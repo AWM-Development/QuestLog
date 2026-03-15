@@ -10,7 +10,7 @@ Read this at the start of every coding session. Add to it when you make a non-ob
 - `Docs/DEVELOPMENT_GUIDE.md` — Coding conventions and patterns
 - `Docs/PRD.md` — Product specification
 
-**Last Updated:** 2026-03-15 (task 1.2)
+**Last Updated:** 2026-03-15 (task 1.3)
 
 ---
 
@@ -37,10 +37,10 @@ Always use `pnpm turbo <task>` from the repo root. Running scripts inside indivi
 
 ## TypeScript & Module Resolution
 
-### `.js` extensions in imports are intentional
-All TypeScript source files use `.js` extensions in imports (e.g., `import { foo } from "./bar.js"`). This is the correct pattern for ESM with `moduleResolution: "bundler"`. TypeScript resolves `.js` → `.ts` at type-check time; the extension is needed for correct Node.js ESM resolution at runtime.
+### `.js` extensions in imports are intentional (not a workaround)
+All TypeScript source files use `.js` extensions in imports (e.g., `import { foo } from "./bar.js"`). This is the correct, standard pattern for TypeScript with `moduleResolution: "bundler"` targeting Node.js ESM. TypeScript resolves `.js` → `.ts` at type-check time; the `.js` extension is what Node.js needs at runtime after compilation.
 
-Do not remove `.js` extensions from imports.
+Do not remove `.js` extensions from imports. Do not "fix" them to `.ts` or extensionless.
 
 ### `packages/shared` has no build step — intentional
 `@questlog/shared` exports raw TypeScript source via `"main": "./src/index.ts"`. Both Vite (web) and tsx (server) can consume TypeScript directly through the `workspace:*` protocol, so no compilation is needed. If this package ever needs to be published externally, add a `build` script then.
@@ -94,8 +94,8 @@ When adding a new shared type, put it in the most specific sub-module. Don't dum
 ### `buildApp()` factory pattern on server
 `apps/server/src/server.ts` exports `buildApp()` instead of a singleton app instance. This is deliberate — it allows `vitest` tests to create fresh app instances per test without shared state or port conflicts. Do not change this to a singleton.
 
-### tRPC is installed but not yet wired up (task 1.3)
-`@trpc/server` is in `apps/server/package.json` as a dependency. The tRPC context, root router, and Fastify plugin will be added in milestone task 1.3 (`feat/foundation/trpc-campaign-crud`). The package is not a dead dependency.
+### tRPC router structure: thin routers, fat services
+Router files in `apps/server/src/routers/` are thin — they define tRPC procedures that validate input (via shared Zod schemas) and delegate to service functions. All business logic lives in `apps/server/src/services/`. Services receive the `db` client as a parameter (dependency injection), keeping them testable independently of tRPC.
 
 ---
 
@@ -115,16 +115,36 @@ DB integration tests wrap each test in `BEGIN`/`ROLLBACK` (via `beforeEach`/`aft
 
 ---
 
+## tRPC & API Layer
+
+### `buildApp()` now requires a `db` parameter
+As of task 1.3, `buildApp({ db })` takes an explicit database client. This supports dependency injection for tests: integration tests create their own `db` via `createTestDb()` with `{ max: 1 }` for transaction isolation, while `main.ts` passes the production singleton. Do not revert to a parameterless `buildApp()`.
+
+### tRPC v11 error handling: `withErrorHandling()` wrapper
+In tRPC v11, middleware's `try/catch` around `next()` does **not** intercept errors thrown by the procedure resolver — tRPC wraps them internally before the middleware sees them. Instead, each router handler wraps service calls with `withErrorHandling(() => service.method(ctx.db, input))`. The `withErrorHandling` async function in `trpc.ts` translates `NotFoundError` → `NOT_FOUND` and `ValidationError` → `BAD_REQUEST`. This keeps service code free of `@trpc/server` imports while correctly mapping domain errors to HTTP status codes. Do not attempt to replace this with middleware — it will not work in tRPC v11.
+
+### TypeScript project references for cross-package imports
+When `@questlog/shared` began exporting real code (Zod validators), TypeScript's `rootDir` constraint caused TS6059 errors because resolved source files are outside `./src`. This is solved with **TypeScript project references** — the proper approach, not a workaround. Each package sets `composite: true` in its `tsconfig.json`, and consuming packages declare `references` to their dependencies. Typecheck uses `tsc -b` (build mode) which respects project boundaries. Note: `tsc -b --noEmit` is incompatible with `composite` (TS6310), so `tsc -b` emits `.js`/`.d.ts` to each package's `dist/` directory (gitignored). The web app imports the server's `AppRouter` type via a paths alias (`@questlog/server/*`) backed by a project reference — not a relative path.
+
+### superjson transformer on both client and server
+Both the tRPC server (`trpc.ts`) and client (`apps/web/src/lib/trpc.ts`) use superjson as the data transformer. This enables `Date` objects from Drizzle to serialize/deserialize correctly across the wire. Both sides must agree on the transformer — do not remove it from either.
+
+### Frontend tRPC URL via `VITE_API_URL` env var
+`apps/web/src/lib/trpc.ts` reads `import.meta.env.VITE_API_URL` for the tRPC endpoint URL. Set this in `.env.local` for development (e.g., `VITE_API_URL=http://localhost:3000/trpc`). The type is declared in `apps/web/src/vite-env.d.ts`. Runtime validation of env vars is deferred to task 1.4+.
+
+---
+
 ## Known Gaps (Deferred to Future Tasks)
 
 | Gap | Planned In |
 |---|---|
 | ~~Database connection (Drizzle + Postgres)~~ | ~~Task 1.2~~ ✅ |
-| tRPC router + context factory | Task 1.3 |
-| Frontend tRPC client (React Query provider) | Task 1.3 |
+| ~~tRPC router + context factory~~ | ~~Task 1.3~~ ✅ |
+| ~~Frontend tRPC client (React Query provider)~~ | ~~Task 1.3~~ ✅ |
 | React Router + layout shell | Task 1.4 |
-| Environment variable runtime validation | Task 1.3 (alongside server context) |
+| Environment variable runtime validation | Task 1.4+ |
 | Error boundaries in React | Task 1.4 |
+| ~~Frontend tRPC URL from env var~~ | ~~Task 1.3~~ ✅ |
 
 ---
 

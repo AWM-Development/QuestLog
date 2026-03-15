@@ -1,1 +1,4 @@
-export {};
+export {
+	CampaignCreateInput,
+	CampaignUpdateInput,
+} from "./campaign.js";

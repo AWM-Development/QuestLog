@@ -4,10 +4,10 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"dev": "tsx watch src/main.ts",
+		"dev": "tsx watch --env-file=../../.env src/main.ts",
 		"build": "tsc",
 		"test": "vitest run",
-		"typecheck": "tsc --noEmit",
+		"typecheck": "tsc -b",
 		"lint": "biome check .",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "tsx src/db/migrate.ts",
@@ -20,6 +20,7 @@
 		"drizzle-orm": "^0.45.1",
 		"fastify": "^5.2.1",
 		"postgres": "^3.4.8",
+		"superjson": "^2.2.6",
 		"zod": "^3.24.2"
 	},
 	"devDependencies": {

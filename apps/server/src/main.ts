@@ -1,6 +1,7 @@
+import { db } from "./db/index.js";
 import { buildApp } from "./server.js";
 
-const app = buildApp();
+const app = buildApp({ db });
 
 const start = async () => {
 	const port = Number(process.env.PORT) || 3000;

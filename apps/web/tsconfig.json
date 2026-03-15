@@ -7,8 +7,13 @@
 		"rootDir": "./src",
 		"paths": {
 			"@/*": ["./src/*"],
-			"@questlog/shared": ["../../packages/shared/src"]
+			"@questlog/shared": ["../../packages/shared/src"],
+			"@questlog/server/*": ["../../apps/server/src/*"]
 		}
 	},
-	"include": ["src"]
+	"include": ["src"],
+	"references": [
+		{ "path": "../../packages/shared" },
+		{ "path": "../../apps/server" }
+	]
 }
