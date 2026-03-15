@@ -8,22 +8,28 @@
 		"build": "tsc -b && vite build",
 		"preview": "vite preview",
 		"test": "vitest run",
-		"typecheck": "tsc -b --noEmit",
+		"typecheck": "tsc -b",
 		"lint": "biome check ."
 	},
 	"dependencies": {
 		"@questlog/shared": "workspace:*",
+		"@trpc/react-query": "^11.13.4",
+		"@trpc/server": "^11.0.0",
 		"react": "^19.0.0",
-		"react-dom": "^19.0.0"
+		"react-dom": "^19.0.0",
+		"superjson": "^2.2.6"
 	},
 	"devDependencies": {
+		"@questlog/server": "workspace:*",
 		"@biomejs/biome": "^1.9.4",
 		"@tailwindcss/vite": "^4.0.15",
-		"@vitejs/plugin-react": "^4.3.4",
+		"@tanstack/react-query": "^5.90.21",
 		"@testing-library/jest-dom": "^6.6.3",
 		"@testing-library/react": "^16.2.0",
+		"@trpc/client": "^11.13.4",
 		"@types/react": "^19.0.10",
 		"@types/react-dom": "^19.0.4",
+		"@vitejs/plugin-react": "^4.3.4",
 		"jsdom": "^26.0.0",
 		"tailwindcss": "^4.0.15",
 		"typescript": "^5.8.2",
