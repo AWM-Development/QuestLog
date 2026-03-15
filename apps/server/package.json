@@ -8,17 +8,25 @@
 		"build": "tsc",
 		"test": "vitest run",
 		"typecheck": "tsc --noEmit",
-		"lint": "biome check ."
+		"lint": "biome check .",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate": "tsx src/db/migrate.ts",
+		"db:push": "drizzle-kit push",
+		"db:studio": "drizzle-kit studio"
 	},
 	"dependencies": {
 		"@questlog/shared": "workspace:*",
 		"@trpc/server": "^11.0.0",
+		"drizzle-orm": "^0.45.1",
 		"fastify": "^5.2.1",
+		"postgres": "^3.4.8",
 		"zod": "^3.24.2"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
 		"@types/node": "^22.13.10",
+		"dotenv": "^17.3.1",
+		"drizzle-kit": "^0.31.9",
 		"tsx": "^4.19.3",
 		"typescript": "^5.8.2",
 		"vitest": "^3.0.9"
