@@ -4,6 +4,7 @@ node_modules/
 # Build outputs
 dist/
 .turbo/
+.vite/
 
 # Environment
 .env
@@ -29,3 +30,4 @@ coverage/
 
 # Lock file artifacts
 .~lock.*
+
