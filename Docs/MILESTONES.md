@@ -108,6 +108,7 @@
   - Work:
     - Chunking service: split extracted text into semantic chunks (~500-1000 tokens), respect section headers and paragraph boundaries
     - Embedding service: call OpenAI embeddings API, store vectors in `chunks` table via pgvector
+    - Swap stubbed PDF/DOCX extraction for real parsers (e.g., `pdf-parse` and `mammoth`), wiring them through the existing `extractText` seam and keeping OCR as-needed based on real campaign PDFs
     - Background processing: queue chunks after upload, update source status on completion
     - `chunks` table: content, embedding vector, source reference, campaign reference, metadata (position, entity mentions)
   - Tests: chunking logic unit tests (verify chunk sizes, boundary respect), embedding service test (mock API, verify storage)
@@ -411,6 +412,7 @@
     - Database query optimization (check slow queries, add missing indexes)
     - Frontend bundle analysis and code splitting
     - Loading state polish: skeletons, progressive rendering
+    - Import pipeline hardening: simple retry strategy for failed sources, structured logging of import errors, and basic monitoring around `sources.status` to surface ingestion issues
 
 - [ ] **9.3 — Deployment**
   - Branch: `feat/polish/deployment`
