@@ -73,7 +73,7 @@ describe("ImportQueueItem", () => {
 	it("shows ErrorState when source status is error", () => {
 		render(<ImportQueueItem source={errorSource} onPasteText={vi.fn()} />);
 
-		expect(screen.getByText(/scanned image/i)).toBeInTheDocument();
+		expect(screen.getByText(/could not be processed/i)).toBeInTheDocument();
 		expect(
 			screen.getByRole("button", { name: /paste text instead/i }),
 		).toBeInTheDocument();

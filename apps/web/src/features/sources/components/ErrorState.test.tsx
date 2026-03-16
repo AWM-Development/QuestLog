@@ -18,8 +18,24 @@ const errorSource: Source = {
 	updatedAt: new Date(),
 };
 
+const scannedPdfSource: Source = {
+	...errorSource,
+	metadata: { errorReason: "scanned_pdf" },
+};
+
 describe("ErrorState", () => {
-	it("renders error message for PDF scanned image", () => {
+	it("renders rescan guidance when errorReason is scanned_pdf", () => {
+		render(
+			<ErrorState
+				source={scannedPdfSource}
+				onPasteText={vi.fn()}
+				onDismiss={vi.fn()}
+			/>,
+		);
+		expect(screen.getByText(/Google Drive, Apple Notes/i)).toBeInTheDocument();
+	});
+
+	it("renders generic PDF error when no errorReason", () => {
 		render(
 			<ErrorState
 				source={errorSource}
@@ -27,7 +43,7 @@ describe("ErrorState", () => {
 				onDismiss={vi.fn()}
 			/>,
 		);
-		expect(screen.getByText(/scanned image/i)).toBeInTheDocument();
+		expect(screen.getByText(/could not be processed/i)).toBeInTheDocument();
 	});
 
 	it("renders custom error message when provided", () => {

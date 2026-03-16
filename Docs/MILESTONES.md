@@ -21,7 +21,7 @@
 
 ### Tasks
 
-- [ ] **1.1 — Project scaffolding**
+- [x] **1.1 — Project scaffolding**
   - Branch: `feat/foundation/scaffolding`
   - PRD ref: §6 Architecture
   - Work:
@@ -34,7 +34,7 @@
     - Create `.env.example`
     - Verify: `pnpm turbo dev` starts both apps, `pnpm turbo test` runs (empty suites), `pnpm turbo lint` passes
 
-- [ ] **1.2 — Database schema & migrations**
+- [x] **1.2 — Database schema & migrations**
   - Branch: `feat/foundation/db-schema`
   - PRD ref: §4.1 (campaigns), §4.3 (sessions), §4.5 (entities, relationships), §4.2 (conversations)
   - Work:
@@ -45,7 +45,7 @@
     - Write integration tests: verify tables exist, basic CRUD on campaigns table
   - Tests first: write a test that inserts and reads a campaign before writing the schema
 
-- [ ] **1.3 — tRPC boilerplate & campaign CRUD**
+- [x] **1.3 — tRPC boilerplate & campaign CRUD**
   - Branch: `feat/foundation/trpc-campaign-crud`
   - PRD ref: §4.1 Campaign Object
   - Work:
@@ -57,7 +57,7 @@
     - Connect frontend tRPC client (React Query provider)
   - Tests first: write service tests for each CRUD operation, then router integration tests
 
-- [ ] **1.4 — Frontend shell & routing**
+- [x] **1.4 — Frontend shell & routing**
   - Branch: `feat/foundation/frontend-shell`
   - PRD ref: §5 Design System (layout structure, navigation)
   - Work:
@@ -70,7 +70,7 @@
     - Placeholder pages for all nav items
   - Tests: component tests for layout rendering, campaign list loading/empty/error states
 
-- [ ] **1.5 — Design system migration**
+- [x] **1.5 — Design system migration**
   - Branch: `feat/foundation/design-system`
   - PRD ref: §5 Design System, Docs/DESIGN_SYSTEM.md
   - Work:
@@ -91,7 +91,7 @@
 
 ### Tasks
 
-- [ ] **2.1 — File upload & text extraction**
+- [x] **2.1 — File upload & text extraction**
   - Branch: `feat/import-pipeline/file-upload`
   - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §4.1 Import Sources, Import Processing Pipeline
@@ -102,7 +102,7 @@
     - Upload UI: drag-and-drop zone, file list with processing status
   - Tests: service tests for each file type extraction, upload endpoint integration test
 
-- [ ] **2.2 — Chunking & embedding pipeline**
+- [x] **2.2 — Chunking & embedding pipeline**
   - Branch: `feat/import-pipeline/chunking-embedding`
   - PRD ref: §6 RAG Pipeline (Ingestion)
   - Work:
@@ -122,6 +122,23 @@
     - Search tRPC endpoint for testing/debugging
     - Verify end-to-end: upload a doc → embed → search → get relevant chunks back
   - Tests: integration test with real embeddings in test DB, verify search returns relevant results and filters by campaign
+
+- [ ] **2.4 — Scanned document support (OCR)**
+  - Branch: `feat/import-pipeline/ocr-support`
+  - 🧠 **Strategy discussion required** — Pause before implementing. See template instructions.
+  - PRD ref: §4.1 Import Sources (file types)
+  - Background: Scanned PDFs and phone photos of notes are a common input for this user base. The pipeline currently errors on these with a helpful rescan message. This task investigates and implements a first-class OCR path so users don't need to pre-process files.
+  - Investigation questions for strategy discussion:
+    - Client-side OCR via Tesseract.js (no server cost, handles printed text well, poor on handwriting)?
+    - Server-side OCR via Claude Vision (handles handwriting, same vendor, per-page API cost)?
+    - Native mobile document scanning via browser `capture` attribute or a PWA camera flow?
+    - Hybrid: use Tesseract.js for confidence-high cases, fall back to Claude Vision for low confidence?
+  - Work (after strategy decision):
+    - Implement chosen OCR path as a new step in `extraction.service.ts` after the empty-text check
+    - Accept JPG/PNG uploads as valid source types and route through OCR
+    - Add `ocrConfidence` to source metadata for observability
+    - Update scanned PDF error state to show OCR progress instead of an error
+  - Tests: OCR extraction integration test with a real image fixture, confidence threshold edge cases
 
 ---
 
