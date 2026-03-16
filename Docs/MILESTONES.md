@@ -432,6 +432,27 @@
 
 ---
 
+## Milestone 10: Rate Limiting & API Governance
+
+**Goal:** Protect against runaway Claude API costs by enforcing per-user and per-campaign usage limits. Requires a strategy discussion before implementation.
+
+**Estimated effort:** 1–2 sessions
+
+### Tasks
+
+- [ ] **10.1 — Rate limiting strategy & implementation**
+  - Branch: `feat/governance/rate-limiting`
+  - 🧠 **Strategy discussion required** — Pause before implementing. See template instructions.
+  - Work:
+    - Decide rate limit strategy (per-user token budget, per-campaign daily cap, sliding window vs. fixed reset — TBD in strategy discussion)
+    - Implement server-side enforcement: track token usage per user/campaign, reject or queue requests that exceed limits
+    - Graceful degradation: inform user when limit is reached, show usage stats
+    - Admin controls: configure limits per environment (dev vs. prod)
+    - Logging: track usage trends to inform limit adjustments over time
+  - Tests: unit tests for limit enforcement logic, integration tests for rejection behavior at boundary conditions
+
+---
+
 ## Starting a Task — Copy-Paste Template
 
 When opening a new coding session, provide the AI with this:
@@ -454,6 +475,12 @@ STOP before writing any code. Ask the user:
 Please share your wireframes, visual references, or UX intent before I begin —
 what should [describe the relevant UI] look like?"
 Do not proceed with implementation until the user provides those specifications.
+
+⚠️ STRATEGY CHECK: If the current task is marked with "🧠 Strategy discussion required",
+STOP before writing any code. Ask the user:
+"This task requires upfront design decisions before implementation.
+Please share your chosen approach or constraints so I can implement accordingly."
+Do not proceed with implementation until the user provides that direction.
 
 Follow TDD: write failing tests first, then implement. Use the patterns
 from the dev guide (thin routers, service layer, Zod validation).
