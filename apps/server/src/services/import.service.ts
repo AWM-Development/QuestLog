@@ -1,111 +1,106 @@
+/**
+ * Import processing pipeline.
+ * Orchestrates: extraction → chunking → embedding → done.
+ * Source CRUD lives in source.service.ts — this module owns only pipeline logic.
+ */
+
 import { eq } from "drizzle-orm";
 import type { Database } from "../db/index.js";
 import { sources } from "../db/schema/index.js";
-import { NotFoundError } from "../lib/errors.js";
+import { chunkText } from "./chunking.service.js";
+import { type EmbedOptions, embedChunks } from "./embedding.service.js";
 import { extractText } from "./extraction.service.js";
+import { sourceService } from "./source.service.js";
 import type { StorageProvider } from "./storage.service.js";
 
-function first<T>(rows: T[]): T {
-	return rows[0] as T;
+export interface ProcessOptions {
+	/** Override for embedding fetch (testing). */
+	embedOptions?: EmbedOptions;
 }
 
-export interface CreateFileSourceInput {
-	campaignId: string;
-	filename: string;
-	mimeType: string;
-	sizeBytes: number;
-	content: Buffer;
+/**
+ * Detect whether extracted PDF text is effectively empty (scanned PDF).
+ * Strips pdf-parse page separator markers and whitespace.
+ */
+function isScannedPdf(text: string): boolean {
+	const stripped = text.replace(/--\s*\d+\s+of\s+\d+\s*--/g, "").trim();
+	return stripped.length === 0;
+}
+
+/** Read the text content from a source, either from storage (file) or metadata (paste). */
+async function getSourceText(
+	source: {
+		type: string;
+		storageKey: string | null;
+		mimeType: string | null;
+		metadata: Record<string, unknown> | null;
+	},
+	storage: StorageProvider,
+): Promise<string> {
+	if (source.type === "paste") {
+		const content = source.metadata?.content;
+		if (typeof content !== "string" || !content.trim()) {
+			throw new Error("Paste source has no content");
+		}
+		return content;
+	}
+
+	const key = source.storageKey;
+	if (!key) throw new Error("Source has no storageKey");
+
+	const buffer = await storage.getFileBuffer(key);
+	const mimeType = source.mimeType ?? "text/plain";
+	return extractText(mimeType, buffer);
 }
 
 export const importService = {
-	async createFileSource(
-		db: Database,
-		storage: StorageProvider,
-		input: CreateFileSourceInput,
-	) {
-		const rows = await db
-			.insert(sources)
-			.values({
-				campaignId: input.campaignId,
-				name: input.filename,
-				type: "file",
-				mimeType: input.mimeType,
-				sizeBytes: input.sizeBytes,
-				status: "pending",
-			})
-			.returning();
-		const source = first(rows);
-		const storageKey = `${source.campaignId}/${source.id}/${input.filename}`;
-		await storage.saveFile({ storageKey, content: input.content });
-		await db
-			.update(sources)
-			.set({ storageKey })
-			.where(eq(sources.id, source.id));
-		const updated = await db
-			.select()
-			.from(sources)
-			.where(eq(sources.id, source.id));
-		return first(updated);
-	},
-
+	/**
+	 * Full processing pipeline for a source:
+	 * pending → extracting → chunking → embedding → done | error
+	 */
 	async processSource(
 		db: Database,
 		storage: StorageProvider,
 		sourceId: string,
+		options?: ProcessOptions,
 	): Promise<void> {
-		const rows = await db
-			.select()
-			.from(sources)
-			.where(eq(sources.id, sourceId));
-		if (rows.length === 0) throw new NotFoundError("Source", sourceId);
-		const source = first(rows);
-
-		await db
-			.update(sources)
-			.set({ status: "extracting" })
-			.where(eq(sources.id, sourceId));
+		const source = await sourceService.getById(db, sourceId);
 
 		try {
-			const key = source.storageKey;
-			if (!key) {
-				throw new Error("Source has no storageKey");
+			// --- Extract ---
+			await sourceService.updateStatus(db, sourceId, "extracting");
+			const text = await getSourceText(source, storage);
+
+			// Scanned PDF detection
+			if (source.mimeType === "application/pdf" && isScannedPdf(text)) {
+				await sourceService.updateStatus(db, sourceId, "error", {
+					errorReason: "scanned_pdf",
+				});
+				return;
 			}
-			const buffer = await storage.getFileBuffer(key);
-			const mimeType = source.mimeType ?? "text/plain";
-			const text = await extractText(mimeType, buffer);
-			await db
-				.update(sources)
-				.set({
-					status: "done",
-					metadata: { ...source.metadata, extractedText: text },
-				})
-				.where(eq(sources.id, sourceId));
+
+			await sourceService.updateStatus(db, sourceId, "chunking", {
+				extractedText: text,
+			});
+
+			// --- Chunk ---
+			const textChunks = chunkText(text, {
+				sourceId,
+				campaignId: source.campaignId,
+			});
+
+			// --- Embed ---
+			await sourceService.updateStatus(db, sourceId, "embedding");
+			await embedChunks(db, textChunks, options?.embedOptions);
+
+			// --- Done ---
+			await sourceService.updateStatus(db, sourceId, "done");
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
-			await db
-				.update(sources)
-				.set({
-					status: "error",
-					metadata: {
-						...(source.metadata ?? {}),
-						extractionError: message,
-					},
-				})
-				.where(eq(sources.id, sourceId));
+			await sourceService.updateStatus(db, sourceId, "error", {
+				errorReason: message,
+			});
 		}
-	},
-
-	async getById(db: Database, sourceId: string) {
-		const rows = await db
-			.select()
-			.from(sources)
-			.where(eq(sources.id, sourceId));
-		if (rows.length === 0) throw new NotFoundError("Source", sourceId);
-		return first(rows);
-	},
-
-	async listByCampaign(db: Database, campaignId: string) {
-		return db.select().from(sources).where(eq(sources.campaignId, campaignId));
 	},
 
 	async listPending(db: Database, limit = 10) {
@@ -117,17 +112,18 @@ export const importService = {
 	},
 
 	/**
-	 * Process all pending sources (e.g. from a cron or pnpm script).
+	 * Process all pending sources (e.g. from a cron or on-start hook).
 	 * Calls processSource for each; safe to re-run.
 	 */
 	async processPendingSources(
 		db: Database,
 		storage: StorageProvider,
 		limit = 50,
+		options?: ProcessOptions,
 	): Promise<number> {
 		const pending = await this.listPending(db, limit);
 		for (const source of pending) {
-			await this.processSource(db, storage, source.id);
+			await this.processSource(db, storage, source.id, options);
 		}
 		return pending.length;
 	},

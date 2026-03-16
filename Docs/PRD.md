@@ -846,7 +846,7 @@ Each theme overrides CSS custom properties for backgrounds, text, accent, and ty
 | **Database** | PostgreSQL | JSONB for flexible entity schemas, `pgvector` for embeddings, `pg_trgm` for fuzzy search, recursive CTEs for graph traversal |
 | **ORM** | Drizzle | Type-safe, SQL-close, lightweight |
 | **AI/LLM** | Anthropic Claude API (or OpenAI) | Conversation, content generation, style matching |
-| **Embedding** | OpenAI `text-embedding-3-small` (or similar) | Vector embeddings for RAG retrieval |
+| **Embedding** | Voyage AI `voyage-3` (1024 dimensions) | Vector embeddings for RAG retrieval |
 | **Infra** | Fly.io or Railway | Managed deployment, good Postgres support |
 | **CI/CD** | GitHub Actions | Standard, familiar, extensible |
 | **Containerization** | Docker | Consistent environments, deployable anywhere |
@@ -919,8 +919,8 @@ Each theme overrides CSS custom properties for backgrounds, text, accent, and ty
 External Services:
 ┌──────────────┐  ┌──────────────┐
 │  LLM API     │  │  Embedding   │
-│  (Claude /   │  │  API         │
-│   OpenAI)    │  │  (OpenAI)    │
+│  (Claude)    │  │  API         │
+│              │  │  (Voyage AI) │
 └──────────────┘  └──────────────┘
 ```
 
@@ -980,7 +980,7 @@ To keep v1 focused, the following are explicitly out of scope:
 | **RAG quality** — retrieval returns irrelevant context, agent confabulates | High | Invest in chunking strategy, test with real campaign data early, add source citations for verifiability |
 | **PDF extraction quality** — published modules have complex layouts (columns, sidebars, stat blocks) | Medium | Test with actual D&D PDFs early. Fall back to manual paste for difficult layouts. Consider specialized PDF parsers. |
 | **Context window limits** — large campaigns exceed what can fit in a single LLM call | Medium | Smart context assembly, summarization of older material, entity summaries as compressed representations |
-| **Embedding cost** — large campaigns with many documents could get expensive | Low | Chunk efficiently, cache embeddings, use cost-effective embedding models (text-embedding-3-small) |
+| **Embedding cost** — large campaigns with many documents could get expensive | Low | Chunk efficiently, cache embeddings, use cost-effective embedding models (Voyage AI voyage-3) |
 | **Entity linking accuracy** — NER on fantasy names is unreliable | Medium | Use the campaign's own entity list as a dictionary for matching. Suggest, don't auto-commit. Let the user correct. |
 
 ### Product Risks
@@ -994,7 +994,7 @@ To keep v1 focused, the following are explicitly out of scope:
 ### Open Questions
 
 1. **LLM provider:** Claude vs. OpenAI vs. both? Implications for cost, quality, and API design.
-2. **Embedding model:** OpenAI text-embedding-3-small is the default assumption. Alternatives? Self-hosted?
+2. **Embedding model:** Voyage AI voyage-3 (1024 dimensions, recommended by Anthropic). Alternatives? Self-hosted?
 3. **Entity extraction approach:** LLM-based NER vs. rule-based matching against known entity list vs. hybrid?
 4. **Graph visualization library:** D3.js, Cytoscape.js, react-force-graph, or something else?
 5. **Rich text editor:** TipTap, Slate, Lexical, or ProseMirror? Needs to support inline entity linking.
@@ -1013,7 +1013,7 @@ To keep v1 focused, the following are explicitly out of scope:
 - Database schema: campaigns, sessions, entities, relationships, chunks.
 - Basic frontend shell: React + Tailwind, routing, layout scaffolding.
 - File upload + text extraction pipeline (PDF, markdown, text).
-- Embedding pipeline: chunking → OpenAI embeddings → pgvector storage.
+- Embedding pipeline: chunking → Voyage AI embeddings → pgvector storage.
 - Basic agent chat: send query → retrieve context → call LLM → display response.
 
 ### Phase 2: Core Loop (Weeks 3–4)

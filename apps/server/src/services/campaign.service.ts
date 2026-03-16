@@ -3,10 +3,7 @@ import { desc, eq } from "drizzle-orm";
 import type { Database } from "../db/index.js";
 import { campaigns } from "../db/schema/index.js";
 import { NotFoundError } from "../lib/errors.js";
-
-function first<T>(rows: T[]): T {
-	return rows[0] as T;
-}
+import { first } from "../lib/utils.js";
 
 export const campaignService = {
 	async create(db: Database, input: CampaignCreateInput) {

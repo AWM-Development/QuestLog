@@ -31,7 +31,7 @@ describe("chunks table", () => {
 		expect(campaignRows).toHaveLength(1);
 		const campaign = campaignRows[0] as (typeof campaignRows)[number];
 
-		const embedding = Array.from({ length: 1536 }, (_, i) => i / 1536);
+		const embedding = Array.from({ length: 1024 }, (_, i) => i / 1024);
 
 		const chunkRows = await db
 			.insert(chunks)
@@ -51,7 +51,7 @@ describe("chunks table", () => {
 		expect(found).toHaveLength(1);
 		const record = found[0] as (typeof found)[number];
 
-		expect(record.embedding).toHaveLength(1536);
+		expect(record.embedding).toHaveLength(1024);
 		// Verify round-trip precision to 4 decimal places (Postgres vector storage)
 		embedding.forEach((v, i) => {
 			expect(record.embedding?.[i]).toBeCloseTo(v, 4);
