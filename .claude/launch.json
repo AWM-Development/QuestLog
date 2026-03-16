@@ -1,0 +1,17 @@
+{
+	"version": "0.0.1",
+	"configurations": [
+		{
+			"name": "api-server",
+			"runtimeExecutable": "pnpm",
+			"runtimeArgs": ["--filter", "@questlog/server", "dev"],
+			"port": 3000
+		},
+		{
+			"name": "web-client",
+			"runtimeExecutable": "pnpm",
+			"runtimeArgs": ["--filter", "@questlog/web", "dev"],
+			"port": 5173
+		}
+	]
+}

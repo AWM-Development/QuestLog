@@ -1,12 +1,21 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import App from "./App.js";
+import { AppShell } from "./layouts/AppShell.js";
+import { renderWithRouter } from "./test-utils.js";
 
 describe("App", () => {
-	it("renders the app heading", () => {
-		render(<App />);
-		expect(
-			screen.getByRole("heading", { name: /questlog/i }),
-		).toBeInTheDocument();
+	it("renders the QuestLog brand", () => {
+		renderWithRouter(
+			[
+				{
+					path: "/",
+					element: <AppShell />,
+					children: [{ index: true, element: <p>Home</p> }],
+				},
+			],
+			{ initialEntries: ["/"] },
+		);
+
+		expect(screen.getByText("QuestLog")).toBeInTheDocument();
 	});
 });
