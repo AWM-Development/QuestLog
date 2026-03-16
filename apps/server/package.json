@@ -17,6 +17,7 @@
 	},
 	"dependencies": {
 		"@fastify/cors": "^11.2.0",
+		"@fastify/multipart": "^9.0.0",
 		"@questlog/shared": "workspace:*",
 		"@trpc/server": "^11.0.0",
 		"drizzle-orm": "^0.45.1",
