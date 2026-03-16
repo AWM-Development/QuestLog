@@ -12,9 +12,7 @@ describe("FileDropZone", () => {
 		renderDropZone();
 		expect(screen.getByText("Drop files here")).toBeInTheDocument();
 		expect(screen.getByText("or click to browse")).toBeInTheDocument();
-		expect(
-			screen.getByText(/PDF.*MD.*TXT.*DOCX.*50 MB/i),
-		).toBeInTheDocument();
+		expect(screen.getByText(/PDF.*MD.*TXT.*DOCX.*50 MB/i)).toBeInTheDocument();
 	});
 
 	it("calls onFilesSelected when files are dropped", () => {
@@ -36,7 +34,9 @@ describe("FileDropZone", () => {
 		renderDropZone(onFilesSelected);
 
 		const file = new File(["content"], "notes.md", { type: "text/markdown" });
-		const input = document.querySelector('input[type="file"]') as HTMLInputElement;
+		const input = document.querySelector(
+			'input[type="file"]',
+		) as HTMLInputElement;
 
 		await userEvent.upload(input, file);
 

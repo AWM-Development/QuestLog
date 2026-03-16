@@ -40,7 +40,9 @@ function setupMocks() {
 	});
 }
 
-function renderSourcesPage(campaignId = "00000000-0000-0000-0000-000000000001") {
+function renderSourcesPage(
+	campaignId = "00000000-0000-0000-0000-000000000001",
+) {
 	setupMocks();
 	return renderWithRouter(
 		[{ path: "/campaign/:id/sources", element: <SourcesPage /> }],
@@ -85,9 +87,7 @@ describe("SourcesPage", () => {
 
 		renderSourcesPage();
 
-		expect(
-			screen.getByText(/no sources yet/i),
-		).toBeInTheDocument();
+		expect(screen.getByText(/no sources yet/i)).toBeInTheDocument();
 	});
 
 	it("shows Active imports section only when active sources exist", () => {

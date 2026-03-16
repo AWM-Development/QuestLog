@@ -63,7 +63,6 @@ export function FileDropZone({ onFilesSelected }: FileDropZoneProps) {
 		<div>
 			<button
 				type="button"
-				role="button"
 				data-dragging={isDragging ? "true" : "false"}
 				onClick={() => inputRef.current?.click()}
 				onDragOver={handleDragOver}

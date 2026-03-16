@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { trpc } from "@/lib/trpc.js";
+import { useState } from "react";
 import type {
 	DuplicateResolutionAction,
 	LocalQueueItem,
@@ -66,16 +66,19 @@ export function useFileUpload(campaignId: string) {
 		updateItem(key, { state: "checking" });
 		let duplicate: Source | null = null;
 		try {
-			duplicate = await utils.source.checkDuplicate.fetch({
+			duplicate = (await utils.source.checkDuplicate.fetch({
 				campaignId,
 				hash,
-			}) as Source | null;
+			})) as Source | null;
 		} catch {
 			// Non-fatal: proceed without duplicate check
 		}
 
 		if (duplicate) {
-			updateItem(key, { state: "waiting-duplicate", existingSource: duplicate });
+			updateItem(key, {
+				state: "waiting-duplicate",
+				existingSource: duplicate,
+			});
 			return; // Wait for user to resolve
 		}
 

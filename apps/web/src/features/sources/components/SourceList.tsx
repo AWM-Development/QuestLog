@@ -22,7 +22,9 @@ export function SourceList({ sources }: SourceListProps) {
 					key={source.id}
 					style={{
 						borderBottom:
-							index < sources.length - 1 ? "1px solid var(--border-subtle)" : "none",
+							index < sources.length - 1
+								? "1px solid var(--border-subtle)"
+								: "none",
 					}}
 				>
 					<SourceListItem source={source} />

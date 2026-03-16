@@ -30,14 +30,24 @@ export function ErrorState({
 				backgroundColor: "rgba(220, 96, 96, 0.06)",
 			}}
 		>
-			<p style={{ fontSize: "0.8125rem", color: "var(--status-error)", marginBottom: "var(--space-3)" }}>
+			<p
+				style={{
+					fontSize: "0.8125rem",
+					color: "var(--status-error)",
+					marginBottom: "var(--space-3)",
+				}}
+			>
 				{message}
 			</p>
 			<div style={{ display: "flex", gap: "var(--space-2)" }}>
 				<button
 					type="button"
 					onClick={() => onPasteText(source.name)}
-					style={{ ...buttonGhost, color: "var(--accent)", fontSize: "0.8125rem" }}
+					style={{
+						...buttonGhost,
+						color: "var(--accent)",
+						fontSize: "0.8125rem",
+					}}
 				>
 					Paste text instead
 				</button>

@@ -1,4 +1,8 @@
-import type { DuplicateResolutionAction, LocalQueueItem, Source } from "../types.js";
+import type {
+	DuplicateResolutionAction,
+	LocalQueueItem,
+	Source,
+} from "../types.js";
 import { DuplicatePrompt } from "./DuplicatePrompt.js";
 import { EmberPlaceholder } from "./EmberPlaceholder.js";
 import { ErrorState } from "./ErrorState.js";
@@ -64,7 +68,13 @@ export function ImportQueueItem({
 				padding: "var(--space-4)",
 			}}
 		>
-			<div style={{ display: "flex", alignItems: "flex-start", gap: "var(--space-4)" }}>
+			<div
+				style={{
+					display: "flex",
+					alignItems: "flex-start",
+					gap: "var(--space-4)",
+				}}
+			>
 				<div style={{ flex: 1, minWidth: 0 }}>
 					<p
 						style={{
@@ -109,7 +119,9 @@ export function ImportQueueItem({
 					)}
 				</div>
 
-				<EmberPlaceholder status={status as Parameters<typeof EmberPlaceholder>[0]["status"]} />
+				<EmberPlaceholder
+					status={status as Parameters<typeof EmberPlaceholder>[0]["status"]}
+				/>
 			</div>
 
 			{/* Inline duplicate resolution */}

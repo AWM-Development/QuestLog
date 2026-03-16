@@ -6,7 +6,10 @@ interface DuplicatePromptProps {
 	onResolve: (action: DuplicateResolutionAction) => void;
 }
 
-export function DuplicatePrompt({ existingSource, onResolve }: DuplicatePromptProps) {
+export function DuplicatePrompt({
+	existingSource,
+	onResolve,
+}: DuplicatePromptProps) {
 	const importedDate = existingSource.createdAt.toLocaleDateString("en-US", {
 		month: "short",
 		day: "numeric",
@@ -23,14 +26,25 @@ export function DuplicatePrompt({ existingSource, onResolve }: DuplicatePromptPr
 				backgroundColor: "rgba(232, 176, 64, 0.06)",
 			}}
 		>
-			<p style={{ fontSize: "0.8125rem", color: "var(--text-secondary)", marginBottom: "var(--space-3)" }}>
-				This looks like a file you already imported ({importedDate}). What should we do?
+			<p
+				style={{
+					fontSize: "0.8125rem",
+					color: "var(--text-secondary)",
+					marginBottom: "var(--space-3)",
+				}}
+			>
+				This looks like a file you already imported ({importedDate}). What
+				should we do?
 			</p>
 			<div style={{ display: "flex", gap: "var(--space-2)" }}>
 				<button
 					type="button"
 					onClick={() => onResolve("replace")}
-					style={{ ...buttonGhost, color: "var(--status-warning)", fontSize: "0.8125rem" }}
+					style={{
+						...buttonGhost,
+						color: "var(--status-warning)",
+						fontSize: "0.8125rem",
+					}}
 				>
 					Replace
 				</button>

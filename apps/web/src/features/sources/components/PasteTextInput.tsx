@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
 import { buttonAccent, buttonGhost, inputField } from "@/components/styles.js";
 import { trpc } from "@/lib/trpc.js";
+import { useEffect, useRef, useState } from "react";
 
 interface PasteTextInputProps {
 	campaignId: string;
@@ -53,7 +53,11 @@ export function PasteTextInput({
 	function handleSubmit(e: React.FormEvent) {
 		e.preventDefault();
 		if (!title.trim() || !content.trim()) return;
-		mutation.mutate({ campaignId, title: title.trim(), content: content.trim() });
+		mutation.mutate({
+			campaignId,
+			title: title.trim(),
+			content: content.trim(),
+		});
 	}
 
 	return (
@@ -120,7 +124,13 @@ export function PasteTextInput({
 							{mutation.isPending ? "Importing…" : "Import text"}
 						</button>
 						{mutation.isError && (
-							<span style={{ fontSize: "0.8125rem", color: "var(--status-error)", alignSelf: "center" }}>
+							<span
+								style={{
+									fontSize: "0.8125rem",
+									color: "var(--status-error)",
+									alignSelf: "center",
+								}}
+							>
 								Failed to import
 							</span>
 						)}
