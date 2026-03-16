@@ -1,4 +1,4 @@
-import { buttonGhost } from "@/components/styles.js";
+import { buttonGhost, inlineAlertError } from "@/components/styles.js";
 import type { Source } from "../types.js";
 
 interface ErrorStateProps {
@@ -23,11 +23,8 @@ export function ErrorState({
 	return (
 		<div
 			style={{
+				...inlineAlertError,
 				marginTop: "var(--space-3)",
-				padding: "var(--space-3) var(--space-4)",
-				border: "1px solid var(--status-error)",
-				borderRadius: "var(--r-sm)",
-				backgroundColor: "rgba(220, 96, 96, 0.06)",
 			}}
 		>
 			<p

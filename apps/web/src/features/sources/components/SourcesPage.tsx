@@ -1,3 +1,4 @@
+import { trpc } from "@/lib/trpc.js";
 import { useState } from "react";
 import { useParams } from "react-router";
 import { useFileUpload } from "../hooks/useFileUpload.js";
@@ -14,6 +15,10 @@ export function SourcesPage() {
 		useSourcePolling(campaignId);
 	const { uploadFiles, resolveDuplicate, queueItems } =
 		useFileUpload(campaignId);
+	const utils = trpc.useUtils();
+	const deleteSource = trpc.source.delete.useMutation({
+		onSuccess: () => utils.source.list.invalidate({ campaignId }),
+	});
 
 	const [pasteTextTitle, setPasteTextTitle] = useState<string | undefined>(
 		undefined,
@@ -104,6 +109,7 @@ export function SourcesPage() {
 						activeSources={activeSources}
 						onResolveDuplicate={resolveDuplicate}
 						onPasteText={setPasteTextTitle}
+						onDismissError={(id) => deleteSource.mutate({ id })}
 					/>
 				</section>
 			)}

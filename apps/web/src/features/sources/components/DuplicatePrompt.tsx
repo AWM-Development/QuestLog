@@ -1,4 +1,4 @@
-import { buttonGhost } from "@/components/styles.js";
+import { buttonGhost, inlineAlertWarning } from "@/components/styles.js";
 import type { DuplicateResolutionAction, Source } from "../types.js";
 
 interface DuplicatePromptProps {
@@ -19,11 +19,8 @@ export function DuplicatePrompt({
 	return (
 		<div
 			style={{
+				...inlineAlertWarning,
 				marginTop: "var(--space-3)",
-				padding: "var(--space-3) var(--space-4)",
-				border: "1px solid var(--status-warning)",
-				borderRadius: "var(--r-sm)",
-				backgroundColor: "rgba(232, 176, 64, 0.06)",
 			}}
 		>
 			<p

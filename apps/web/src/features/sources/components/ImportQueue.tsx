@@ -13,6 +13,8 @@ interface ImportQueueProps {
 		action: DuplicateResolutionAction,
 	) => void;
 	onPasteText: (fileName: string) => void;
+	/** Called when the user dismisses a failed DB source — deletes the record. */
+	onDismissError: (id: string) => void;
 }
 
 export function ImportQueue({
@@ -20,6 +22,7 @@ export function ImportQueue({
 	activeSources,
 	onResolveDuplicate,
 	onPasteText,
+	onDismissError,
 }: ImportQueueProps) {
 	return (
 		<div
@@ -42,6 +45,7 @@ export function ImportQueue({
 					key={source.id}
 					source={source}
 					onPasteText={onPasteText}
+					onDismissError={onDismissError}
 				/>
 			))}
 		</div>

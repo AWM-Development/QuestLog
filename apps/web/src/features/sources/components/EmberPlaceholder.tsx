@@ -1,7 +1,6 @@
-import type { SourceStatus } from "@questlog/shared";
-
 interface EmberPlaceholderProps {
-	status: SourceStatus | "hashing" | "checking" | "uploading";
+	/** Any status string — import pipeline stages, local queue states, or future values. */
+	status: string;
 }
 
 /** Emoji placeholder for the Ember mascot. Replaced by sprite animation in Task 8.2. */

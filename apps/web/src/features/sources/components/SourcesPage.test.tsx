@@ -28,6 +28,7 @@ const mockList = trpc.source.list.useQuery as ReturnType<typeof vi.fn>;
 const mockImportText = trpc.source.importText.useMutation as ReturnType<
 	typeof vi.fn
 >;
+const mockDelete = trpc.source.delete.useMutation as ReturnType<typeof vi.fn>;
 
 function setupMocks() {
 	mockImportText.mockReturnValue({
@@ -37,6 +38,10 @@ function setupMocks() {
 		error: null,
 		isSuccess: false,
 		reset: vi.fn(),
+	});
+	mockDelete.mockReturnValue({
+		mutate: vi.fn(),
+		isPending: false,
 	});
 }
 

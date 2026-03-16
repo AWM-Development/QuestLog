@@ -12,6 +12,8 @@ interface ImportQueueItemProps {
 	localItem?: LocalQueueItem;
 	onResolveDuplicate?: (action: DuplicateResolutionAction) => void;
 	onPasteText: (fileName: string) => void;
+	/** Called when the user dismisses a failed DB source — deletes the record. */
+	onDismissError?: (id: string) => void;
 }
 
 const STATUS_PROGRESS: Record<string, number> = {
@@ -44,6 +46,7 @@ export function ImportQueueItem({
 	localItem,
 	onResolveDuplicate,
 	onPasteText,
+	onDismissError,
 }: ImportQueueItemProps) {
 	const status = getStatus(source, localItem);
 	const name = getName(source, localItem);
@@ -119,9 +122,7 @@ export function ImportQueueItem({
 					)}
 				</div>
 
-				<EmberPlaceholder
-					status={status as Parameters<typeof EmberPlaceholder>[0]["status"]}
-				/>
+				<EmberPlaceholder status={status} />
 			</div>
 
 			{/* Inline duplicate resolution */}
@@ -132,14 +133,12 @@ export function ImportQueueItem({
 				/>
 			)}
 
-			{/* Inline error with fallback */}
+			{/* Inline error state — only for DB sources (localItem errors show in status label) */}
 			{isError && source && (
 				<ErrorState
 					source={source}
 					onPasteText={onPasteText}
-					onDismiss={() => {
-						/* TODO: dismiss logic (remove from active list) */
-					}}
+					onDismiss={() => onDismissError?.(source.id)}
 				/>
 			)}
 		</div>
