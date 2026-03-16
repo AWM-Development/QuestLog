@@ -1,6 +1,7 @@
 import { Navigate, createBrowserRouter } from "react-router";
 import { PlaceholderPage } from "./components/PlaceholderPage.js";
 import { CampaignListPage } from "./features/campaigns/index.js";
+import { SourcesPage } from "./features/sources/index.js";
 import { AppShell } from "./layouts/AppShell.js";
 
 export const router = createBrowserRouter([
@@ -35,7 +36,7 @@ export const router = createBrowserRouter([
 					},
 					{
 						path: "sources",
-						element: <PlaceholderPage title="Sources" />,
+						element: <SourcesPage />,
 					},
 					{
 						path: "settings",

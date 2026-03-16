@@ -117,7 +117,9 @@ export const sources = pgTable("sources", {
 		.references(() => campaigns.id)
 		.notNull(),
 	name: text("name").notNull(),
-	type: text("type").notNull(),
+	type: text("type").notNull(), // "file" | "pasted_text" (source kind)
+	mimeType: text("mime_type"),
+	storageKey: text("storage_key"),
 	sizeBytes: integer("size_bytes"),
 	hash: text("hash"),
 	status: text("status").notNull().default("pending"),

@@ -30,9 +30,11 @@ export type SourceType = (typeof SOURCE_TYPES)[number];
 
 export const SOURCE_STATUSES = [
 	"pending",
-	"processing",
-	"completed",
-	"failed",
+	"extracting",
+	"chunking",
+	"embedding",
+	"done",
+	"error",
 ] as const;
 export type SourceStatus = (typeof SOURCE_STATUSES)[number];
 

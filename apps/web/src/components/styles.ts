@@ -209,3 +209,21 @@ export const inputFieldFocus: CSSProperties = {
 	borderColor: "var(--border-hover)",
 	boxShadow: "0 0 0 3px rgba(96, 184, 255, 0.06)",
 };
+
+// ── Inline alerts ──
+// Use these for inline contextual messages (errors, warnings) inside cards or
+// queue items. Pair with small ghost buttons for actions.
+
+export const inlineAlertError: CSSProperties = {
+	padding: "var(--space-3) var(--space-4)",
+	border: "1px solid var(--status-error)",
+	borderRadius: "var(--r-sm)",
+	backgroundColor: "var(--status-error-muted)",
+};
+
+export const inlineAlertWarning: CSSProperties = {
+	padding: "var(--space-3) var(--space-4)",
+	border: "1px solid var(--status-warning)",
+	borderRadius: "var(--r-sm)",
+	backgroundColor: "var(--status-warning-muted)",
+};

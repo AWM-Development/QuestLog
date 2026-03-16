@@ -66,7 +66,9 @@
 	/* ── Status ── */
 	--status-success: #40d8a0;
 	--status-error: #dc6060;
+	--status-error-muted: rgba(220, 96, 96, 0.08);
 	--status-warning: #e8b040;
+	--status-warning-muted: rgba(232, 176, 64, 0.08);
 	--status-info: #60b8ff;
 
 	/* ── Spacing ── */
