@@ -10,7 +10,7 @@ Read this at the start of every coding session. Add to it when you make a non-ob
 - `Docs/DEVELOPMENT_GUIDE.md` — Coding conventions and patterns
 - `Docs/PRD.md` — Product specification
 
-**Last Updated:** 2026-03-15 (task 1.3)
+**Last Updated:** 2026-03-15 (task 1.4)
 
 ---
 
@@ -94,6 +94,9 @@ When adding a new shared type, put it in the most specific sub-module. Don't dum
 ### `buildApp()` factory pattern on server
 `apps/server/src/server.ts` exports `buildApp()` instead of a singleton app instance. This is deliberate — it allows `vitest` tests to create fresh app instances per test without shared state or port conflicts. Do not change this to a singleton.
 
+### CORS is configured on the Fastify server
+`@fastify/cors` is registered in `apps/server/src/server.ts`. The origin is controlled by the `CORS_ORIGIN` env var — when unset (local dev), it falls back to `true` which allows any origin. In production, set `CORS_ORIGIN` to the actual frontend domain (e.g., `https://questlog.example.com`). Without CORS, the browser blocks all tRPC requests from the frontend. See `.env.example` for the variable.
+
 ### tRPC router structure: thin routers, fat services
 Router files in `apps/server/src/routers/` are thin — they define tRPC procedures that validate input (via shared Zod schemas) and delegate to service functions. All business logic lives in `apps/server/src/services/`. Services receive the `db` client as a parameter (dependency injection), keeping them testable independently of tRPC.
 
@@ -134,6 +137,42 @@ Both the tRPC server (`trpc.ts`) and client (`apps/web/src/lib/trpc.ts`) use sup
 
 ---
 
+## Frontend
+
+### CSS custom properties for theming, not Tailwind utilities (task 1.4)
+All layout and component styling uses CSS custom properties (e.g., `var(--color-bg-primary)`) applied via inline `style` objects, not Tailwind utility classes. This is intentional: the token names are the foundation that task 8.1 will swap per-campaign-theme. Tailwind is still installed and available for utility styling where tokens aren't needed, but the core design system runs through custom properties. Components use inline styles so that token references are explicit and easy to audit for theme coverage.
+
+### Shared button style presets in `components/styles.ts`
+`buttonAccent` and `buttonSecondary` are exported as `CSSProperties` objects from `apps/web/src/components/styles.ts`. Components spread these into their `style` prop and override as needed (e.g., `{ ...buttonAccent, opacity: 0.5 }`). This eliminates the 5-way duplication of accent button styles across CampaignListPage and CampaignCreateModal. When adding new shared style presets, put them in this file.
+
+### Route naming: `/campaigns` (plural) vs `/campaign/:id` (singular)
+The list route is `/campaigns` and the detail route is `/campaign/:id`. This is a deliberate choice: plural for collections, singular for a specific resource's sub-pages (`/campaign/:id/chat`, `/campaign/:id/sessions`). This mirrors how you'd say "go to campaigns" vs "this campaign's chat."
+
+### Component tests mock tRPC hooks, not HTTP
+Campaign component tests (`CampaignListPage.test.tsx`, `CampaignCreateModal.test.tsx`) use `vi.mock("@/lib/trpc.js")` to mock tRPC hooks directly rather than intercepting HTTP with msw. This avoids the jsdom + msw `AbortSignal` compatibility issue and makes tests faster and more deterministic. The trade-off is that tests don't exercise the real tRPC serialization layer — that's covered by server integration tests.
+
+### `test-utils.tsx` does not include tRPC providers
+`renderWithRouter()` only wraps components in a `RouterProvider`. Tests that mock tRPC hooks don't need the real `trpc.Provider` or `QueryClientProvider`. Tests that need real tRPC (e.g., integration tests hitting a running server) should add providers manually.
+
+### Modal uses `<dialog open>` without `showModal()`
+The campaign create modal uses a `<dialog open>` element for semantic HTML, but it's not opened via `showModal()`. This means the browser doesn't provide native focus trapping or top-layer rendering. Escape key handling is wired via `onKeyDown` on the overlay div, which propagates from child form elements. A focus-trap library may be added in a future polish pass.
+
+---
+
+## Agent Cleanup Protocol
+
+### Always shut down dev servers when done
+When an AI agent starts dev servers (API on port 3000, Vite on port 5173) for verification, it **must** shut them down before finishing. Stale Node processes hold ports open and cause `EADDRINUSE` errors for the next session.
+
+Cleanup steps:
+1. Stop any preview servers via `preview_stop`
+2. Kill remaining processes: `lsof -ti :3000 :5173 | xargs kill -9 2>/dev/null`
+3. Verify ports are clear: `lsof -ti :3000 :5173 2>/dev/null || echo "All clear"`
+
+If you encounter `EADDRINUSE` at the start of a session, kill the stale processes before starting new servers. Do not assume the port is in use by something important — it's almost always a leftover dev server from a previous agent session.
+
+---
+
 ## Known Gaps (Deferred to Future Tasks)
 
 | Gap | Planned In |
@@ -141,10 +180,14 @@ Both the tRPC server (`trpc.ts`) and client (`apps/web/src/lib/trpc.ts`) use sup
 | ~~Database connection (Drizzle + Postgres)~~ | ~~Task 1.2~~ ✅ |
 | ~~tRPC router + context factory~~ | ~~Task 1.3~~ ✅ |
 | ~~Frontend tRPC client (React Query provider)~~ | ~~Task 1.3~~ ✅ |
-| React Router + layout shell | Task 1.4 |
+| ~~React Router + layout shell~~ | ~~Task 1.4~~ ✅ |
 | Environment variable runtime validation | Task 1.4+ |
-| Error boundaries in React | Task 1.4 |
+| Error boundaries in React | Future |
 | ~~Frontend tRPC URL from env var~~ | ~~Task 1.3~~ ✅ |
+| Focus trapping in modals | Future (polish) |
+| Error boundary / 404 catch-all route | Future |
+| ~~CORS `origin: true` → restrict to production domain~~ | ~~Deployment~~ ✅ (`CORS_ORIGIN` env var) |
+| ~~Extract shared button component (5 duplicate style objects)~~ | ~~Future (polish)~~ ✅ (`components/styles.ts`) |
 
 ---
 

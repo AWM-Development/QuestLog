@@ -1,3 +1,4 @@
+import cors from "@fastify/cors";
 import {
 	type FastifyTRPCPluginOptions,
 	fastifyTRPCPlugin,
@@ -13,6 +14,10 @@ export interface BuildAppOptions {
 
 export function buildApp({ db }: BuildAppOptions) {
 	const app = Fastify();
+
+	app.register(cors, {
+		origin: process.env.CORS_ORIGIN || true,
+	});
 
 	app.get("/health", async () => {
 		return { status: "ok" };
