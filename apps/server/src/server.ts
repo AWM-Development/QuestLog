@@ -6,13 +6,23 @@ import {
 import Fastify from "fastify";
 import type { Database } from "./db/index.js";
 import { type AppRouter, appRouter } from "./routers/_app.js";
+import {
+	type StorageProvider,
+	createLocalFilesystemStorage,
+} from "./services/storage.service.js";
 import { createContextFactory } from "./trpc.js";
 
 export interface BuildAppOptions {
 	db: Database;
+	storage?: StorageProvider;
 }
 
-export function buildApp({ db }: BuildAppOptions) {
+export function buildApp({ db, storage: storageOption }: BuildAppOptions) {
+	const storage =
+		storageOption ??
+		createLocalFilesystemStorage({
+			basePath: process.env.UPLOAD_PATH ?? "uploads",
+		});
 	const app = Fastify();
 
 	app.register(cors, {
@@ -27,7 +37,7 @@ export function buildApp({ db }: BuildAppOptions) {
 		prefix: "/trpc",
 		trpcOptions: {
 			router: appRouter,
-			createContext: createContextFactory(db),
+			createContext: createContextFactory(db, storage),
 		} satisfies FastifyTRPCPluginOptions<AppRouter>["trpcOptions"],
 	});
 

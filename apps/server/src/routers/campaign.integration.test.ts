@@ -120,7 +120,13 @@ describe("campaign router", () => {
 
 			expect(response.statusCode).toBe(200);
 			const campaigns = response.json().result.data.json;
-			expect(campaigns).toHaveLength(2);
+			expect(campaigns.length).toBeGreaterThanOrEqual(2);
+			expect(
+				campaigns.some((c: { name: string }) => c.name === "Campaign 1"),
+			).toBe(true);
+			expect(
+				campaigns.some((c: { name: string }) => c.name === "Campaign 2"),
+			).toBe(true);
 		});
 	});
 

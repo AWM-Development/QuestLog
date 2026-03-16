@@ -2,16 +2,22 @@ import { TRPCError, initTRPC } from "@trpc/server";
 import type { CreateFastifyContextOptions } from "@trpc/server/adapters/fastify";
 import superjson from "superjson";
 import type { Database } from "./db/index.js";
-import { NotFoundError, ValidationError } from "./lib/errors.js";
+import {
+	ExtractionNotSupportedError,
+	NotFoundError,
+	ValidationError,
+} from "./lib/errors.js";
+import type { StorageProvider } from "./services/storage.service.js";
 
 export interface Context {
 	db: Database;
+	storage: StorageProvider;
 }
 
 /** Factory used by the Fastify adapter at request time. */
-export function createContextFactory(db: Database) {
+export function createContextFactory(db: Database, storage: StorageProvider) {
 	return (_opts: CreateFastifyContextOptions): Context => {
-		return { db };
+		return { db, storage };
 	};
 }
 
@@ -51,6 +57,13 @@ export async function withErrorHandling<T>(fn: () => Promise<T>): Promise<T> {
 			});
 		}
 		if (error instanceof ValidationError) {
+			throw new TRPCError({
+				code: "BAD_REQUEST",
+				message: error.message,
+				cause: error,
+			});
+		}
+		if (error instanceof ExtractionNotSupportedError) {
 			throw new TRPCError({
 				code: "BAD_REQUEST",
 				message: error.message,

@@ -11,3 +11,11 @@ export class ValidationError extends Error {
 		this.name = "ValidationError";
 	}
 }
+
+/** Thrown when a MIME type is not supported for text extraction (e.g. PDF/DOCX stub). */
+export class ExtractionNotSupportedError extends Error {
+	constructor(mimeType: string) {
+		super(`Text extraction not supported for type: ${mimeType}`);
+		this.name = "ExtractionNotSupportedError";
+	}
+}

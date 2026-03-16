@@ -59,6 +59,11 @@ We use `postgres` (postgres.js) as the Drizzle driver, not `pg` (node-postgres).
 ### Docker Postgres runs on port 5433
 The Docker Compose pgvector container maps `5433:5432` to avoid conflicts with any local Postgres on the default port 5432. All connection strings (`.env`, test helpers, drizzle config) use port 5433.
 
+### Import pipeline: storage and worker (task 2.1)
+- **Storage:** Uploads use a pluggable `StorageProvider`; default is local filesystem via `UPLOAD_PATH` (default `uploads/`). Use `createMemoryStorage()` in tests. Swap for S3 later without changing import service.
+- **Worker:** Pending sources are processed by running `pnpm run process-imports` (or set up a cron). No queue table; status on `sources` drives polling. `processSource` is idempotent for re-runs.
+- **Sources schema:** `sources` has `mimeType`, `storageKey`; extracted text and extraction errors live in `metadata.extractedText` / `metadata.extractionError`. Migration: `0001_add_sources_mime_storage.sql`. Apply with `pnpm db:push` (dev) or run migrations for deploy.
+
 ---
 
 ## TypeScript & Module Resolution (continued)
