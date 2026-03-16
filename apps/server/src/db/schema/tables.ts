@@ -141,7 +141,7 @@ export const chunks = pgTable("chunks", {
 	sourceId: uuid("source_id").references(() => sources.id),
 	sessionId: uuid("session_id").references(() => sessions.id),
 	content: text("content").notNull(),
-	embedding: vector("embedding", 1536),
+	embedding: vector("embedding", 1024),
 	metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()

@@ -2,6 +2,8 @@ import { eq } from "drizzle-orm";
 import type { Database } from "../db/index.js";
 import { sources } from "../db/schema/index.js";
 import { NotFoundError } from "../lib/errors.js";
+import { chunkText } from "./chunking.service.js";
+import { type EmbedOptions, embedChunks } from "./embedding.service.js";
 import { extractText } from "./extraction.service.js";
 import type { StorageProvider } from "./storage.service.js";
 
@@ -15,6 +17,20 @@ export interface CreateFileSourceInput {
 	mimeType: string;
 	sizeBytes: number;
 	content: Buffer;
+}
+
+export interface ProcessOptions {
+	/** Override for embedding fetch (testing). */
+	embedOptions?: EmbedOptions;
+}
+
+/**
+ * Detect whether extracted PDF text is effectively empty (scanned PDF).
+ * Strips page separator markers and whitespace.
+ */
+function isScannedPdf(text: string): boolean {
+	const stripped = text.replace(/--\s*\d+\s+of\s+\d+\s*--/g, "").trim();
+	return stripped.length === 0;
 }
 
 export const importService = {
@@ -48,10 +64,15 @@ export const importService = {
 		return first(updated);
 	},
 
+	/**
+	 * Full processing pipeline for a source:
+	 * pending → extracting → chunking → embedding → done | error
+	 */
 	async processSource(
 		db: Database,
 		storage: StorageProvider,
 		sourceId: string,
+		options?: ProcessOptions,
 	): Promise<void> {
 		const rows = await db
 			.select()
@@ -60,25 +81,77 @@ export const importService = {
 		if (rows.length === 0) throw new NotFoundError("Source", sourceId);
 		const source = first(rows);
 
-		await db
-			.update(sources)
-			.set({ status: "extracting" })
-			.where(eq(sources.id, sourceId));
-
 		try {
-			const key = source.storageKey;
-			if (!key) {
-				throw new Error("Source has no storageKey");
+			// --- Stage 1: Extraction ---
+			await db
+				.update(sources)
+				.set({ status: "extracting" })
+				.where(eq(sources.id, sourceId));
+
+			let text: string;
+
+			// Handle pasted text sources (no file to extract)
+			if (source.type === "paste") {
+				const content = source.metadata?.content;
+				if (typeof content !== "string" || !content.trim()) {
+					throw new Error("Paste source has no content");
+				}
+				text = content;
+			} else {
+				const key = source.storageKey;
+				if (!key) {
+					throw new Error("Source has no storageKey");
+				}
+				const buffer = await storage.getFileBuffer(key);
+				const mimeType = source.mimeType ?? "text/plain";
+				text = await extractText(mimeType, buffer);
+
+				// Check for scanned PDFs (empty extracted text)
+				if (mimeType === "application/pdf" && isScannedPdf(text)) {
+					await db
+						.update(sources)
+						.set({
+							status: "error",
+							metadata: {
+								...(source.metadata ?? {}),
+								errorReason: "scanned_pdf",
+							},
+						})
+						.where(eq(sources.id, sourceId));
+					return;
+				}
 			}
-			const buffer = await storage.getFileBuffer(key);
-			const mimeType = source.mimeType ?? "text/plain";
-			const text = await extractText(mimeType, buffer);
+
 			await db
 				.update(sources)
 				.set({
-					status: "done",
-					metadata: { ...source.metadata, extractedText: text },
+					metadata: { ...(source.metadata ?? {}), extractedText: text },
 				})
+				.where(eq(sources.id, sourceId));
+
+			// --- Stage 2: Chunking ---
+			await db
+				.update(sources)
+				.set({ status: "chunking" })
+				.where(eq(sources.id, sourceId));
+
+			const textChunks = chunkText(text, {
+				sourceId,
+				campaignId: source.campaignId,
+			});
+
+			// --- Stage 3: Embedding ---
+			await db
+				.update(sources)
+				.set({ status: "embedding" })
+				.where(eq(sources.id, sourceId));
+
+			await embedChunks(db, textChunks, options?.embedOptions);
+
+			// --- Done ---
+			await db
+				.update(sources)
+				.set({ status: "done" })
 				.where(eq(sources.id, sourceId));
 		} catch (error) {
 			const message = error instanceof Error ? error.message : String(error);
@@ -88,7 +161,7 @@ export const importService = {
 					status: "error",
 					metadata: {
 						...(source.metadata ?? {}),
-						extractionError: message,
+						errorReason: message,
 					},
 				})
 				.where(eq(sources.id, sourceId));
@@ -117,17 +190,18 @@ export const importService = {
 	},
 
 	/**
-	 * Process all pending sources (e.g. from a cron or pnpm script).
+	 * Process all pending sources (e.g. from a cron or on-start hook).
 	 * Calls processSource for each; safe to re-run.
 	 */
 	async processPendingSources(
 		db: Database,
 		storage: StorageProvider,
 		limit = 50,
+		options?: ProcessOptions,
 	): Promise<number> {
 		const pending = await this.listPending(db, limit);
 		for (const source of pending) {
-			await this.processSource(db, storage, source.id);
+			await this.processSource(db, storage, source.id, options);
 		}
 		return pending.length;
 	},

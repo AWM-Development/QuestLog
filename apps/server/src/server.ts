@@ -8,6 +8,7 @@ import {
 import Fastify from "fastify";
 import type { Database } from "./db/index.js";
 import { type AppRouter, appRouter } from "./routers/_app.js";
+import { importService } from "./services/import.service.js";
 import { sourceService } from "./services/source.service.js";
 import {
 	type StorageProvider,
@@ -168,6 +169,25 @@ export function buildApp({ db, storage: storageOption }: BuildAppOptions) {
 			router: appRouter,
 			createContext: createContextFactory(db, storage),
 		} satisfies FastifyTRPCPluginOptions<AppRouter>["trpcOptions"],
+	});
+
+	// Drain pending import queue on server startup (fire-and-forget)
+	app.addHook("onReady", async () => {
+		importService
+			.processPendingSources(db, storage)
+			.then((count) => {
+				if (count > 0) {
+					console.log(
+						`[import] Processed ${count} pending source(s) on startup.`,
+					);
+				}
+			})
+			.catch((err) => {
+				console.error(
+					"[import] Error processing pending sources on startup:",
+					err,
+				);
+			});
 	});
 
 	return app;
