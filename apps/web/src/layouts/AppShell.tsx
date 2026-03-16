@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Outlet, useParams } from "react-router";
-import { Sidebar } from "./Sidebar.js";
+import { Rail } from "./Rail.js";
 
 export function AppShell() {
 	// TODO: wire up context panel toggle — entity clicks will open this panel (future milestone)
@@ -11,21 +11,22 @@ export function AppShell() {
 		<div
 			className="app-shell"
 			style={{
-				display: "flex",
+				display: "grid",
+				gridTemplateColumns: "var(--rail-width) 1fr",
 				height: "100vh",
-				backgroundColor: "var(--color-bg-primary)",
-				color: "var(--color-text-primary)",
+				backgroundColor: "var(--bg-void)",
+				color: "var(--text-primary)",
 				fontFamily: "var(--font-body)",
 			}}
 		>
-			<Sidebar campaignId={campaignId} />
+			<Rail campaignId={campaignId} />
 
 			<main
 				className="main-content"
 				style={{
 					flex: 1,
 					overflow: "auto",
-					padding: "var(--spacing-xl)",
+					padding: "var(--space-8)",
 				}}
 			>
 				<Outlet />
@@ -35,11 +36,11 @@ export function AppShell() {
 				<aside
 					className="context-panel"
 					style={{
-						width: "var(--context-panel-width)",
-						borderLeft: "1px solid var(--color-border)",
-						backgroundColor: "var(--color-bg-secondary)",
+						width: "var(--panel-width)",
+						borderLeft: "1px solid var(--border)",
+						backgroundColor: "var(--bg-surface)",
 						overflow: "auto",
-						padding: "var(--spacing-lg)",
+						padding: "var(--space-6)",
 					}}
 				>
 					<button
@@ -48,7 +49,7 @@ export function AppShell() {
 						style={{
 							background: "none",
 							border: "none",
-							color: "var(--color-text-secondary)",
+							color: "var(--text-secondary)",
 							cursor: "pointer",
 							fontSize: "1.25rem",
 						}}
@@ -56,7 +57,7 @@ export function AppShell() {
 					>
 						&times;
 					</button>
-					<p style={{ color: "var(--color-text-muted)" }}>
+					<p style={{ color: "var(--text-muted)" }}>
 						Context panel — coming soon
 					</p>
 				</aside>

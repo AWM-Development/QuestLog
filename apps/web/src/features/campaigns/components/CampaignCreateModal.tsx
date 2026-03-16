@@ -57,11 +57,11 @@ export function CampaignCreateModal({ onClose }: CampaignCreateModalProps) {
 
 	const inputStyle = {
 		width: "100%",
-		padding: "var(--spacing-sm) var(--spacing-md)",
-		backgroundColor: "var(--color-bg-primary)",
-		border: "1px solid var(--color-border)",
-		borderRadius: "var(--radius-sm)",
-		color: "var(--color-text-primary)",
+		padding: "var(--space-2) var(--space-4)",
+		backgroundColor: "var(--bg-void)",
+		border: "1px solid var(--border)",
+		borderRadius: "var(--r-sm)",
+		color: "var(--text-primary)",
 		fontSize: "0.875rem",
 		fontFamily: "var(--font-body)",
 	};
@@ -70,8 +70,8 @@ export function CampaignCreateModal({ onClose }: CampaignCreateModalProps) {
 		display: "block",
 		fontSize: "0.875rem",
 		fontWeight: 600 as const,
-		color: "var(--color-text-secondary)",
-		marginBottom: "var(--spacing-xs)",
+		color: "var(--text-secondary)",
+		marginBottom: "var(--space-1)",
 	};
 
 	return (
@@ -80,7 +80,7 @@ export function CampaignCreateModal({ onClose }: CampaignCreateModalProps) {
 			style={{
 				position: "fixed",
 				inset: 0,
-				backgroundColor: "var(--color-bg-overlay)",
+				backgroundColor: "rgba(9, 13, 18, 0.92)",
 				display: "flex",
 				alignItems: "center",
 				justifyContent: "center",
@@ -101,29 +101,29 @@ export function CampaignCreateModal({ onClose }: CampaignCreateModalProps) {
 				open
 				aria-labelledby="create-campaign-title"
 				style={{
-					backgroundColor: "var(--color-bg-surface)",
-					borderRadius: "var(--radius-lg)",
-					padding: "var(--spacing-xl)",
+					backgroundColor: "var(--bg-elevated)",
+					borderRadius: "var(--r-lg)",
+					padding: "var(--space-8)",
 					width: "100%",
 					maxWidth: 480,
-					boxShadow: "var(--shadow-lg)",
+					boxShadow: "var(--shadow-focal)",
 				}}
 			>
 				<h2
 					id="create-campaign-title"
 					style={{
-						fontFamily: "var(--font-heading)",
+						fontFamily: "var(--font-display)",
 						fontSize: "1.25rem",
 						fontWeight: 700,
-						marginBottom: "var(--spacing-lg)",
-						color: "var(--color-text-primary)",
+						marginBottom: "var(--space-6)",
+						color: "var(--text-primary)",
 					}}
 				>
 					Create Campaign
 				</h2>
 
 				<form onSubmit={handleSubmit}>
-					<div style={{ marginBottom: "var(--spacing-md)" }}>
+					<div style={{ marginBottom: "var(--space-4)" }}>
 						<label htmlFor="campaign-name" style={labelStyle}>
 							Name *
 						</label>
@@ -139,7 +139,7 @@ export function CampaignCreateModal({ onClose }: CampaignCreateModalProps) {
 						/>
 					</div>
 
-					<div style={{ marginBottom: "var(--spacing-md)" }}>
+					<div style={{ marginBottom: "var(--space-4)" }}>
 						<label htmlFor="campaign-description" style={labelStyle}>
 							Description
 						</label>
@@ -154,7 +154,7 @@ export function CampaignCreateModal({ onClose }: CampaignCreateModalProps) {
 						/>
 					</div>
 
-					<div style={{ marginBottom: "var(--spacing-md)" }}>
+					<div style={{ marginBottom: "var(--space-4)" }}>
 						<label htmlFor="campaign-theme" style={labelStyle}>
 							Theme
 						</label>
@@ -172,7 +172,7 @@ export function CampaignCreateModal({ onClose }: CampaignCreateModalProps) {
 						</select>
 					</div>
 
-					<div style={{ marginBottom: "var(--spacing-lg)" }}>
+					<div style={{ marginBottom: "var(--space-6)" }}>
 						<label htmlFor="campaign-game-system" style={labelStyle}>
 							Game System
 						</label>
@@ -191,9 +191,9 @@ export function CampaignCreateModal({ onClose }: CampaignCreateModalProps) {
 						<p
 							role="alert"
 							style={{
-								color: "var(--color-error)",
+								color: "var(--status-error)",
 								fontSize: "0.875rem",
-								marginBottom: "var(--spacing-md)",
+								marginBottom: "var(--space-4)",
 							}}
 						>
 							{createMutation.error.message}
@@ -204,7 +204,7 @@ export function CampaignCreateModal({ onClose }: CampaignCreateModalProps) {
 						style={{
 							display: "flex",
 							justifyContent: "flex-end",
-							gap: "var(--spacing-md)",
+							gap: "var(--space-4)",
 						}}
 					>
 						<button
