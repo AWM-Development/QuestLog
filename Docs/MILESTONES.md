@@ -93,6 +93,7 @@
 
 - [ ] **2.1 — File upload & text extraction**
   - Branch: `feat/import-pipeline/file-upload`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §4.1 Import Sources, Import Processing Pipeline
   - Work:
     - File upload endpoint (multipart form handling in Fastify)
@@ -153,6 +154,7 @@
 
 - [ ] **3.3 — Chat UI**
   - Branch: `feat/agent-chat/chat-ui`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §4.2 Agent Chat UX Concept
   - Work:
     - Chat interface: message list, input bar, streaming response display
@@ -174,6 +176,7 @@
 
 - [ ] **4.1 — Session CRUD & editor foundation**
   - Branch: `feat/session-log/crud-editor`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §4.3 Session Log Object, The Notes Panel
   - Work:
     - Session tRPC router: `create`, `getById`, `list`, `update`, `finalize`
@@ -185,6 +188,7 @@
 
 - [ ] **4.2 — Entity detection & linking**
   - Branch: `feat/session-log/entity-linking`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §4.3 Inline entity detection, Entity creation inline
   - Work:
     - Entity matching service: scan text against known campaign entities using pg_trgm fuzzy matching
@@ -195,6 +199,7 @@
 
 - [ ] **4.3 — Post-save processing**
   - Branch: `feat/session-log/post-save`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §4.3 Post-Save Processing
   - Work:
     - On session save: chunk and embed content into knowledge base
@@ -215,6 +220,7 @@
 
 - [ ] **5.1 — Entity CRUD & pages**
   - Branch: `feat/entity-graph/entity-crud`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §4.5 Entity Types, Entity Page Structure
   - Work:
     - Entity tRPC router: full CRUD, list with filtering by type, fuzzy search
@@ -235,6 +241,7 @@
 
 - [ ] **5.3 — Visual relationship map**
   - Branch: `feat/entity-graph/visual-map`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §4.5 Relationship Map UX Concept
   - Work:
     - Graph visualization (react-force-graph or Cytoscape.js)
@@ -257,6 +264,7 @@
 
 - [ ] **6.1 — Session prep brief**
   - Branch: `feat/session-prep/brief-generation`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §4.4 Brief Components, User Interaction with Briefs
   - Work:
     - Prep brief service: assemble "previously on," active threads, likely NPCs, loose ends, suggested follow-ups
@@ -267,6 +275,7 @@
 
 - [ ] **6.2 — Secret management**
   - Branch: `feat/session-prep/secret-management`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §4.6 Visibility Levels, Agent Behavior with Secrets
   - Work:
     - Visibility field on entity facts and notes (player-known / DM-only / revealed)
@@ -277,6 +286,7 @@
 
 - [ ] **6.3 — Player recap generation**
   - Branch: `feat/session-prep/player-recaps`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §4.7 Recap Configuration, Safety Guarantee
   - Work:
     - Recap service: generate from session log, filtered to player-known facts only
@@ -297,6 +307,7 @@
 
 - [ ] **7.1 — Map reference**
   - Branch: `feat/at-table/map-reference`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §4.8.1 Map Reference
   - Work:
     - Image upload for maps
@@ -308,6 +319,7 @@
 
 - [ ] **7.2 — Combat tracker**
   - Branch: `feat/at-table/combat-tracker`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §4.8.2 Combat Tracker
   - Work:
     - Combatant model: name, initiative, HP (current/max), notes, status flags
@@ -319,6 +331,7 @@
 
 - [ ] **7.3 — Quick reference lookup**
   - Branch: `feat/at-table/quick-reference`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §4.8.3 Quick Reference Lookup
   - Work:
     - Quick-action bar or keyboard shortcut to invoke
@@ -339,6 +352,7 @@
 
 - [ ] **8.1 — Campaign theming**
   - Branch: `feat/theming/campaign-themes`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §5 Campaign Themes
   - Work:
     - CSS custom property system for colors, typography, spacing
@@ -349,6 +363,7 @@
 
 - [ ] **8.2 — Mascot system**
   - Branch: `feat/theming/mascot`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §5 Mascot System
   - Work:
     - Sprite sheet animation system (CSS or canvas)
@@ -359,6 +374,7 @@
 
 - [ ] **8.3 — Style profile system**
   - Branch: `feat/theming/style-profiles`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §4.9 Tonal & Writing Style Customization
   - Work:
     - Style profile extraction service: analyze writing samples, produce structured profile
@@ -380,6 +396,7 @@
 
 - [ ] **9.1 — Responsive layout & tablet optimization**
   - Branch: `feat/polish/responsive`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §5 Layout Structure (tablet/mobile breakpoints)
   - Work:
     - Tablet layout: collapsed nav rail, slide-in context panel
@@ -415,6 +432,27 @@
 
 ---
 
+## Milestone 10: Rate Limiting & API Governance
+
+**Goal:** Protect against runaway Claude API costs by enforcing per-user and per-campaign usage limits. Requires a strategy discussion before implementation.
+
+**Estimated effort:** 1–2 sessions
+
+### Tasks
+
+- [ ] **10.1 — Rate limiting strategy & implementation**
+  - Branch: `feat/governance/rate-limiting`
+  - 🧠 **Strategy discussion required** — Pause before implementing. See template instructions.
+  - Work:
+    - Decide rate limit strategy (per-user token budget, per-campaign daily cap, sliding window vs. fixed reset — TBD in strategy discussion)
+    - Implement server-side enforcement: track token usage per user/campaign, reject or queue requests that exceed limits
+    - Graceful degradation: inform user when limit is reached, show usage stats
+    - Admin controls: configure limits per environment (dev vs. prod)
+    - Logging: track usage trends to inform limit adjustments over time
+  - Tests: unit tests for limit enforcement logic, integration tests for rejection behavior at boundary conditions
+
+---
+
 ## Starting a Task — Copy-Paste Template
 
 When opening a new coding session, provide the AI with this:
@@ -430,6 +468,19 @@ Current task: [task name from Docs/MILESTONES.md]
 Branch: [branch name]
 
 What exists so far: [brief description or `ls` output of relevant directories]
+
+⚠️ VISUAL SPEC CHECK: If the current task is marked with "🎨 Visual spec required",
+STOP before writing any code. Ask the user:
+"This task includes new UI screens or visual components that need design decisions.
+Please share your wireframes, visual references, or UX intent before I begin —
+what should [describe the relevant UI] look like?"
+Do not proceed with implementation until the user provides those specifications.
+
+⚠️ STRATEGY CHECK: If the current task is marked with "🧠 Strategy discussion required",
+STOP before writing any code. Ask the user:
+"This task requires upfront design decisions before implementation.
+Please share your chosen approach or constraints so I can implement accordingly."
+Do not proceed with implementation until the user provides that direction.
 
 Follow TDD: write failing tests first, then implement. Use the patterns
 from the dev guide (thin routers, service layer, Zod validation).
