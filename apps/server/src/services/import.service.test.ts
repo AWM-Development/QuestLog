@@ -89,7 +89,7 @@ describe("importService", () => {
 			.from(sources)
 			.where(sql`id = ${created.id}`);
 
-		expect(row?.status).toBe("completed");
+		expect(row?.status).toBe("done");
 		expect(row?.metadata?.extractedText).toBe("session content");
 	});
 
@@ -111,7 +111,7 @@ describe("importService", () => {
 			.from(sources)
 			.where(sql`id = ${created.id}`);
 
-		expect(row?.status).toBe("failed");
+		expect(row?.status).toBe("error");
 		expect(row?.metadata?.extractionError).toContain("boom");
 	});
 });

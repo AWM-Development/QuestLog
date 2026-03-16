@@ -62,7 +62,7 @@ export const importService = {
 
 		await db
 			.update(sources)
-			.set({ status: "processing" })
+			.set({ status: "extracting" })
 			.where(eq(sources.id, sourceId));
 
 		try {
@@ -76,7 +76,7 @@ export const importService = {
 			await db
 				.update(sources)
 				.set({
-					status: "completed",
+					status: "done",
 					metadata: { ...source.metadata, extractedText: text },
 				})
 				.where(eq(sources.id, sourceId));
@@ -85,7 +85,7 @@ export const importService = {
 			await db
 				.update(sources)
 				.set({
-					status: "failed",
+					status: "error",
 					metadata: {
 						...(source.metadata ?? {}),
 						extractionError: message,

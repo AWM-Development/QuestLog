@@ -186,7 +186,7 @@ describe("import router", () => {
 			url: `/trpc/import.getSource?input=${encodeURIComponent(JSON.stringify({ json: { id: sourceId } }))}`,
 		});
 		expect(getResp.statusCode).toBe(200);
-		expect(getResp.json().result.data.json.status).toBe("completed");
+		expect(getResp.json().result.data.json.status).toBe("done");
 		expect(getResp.json().result.data.json.metadata?.extractedText).toBe(
 			content,
 		);
