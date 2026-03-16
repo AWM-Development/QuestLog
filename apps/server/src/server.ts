@@ -95,10 +95,11 @@ export function buildApp({ db, storage: storageOption }: BuildAppOptions) {
 			} catch (err: unknown) {
 				// @fastify/multipart throws a specific error for files exceeding the limit
 				const msg = err instanceof Error ? err.message : String(err);
-				if (msg.includes("Request file too large") || msg.includes("FST_FILES_LIMIT")) {
-					return reply
-						.status(413)
-						.send({ error: "File exceeds 50 MB limit" });
+				if (
+					msg.includes("Request file too large") ||
+					msg.includes("FST_FILES_LIMIT")
+				) {
+					return reply.status(413).send({ error: "File exceeds 50 MB limit" });
 				}
 				return reply.status(400).send({ error: "Failed to read file" });
 			}
@@ -122,7 +123,9 @@ export function buildApp({ db, storage: storageOption }: BuildAppOptions) {
 			try {
 				for await (const chunk of file.file) {
 					bufferChunks.push(
-						Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as string, "utf-8"),
+						Buffer.isBuffer(chunk)
+							? chunk
+							: Buffer.from(chunk as string, "utf-8"),
 					);
 				}
 			} catch (err: unknown) {
@@ -143,6 +146,7 @@ export function buildApp({ db, storage: storageOption }: BuildAppOptions) {
 				campaignId,
 				name: file.filename,
 				type: sourceType,
+				mimeType,
 				sizeBytes: content.length,
 				hash,
 			});

@@ -44,16 +44,11 @@ describe("multipart upload route", () => {
 
 	it("accepts a multipart file and creates a source", async () => {
 		const boundary = "----questlog-multipart-test";
-		const body =
-			`--${boundary}\r\n` +
-			`Content-Disposition: form-data; name="file"; filename="notes.txt"\r\n` +
-			`Content-Type: text/plain\r\n\r\n` +
-			`hello from multipart\r\n` +
-			`--${boundary}--\r\n`;
+		const body = `--${boundary}\r\nContent-Disposition: form-data; name="file"; filename="notes.txt"\r\nContent-Type: text/plain\r\n\r\nhello from multipart\r\n--${boundary}--\r\n`;
 
 		const response = await app.inject({
 			method: "POST",
-			url: `/upload/source?campaignId=${campaignId}`,
+			url: `/api/campaigns/${campaignId}/sources/upload`,
 			headers: {
 				"content-type": `multipart/form-data; boundary=${boundary}`,
 			},
@@ -62,10 +57,9 @@ describe("multipart upload route", () => {
 
 		expect(response.statusCode).toBe(200);
 		const json = response.json();
-		expect(json.campaignId).toBe(campaignId);
-		expect(json.name).toBe("notes.txt");
-		expect(json.mimeType).toBe("text/plain");
-		expect(json.status).toBe("pending");
+		expect(json.source.campaignId).toBe(campaignId);
+		expect(json.source.name).toBe("notes.txt");
+		expect(json.source.mimeType).toBe("text/plain");
+		expect(json.source.status).toBe("pending");
 	});
 });
-

@@ -1,5 +1,5 @@
-import { and, desc, eq } from "drizzle-orm";
 import type { SourceStatus } from "@questlog/shared";
+import { and, desc, eq } from "drizzle-orm";
 import type { Database } from "../db/index.js";
 import { chunks, sources } from "../db/schema/index.js";
 import { NotFoundError } from "../lib/errors.js";
@@ -12,6 +12,7 @@ export interface CreateSourceInput {
 	campaignId: string;
 	name: string;
 	type: string;
+	mimeType?: string | null;
 	sizeBytes: number | null;
 	hash: string | null;
 }
@@ -28,6 +29,7 @@ export const sourceService = {
 				campaignId: input.campaignId,
 				name: input.name,
 				type: input.type,
+				mimeType: input.mimeType ?? null,
 				sizeBytes: input.sizeBytes ?? null,
 				hash: input.hash ?? null,
 				status: "pending",
