@@ -2,65 +2,173 @@
 
 /*
  * QuestLog Design Tokens
- * Fantasy theme (default): parchment, amber, deep brown
- * Dark mode first — these are the dark mode values.
- * Task 8.1 will add full theming with per-campaign overrides.
+ * Entity-driven color system with four-plane depth hierarchy.
+ * Dark mode first. Fantasy theme (default).
+ *
+ * See Docs/DESIGN_SYSTEM.md for the full specification.
+ * Task 8.1 will add per-campaign theme overrides via theme classes on the app root.
  */
 :root {
-	/* Background surfaces */
-	--color-bg-primary: #1a1410;
-	--color-bg-secondary: #231e17;
-	--color-bg-surface: #2c2419;
-	--color-bg-surface-hover: #362d1f;
-	--color-bg-overlay: #1a1410ee;
+	/* ── Depth system (four planes) ── */
+	--bg-void: #090d12;
+	--bg-surface: #0e1820;
+	--bg-elevated: #111c26;
+	--bg-focal: #152636;
+	--bg-focal-hover: #1a2e40;
 
-	/* Text */
-	--color-text-primary: #e8dcc8;
-	--color-text-secondary: #b8a88a;
-	--color-text-muted: #7a6c56;
-	--color-text-inverse: #1a1410;
+	/* ── Text ── */
+	--text-primary: #d0e4f0;
+	--text-secondary: #8aa4b4;
+	--text-muted: #4a6a7a;
+	--text-dim: #2e4856;
 
-	/* Accent */
-	--color-accent: #d4a054;
-	--color-accent-hover: #e0b06a;
-	--color-accent-muted: #d4a05433;
+	/* ── Borders ── */
+	--border: #1a2838;
+	--border-hover: #1e3448;
+	--border-subtle: #14222e;
 
-	/* Borders */
-	--color-border: #3d3228;
-	--color-border-subtle: #2c2419;
+	/* ── Entity colors ── */
+	/* NPC — bright blue, high energy */
+	--ent-npc: #60b8ff;
+	--ent-npc-bg: rgba(96, 184, 255, 0.08);
+	--ent-npc-border: rgba(96, 184, 255, 0.18);
+	--ent-npc-glow: rgba(96, 184, 255, 0.12);
 
-	/* Status */
-	--color-success: #5a9e6f;
-	--color-error: #c75450;
-	--color-warning: #d4a054;
+	/* Faction — emerald green */
+	--ent-faction: #40d8a0;
+	--ent-faction-bg: rgba(64, 216, 160, 0.08);
+	--ent-faction-border: rgba(64, 216, 160, 0.18);
+	--ent-faction-glow: rgba(64, 216, 160, 0.12);
 
-	/* Spacing */
-	--spacing-xs: 0.25rem;
-	--spacing-sm: 0.5rem;
-	--spacing-md: 1rem;
-	--spacing-lg: 1.5rem;
-	--spacing-xl: 2rem;
-	--spacing-2xl: 3rem;
+	/* Location — soft periwinkle */
+	--ent-location: #a0b8ff;
+	--ent-location-bg: rgba(160, 184, 255, 0.08);
+	--ent-location-border: rgba(160, 184, 255, 0.18);
+	--ent-location-glow: rgba(160, 184, 255, 0.12);
 
-	/* Layout */
-	--sidebar-width: 240px;
-	--context-panel-width: 320px;
+	/* Item — teal */
+	--ent-item: #80d8d8;
+	--ent-item-bg: rgba(128, 216, 216, 0.08);
+	--ent-item-border: rgba(128, 216, 216, 0.18);
+	--ent-item-glow: rgba(128, 216, 216, 0.12);
 
-	/* Typography */
-	--font-heading: "Georgia", "Times New Roman", serif;
-	--font-body: "Inter", system-ui, -apple-system, sans-serif;
+	/* Story arc — soft violet */
+	--ent-arc: #c0a0ff;
+	--ent-arc-bg: rgba(192, 160, 255, 0.08);
+	--ent-arc-border: rgba(192, 160, 255, 0.18);
+	--ent-arc-glow: rgba(192, 160, 255, 0.12);
+
+	/* ── Accent (aliases --ent-npc — entities ARE the accent system) ── */
+	--accent: #60b8ff;
+	--accent-hover: #78c8ff;
+	--accent-muted: rgba(96, 184, 255, 0.1);
+
+	/* ── Status ── */
+	--status-success: #40d8a0;
+	--status-error: #dc6060;
+	--status-warning: #e8b040;
+	--status-info: #60b8ff;
+
+	/* ── Spacing ── */
+	--space-1: 0.25rem;
+	--space-2: 0.5rem;
+	--space-3: 0.75rem;
+	--space-4: 1rem;
+	--space-5: 1.25rem;
+	--space-6: 1.5rem;
+	--space-8: 2rem;
+
+	/* ── Layout ── */
+	--rail-width: 56px;
+	--panel-width: 300px;
+
+	/* ── Typography ── */
+	--font-display: "Crimson Pro", Georgia, "Times New Roman", serif;
+	--font-body: "DM Sans", system-ui, -apple-system, sans-serif;
 	--font-mono: "JetBrains Mono", "Fira Code", monospace;
 
-	/* Border radius */
-	--radius-sm: 4px;
-	--radius-md: 8px;
-	--radius-lg: 12px;
+	/* ── Border radius ── */
+	--r-sm: 6px;
+	--r-md: 10px;
+	--r-lg: 14px;
+	--r-xl: 18px;
+	--r-pill: 20px;
 
-	/* Shadows */
-	--shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-	--shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
-	--shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.5);
+	/* ── Shadows ── */
+	--shadow-sm: 0 1px 2px rgba(4, 12, 24, 0.3);
+	--shadow-md: 0 4px 12px rgba(4, 12, 24, 0.4);
+	--shadow-focal: 0 12px 40px rgba(4, 12, 24, 0.8);
 }
+
+/* ── Campaign theme overrides ── */
+
+.theme-sci-fi {
+	--bg-void: #06080e;
+	--bg-surface: #0a1018;
+	--bg-elevated: #0e1620;
+	--bg-focal: #14202c;
+	--accent: #00e5ff;
+	--accent-hover: #40ecff;
+	--accent-muted: rgba(0, 229, 255, 0.1);
+	--text-primary: #d0ecf4;
+	--text-secondary: #7ab0c0;
+	--text-muted: #3a7888;
+	--border: #142838;
+	--border-hover: #1a3848;
+	--border-subtle: #0e2030;
+	--font-display: "JetBrains Mono", monospace;
+}
+
+.theme-horror {
+	--bg-void: #0a080e;
+	--bg-surface: #120e18;
+	--bg-elevated: #1a1424;
+	--bg-focal: #221a30;
+	--accent: #c850c0;
+	--accent-hover: #d870d0;
+	--accent-muted: rgba(200, 80, 192, 0.1);
+	--text-primary: #e0d0e8;
+	--text-secondary: #9a82a8;
+	--text-muted: #604870;
+	--border: #2a1838;
+	--border-hover: #381e48;
+	--border-subtle: #1e1228;
+	--status-error: #e04040;
+}
+
+.theme-western {
+	--bg-void: #0c0a08;
+	--bg-surface: #161210;
+	--bg-elevated: #1e1a16;
+	--bg-focal: #282220;
+	--accent: #e09040;
+	--accent-hover: #eca050;
+	--accent-muted: rgba(224, 144, 64, 0.1);
+	--text-primary: #e8dcd0;
+	--text-secondary: #b0a090;
+	--text-muted: #6a5848;
+	--border: #302820;
+	--border-hover: #3a3028;
+	--border-subtle: #241e18;
+}
+
+.theme-modern {
+	--bg-void: #0a0a0c;
+	--bg-surface: #121214;
+	--bg-elevated: #1a1a1e;
+	--bg-focal: #222226;
+	--accent: #4a90d9;
+	--accent-hover: #60a0e8;
+	--accent-muted: rgba(74, 144, 217, 0.1);
+	--text-primary: #e8e8ec;
+	--text-secondary: #8888a0;
+	--text-muted: #505060;
+	--border: #282830;
+	--border-hover: #303038;
+	--border-subtle: #1e1e24;
+}
+
+/* ── Animation keyframes ── */
 
 @keyframes pulse {
 	0%,
@@ -72,8 +180,56 @@
 	}
 }
 
-/* Reset native dialog styles — browser defaults include position: absolute and margin: auto
-   which break flex centering from the overlay parent */
+@keyframes msg-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes mascot-idle {
+	0%,
+	100% {
+		transform: translateY(0) scale(1);
+	}
+	30% {
+		transform: translateY(-1px) scale(1.02);
+	}
+	60% {
+		transform: translateY(0) scale(0.99);
+	}
+}
+
+@keyframes typing-bounce {
+	0%,
+	60%,
+	100% {
+		transform: translateY(0);
+		opacity: 0.3;
+	}
+	30% {
+		transform: translateY(-4px);
+		opacity: 1;
+	}
+}
+
+/* ── Reduced motion ── */
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
+/* Reset native dialog styles */
 dialog[open] {
 	position: relative;
 	margin: 0;
@@ -83,4 +239,19 @@ dialog[open] {
 	color: inherit;
 	max-width: none;
 	max-height: none;
+}
+
+/* ── Scrollbar styling ── */
+::-webkit-scrollbar {
+	width: 4px;
+}
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+::-webkit-scrollbar-thumb {
+	background: var(--border);
+	border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: var(--border-hover);
 }

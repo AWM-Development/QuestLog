@@ -4,7 +4,7 @@ import { renderWithRouter } from "../test-utils.js";
 import { AppShell } from "./AppShell.js";
 
 describe("AppShell", () => {
-	it("renders the sidebar navigation", () => {
+	it("renders the rail navigation", () => {
 		renderWithRouter(
 			[
 				{
@@ -34,7 +34,7 @@ describe("AppShell", () => {
 		expect(screen.getByText("Main Content")).toBeInTheDocument();
 	});
 
-	it("renders the QuestLog brand link", () => {
+	it("renders the QuestLog logo link", () => {
 		renderWithRouter(
 			[
 				{
@@ -46,25 +46,10 @@ describe("AppShell", () => {
 			{ initialEntries: ["/"] },
 		);
 
-		expect(screen.getByText("QuestLog")).toBeInTheDocument();
+		expect(screen.getByTitle("QuestLog")).toBeInTheDocument();
 	});
 
-	it("renders the All Campaigns nav link", () => {
-		renderWithRouter(
-			[
-				{
-					path: "/",
-					element: <AppShell />,
-					children: [{ index: true, element: <p>Content</p> }],
-				},
-			],
-			{ initialEntries: ["/"] },
-		);
-
-		expect(screen.getByText("All Campaigns")).toBeInTheDocument();
-	});
-
-	it("renders campaign nav links when a campaignId is in the URL", () => {
+	it("renders campaign nav icons when a campaignId is in the URL", () => {
 		renderWithRouter(
 			[
 				{
@@ -76,15 +61,15 @@ describe("AppShell", () => {
 			{ initialEntries: ["/campaign/abc-123"] },
 		);
 
-		expect(screen.getByText("Agent Chat")).toBeInTheDocument();
-		expect(screen.getByText("Session Logs")).toBeInTheDocument();
-		expect(screen.getByText("Session Prep")).toBeInTheDocument();
-		expect(screen.getByText("Entities")).toBeInTheDocument();
-		expect(screen.getByText("Sources")).toBeInTheDocument();
-		expect(screen.getByText("Settings")).toBeInTheDocument();
+		expect(screen.getByTitle("Agent chat")).toBeInTheDocument();
+		expect(screen.getByTitle("Session logs")).toBeInTheDocument();
+		expect(screen.getByTitle("Session prep")).toBeInTheDocument();
+		expect(screen.getByTitle("Entities")).toBeInTheDocument();
+		expect(screen.getByTitle("Sources")).toBeInTheDocument();
+		expect(screen.getByTitle("Settings")).toBeInTheDocument();
 	});
 
-	it("does not render campaign nav links when on /campaigns", () => {
+	it("does not render campaign nav icons when on /campaigns", () => {
 		renderWithRouter(
 			[
 				{
@@ -96,10 +81,10 @@ describe("AppShell", () => {
 			{ initialEntries: ["/campaigns"] },
 		);
 
-		expect(screen.queryByText("Agent Chat")).not.toBeInTheDocument();
+		expect(screen.queryByTitle("Agent chat")).not.toBeInTheDocument();
 	});
 
-	it("renders the mascot placeholder", () => {
+	it("renders the mascot", () => {
 		renderWithRouter(
 			[
 				{
@@ -111,6 +96,6 @@ describe("AppShell", () => {
 			{ initialEntries: ["/"] },
 		);
 
-		expect(screen.getByText("Mascot")).toBeInTheDocument();
+		expect(screen.getByTitle("Ember — idle")).toBeInTheDocument();
 	});
 });

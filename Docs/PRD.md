@@ -11,6 +11,7 @@
 - `Docs/README.md` — Overview of all project documentation
 - `Docs/DEVELOPMENT_GUIDE.md` — Coding conventions and patterns
 - `Docs/MILESTONES.md` — Task breakdown with branch names
+- `Docs/DESIGN_SYSTEM.md` — Visual design specification (colors, components, entity system)
 
 ---
 
@@ -776,102 +777,50 @@ When generating content, the system resolves style in this order (most specific 
 
 ## 5. Design System & UX Concepts
 
+> **Full specification:** `Docs/DESIGN_SYSTEM.md`
+>
+> This section summarizes the design direction. All token values, component specs, interaction states, and implementation details live in the dedicated design system document.
+
 ### Design Philosophy
-QuestLog should feel like opening a spellbook, not a project management tool. It's opinionated, characterful, and polished — a portfolio piece as much as a productivity tool. Dark mode first (DMs prep at night). Progressive disclosure (simple on first use, deep on tenth). The agent chat is the primary interface, not a sidebar feature. Meaningful motion communicates state; gratuitous animation is cut.
+
+QuestLog should feel like a **creative command center**, not a project management tool. Dark mode first (DMs prep at night). The agent chat is the primary interface, not a sidebar feature. Meaningful motion communicates state; gratuitous animation is cut.
+
+**Core principle: Entities are the color system.** There is no single "accent color." Instead, each entity type (NPC, faction, location, item, story arc) has its own hue within the blue-green spectrum. The background stays deeply neutral so entity colors pop. When scanning a paragraph, a user should instantly perceive the types of entities mentioned without reading labels.
+
+### Visual Direction
+
+- **Palette:** Deep navy-black base (#090d12) with a four-plane depth system (void → surface → elevated → focal). Cool-toned entity accent colors across the blue-green spectrum.
+- **Typography:** Crimson Pro (display/headings), DM Sans (body), JetBrains Mono (mono/code).
+- **Layout:** 56px icon rail + main content + toggleable 300px right panel (context or session notes).
+- **Signature interaction:** Entity hover cards — hovering any entity name in the app surfaces a rich summary card tinted with that entity type's color, with pin and open actions.
+
+### Entity Color Mapping
+
+| Entity Type | Color | Hex | Rationale |
+|-------------|-------|-----|-----------|
+| NPC | Bright blue | `#60b8ff` | High energy — characters drive action |
+| Faction | Emerald green | `#40d8a0` | Organized groups, alliances |
+| Location | Soft periwinkle | `#a0b8ff` | Spatial, grounding |
+| Item | Teal | `#80d8d8` | Tangible objects |
+| Story Arc | Soft violet | `#c0a0ff` | Narrative threads, abstract |
+
+Primary actions (send button, active nav) use NPC blue (`#60b8ff`) since it's the highest-energy entity hue and NPCs are the most frequently referenced type.
 
 ### Mascot System
 
-The animated companion character is central to QuestLog's personality. It serves as an ambient status indicator throughout the UI.
-
-| State | Animation | Description |
-|---|---|---|
-| Idle | Sleeping | Curled up, slow breathing animation. Shown when no activity. |
-| Importing | Eating scrolls/treasure | Chomping on documents. Shown during file processing. |
-| Thinking | Thinking pose | Chin on hand/paw, thought bubble. Shown when agent is processing a query. |
-| Saving | Writing with quill | Scribbling on parchment. Shown when saving logs or entities. |
-| Searching | Diving into hoard | Burrowing through a pile. Shown during search/retrieval. |
-| Error | Confused/dizzy | Stars or question marks. Shown on errors. |
-| Success | Celebratory | Brief happy animation. Shown on successful operations. |
-
-**Art style:** 2-bit/sprite-style, 2–3 frames per state. Pixel art, small and charming. Think Tamagotchi, not Pixar. Implemented as sprite sheet animations via CSS.
+Unchanged — see `Docs/DESIGN_SYSTEM.md` §10. The animated companion character (dragon "Ember" in fantasy theme) serves as an ambient status indicator: sleeping when idle, eating scrolls during import, thinking during agent queries, confused on errors.
 
 ### Campaign Themes
 
-Each theme reskins the mascot, color palette, and typography:
+Each theme overrides CSS custom properties for backgrounds, text, accent, and typography. Entity colors remain constant across all themes to ensure consistent entity recognition. See `Docs/DESIGN_SYSTEM.md` §11 for full theme definitions.
 
-| Theme | Mascot | Palette | Typography |
-|---|---|---|---|
-| **Fantasy** (default) | Dragon | Parchment, amber, deep brown | Serif headers, clean sans body |
-| **Sci-Fi** | Robot | Dark slate, cyan, electric blue | Monospace headers, geometric sans body |
-| **Western** | Coyote | Earth tones, dusty orange, leather brown | Slab serif headers, rustic sans body |
-| **Horror** | Raven | Gothic purple, blood red, charcoal | Blackletter headers, thin serif body |
-| **Modern** | Street cat | Minimal white, clean black, accent blue | Grotesque sans throughout |
-
-**Implementation:** CSS custom properties (variables) for colors and spacing. Sprite sheet swap for mascot. Font-face swap for typography. Theme selection is part of campaign creation and can be changed later.
-
-### Layout Structure
-
-The app uses a three-panel layout that adapts to screen size:
-
-**Desktop (≥1200px):**
-```
-┌──────────┬──────────────────────────────┬──────────────┐
-│          │                              │              │
-│  Nav     │     Main Content             │   Context    │
-│  Sidebar │     (Agent Chat / Editor /   │   Panel      │
-│          │      Map / Tracker /         │   (Entity    │
-│  Campaign│      Entity Page)            │   details,   │
-│  switcher│                              │   related    │
-│  + nav   │                              │   items,     │
-│  links   │                              │   sources)   │
-│          │                              │              │
-│  🐉      │                              │              │
-│  [mascot]│                              │              │
-└──────────┴──────────────────────────────┴──────────────┘
-```
-
-**Tablet (768–1199px):**
-```
-┌────┬─────────────────────────────────────────┐
-│    │                                         │
-│ ☰  │     Main Content                        │
-│    │     (full width)                        │
-│Nav │                                         │
-│rail│     Context panel slides in from right  │
-│    │     when an entity or source is tapped  │
-│    │                                         │
-│ 🐉 │                                         │
-└────┴─────────────────────────────────────────┘
-```
-
-**Mobile (< 768px):**
-Single-column with bottom tab navigation. Context panel is a full-screen sheet. Not the primary target but functional for quick lookups.
-
-### Navigation Structure
-
-```
-Campaign Selector (top of sidebar)
-├── 📱 Agent Chat (primary — default view)
-├── 📝 Session Logs
-│   ├── Session list (timeline view)
-│   └── New / Edit session
-├── 📋 Session Prep
-│   └── Generated brief
-├── 🗺️ Entities
-│   ├── Entity list (filterable by type)
-│   ├── Entity page
-│   └── Relationship map
-├── 🖼️ Maps
-│   ├── Map list
-│   └── Map view with annotations
-├── ⚔️ Combat Tracker
-├── 📚 Sources
-│   └── Imported documents list
-└── ⚙️ Settings
-    ├── Campaign settings
-    ├── Style profiles
-    └── Theme picker
-```
+| Theme | Mascot | Accent | Font Flavor |
+|-------|--------|--------|-------------|
+| **Fantasy** (default) | Dragon | Blue `#60b8ff` | Serif display + clean sans body |
+| **Sci-Fi** | Robot | Cyan `#00e5ff` | Monospace display + geometric sans body |
+| **Horror** | Raven | Magenta `#c850c0` | Serif display + thin serif body |
+| **Western** | Coyote | Amber `#e09040` | Serif display + rustic sans body |
+| **Modern** | Street cat | Blue `#4a90d9` | Grotesque sans throughout |
 
 ### Key Interaction Patterns
 
@@ -879,9 +828,9 @@ Campaign Selector (top of sidebar)
 
 **The agent is always accessible:** A persistent chat input is available from any screen (collapsible, not intrusive). You can ask a question while looking at the entity graph, the map, or the prep brief without switching views.
 
-**Everything is linkable internally:** Entity names in any context (chat, logs, briefs, maps) are clickable links to their entity page. The context panel shows the entity card without navigating away from the current view.
+**Everything is linkable internally:** Entity names in any context (chat, session notes, prep briefs, entity pages) are hoverable (showing summary cards) and clickable (navigating to their entity page).
 
-**Glanceable at the table:** Key screens (combat tracker, map, quick reference) are designed for quick in-and-out interactions. Large tap targets, high contrast, minimal chrome. No unnecessary modals or multi-step flows for common mid-session actions.
+**Command palette (⌘K):** Global search across entities, sessions, conversations, and commands. Available from any screen.
 
 ---
 

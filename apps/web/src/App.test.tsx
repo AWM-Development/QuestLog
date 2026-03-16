@@ -16,6 +16,6 @@ describe("App", () => {
 			{ initialEntries: ["/"] },
 		);
 
-		expect(screen.getByText("QuestLog")).toBeInTheDocument();
+		expect(screen.getByTitle("QuestLog")).toBeInTheDocument();
 	});
 });

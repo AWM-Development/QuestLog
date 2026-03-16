@@ -70,6 +70,17 @@
     - Placeholder pages for all nav items
   - Tests: component tests for layout rendering, campaign list loading/empty/error states
 
+- [ ] **1.5 — Design system migration**
+  - Branch: `feat/foundation/design-system`
+  - PRD ref: §5 Design System, Docs/DESIGN_SYSTEM.md
+  - Work:
+    - Replace index.css tokens with entity-driven color system
+    - Replace Sidebar with Rail navigation component
+    - Update all components to use new token names
+    - Add DESIGN_SYSTEM.md as canonical visual reference
+    - Add Google Fonts loading for Crimson Pro, DM Sans, JetBrains Mono
+  - Tests: app builds cleanly, all existing component tests pass, no references to old token names remain
+
 ---
 
 ## Milestone 2: Import & Knowledge Base

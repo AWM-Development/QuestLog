@@ -18,15 +18,15 @@ export function CampaignListPage() {
 					display: "flex",
 					justifyContent: "space-between",
 					alignItems: "center",
-					marginBottom: "var(--spacing-xl)",
+					marginBottom: "var(--space-8)",
 				}}
 			>
 				<h1
 					style={{
-						fontFamily: "var(--font-heading)",
+						fontFamily: "var(--font-display)",
 						fontSize: "1.75rem",
 						fontWeight: 700,
-						color: "var(--color-text-primary)",
+						color: "var(--text-primary)",
 					}}
 				>
 					Campaigns
@@ -46,21 +46,21 @@ export function CampaignListPage() {
 				<div
 					role="alert"
 					style={{
-						backgroundColor: "var(--color-bg-surface)",
-						borderRadius: "var(--radius-md)",
-						padding: "var(--spacing-xl)",
+						backgroundColor: "var(--bg-elevated)",
+						borderRadius: "var(--r-md)",
+						padding: "var(--space-8)",
 						textAlign: "center",
-						color: "var(--color-error)",
+						color: "var(--status-error)",
 					}}
 				>
-					<p style={{ fontWeight: 600, marginBottom: "var(--spacing-sm)" }}>
+					<p style={{ fontWeight: 600, marginBottom: "var(--space-2)" }}>
 						Failed to load campaigns
 					</p>
 					<p
 						style={{
 							fontSize: "0.875rem",
-							color: "var(--color-text-muted)",
-							marginBottom: "var(--spacing-lg)",
+							color: "var(--text-muted)",
+							marginBottom: "var(--space-6)",
 						}}
 					>
 						Could not connect to the server. Make sure the API is running.
@@ -78,26 +78,26 @@ export function CampaignListPage() {
 			{campaignsQuery.isSuccess && campaignsQuery.data.length === 0 && (
 				<div
 					style={{
-						backgroundColor: "var(--color-bg-surface)",
-						borderRadius: "var(--radius-md)",
-						padding: "var(--spacing-2xl)",
+						backgroundColor: "var(--bg-elevated)",
+						borderRadius: "var(--r-md)",
+						padding: "var(--space-8)",
 						textAlign: "center",
 					}}
 				>
 					<p
 						style={{
 							fontSize: "1.25rem",
-							fontFamily: "var(--font-heading)",
-							color: "var(--color-text-primary)",
-							marginBottom: "var(--spacing-sm)",
+							fontFamily: "var(--font-display)",
+							color: "var(--text-primary)",
+							marginBottom: "var(--space-2)",
 						}}
 					>
 						No campaigns yet
 					</p>
 					<p
 						style={{
-							color: "var(--color-text-muted)",
-							marginBottom: "var(--spacing-lg)",
+							color: "var(--text-muted)",
+							marginBottom: "var(--space-6)",
 							fontSize: "0.875rem",
 						}}
 					>
@@ -118,7 +118,7 @@ export function CampaignListPage() {
 					style={{
 						display: "grid",
 						gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-						gap: "var(--spacing-lg)",
+						gap: "var(--space-6)",
 					}}
 				>
 					{campaignsQuery.data.map((campaign) => (
@@ -141,16 +141,16 @@ function CampaignListSkeleton() {
 			style={{
 				display: "grid",
 				gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
-				gap: "var(--spacing-lg)",
+				gap: "var(--space-6)",
 			}}
 		>
 			{[1, 2, 3].map((i) => (
 				<div
 					key={i}
 					style={{
-						backgroundColor: "var(--color-bg-surface)",
-						borderRadius: "var(--radius-md)",
-						padding: "var(--spacing-lg)",
+						backgroundColor: "var(--bg-elevated)",
+						borderRadius: "var(--r-md)",
+						padding: "var(--space-6)",
 						height: 140,
 						animation: "pulse 2s ease-in-out infinite",
 					}}
@@ -177,31 +177,31 @@ function CampaignCard({ campaign }: CampaignCardProps) {
 			to={`/campaign/${campaign.id}`}
 			style={{
 				display: "block",
-				backgroundColor: "var(--color-bg-surface)",
-				borderRadius: "var(--radius-md)",
-				padding: "var(--spacing-lg)",
+				backgroundColor: "var(--bg-elevated)",
+				borderRadius: "var(--r-md)",
+				padding: "var(--space-6)",
 				textDecoration: "none",
 				color: "inherit",
-				border: "1px solid var(--color-border-subtle)",
+				border: "1px solid var(--border-subtle)",
 				cursor: "pointer",
 				transition: "background-color 0.15s, border-color 0.15s",
 			}}
 			onMouseEnter={(e) => {
-				e.currentTarget.style.backgroundColor = "var(--color-bg-surface-hover)";
-				e.currentTarget.style.borderColor = "var(--color-border)";
+				e.currentTarget.style.backgroundColor = "var(--bg-focal)";
+				e.currentTarget.style.borderColor = "var(--border)";
 			}}
 			onMouseLeave={(e) => {
-				e.currentTarget.style.backgroundColor = "var(--color-bg-surface)";
-				e.currentTarget.style.borderColor = "var(--color-border-subtle)";
+				e.currentTarget.style.backgroundColor = "var(--bg-elevated)";
+				e.currentTarget.style.borderColor = "var(--border-subtle)";
 			}}
 		>
 			<h2
 				style={{
-					fontFamily: "var(--font-heading)",
+					fontFamily: "var(--font-display)",
 					fontSize: "1.125rem",
 					fontWeight: 600,
-					marginBottom: "var(--spacing-sm)",
-					color: "var(--color-text-primary)",
+					marginBottom: "var(--space-2)",
+					color: "var(--text-primary)",
 				}}
 			>
 				{campaign.name}
@@ -210,8 +210,8 @@ function CampaignCard({ campaign }: CampaignCardProps) {
 				<p
 					style={{
 						fontSize: "0.875rem",
-						color: "var(--color-text-secondary)",
-						marginBottom: "var(--spacing-md)",
+						color: "var(--text-secondary)",
+						marginBottom: "var(--space-4)",
 						lineHeight: 1.5,
 						overflow: "hidden",
 						display: "-webkit-box",
@@ -225,17 +225,17 @@ function CampaignCard({ campaign }: CampaignCardProps) {
 			<div
 				style={{
 					display: "flex",
-					gap: "var(--spacing-md)",
+					gap: "var(--space-4)",
 					fontSize: "0.75rem",
-					color: "var(--color-text-muted)",
+					color: "var(--text-muted)",
 				}}
 			>
 				<span
 					style={{
-						backgroundColor: "var(--color-accent-muted)",
-						color: "var(--color-accent)",
+						backgroundColor: "var(--accent-muted)",
+						color: "var(--accent)",
 						padding: "2px 8px",
-						borderRadius: "var(--radius-sm)",
+						borderRadius: "var(--r-sm)",
 					}}
 				>
 					{campaign.theme}
