@@ -158,8 +158,9 @@ export function buildApp({ db, storage: storageOption }: BuildAppOptions) {
 				: "";
 			const storageKey = `${campaignId}/${source.id}${ext}`;
 			await storage.saveFile({ storageKey, content });
+			await sourceService.setStorageKey(db, source.id, storageKey);
 
-			return reply.send({ source });
+			return reply.send({ source: { ...source, storageKey } });
 		},
 	);
 

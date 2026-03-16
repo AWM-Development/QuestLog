@@ -31,7 +31,7 @@ This folder contains all project documentation and planning artifacts.
   - Covers: tooling quirks, architectural choices and their reasons, deferred work, and testing patterns.
 
 ### Analysis
-- **QuestLog_API_Cost_Model.xlsx** — Token usage and cost estimation for Anthropic API + OpenAI embeddings.
+- **QuestLog_API_Cost_Model.xlsx** — Token usage and cost estimation for Anthropic API + Voyage AI embeddings.
   - Modular spreadsheet with Assumptions (pricing, usage patterns), Monthly Cost Model (per-operation breakdown), and Summary (total cost scenarios).
   - Update the Assumptions sheet if you change model choices or usage patterns.
   - For your current plan (2–3 sessions/month, light import): ~$1.03/month with prompt caching, ~$1.60/month without.

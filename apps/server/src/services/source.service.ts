@@ -3,10 +3,7 @@ import { and, desc, eq } from "drizzle-orm";
 import type { Database } from "../db/index.js";
 import { chunks, sources } from "../db/schema/index.js";
 import { NotFoundError } from "../lib/errors.js";
-
-function first<T>(rows: T[]): T {
-	return rows[0] as T;
-}
+import { first } from "../lib/utils.js";
 
 export interface CreateSourceInput {
 	campaignId: string;
@@ -77,17 +74,32 @@ export const sourceService = {
 		return first(rows);
 	},
 
-	/** Update source status (called by processing pipeline). */
-	async updateStatus(db: Database, id: string, status: SourceStatus) {
+	/** Update source status, optionally merging metadata. */
+	async updateStatus(
+		db: Database,
+		id: string,
+		status: SourceStatus,
+		metadata?: Record<string, unknown>,
+	) {
+		const set: Record<string, unknown> = { status };
+		if (metadata) {
+			const existing = await this.getById(db, id);
+			set.metadata = { ...(existing.metadata ?? {}), ...metadata };
+		}
 		const rows = await db
 			.update(sources)
-			.set({ status })
+			.set(set)
 			.where(eq(sources.id, id))
 			.returning();
 		if (rows.length === 0) {
 			throw new NotFoundError("Source", id);
 		}
 		return first(rows);
+	},
+
+	/** Set the storage key after file upload. */
+	async setStorageKey(db: Database, id: string, storageKey: string) {
+		await db.update(sources).set({ storageKey }).where(eq(sources.id, id));
 	},
 
 	/**

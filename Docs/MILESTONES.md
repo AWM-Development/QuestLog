@@ -107,7 +107,7 @@
   - PRD ref: §6 RAG Pipeline (Ingestion)
   - Work:
     - Chunking service: split extracted text into semantic chunks (~500-1000 tokens), respect section headers and paragraph boundaries
-    - Embedding service: call OpenAI embeddings API, store vectors in `chunks` table via pgvector
+    - Embedding service: call Voyage AI embeddings API (voyage-3, 1024 dims), store vectors in `chunks` table via pgvector
     - Swap stubbed PDF/DOCX extraction for real parsers (e.g., `pdf-parse` and `mammoth`), wiring them through the existing `extractText` seam and keeping OCR as-needed based on real campaign PDFs
     - Background processing: queue chunks after upload, update source status on completion
     - `chunks` table: content, embedding vector, source reference, campaign reference, metadata (position, entity mentions)

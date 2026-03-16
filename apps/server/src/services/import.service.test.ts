@@ -12,11 +12,10 @@ import { chunks, sources } from "../db/schema/index.js";
 import { createTestDb } from "../db/test-helpers.js";
 import { campaignService } from "./campaign.service.js";
 import { importService } from "./import.service.js";
-import type { StorageProvider } from "./storage.service.js";
+import { sourceService } from "./source.service.js";
+import { createMemoryStorage } from "./storage.service.js";
 
 const { db, close } = createTestDb();
-
-const makeBuffer = (text: string) => Buffer.from(text, "utf-8");
 
 /** Fake embedding: returns a deterministic 1024-dim vector. */
 function fakeEmbedding(index: number): number[] {
@@ -44,19 +43,28 @@ function createMockFetch() {
 		});
 }
 
+/** Helper: create a file source with content stored in memory storage. */
+async function seedFileSource(
+	campaignId: string,
+	storage: ReturnType<typeof createMemoryStorage>,
+	opts: { filename: string; mimeType: string; content: Buffer },
+) {
+	const source = await sourceService.create(db, {
+		campaignId,
+		name: opts.filename,
+		type: "file",
+		mimeType: opts.mimeType,
+		sizeBytes: opts.content.length,
+		hash: null,
+	});
+	const storageKey = `${campaignId}/${source.id}/${opts.filename}`;
+	await storage.saveFile({ storageKey, content: opts.content });
+	await sourceService.setStorageKey(db, source.id, storageKey);
+	return source;
+}
+
 describe("importService", () => {
-	const saveFile = vi.fn(async (params: { storageKey: string }) => ({
-		storageKey: params.storageKey,
-	}));
-	const getFileBuffer = vi.fn(async () => makeBuffer("example content"));
-	const deleteFile = vi.fn(async () => {});
-
-	const storage: StorageProvider = {
-		saveFile,
-		getFileBuffer,
-		deleteFile,
-	};
-
+	const storage = createMemoryStorage();
 	let campaignId: string;
 
 	afterAll(async () => {
@@ -77,49 +85,25 @@ describe("importService", () => {
 		await db.execute(sql`ROLLBACK`);
 	});
 
-	it("creates a file source and persists metadata", async () => {
-		const result = await importService.createFileSource(db, storage, {
-			campaignId,
-			filename: "notes.txt",
-			mimeType: "text/plain",
-			sizeBytes: 42,
-			content: makeBuffer("hello"),
-		});
-
-		expect(result.id).toBeDefined();
-		expect(result.name).toBe("notes.txt");
-		expect(result.mimeType).toBe("text/plain");
-		expect(result.sizeBytes).toBe(42);
-		expect(result.status).toBe("pending");
-
-		expect(saveFile).toHaveBeenCalledTimes(1);
-
-		const rows = await db.select().from(sources).where(sql`id = ${result.id}`);
-		expect(rows).toHaveLength(1);
-	});
-
 	it("processes a plain text source through the full pipeline to done", async () => {
 		const content =
 			"The ancient dragon Karthax guards the northern pass. Villagers fear the beast.";
-		getFileBuffer.mockResolvedValueOnce(makeBuffer(content));
 		const mockFetch = createMockFetch();
 
-		const created = await importService.createFileSource(db, storage, {
-			campaignId,
+		const source = await seedFileSource(campaignId, storage, {
 			filename: "session.txt",
 			mimeType: "text/plain",
-			sizeBytes: 100,
-			content: makeBuffer(content),
+			content: Buffer.from(content),
 		});
 
-		await importService.processSource(db, storage, created.id, {
+		await importService.processSource(db, storage, source.id, {
 			embedOptions: { fetchFn: mockFetch },
 		});
 
 		const [row] = await db
 			.select()
 			.from(sources)
-			.where(eq(sources.id, created.id));
+			.where(eq(sources.id, source.id));
 
 		expect(row?.status).toBe("done");
 		expect(row?.metadata?.extractedText).toBe(content);
@@ -128,121 +112,105 @@ describe("importService", () => {
 		const chunkRows = await db
 			.select()
 			.from(chunks)
-			.where(eq(chunks.sourceId, created.id));
+			.where(eq(chunks.sourceId, source.id));
 		expect(chunkRows.length).toBeGreaterThanOrEqual(1);
 		expect(chunkRows[0]?.content).toContain("dragon");
 		expect(chunkRows[0]?.embedding).toHaveLength(1024);
 	});
 
 	it("marks source as error and records reason when extraction throws", async () => {
-		getFileBuffer.mockRejectedValueOnce(new Error("boom"));
 		const mockFetch = createMockFetch();
 
-		const created = await importService.createFileSource(db, storage, {
+		// Create source with storageKey pointing to non-existent file
+		const source = await sourceService.create(db, {
 			campaignId,
-			filename: "bad.txt",
+			name: "bad.txt",
+			type: "file",
 			mimeType: "text/plain",
 			sizeBytes: 10,
-			content: makeBuffer("bad"),
+			hash: null,
 		});
+		await sourceService.setStorageKey(db, source.id, "nonexistent/key");
 
-		await importService.processSource(db, storage, created.id, {
+		await importService.processSource(db, storage, source.id, {
 			embedOptions: { fetchFn: mockFetch },
 		});
 
 		const [row] = await db
 			.select()
 			.from(sources)
-			.where(eq(sources.id, created.id));
+			.where(eq(sources.id, source.id));
 
 		expect(row?.status).toBe("error");
-		expect(row?.metadata?.errorReason).toContain("boom");
+		expect(row?.metadata?.errorReason).toBeDefined();
 	});
 
 	it("marks source as error with scanned_pdf reason for empty PDF", async () => {
-		// Return a minimal PDF with no text content
 		const emptyPdfContent =
 			"%PDF-1.0\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/MediaBox[0 0 612 792]/Parent 2 0 R/Resources<<>>>>endobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000058 00000 n \n0000000115 00000 n \ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n206\n%%EOF";
-		getFileBuffer.mockResolvedValueOnce(Buffer.from(emptyPdfContent));
 		const mockFetch = createMockFetch();
 
-		const created = await importService.createFileSource(db, storage, {
-			campaignId,
+		const source = await seedFileSource(campaignId, storage, {
 			filename: "scanned.pdf",
 			mimeType: "application/pdf",
-			sizeBytes: 500,
 			content: Buffer.from(emptyPdfContent),
 		});
 
-		await importService.processSource(db, storage, created.id, {
+		await importService.processSource(db, storage, source.id, {
 			embedOptions: { fetchFn: mockFetch },
 		});
 
 		const [row] = await db
 			.select()
 			.from(sources)
-			.where(eq(sources.id, created.id));
+			.where(eq(sources.id, source.id));
 
 		expect(row?.status).toBe("error");
 		expect(row?.metadata?.errorReason).toBe("scanned_pdf");
-
-		// No embedding call should have been made
 		expect(mockFetch).not.toHaveBeenCalled();
 	});
 
 	it("processes pasted text sources (no storage key)", async () => {
 		const mockFetch = createMockFetch();
 
-		// Create a paste source directly
-		const [created] = await db
-			.insert(sources)
-			.values({
-				campaignId,
-				name: "Pasted Notes",
-				type: "paste",
-				status: "pending",
-				metadata: { content: "The tavern keeper is secretly a spy." },
-			})
-			.returning();
+		const source = await sourceService.createFromText(db, {
+			campaignId,
+			name: "Pasted Notes",
+			content: "The tavern keeper is secretly a spy.",
+		});
 
-		const createdId = created?.id ?? "";
-		await importService.processSource(db, storage, createdId, {
+		await importService.processSource(db, storage, source.id, {
 			embedOptions: { fetchFn: mockFetch },
 		});
 
 		const [row] = await db
 			.select()
 			.from(sources)
-			.where(eq(sources.id, createdId));
+			.where(eq(sources.id, source.id));
 
 		expect(row?.status).toBe("done");
 
 		const chunkRows = await db
 			.select()
 			.from(chunks)
-			.where(eq(chunks.sourceId, createdId));
+			.where(eq(chunks.sourceId, source.id));
 		expect(chunkRows.length).toBeGreaterThanOrEqual(1);
 	});
 
 	it("processPendingSources drains the queue", async () => {
 		const content = "A short note about goblins.";
-		getFileBuffer.mockResolvedValue(makeBuffer(content));
 		const mockFetch = createMockFetch();
 
-		await importService.createFileSource(db, storage, {
-			campaignId,
+		await seedFileSource(campaignId, storage, {
 			filename: "note1.txt",
 			mimeType: "text/plain",
-			sizeBytes: 30,
-			content: makeBuffer(content),
+			content: Buffer.from(content),
 		});
 
-		await importService.createFileSource(db, storage, {
-			campaignId,
+		await seedFileSource(campaignId, storage, {
 			filename: "note2.txt",
 			mimeType: "text/plain",
-			sizeBytes: 30,
-			content: makeBuffer(content),
+			content: Buffer.from(content),
 		});
 
 		const processed = await importService.processPendingSources(
@@ -254,7 +222,6 @@ describe("importService", () => {
 
 		expect(processed).toBe(2);
 
-		// Both should be done now
 		const allSources = await db
 			.select()
 			.from(sources)
