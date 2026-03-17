@@ -11,3 +11,4 @@ export {
 	UploadSourceInput,
 } from "./source.js";
 export type { SourceSchemaType } from "./source.js";
+export { SearchSourcesInput } from "./search.js";
