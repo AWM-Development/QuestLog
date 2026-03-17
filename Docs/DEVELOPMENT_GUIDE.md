@@ -428,7 +428,7 @@ pnpm drizzle-kit push             # Push schema directly (dev only)
 # .env.example
 DATABASE_URL=postgresql://questlog:questlog@localhost:5432/questlog
 ANTHROPIC_API_KEY=sk-ant-...       # For Claude API (agent conversation)
-VOYAGE_API_KEY=pa-...              # For embeddings (Voyage AI voyage-3)
+VOYAGE_API_KEY=pa-...              # For embeddings (Voyage AI voyage-4-lite)
 ```
 
 ---

@@ -258,7 +258,7 @@ describe("searchService", () => {
 		const callArgs = mockFetch.mock.calls[0] as [string, { body: string }];
 		const body = JSON.parse(callArgs[1].body);
 		expect(body.input_type).toBe("query");
-		expect(body.model).toBe("voyage-3");
+		expect(body.model).toBe("voyage-4-lite");
 		expect(body.input).toEqual(["test query"]);
 	});
 

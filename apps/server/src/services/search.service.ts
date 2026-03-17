@@ -8,7 +8,7 @@ import type { Database } from "../db/index.js";
 import { chunks, sources } from "../db/schema/index.js";
 
 const VOYAGE_EMBEDDINGS_URL = "https://api.voyageai.com/v1/embeddings";
-const EMBEDDING_MODEL = "voyage-3";
+const EMBEDDING_MODEL = "voyage-4-lite";
 const DEFAULT_LIMIT = 5;
 
 type FetchFn = typeof globalThis.fetch;

@@ -108,3 +108,32 @@ The list route is `/campaigns` and the detail route is `/campaign/:id`. This is 
 
 ### Font loading
 Crimson Pro, DM Sans, and JetBrains Mono are loaded via Google Fonts in `index.html`. The `<link>` tags use `rel="preconnect"` for faster loading. If fonts fail to load, the fallback stack is Georgia → serif for display, system-ui → sans-serif for body.
+
+---
+
+## Embedding Model
+
+### Migration from OpenAI to Voyage AI, then voyage-3 → voyage-4-lite (2026-03-17)
+
+**History:**
+- The PRD originally referenced OpenAI `text-embedding-3-small` as a candidate embedding model.
+- During task 2.1 (embedding pipeline), Voyage AI `voyage-3` was chosen instead: same cost ($0.02/MTok), better MTEB scores, and `input_type` query/document differentiation for improved RAG retrieval quality.
+- In task 2.3.5, the model was upgraded from `voyage-3` to `voyage-4-lite` for improved quality at no cost increase.
+
+**Why Voyage AI over OpenAI embeddings:**
+- Same price as OpenAI `text-embedding-3-small` ($0.02/MTok)
+- `input_type: "document"` / `input_type: "query"` parameters allow the model to produce asymmetric embeddings optimised for each role — documents are indexed differently from search queries, which improves retrieval precision
+- Top-tier MTEB benchmark scores
+- 200M free token tier for new accounts
+- Recommended by Anthropic for use with Claude
+
+**Why voyage-4-lite over voyage-3:**
+- Same $0.02/MTok price
+- Same 1024-dimension output (no schema migration required — `chunks.embedding vector(1024)` is unchanged)
+- Same API shape (`model`, `input`, `input_type` — no code changes beyond the model string)
+- Improved quality on MTEB benchmarks
+
+**Current state:**
+- `embedding.service.ts` and `search.service.ts` both use `EMBEDDING_MODEL = "voyage-4-lite"`
+- `VOYAGE_API_KEY` is the only embedding-related env var (no OpenAI key needed)
+- Vector dimension remains 1024; no migration needed
