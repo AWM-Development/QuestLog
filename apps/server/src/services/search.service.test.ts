@@ -9,21 +9,11 @@ import {
 	vi,
 } from "vitest";
 import { chunks, sources } from "../db/schema/index.js";
-import { createTestDb } from "../db/test-helpers.js";
+import { basisVector, createTestDb } from "../db/test-helpers.js";
 import { campaignService } from "./campaign.service.js";
 import { searchService } from "./search.service.js";
 
 const { db, close } = createTestDb();
-
-/**
- * Build a unit vector that points primarily along axis `axis`.
- * Useful for creating vectors with known cosine similarity relationships.
- */
-function basisVector(axis: number, dims = 1024): number[] {
-	const vec = new Array(dims).fill(0);
-	vec[axis] = 1;
-	return vec;
-}
 
 /**
  * Mock fetch that returns a deterministic embedding for a query string.

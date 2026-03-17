@@ -7,21 +7,17 @@
 
 import type { Database } from "../db/index.js";
 import { chunks } from "../db/schema/index.js";
+import { estimateTokens } from "../lib/utils.js";
 import type { TextChunk } from "./chunking.service.js";
-
-const VOYAGE_EMBEDDINGS_URL = "https://api.voyageai.com/v1/embeddings";
-const EMBEDDING_MODEL = "voyage-4-lite";
-const BATCH_SIZE = 128;
-
-type FetchFn = typeof globalThis.fetch;
+import {
+	BATCH_SIZE,
+	type FetchFn,
+	callVoyageEmbeddings,
+} from "./voyage.client.js";
 
 export interface EmbedOptions {
 	/** Override fetch for testing. */
 	fetchFn?: FetchFn;
-}
-
-interface EmbeddingResponse {
-	data: Array<{ embedding: number[]; index: number }>;
 }
 
 /**
@@ -35,41 +31,22 @@ export async function embedChunks(
 ): Promise<void> {
 	if (textChunks.length === 0) return;
 
-	const apiKey = process.env.VOYAGE_API_KEY;
-	const fetchFn = options?.fetchFn ?? globalThis.fetch;
-
-	if (!apiKey && !options?.fetchFn) {
-		console.warn(
-			"[embedding] VOYAGE_API_KEY not set — skipping embedding. Chunks will not be stored.",
-		);
-		return;
-	}
-
 	for (let i = 0; i < textChunks.length; i += BATCH_SIZE) {
 		const batch = textChunks.slice(i, i + BATCH_SIZE);
 		const texts = batch.map((c) => c.content);
 
-		const response = await fetchFn(VOYAGE_EMBEDDINGS_URL, {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-				Authorization: `Bearer ${apiKey ?? "test"}`,
-			},
-			body: JSON.stringify({
-				model: EMBEDDING_MODEL,
-				input: texts,
-				input_type: "document",
-			}),
+		const result = await callVoyageEmbeddings({
+			input: texts,
+			inputType: "document",
+			fetchFn: options?.fetchFn,
 		});
 
-		if (!response.ok) {
-			const errorText = await response.text();
-			throw new Error(
-				`Voyage embeddings API error (${response.status}): ${errorText}`,
+		if (!result) {
+			console.warn(
+				"[embedding] VOYAGE_API_KEY not set — skipping embedding. Chunks will not be stored.",
 			);
+			return;
 		}
-
-		const result = (await response.json()) as EmbeddingResponse;
 
 		const insertValues = batch.map((chunk, batchIndex) => {
 			const embeddingData = result.data.find((d) => d.index === batchIndex);
@@ -80,9 +57,7 @@ export async function embedChunks(
 				embedding: embeddingData?.embedding ?? [],
 				metadata: {
 					position: chunk.position,
-					tokenEstimate: Math.ceil(
-						chunk.content.split(/\s+/).filter(Boolean).length / 0.75,
-					),
+					tokenEstimate: estimateTokens(chunk.content),
 				},
 			};
 		});

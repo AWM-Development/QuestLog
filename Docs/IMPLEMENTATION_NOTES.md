@@ -11,7 +11,7 @@ Read this at the start of every coding session. Add to it when you make a non-ob
 - `Docs/PRD.md` — Product specification
 - `Docs/DESIGN_SYSTEM.md` — Visual design spec (color tokens, components, entity system)
 
-**Last Updated:** 2026-03-15 (design system overhaul)
+**Last Updated:** 2026-03-17 (code review cleanup — Voyage client consolidation, config extraction, dead code removal)
 
 ---
 
@@ -88,14 +88,11 @@ The original parchment/amber/brown palette (task 1.4) has been replaced with an 
 - **Depth system:** Four surface planes (void → surface → elevated → focal) replace the old two-level bg-primary/bg-secondary split.
 - **Entity colors are the accent system:** There is no single `--accent` color. Instead, each entity type (NPC, faction, location, item, story arc) has its own hue. `--accent` aliases `--ent-npc` (#60b8ff) for primary actions.
 - **New fonts:** Crimson Pro (display), DM Sans (body), JetBrains Mono (mono). Replaces Georgia + Inter.
-- **Rail nav replaces sidebar:** 56px icon-only rail (`Rail.tsx`) replaces the 240px text sidebar (`Sidebar.tsx`). The old `Sidebar.tsx` is deprecated.
+- **Rail nav replaces sidebar:** 56px icon-only rail (`Rail.tsx`) replaces the 240px text sidebar. The old `Sidebar.tsx` has been deleted.
 - **Right panel is toggleable:** 300px panel slides in/out. Not always visible. Tabs for "Context" and "Session notes."
 
-### Legacy token aliases in index.css
-During migration, `index.css` contains a "Legacy aliases" section that maps old token names (e.g., `--color-bg-primary`) to new ones (e.g., `--bg-void`). This allows existing components to keep working while they're incrementally updated. **Remove legacy aliases once all components use the new token names.** You can audit usage with:
-```bash
-grep -r "color-bg-primary\|color-text-primary\|color-accent\|color-border\|color-success\|color-error\|color-warning" apps/web/src/ --include="*.tsx" --include="*.ts"
-```
+### Legacy token aliases — removed
+The old brown/amber CSS token aliases (`--color-bg-primary`, `--color-accent`, etc.) have been fully removed from `index.css`. The deprecated `Sidebar.tsx` was the last consumer of those tokens; it has been deleted. All active components now use the new design system tokens directly.
 
 ### CSS custom properties for theming, not Tailwind utilities
 All layout and component styling uses CSS custom properties (e.g., `var(--bg-void)`) applied via inline `style` objects, not Tailwind utility classes. This is intentional: the token names are the foundation that task 8.1 swaps per-campaign-theme. Tailwind is still installed and available for utility styling where tokens aren't needed, but the core design system runs through custom properties. Components use inline styles so that token references are explicit and easy to audit for theme coverage.
@@ -134,6 +131,75 @@ Crimson Pro, DM Sans, and JetBrains Mono are loaded via Google Fonts in `index.h
 - Improved quality on MTEB benchmarks
 
 **Current state:**
-- `embedding.service.ts` and `search.service.ts` both use `EMBEDDING_MODEL = "voyage-4-lite"`
+- `voyage.client.ts` is the shared HTTP client — it owns the API URL, model name (`voyage-4-lite`), auth header, `EmbeddingResponse` type, and batch size constant. Both `embedding.service.ts` and `search.service.ts` call `callVoyageEmbeddings()` from this module.
 - `VOYAGE_API_KEY` is the only embedding-related env var (no OpenAI key needed)
 - Vector dimension remains 1024; no migration needed
+
+---
+
+## Context Assembly Service (task 3.1)
+
+### What it does
+`contextService.assemble(db, input)` builds a structured text block suitable for injection into an LLM prompt. Given a query and campaign ID it pulls from four sources and assembles them in this order:
+
+1. **Campaign metadata** — name, description, game system, theme
+2. **Relevant chunks** — top-k vector search results, re-ranked with recency blending
+3. **Campaign entities** — all entities up to the entity token budget
+4. **Conversation history** — recent messages from the specified conversation (optional)
+
+### Token budget split
+Default total budget is 100 000 tokens, split as:
+
+| Section  | Ratio | Tokens (default) |
+|----------|-------|-----------------|
+| Chunks   | 60 %  | 60 000          |
+| History  | 25 %  | 25 000          |
+| Entities | 10 %  | 10 000          |
+| Metadata |  5 %  | 5 000           |
+
+The budget and `searchLimit` (default 40 candidates per search path) are configurable per-call via `ContextInput`. All magic numbers (budget ratios, recency weight, keyword threshold, dual-match boost, search limit) are centralised in the exported `CONTEXT_CONFIG` object for easy tuning and test assertions. Token counting uses a fast approximation: `ceil(words / 0.75)` — fast enough for budget math, no tiktoken dependency.
+
+### Recency weighting
+After vector search, chunks are re-ranked with:
+```
+combinedScore = 0.9 * cosineSimilarity + 0.1 * recencyScore
+```
+`recencyScore` is normalised to [0, 1] within the result set (newest = 1.0, oldest = 0.0). When all chunks share the same timestamp, recency has no effect. This ensures newer lore beats equally-relevant older lore without completely overriding semantic relevance.
+
+Chunks are then greedily packed into the chunk budget; a chunk that doesn't fit is skipped (not breaking) so smaller later chunks can still be included.
+
+### Confidence score
+`AssembledContext.confidence` is the average cosine similarity of the included chunks (0 when no chunks). This is surfaced in the milestone 11.2 "answer confidence" UI. Callers don't need to compute it — it comes back with every `assemble()` call.
+
+### Conversation history truncation
+History is fetched newest-first. Oldest messages are dropped when the history budget is exhausted, keeping the most recent exchange intact. After truncation, messages are reversed back to chronological order before assembly.
+
+### Test override: `fetchFn`
+`ContextInput.fetchFn` is passed through to `searchService.search`, which forwards it to the Voyage AI HTTP call. This lets unit tests inject a mock `fetch` and avoid network calls entirely — no environment variable patching needed.
+
+### Output shape
+```ts
+interface AssembledContext {
+  text: string;           // ready-to-inject prompt section
+  citations: ContextCitation[];  // chunkId + sourceName + sourceId per chunk
+  confidence: number;     // avg cosine similarity of included chunks
+  tokenCount: number;     // estimated tokens of assembled text
+}
+```
+
+### `createdAt` on SearchResult
+`search.service.ts` now returns `createdAt: Date` on each `SearchResult`. This field comes from the `chunks` table's `createdAt` column and is required by the recency ranking logic. Tests that mock `searchService.search` need to include this field.
+
+### Hybrid search (vector + keyword)
+`contextService.assemble()` now runs vector search and pg_trgm keyword search in parallel, then merges results via `mergeSearchResults()` before recency re-ranking. Key constants:
+
+- `KEYWORD_SEARCH_THRESHOLD = 0.1` — minimum trgm similarity to include a chunk from keyword search
+- `DUAL_MATCH_BOOST = 0.1` — score boost added when a chunk appears in both result sets
+- `DEFAULT_SEARCH_LIMIT = 40` — candidate chunks retrieved by each search path
+
+`mergeSearchResults` is exported for direct unit testing. Scoring rules:
+- In both result sets → vector score + 0.1 (capped at 1.0)
+- Vector only → vector score unchanged
+- Keyword only → trgm similarity score as-is
+
+The keyword search uses Drizzle's `sql` template literals, so `query` is always a parameterized value — no SQL injection risk.

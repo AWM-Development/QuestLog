@@ -94,12 +94,13 @@ export function buildApp({ db, storage: storageOption }: BuildAppOptions) {
 			try {
 				file = await request.file();
 			} catch (err: unknown) {
-				// @fastify/multipart throws a specific error for files exceeding the limit
-				const msg = err instanceof Error ? err.message : String(err);
-				if (
-					msg.includes("Request file too large") ||
-					msg.includes("FST_FILES_LIMIT")
-				) {
+				// @fastify/multipart errors carry a stable `.code` property —
+				// match on that instead of fragile message-string checks.
+				const code =
+					err instanceof Error
+						? (err as Error & { code?: string }).code
+						: undefined;
+				if (code === "FST_REQ_FILE_TOO_LARGE" || code === "FST_FILES_LIMIT") {
 					return reply.status(413).send({ error: "File exceeds 50 MB limit" });
 				}
 				return reply.status(400).send({ error: "Failed to read file" });
@@ -130,8 +131,11 @@ export function buildApp({ db, storage: storageOption }: BuildAppOptions) {
 					);
 				}
 			} catch (err: unknown) {
-				const msg = err instanceof Error ? err.message : String(err);
-				if (msg.includes("Request file too large")) {
+				const code =
+					err instanceof Error
+						? (err as Error & { code?: string }).code
+						: undefined;
+				if (code === "FST_REQ_FILE_TOO_LARGE") {
 					return reply.status(413).send({ error: "File exceeds 50 MB limit" });
 				}
 				throw err;
