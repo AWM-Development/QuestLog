@@ -1,7 +1,7 @@
 /**
  * Embedding service: calls Voyage AI embeddings API and inserts chunks into the DB.
  *
- * Uses voyage-3 (1024 dimensions).
+ * Uses voyage-4-lite (1024 dimensions).
  * Batches requests in groups of 128 (Voyage API max).
  */
 
@@ -10,7 +10,7 @@ import { chunks } from "../db/schema/index.js";
 import type { TextChunk } from "./chunking.service.js";
 
 const VOYAGE_EMBEDDINGS_URL = "https://api.voyageai.com/v1/embeddings";
-const EMBEDDING_MODEL = "voyage-3";
+const EMBEDDING_MODEL = "voyage-4-lite";
 const BATCH_SIZE = 128;
 
 type FetchFn = typeof globalThis.fetch;
