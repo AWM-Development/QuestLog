@@ -11,7 +11,7 @@ Read this at the start of every coding session. Add to it when you make a non-ob
 - `Docs/PRD.md` — Product specification
 - `Docs/DESIGN_SYSTEM.md` — Visual design spec (color tokens, components, entity system)
 
-**Last Updated:** 2026-03-15 (design system overhaul)
+**Last Updated:** 2026-03-17 (context assembly service, task 3.1)
 
 ---
 
@@ -137,3 +137,58 @@ Crimson Pro, DM Sans, and JetBrains Mono are loaded via Google Fonts in `index.h
 - `embedding.service.ts` and `search.service.ts` both use `EMBEDDING_MODEL = "voyage-4-lite"`
 - `VOYAGE_API_KEY` is the only embedding-related env var (no OpenAI key needed)
 - Vector dimension remains 1024; no migration needed
+
+---
+
+## Context Assembly Service (task 3.1)
+
+### What it does
+`contextService.assemble(db, input)` builds a structured text block suitable for injection into an LLM prompt. Given a query and campaign ID it pulls from four sources and assembles them in this order:
+
+1. **Campaign metadata** — name, description, game system, theme
+2. **Relevant chunks** — top-k vector search results, re-ranked with recency blending
+3. **Campaign entities** — all entities up to the entity token budget
+4. **Conversation history** — recent messages from the specified conversation (optional)
+
+### Token budget split
+Default total budget is 100 000 tokens, split as:
+
+| Section  | Ratio | Tokens (default) |
+|----------|-------|-----------------|
+| Chunks   | 60 %  | 60 000          |
+| History  | 25 %  | 25 000          |
+| Entities | 10 %  | 10 000          |
+| Metadata |  5 %  | 5 000           |
+
+The budget and `searchLimit` (default 20 candidates) are configurable per-call via `ContextInput`. Token counting uses a fast approximation: `ceil(words / 0.75)` — fast enough for budget math, no tiktoken dependency.
+
+### Recency weighting
+After vector search, chunks are re-ranked with:
+```
+combinedScore = 0.9 * cosineSimilarity + 0.1 * recencyScore
+```
+`recencyScore` is normalised to [0, 1] within the result set (newest = 1.0, oldest = 0.0). When all chunks share the same timestamp, recency has no effect. This ensures newer lore beats equally-relevant older lore without completely overriding semantic relevance.
+
+Chunks are then greedily packed into the chunk budget; a chunk that doesn't fit is skipped (not breaking) so smaller later chunks can still be included.
+
+### Confidence score
+`AssembledContext.confidence` is the average cosine similarity of the included chunks (0 when no chunks). This is surfaced in the milestone 11.2 "answer confidence" UI. Callers don't need to compute it — it comes back with every `assemble()` call.
+
+### Conversation history truncation
+History is fetched newest-first. Oldest messages are dropped when the history budget is exhausted, keeping the most recent exchange intact. After truncation, messages are reversed back to chronological order before assembly.
+
+### Test override: `fetchFn`
+`ContextInput.fetchFn` is passed through to `searchService.search`, which forwards it to the Voyage AI HTTP call. This lets unit tests inject a mock `fetch` and avoid network calls entirely — no environment variable patching needed.
+
+### Output shape
+```ts
+interface AssembledContext {
+  text: string;           // ready-to-inject prompt section
+  citations: ContextCitation[];  // chunkId + sourceName + sourceId per chunk
+  confidence: number;     // avg cosine similarity of included chunks
+  tokenCount: number;     // estimated tokens of assembled text
+}
+```
+
+### `createdAt` on SearchResult
+`search.service.ts` now returns `createdAt: Date` on each `SearchResult`. This field comes from the `chunks` table's `createdAt` column and is required by the recency ranking logic. Tests that mock `searchService.search` need to include this field.

@@ -150,7 +150,7 @@
 
 ### Tasks
 
-- [ ] **3.1 — Context assembly**
+- [x] **3.1 — Context assembly**
   - Branch: `feat/agent-chat/context-assembly`
   - PRD ref: §4.2 Context Assembly
   - Work:
