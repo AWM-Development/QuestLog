@@ -6,12 +6,9 @@
 import { eq, sql } from "drizzle-orm";
 import type { Database } from "../db/index.js";
 import { chunks, sources } from "../db/schema/index.js";
+import { type FetchFn, callVoyageEmbeddings } from "./voyage.client.js";
 
-const VOYAGE_EMBEDDINGS_URL = "https://api.voyageai.com/v1/embeddings";
-const EMBEDDING_MODEL = "voyage-4-lite";
 const DEFAULT_LIMIT = 5;
-
-type FetchFn = typeof globalThis.fetch;
 
 export interface SearchInput {
 	campaignId: string;
@@ -31,35 +28,18 @@ export interface SearchResult {
 	createdAt: Date;
 }
 
-interface EmbeddingResponse {
-	data: Array<{ embedding: number[]; index: number }>;
-}
-
 /** Embed a single query string via Voyage AI. */
-async function embedQuery(query: string, fetchFn: FetchFn): Promise<number[]> {
-	const apiKey = process.env.VOYAGE_API_KEY;
-
-	const response = await fetchFn(VOYAGE_EMBEDDINGS_URL, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-			Authorization: `Bearer ${apiKey ?? "test"}`,
-		},
-		body: JSON.stringify({
-			model: EMBEDDING_MODEL,
-			input: [query],
-			input_type: "query",
-		}),
+async function embedQuery(query: string, fetchFn?: FetchFn): Promise<number[]> {
+	const result = await callVoyageEmbeddings({
+		input: [query],
+		inputType: "query",
+		fetchFn,
 	});
 
-	if (!response.ok) {
-		const errorText = await response.text();
-		throw new Error(
-			`Voyage embeddings API error (${response.status}): ${errorText}`,
-		);
+	if (!result) {
+		throw new Error("Voyage API key not set and no fetchFn override provided");
 	}
 
-	const result = (await response.json()) as EmbeddingResponse;
 	const embedding = result.data[0]?.embedding;
 	if (!embedding) {
 		throw new Error("Voyage API returned no embedding data");

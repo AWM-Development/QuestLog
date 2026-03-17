@@ -11,7 +11,7 @@ Read this at the start of every coding session. Add to it when you make a non-ob
 - `Docs/PRD.md` — Product specification
 - `Docs/DESIGN_SYSTEM.md` — Visual design spec (color tokens, components, entity system)
 
-**Last Updated:** 2026-03-17 (context assembly service — hybrid search + top-k 40, task 3.1)
+**Last Updated:** 2026-03-17 (code review cleanup — Voyage client consolidation, config extraction, dead code removal)
 
 ---
 
@@ -88,14 +88,11 @@ The original parchment/amber/brown palette (task 1.4) has been replaced with an 
 - **Depth system:** Four surface planes (void → surface → elevated → focal) replace the old two-level bg-primary/bg-secondary split.
 - **Entity colors are the accent system:** There is no single `--accent` color. Instead, each entity type (NPC, faction, location, item, story arc) has its own hue. `--accent` aliases `--ent-npc` (#60b8ff) for primary actions.
 - **New fonts:** Crimson Pro (display), DM Sans (body), JetBrains Mono (mono). Replaces Georgia + Inter.
-- **Rail nav replaces sidebar:** 56px icon-only rail (`Rail.tsx`) replaces the 240px text sidebar (`Sidebar.tsx`). The old `Sidebar.tsx` is deprecated.
+- **Rail nav replaces sidebar:** 56px icon-only rail (`Rail.tsx`) replaces the 240px text sidebar. The old `Sidebar.tsx` has been deleted.
 - **Right panel is toggleable:** 300px panel slides in/out. Not always visible. Tabs for "Context" and "Session notes."
 
-### Legacy token aliases in index.css
-During migration, `index.css` contains a "Legacy aliases" section that maps old token names (e.g., `--color-bg-primary`) to new ones (e.g., `--bg-void`). This allows existing components to keep working while they're incrementally updated. **Remove legacy aliases once all components use the new token names.** You can audit usage with:
-```bash
-grep -r "color-bg-primary\|color-text-primary\|color-accent\|color-border\|color-success\|color-error\|color-warning" apps/web/src/ --include="*.tsx" --include="*.ts"
-```
+### Legacy token aliases — removed
+The old brown/amber CSS token aliases (`--color-bg-primary`, `--color-accent`, etc.) have been fully removed from `index.css`. The deprecated `Sidebar.tsx` was the last consumer of those tokens; it has been deleted. All active components now use the new design system tokens directly.
 
 ### CSS custom properties for theming, not Tailwind utilities
 All layout and component styling uses CSS custom properties (e.g., `var(--bg-void)`) applied via inline `style` objects, not Tailwind utility classes. This is intentional: the token names are the foundation that task 8.1 swaps per-campaign-theme. Tailwind is still installed and available for utility styling where tokens aren't needed, but the core design system runs through custom properties. Components use inline styles so that token references are explicit and easy to audit for theme coverage.
@@ -134,7 +131,7 @@ Crimson Pro, DM Sans, and JetBrains Mono are loaded via Google Fonts in `index.h
 - Improved quality on MTEB benchmarks
 
 **Current state:**
-- `embedding.service.ts` and `search.service.ts` both use `EMBEDDING_MODEL = "voyage-4-lite"`
+- `voyage.client.ts` is the shared HTTP client — it owns the API URL, model name (`voyage-4-lite`), auth header, `EmbeddingResponse` type, and batch size constant. Both `embedding.service.ts` and `search.service.ts` call `callVoyageEmbeddings()` from this module.
 - `VOYAGE_API_KEY` is the only embedding-related env var (no OpenAI key needed)
 - Vector dimension remains 1024; no migration needed
 
@@ -160,7 +157,7 @@ Default total budget is 100 000 tokens, split as:
 | Entities | 10 %  | 10 000          |
 | Metadata |  5 %  | 5 000           |
 
-The budget and `searchLimit` (default 20 candidates) are configurable per-call via `ContextInput`. Token counting uses a fast approximation: `ceil(words / 0.75)` — fast enough for budget math, no tiktoken dependency.
+The budget and `searchLimit` (default 40 candidates per search path) are configurable per-call via `ContextInput`. All magic numbers (budget ratios, recency weight, keyword threshold, dual-match boost, search limit) are centralised in the exported `CONTEXT_CONFIG` object for easy tuning and test assertions. Token counting uses a fast approximation: `ceil(words / 0.75)` — fast enough for budget math, no tiktoken dependency.
 
 ### Recency weighting
 After vector search, chunks are re-ranked with:

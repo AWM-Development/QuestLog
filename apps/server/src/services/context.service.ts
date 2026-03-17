@@ -19,7 +19,7 @@
  *
  * Hybrid search: vector search (Voyage AI) and keyword search (pg_trgm) run
  * in parallel. Results are merged before recency re-ranking:
- *   - Chunks in both result sets get a score boost (DUAL_MATCH_BOOST), ensuring
+ *   - Chunks in both result sets get a score boost (CONTEXT_CONFIG.dualMatchBoost), ensuring
  *     proper nouns and entity names that match both semantically and literally
  *     rank near the top.
  *   - Chunks only in keyword results enter the pool with their trgm similarity
@@ -40,30 +40,39 @@ import { NotFoundError } from "../lib/errors.js";
 import { estimateTokens } from "../lib/utils.js";
 import type { SearchResult } from "./search.service.js";
 import { searchService } from "./search.service.js";
-
-type FetchFn = typeof globalThis.fetch;
-
-// ---------------------------------------------------------------------------
-// Budget constants
-// ---------------------------------------------------------------------------
-const DEFAULT_TOKEN_BUDGET = 100_000;
-/** Candidate chunks retrieved before budget trimming (vector + keyword each). */
-const DEFAULT_SEARCH_LIMIT = 40;
-const CHUNK_BUDGET_RATIO = 0.6;
-const HISTORY_BUDGET_RATIO = 0.25;
-const ENTITY_BUDGET_RATIO = 0.1;
-const METADATA_BUDGET_RATIO = 0.05;
-
-/** Fraction of combined score contributed by recency (0–1). */
-const RECENCY_WEIGHT = 0.1;
+import type { FetchFn } from "./voyage.client.js";
 
 // ---------------------------------------------------------------------------
-// Hybrid search constants
+// Configuration — all tunable constants in one typed object
 // ---------------------------------------------------------------------------
-/** Minimum pg_trgm similarity score to include a chunk from keyword search. */
-const KEYWORD_SEARCH_THRESHOLD = 0.1;
-/** Score boost added to a chunk's vector similarity when it also matches keyword search. */
-const DUAL_MATCH_BOOST = 0.1;
+
+/**
+ * Centralises every magic number used by context assembly.
+ * Exported so tests can assert against the same values and so future
+ * admin-panel / per-campaign overrides have a single place to wire into.
+ */
+export const CONTEXT_CONFIG = {
+	/** Default total token budget for the assembled context window. */
+	defaultTokenBudget: 100_000,
+	/** Candidate chunks retrieved before budget trimming (vector + keyword each). */
+	defaultSearchLimit: 40,
+
+	/** Token budget allocation ratios (must sum to 1.0). */
+	budgetRatios: {
+		chunks: 0.6,
+		history: 0.25,
+		entities: 0.1,
+		metadata: 0.05,
+	},
+
+	/** Fraction of combined score contributed by recency (0–1). */
+	recencyWeight: 0.1,
+
+	/** Minimum pg_trgm similarity score to include a chunk from keyword search. */
+	keywordSearchThreshold: 0.1,
+	/** Score boost when a chunk appears in both vector and keyword results. */
+	dualMatchBoost: 0.1,
+} as const;
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -127,7 +136,8 @@ function applyRecencyWeighting(
 		const recencyScore =
 			timeRange > 0 ? (r.createdAt.getTime() - minTime) / timeRange : 0;
 		const combinedScore =
-			(1 - RECENCY_WEIGHT) * r.score + RECENCY_WEIGHT * recencyScore;
+			(1 - CONTEXT_CONFIG.recencyWeight) * r.score +
+			CONTEXT_CONFIG.recencyWeight * recencyScore;
 		return { ...r, combinedScore };
 	});
 
@@ -167,7 +177,7 @@ async function keywordSearch(
 	const rows = await db
 		.select()
 		.from(sq)
-		.where(sql`${sq.trgmScore} > ${KEYWORD_SEARCH_THRESHOLD}`)
+		.where(sql`${sq.trgmScore} > ${CONTEXT_CONFIG.keywordSearchThreshold}`)
 		.orderBy(sql`${sq.trgmScore} DESC`)
 		.limit(limit);
 
@@ -186,7 +196,7 @@ async function keywordSearch(
  * Merge vector and keyword search results, deduplicating by chunk ID.
  *
  * Scoring rules:
- *   - Chunk in both result sets: vector score + DUAL_MATCH_BOOST (capped at 1.0)
+ *   - Chunk in both result sets: vector score + CONTEXT_CONFIG.dualMatchBoost (capped at 1.0)
  *   - Chunk only in vector results: vector score unchanged
  *   - Chunk only in keyword results: trgm similarity score as-is
  *
@@ -196,26 +206,23 @@ export function mergeSearchResults(
 	vectorResults: SearchResult[],
 	keywordResults: SearchResult[],
 ): SearchResult[] {
-	// Seed map with vector results (keyed by chunkId for O(1) lookup)
 	const merged = new Map<string, SearchResult>();
 	for (const r of vectorResults) {
 		merged.set(r.chunkId, r);
 	}
 
-	// Build lookup for keyword results
-	const keywordIds = new Set(keywordResults.map((r) => r.chunkId));
-
-	// Boost vector results that also appear in keyword results
-	for (const [id, r] of merged) {
-		if (keywordIds.has(id)) {
-			merged.set(id, { ...r, score: Math.min(1, r.score + DUAL_MATCH_BOOST) });
-		}
-	}
-
-	// Add keyword-only results (not already in vector results) with trgm score
-	for (const r of keywordResults) {
-		if (!merged.has(r.chunkId)) {
-			merged.set(r.chunkId, r);
+	// Single pass over keyword results: boost dual-matches, add keyword-only.
+	for (const kw of keywordResults) {
+		const existing = merged.get(kw.chunkId);
+		if (existing) {
+			// Dual match — boost the vector score (cap at 1.0)
+			merged.set(kw.chunkId, {
+				...existing,
+				score: Math.min(1, existing.score + CONTEXT_CONFIG.dualMatchBoost),
+			});
+		} else {
+			// Keyword-only — enter with trgm similarity score
+			merged.set(kw.chunkId, kw);
 		}
 	}
 
@@ -260,16 +267,17 @@ export const contextService = {
 			query,
 			campaignId,
 			conversationId,
-			tokenBudget = DEFAULT_TOKEN_BUDGET,
-			searchLimit = DEFAULT_SEARCH_LIMIT,
+			tokenBudget = CONTEXT_CONFIG.defaultTokenBudget,
+			searchLimit = CONTEXT_CONFIG.defaultSearchLimit,
 		} = input;
 		const fetchFn = input.fetchFn ?? globalThis.fetch;
 
 		// -- Budget allocation ------------------------------------------------
-		const chunkBudget = Math.floor(tokenBudget * CHUNK_BUDGET_RATIO);
-		const historyBudget = Math.floor(tokenBudget * HISTORY_BUDGET_RATIO);
-		const entityBudget = Math.floor(tokenBudget * ENTITY_BUDGET_RATIO);
-		const metadataBudget = Math.floor(tokenBudget * METADATA_BUDGET_RATIO);
+		const { budgetRatios } = CONTEXT_CONFIG;
+		const chunkBudget = Math.floor(tokenBudget * budgetRatios.chunks);
+		const historyBudget = Math.floor(tokenBudget * budgetRatios.history);
+		const entityBudget = Math.floor(tokenBudget * budgetRatios.entities);
+		const metadataBudget = Math.floor(tokenBudget * budgetRatios.metadata);
 
 		// -- Campaign metadata ------------------------------------------------
 		const [campaign] = await db
@@ -328,14 +336,14 @@ export const contextService = {
 		]);
 
 		// -- Entities ---------------------------------------------------------
-		const selectedEntities: Array<{ entity: (typeof allEntities)[0]; text: string }> = [];
+		const entityLines: string[] = [];
 		let entityTokensUsed = 0;
 
 		for (const entity of allEntities) {
-			const text = formatEntity(entity);
-			const tokens = estimateTokens(text);
+			const line = formatEntity(entity);
+			const tokens = estimateTokens(line);
 			if (entityTokensUsed + tokens > entityBudget) break;
-			selectedEntities.push({ entity, text });
+			entityLines.push(line);
 			entityTokensUsed += tokens;
 		}
 
@@ -372,12 +380,8 @@ export const contextService = {
 			sections.push(lines.join("\n"));
 		}
 
-		if (selectedEntities.length > 0) {
-			const lines = ["## Campaign Entities"];
-			for (const { text } of selectedEntities) {
-				lines.push(text);
-			}
-			sections.push(lines.join("\n"));
+		if (entityLines.length > 0) {
+			sections.push(["## Campaign Entities", ...entityLines].join("\n"));
 		}
 
 		if (selectedMessages.length > 0) {

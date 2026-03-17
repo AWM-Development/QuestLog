@@ -16,9 +16,9 @@ import {
 	sources,
 } from "../db/schema/index.js";
 import { basisVector, createTestDb } from "../db/test-helpers.js";
-import type { SearchResult } from "./search.service.js";
 import { campaignService } from "./campaign.service.js";
 import { contextService, mergeSearchResults } from "./context.service.js";
+import type { SearchResult } from "./search.service.js";
 
 const { db, close } = createTestDb();
 

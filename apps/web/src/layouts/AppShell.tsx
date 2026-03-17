@@ -1,10 +1,14 @@
-import { useState } from "react";
 import { Outlet, useParams } from "react-router";
 import { Rail } from "./Rail.js";
 
+/**
+ * Top-level layout shell: rail navigation + main content area.
+ *
+ * A toggleable context panel (entity detail / session notes) is planned
+ * for a future milestone — see MILESTONES.md §11. When implemented,
+ * add state + aside here and update the grid template to include the panel column.
+ */
 export function AppShell() {
-	// TODO: wire up context panel toggle — entity clicks will open this panel (future milestone)
-	const [contextPanelOpen, setContextPanelOpen] = useState(false);
 	const { id: campaignId } = useParams();
 
 	return (
@@ -31,37 +35,6 @@ export function AppShell() {
 			>
 				<Outlet />
 			</main>
-
-			{contextPanelOpen && (
-				<aside
-					className="context-panel"
-					style={{
-						width: "var(--panel-width)",
-						borderLeft: "1px solid var(--border)",
-						backgroundColor: "var(--bg-surface)",
-						overflow: "auto",
-						padding: "var(--space-6)",
-					}}
-				>
-					<button
-						type="button"
-						onClick={() => setContextPanelOpen(false)}
-						style={{
-							background: "none",
-							border: "none",
-							color: "var(--text-secondary)",
-							cursor: "pointer",
-							fontSize: "1.25rem",
-						}}
-						aria-label="Close context panel"
-					>
-						&times;
-					</button>
-					<p style={{ color: "var(--text-muted)" }}>
-						Context panel — coming soon
-					</p>
-				</aside>
-			)}
 		</div>
 	);
 }
