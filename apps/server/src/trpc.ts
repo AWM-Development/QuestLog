@@ -4,6 +4,7 @@ import superjson from "superjson";
 import type { Database } from "./db/index.js";
 import {
 	ExtractionNotSupportedError,
+	LlmApiError,
 	NotFoundError,
 	ValidationError,
 } from "./lib/errors.js";
@@ -66,6 +67,13 @@ export async function withErrorHandling<T>(fn: () => Promise<T>): Promise<T> {
 		if (error instanceof ExtractionNotSupportedError) {
 			throw new TRPCError({
 				code: "BAD_REQUEST",
+				message: error.message,
+				cause: error,
+			});
+		}
+		if (error instanceof LlmApiError) {
+			throw new TRPCError({
+				code: "INTERNAL_SERVER_ERROR",
 				message: error.message,
 				cause: error,
 			});
