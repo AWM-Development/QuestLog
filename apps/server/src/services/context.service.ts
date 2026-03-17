@@ -3,7 +3,7 @@
  *
  * Sources assembled (in order of text appearance):
  *   1. Campaign metadata — name, description, game system, theme
- *   2. Relevant chunks  — top-k results from vector search, re-ranked with recency
+ *   2. Relevant chunks  — hybrid (vector + keyword) search results, re-ranked with recency
  *   3. Campaign entities — all entities up to entity budget
  *   4. Conversation history — recent messages, oldest dropped first when budget is tight
  *
@@ -14,12 +14,28 @@
  *   Metadata     5 %
  *
  * Recency weighting: combined_score = (1-w)*similarity + w*recency, w = 0.1
- * Confidence score: average cosine similarity of the chunks included in the context.
+ * Confidence score: average cosine similarity of the selected chunks (0
+ * when no chunks present); will be surfaced in the UI at milestone 11.2.
+ *
+ * Hybrid search: vector search (Voyage AI) and keyword search (pg_trgm) run
+ * in parallel. Results are merged before recency re-ranking:
+ *   - Chunks in both result sets get a score boost (DUAL_MATCH_BOOST), ensuring
+ *     proper nouns and entity names that match both semantically and literally
+ *     rank near the top.
+ *   - Chunks only in keyword results enter the pool with their trgm similarity
+ *     score, so older lore with exact name matches surfaces even when its
+ *     embedding drifts from the query.
  */
 
-import { desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { Database } from "../db/index.js";
-import { campaigns, entities, messages } from "../db/schema/index.js";
+import {
+	campaigns,
+	chunks,
+	entities,
+	messages,
+	sources,
+} from "../db/schema/index.js";
 import { NotFoundError } from "../lib/errors.js";
 import type { SearchResult } from "./search.service.js";
 import { searchService } from "./search.service.js";
@@ -30,7 +46,8 @@ type FetchFn = typeof globalThis.fetch;
 // Budget constants
 // ---------------------------------------------------------------------------
 const DEFAULT_TOKEN_BUDGET = 100_000;
-const DEFAULT_SEARCH_LIMIT = 20;
+/** Candidate chunks retrieved before budget trimming (vector + keyword each). */
+const DEFAULT_SEARCH_LIMIT = 40;
 const CHUNK_BUDGET_RATIO = 0.6;
 const HISTORY_BUDGET_RATIO = 0.25;
 const ENTITY_BUDGET_RATIO = 0.1;
@@ -38,6 +55,14 @@ const METADATA_BUDGET_RATIO = 0.05;
 
 /** Fraction of combined score contributed by recency (0–1). */
 const RECENCY_WEIGHT = 0.1;
+
+// ---------------------------------------------------------------------------
+// Hybrid search constants
+// ---------------------------------------------------------------------------
+/** Minimum pg_trgm similarity score to include a chunk from keyword search. */
+const KEYWORD_SEARCH_THRESHOLD = 0.1;
+/** Score boost added to a chunk's vector similarity when it also matches keyword search. */
+const DUAL_MATCH_BOOST = 0.1;
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -50,7 +75,7 @@ export interface ContextInput {
 	conversationId?: string;
 	/** Maximum tokens for the assembled context. Default: 100 000. */
 	tokenBudget?: number;
-	/** Number of candidate chunks to retrieve before budget trimming. Default: 20. */
+	/** Number of candidate chunks to retrieve before budget trimming. Default: 40. */
 	searchLimit?: number;
 	/** Override fetch for testing (passed through to search service). */
 	fetchFn?: FetchFn;
@@ -114,6 +139,88 @@ function applyRecencyWeighting(
 	return scored;
 }
 
+/**
+ * Run a pg_trgm similarity search against chunk content for a campaign.
+ * Returns results ordered by trgm similarity (highest first).
+ */
+async function keywordSearch(
+	db: Database,
+	campaignId: string,
+	query: string,
+	limit: number,
+): Promise<SearchResult[]> {
+	const rows = await db
+		.select({
+			chunkId: chunks.id,
+			content: chunks.content,
+			trgmScore: sql<number>`similarity(${chunks.content}, ${query})`,
+			sourceName: sources.name,
+			sourceId: chunks.sourceId,
+			metadata: chunks.metadata,
+			createdAt: chunks.createdAt,
+		})
+		.from(chunks)
+		.leftJoin(sources, eq(chunks.sourceId, sources.id))
+		.where(
+			and(
+				eq(chunks.campaignId, campaignId),
+				sql`similarity(${chunks.content}, ${query}) > ${KEYWORD_SEARCH_THRESHOLD}`,
+			),
+		)
+		.orderBy(sql`similarity(${chunks.content}, ${query}) DESC`)
+		.limit(limit);
+
+	return rows.map((row) => ({
+		chunkId: row.chunkId,
+		content: row.content,
+		score: Number(row.trgmScore),
+		sourceName: row.sourceName,
+		sourceId: row.sourceId,
+		metadata: (row.metadata ?? {}) as Record<string, unknown>,
+		createdAt: row.createdAt,
+	}));
+}
+
+/**
+ * Merge vector and keyword search results, deduplicating by chunk ID.
+ *
+ * Scoring rules:
+ *   - Chunk in both result sets: vector score + DUAL_MATCH_BOOST (capped at 1.0)
+ *   - Chunk only in vector results: vector score unchanged
+ *   - Chunk only in keyword results: trgm similarity score as-is
+ *
+ * Exported for unit testing.
+ */
+export function mergeSearchResults(
+	vectorResults: SearchResult[],
+	keywordResults: SearchResult[],
+): SearchResult[] {
+	// Seed map with vector results (keyed by chunkId for O(1) lookup)
+	const merged = new Map<string, SearchResult>();
+	for (const r of vectorResults) {
+		merged.set(r.chunkId, r);
+	}
+
+	// Build lookup for keyword results
+	const keywordIds = new Set(keywordResults.map((r) => r.chunkId));
+
+	// Boost vector results that also appear in keyword results
+	for (const [id, r] of merged) {
+		if (keywordIds.has(id)) {
+			merged.set(id, { ...r, score: Math.min(1, r.score + DUAL_MATCH_BOOST) });
+		}
+	}
+
+	// Add keyword-only results (not already in vector results) with trgm score
+	for (const r of keywordResults) {
+		if (!merged.has(r.chunkId)) {
+			merged.set(r.chunkId, r);
+		}
+	}
+
+	return Array.from(merged.values());
+}
+
 function formatCampaignMetadata(campaign: {
 	name: string;
 	description: string | null;
@@ -171,14 +278,20 @@ export const contextService = {
 
 		if (!campaign) throw new NotFoundError("Campaign", campaignId);
 
-		// -- Vector search + recency re-ranking --------------------------------
-		const rawResults = await searchService.search(db, {
-			campaignId,
-			query,
-			limit: searchLimit,
-			fetchFn,
-		});
+		// -- Hybrid search: vector + keyword in parallel -----------------------
+		const [vectorResults, kwResults] = await Promise.all([
+			searchService.search(db, {
+				campaignId,
+				query,
+				limit: searchLimit,
+				fetchFn,
+			}),
+			keywordSearch(db, campaignId, query, searchLimit),
+		]);
 
+		const rawResults = mergeSearchResults(vectorResults, kwResults);
+
+		// -- Recency re-ranking ------------------------------------------------
 		const rankedResults = applyRecencyWeighting(rawResults);
 
 		// Select chunks that fit within the chunk token budget.

@@ -11,7 +11,7 @@ Read this at the start of every coding session. Add to it when you make a non-ob
 - `Docs/PRD.md` — Product specification
 - `Docs/DESIGN_SYSTEM.md` — Visual design spec (color tokens, components, entity system)
 
-**Last Updated:** 2026-03-17 (context assembly service, task 3.1)
+**Last Updated:** 2026-03-17 (context assembly service — hybrid search + top-k 40, task 3.1)
 
 ---
 
@@ -192,3 +192,17 @@ interface AssembledContext {
 
 ### `createdAt` on SearchResult
 `search.service.ts` now returns `createdAt: Date` on each `SearchResult`. This field comes from the `chunks` table's `createdAt` column and is required by the recency ranking logic. Tests that mock `searchService.search` need to include this field.
+
+### Hybrid search (vector + keyword)
+`contextService.assemble()` now runs vector search and pg_trgm keyword search in parallel, then merges results via `mergeSearchResults()` before recency re-ranking. Key constants:
+
+- `KEYWORD_SEARCH_THRESHOLD = 0.1` — minimum trgm similarity to include a chunk from keyword search
+- `DUAL_MATCH_BOOST = 0.1` — score boost added when a chunk appears in both result sets
+- `DEFAULT_SEARCH_LIMIT = 40` — candidate chunks retrieved by each search path
+
+`mergeSearchResults` is exported for direct unit testing. Scoring rules:
+- In both result sets → vector score + 0.1 (capped at 1.0)
+- Vector only → vector score unchanged
+- Keyword only → trgm similarity score as-is
+
+The keyword search uses Drizzle's `sql` template literals, so `query` is always a parameterized value — no SQL injection risk.

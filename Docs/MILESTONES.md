@@ -155,9 +155,12 @@
   - PRD ref: §4.2 Context Assembly
   - Work:
     - Context assembly service: given a query and campaign ID, build an LLM context from vector search results + entity data + conversation history + campaign metadata
-    - Token budget management: allocate portions of context window to each source
-    - Context ranking: combine vector similarity score with recency weighting
-  - Tests: unit tests for context assembly logic, token budget allocation, ranking
+    - Token budget management: allocate portions of context window to each source (60/25/10/5 split)
+    - Context ranking: combine vector similarity score with recency weighting (90/10 blend)
+    - **Hybrid search**: vector search (Voyage AI) and pg_trgm keyword search run in parallel; results merged before recency re-ranking. Chunks in both result sets receive a score boost (0.1); keyword-only chunks enter the pool with their trgm similarity score. Addresses retrieval failure for proper nouns, entity names, and early-campaign lore that has drifted from the query embedding.
+    - **Candidate pool**: retrieves 40 candidates (up from 20) before budget trimming, reducing the chance of missing relevant content in long campaigns. Greedy packing already handles trimming to the token budget.
+    - Confidence score: average cosine similarity of included chunks, returned on every call for use by milestone 11.2 UI
+  - Tests: 6 integration tests (full assembly, token budget, recency ranking, confidence score, empty results, history truncation) + 3 integration tests (keyword surface, deduplication, top-k budget trimming) + 7 unit tests for `mergeSearchResults` (dedup, boost, cap, keyword-only, vector-only, empty inputs)
 
 - [ ] **3.2 — LLM integration & streaming**
   - Branch: `feat/agent-chat/llm-integration`

@@ -16,8 +16,9 @@ import {
 	sources,
 } from "../db/schema/index.js";
 import { createTestDb } from "../db/test-helpers.js";
+import type { SearchResult } from "./search.service.js";
 import { campaignService } from "./campaign.service.js";
-import { contextService } from "./context.service.js";
+import { contextService, mergeSearchResults } from "./context.service.js";
 
 const { db, close } = createTestDb();
 
@@ -393,5 +394,167 @@ describe("contextService", () => {
 
 		// Oldest message should be dropped
 		expect(result.text).not.toContain("OLDEST_MESSAGE");
+	});
+
+	// -----------------------------------------------------------------------
+	// Test 7: hybrid search — keyword-matching chunk surfaces in context
+	// -----------------------------------------------------------------------
+	it("surfaces a keyword-matching chunk via hybrid search", async () => {
+		// Insert a chunk whose content exactly contains the query term.
+		// The pg_trgm keyword path should pick it up regardless of vector score.
+		await db.insert(chunks).values([
+			{
+				campaignId,
+				sourceId,
+				content: "Zarovich Castle stands at the peak of Mount Baratok.",
+				embedding: basisVector(0),
+				metadata: { position: 0 },
+			},
+		]);
+
+		const mockFetch = createMockFetch(basisVector(0));
+
+		const result = await contextService.assemble(db, {
+			// Query contains exact words from the chunk — should match via trgm
+			query: "Zarovich Castle Baratok",
+			campaignId,
+			fetchFn: mockFetch,
+		});
+
+		expect(result.text).toContain("Zarovich Castle");
+		expect(result.citations).toHaveLength(1);
+	});
+
+	// -----------------------------------------------------------------------
+	// Test 8: hybrid search — deduplication (chunk in both sets appears once)
+	// -----------------------------------------------------------------------
+	it("deduplicates chunks that appear in both vector and keyword results", async () => {
+		// Insert a single chunk with content matching the query
+		await db.insert(chunks).values({
+			campaignId,
+			sourceId,
+			content: "The vampire Strahd haunts Barovia eternally.",
+			embedding: basisVector(0),
+			metadata: { position: 0 },
+		});
+
+		const mockFetch = createMockFetch(basisVector(0));
+
+		const result = await contextService.assemble(db, {
+			query: "vampire Strahd Barovia",
+			campaignId,
+			fetchFn: mockFetch,
+		});
+
+		// The chunk must appear exactly once in citations
+		expect(result.citations).toHaveLength(1);
+
+		// The chunk content must appear exactly once in the assembled text
+		const occurrences = (
+			result.text.match(/vampire Strahd haunts Barovia/g) ?? []
+		).length;
+		expect(occurrences).toBe(1);
+	});
+
+	// -----------------------------------------------------------------------
+	// Test 9: top-k 40 — greedy packer limits inclusions to token budget
+	// -----------------------------------------------------------------------
+	it("limits included chunks to token budget even when 40 candidates are retrieved", async () => {
+		// Each chunk is ~267 tokens (200 words / 0.75).
+		// chunkBudget = 60% of 1 500 = 900 tokens → fits ~3 chunks.
+		// Insert 45 chunks so vector search returns its full 40-candidate pool.
+		const medText = "word ".repeat(200);
+		await db.insert(chunks).values(
+			Array.from({ length: 45 }, (_, i) => ({
+				campaignId,
+				sourceId,
+				content: medText,
+				embedding: basisVector(0),
+				metadata: { position: i },
+			})),
+		);
+
+		const mockFetch = createMockFetch(basisVector(0));
+
+		const result = await contextService.assemble(db, {
+			query: "test",
+			campaignId,
+			tokenBudget: 1500,
+			fetchFn: mockFetch,
+		});
+
+		// Many candidates were retrieved, but only a few fit in the budget
+		expect(result.citations.length).toBeGreaterThan(0);
+		expect(result.citations.length).toBeLessThan(40);
+		expect(result.tokenCount).toBeLessThanOrEqual(1500);
+	});
+});
+
+// ---------------------------------------------------------------------------
+// Unit tests for mergeSearchResults (no DB required)
+// ---------------------------------------------------------------------------
+
+function makeResult(
+	chunkId: string,
+	score: number,
+	content = "content",
+): SearchResult {
+	return {
+		chunkId,
+		score,
+		content,
+		sourceName: null,
+		sourceId: null,
+		metadata: {},
+		createdAt: new Date("2024-01-01"),
+	};
+}
+
+describe("mergeSearchResults", () => {
+	it("deduplicates a chunk that appears in both result sets", () => {
+		const chunk = makeResult("a", 0.8);
+		const merged = mergeSearchResults([chunk], [{ ...chunk, score: 0.7 }]);
+		expect(merged).toHaveLength(1);
+		expect(merged[0]?.chunkId).toBe("a");
+	});
+
+	it("boosts the score of a dual-match chunk by DUAL_MATCH_BOOST (0.1)", () => {
+		const chunk = makeResult("a", 0.7);
+		// Also appears in keyword results → score should become 0.7 + 0.1 = 0.8
+		const merged = mergeSearchResults([chunk], [{ ...chunk, score: 0.5 }]);
+		expect(merged[0]?.score).toBeCloseTo(0.8);
+	});
+
+	it("caps the boosted score at 1.0", () => {
+		const chunk = makeResult("a", 0.95);
+		const merged = mergeSearchResults([chunk], [{ ...chunk, score: 1.0 }]);
+		expect(merged[0]?.score).toBeLessThanOrEqual(1.0);
+	});
+
+	it("includes keyword-only chunks with their trgm similarity score", () => {
+		const vectorChunk = makeResult("a", 0.9);
+		const keywordChunk = makeResult("b", 0.6);
+		const merged = mergeSearchResults([vectorChunk], [keywordChunk]);
+		expect(merged).toHaveLength(2);
+		const b = merged.find((r) => r.chunkId === "b");
+		expect(b?.score).toBeCloseTo(0.6);
+	});
+
+	it("preserves vector-only chunks unchanged", () => {
+		const chunk = makeResult("a", 0.9);
+		const merged = mergeSearchResults([chunk], []);
+		expect(merged).toHaveLength(1);
+		expect(merged[0]?.score).toBeCloseTo(0.9);
+	});
+
+	it("handles empty vector results with keyword-only results", () => {
+		const keyword = makeResult("a", 0.5);
+		const merged = mergeSearchResults([], [keyword]);
+		expect(merged).toHaveLength(1);
+		expect(merged[0]?.score).toBeCloseTo(0.5);
+	});
+
+	it("returns empty array when both inputs are empty", () => {
+		expect(mergeSearchResults([], [])).toHaveLength(0);
 	});
 });
