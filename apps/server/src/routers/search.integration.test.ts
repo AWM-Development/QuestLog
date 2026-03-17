@@ -58,6 +58,7 @@ describe("search router", () => {
 					sourceName: "router-test-source.txt",
 					sourceId: "mock-source-id",
 					metadata: { position: 0 },
+					createdAt: new Date(),
 				},
 			]);
 

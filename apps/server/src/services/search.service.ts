@@ -28,6 +28,7 @@ export interface SearchResult {
 	sourceName: string | null;
 	sourceId: string | null;
 	metadata: Record<string, unknown>;
+	createdAt: Date;
 }
 
 interface EmbeddingResponse {
@@ -88,6 +89,7 @@ export const searchService = {
 				sourceName: sources.name,
 				sourceId: chunks.sourceId,
 				metadata: chunks.metadata,
+				createdAt: chunks.createdAt,
 			})
 			.from(chunks)
 			.leftJoin(sources, eq(chunks.sourceId, sources.id))
@@ -102,6 +104,7 @@ export const searchService = {
 			sourceName: row.sourceName,
 			sourceId: row.sourceId,
 			metadata: (row.metadata ?? {}) as Record<string, unknown>,
+			createdAt: row.createdAt,
 		}));
 	},
 };
