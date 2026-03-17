@@ -27,7 +27,7 @@
  *     embedding drifts from the query.
  */
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { desc, eq, sql } from "drizzle-orm";
 import type { Database } from "../db/index.js";
 import {
 	campaigns,
@@ -37,6 +37,7 @@ import {
 	sources,
 } from "../db/schema/index.js";
 import { NotFoundError } from "../lib/errors.js";
+import { estimateTokens } from "../lib/utils.js";
 import type { SearchResult } from "./search.service.js";
 import { searchService } from "./search.service.js";
 
@@ -105,11 +106,6 @@ export interface AssembledContext {
 // Internal helpers
 // ---------------------------------------------------------------------------
 
-/** Rough token estimate: ~1.33 tokens per whitespace-delimited word. */
-function estimateTokens(text: string): number {
-	return Math.ceil(text.split(/\s+/).filter(Boolean).length / 0.75);
-}
-
 /**
  * Re-rank search results by blending cosine similarity with recency.
  *
@@ -149,11 +145,15 @@ async function keywordSearch(
 	query: string,
 	limit: number,
 ): Promise<SearchResult[]> {
-	const rows = await db
+	// Compute similarity once in a subquery so the expression isn't
+	// evaluated separately in SELECT, WHERE, and ORDER BY.
+	const sq = db
 		.select({
 			chunkId: chunks.id,
 			content: chunks.content,
-			trgmScore: sql<number>`similarity(${chunks.content}, ${query})`,
+			trgmScore: sql<number>`similarity(${chunks.content}, ${query})`.as(
+				"trgm_score",
+			),
 			sourceName: sources.name,
 			sourceId: chunks.sourceId,
 			metadata: chunks.metadata,
@@ -161,13 +161,14 @@ async function keywordSearch(
 		})
 		.from(chunks)
 		.leftJoin(sources, eq(chunks.sourceId, sources.id))
-		.where(
-			and(
-				eq(chunks.campaignId, campaignId),
-				sql`similarity(${chunks.content}, ${query}) > ${KEYWORD_SEARCH_THRESHOLD}`,
-			),
-		)
-		.orderBy(sql`similarity(${chunks.content}, ${query}) DESC`)
+		.where(eq(chunks.campaignId, campaignId))
+		.as("sq");
+
+	const rows = await db
+		.select()
+		.from(sq)
+		.where(sql`${sq.trgmScore} > ${KEYWORD_SEARCH_THRESHOLD}`)
+		.orderBy(sql`${sq.trgmScore} DESC`)
 		.limit(limit);
 
 	return rows.map((row) => ({
@@ -314,20 +315,27 @@ export const contextService = {
 					selectedChunks.length
 				: 0;
 
-		// -- Entities ---------------------------------------------------------
-		const allEntities = await db
-			.select()
-			.from(entities)
-			.where(eq(entities.campaignId, campaignId));
+		// -- Entities + conversation history (parallel fetch) -----------------
+		const [allEntities, allMessages] = await Promise.all([
+			db.select().from(entities).where(eq(entities.campaignId, campaignId)),
+			conversationId
+				? db
+						.select()
+						.from(messages)
+						.where(eq(messages.conversationId, conversationId))
+						.orderBy(desc(messages.createdAt))
+				: Promise.resolve([] as (typeof messages.$inferSelect)[]),
+		]);
 
-		const selectedEntities: typeof allEntities = [];
+		// -- Entities ---------------------------------------------------------
+		const selectedEntities: Array<{ entity: (typeof allEntities)[0]; text: string }> = [];
 		let entityTokensUsed = 0;
 
 		for (const entity of allEntities) {
 			const text = formatEntity(entity);
 			const tokens = estimateTokens(text);
 			if (entityTokensUsed + tokens > entityBudget) break;
-			selectedEntities.push(entity);
+			selectedEntities.push({ entity, text });
 			entityTokensUsed += tokens;
 		}
 
@@ -336,22 +344,14 @@ export const contextService = {
 		// to restore chronological order. Oldest messages are dropped first.
 		const selectedMessages: Array<{ role: string; content: string }> = [];
 
-		if (conversationId) {
-			const allMessages = await db
-				.select()
-				.from(messages)
-				.where(eq(messages.conversationId, conversationId))
-				.orderBy(desc(messages.createdAt));
-
-			let historyTokensUsed = 0;
-			for (const msg of allMessages) {
-				const tokens = estimateTokens(msg.content);
-				if (historyTokensUsed + tokens > historyBudget) break;
-				selectedMessages.push({ role: msg.role, content: msg.content });
-				historyTokensUsed += tokens;
-			}
-			selectedMessages.reverse();
+		let historyTokensUsed = 0;
+		for (const msg of allMessages) {
+			const tokens = estimateTokens(msg.content);
+			if (historyTokensUsed + tokens > historyBudget) break;
+			selectedMessages.push({ role: msg.role, content: msg.content });
+			historyTokensUsed += tokens;
 		}
+		selectedMessages.reverse();
 
 		// -- Assemble text ----------------------------------------------------
 		const sections: string[] = [];
@@ -374,8 +374,8 @@ export const contextService = {
 
 		if (selectedEntities.length > 0) {
 			const lines = ["## Campaign Entities"];
-			for (const entity of selectedEntities) {
-				lines.push(formatEntity(entity));
+			for (const { text } of selectedEntities) {
+				lines.push(text);
 			}
 			sections.push(lines.join("\n"));
 		}

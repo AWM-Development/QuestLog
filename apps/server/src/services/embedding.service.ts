@@ -7,6 +7,7 @@
 
 import type { Database } from "../db/index.js";
 import { chunks } from "../db/schema/index.js";
+import { estimateTokens } from "../lib/utils.js";
 import type { TextChunk } from "./chunking.service.js";
 
 const VOYAGE_EMBEDDINGS_URL = "https://api.voyageai.com/v1/embeddings";
@@ -80,9 +81,7 @@ export async function embedChunks(
 				embedding: embeddingData?.embedding ?? [],
 				metadata: {
 					position: chunk.position,
-					tokenEstimate: Math.ceil(
-						chunk.content.split(/\s+/).filter(Boolean).length / 0.75,
-					),
+					tokenEstimate: estimateTokens(chunk.content),
 				},
 			};
 		});

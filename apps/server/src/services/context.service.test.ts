@@ -15,22 +15,12 @@ import {
 	messages,
 	sources,
 } from "../db/schema/index.js";
-import { createTestDb } from "../db/test-helpers.js";
+import { basisVector, createTestDb } from "../db/test-helpers.js";
 import type { SearchResult } from "./search.service.js";
 import { campaignService } from "./campaign.service.js";
 import { contextService, mergeSearchResults } from "./context.service.js";
 
 const { db, close } = createTestDb();
-
-/**
- * Build a unit vector along a single axis.
- * All vectors along the same axis have cosine similarity 1.0 with each other.
- */
-function basisVector(axis: number, dims = 1024): number[] {
-	const vec = new Array(dims).fill(0);
-	vec[axis] = 1;
-	return vec;
-}
 
 /**
  * Mock fetch that always returns a fixed embedding for the query.
