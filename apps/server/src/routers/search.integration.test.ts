@@ -9,7 +9,6 @@ import {
 	it,
 	vi,
 } from "vitest";
-import { chunks, sources } from "../db/schema/index.js";
 import { createTestDb } from "../db/test-helpers.js";
 import { buildApp } from "../server.js";
 import { campaignService } from "../services/campaign.service.js";
@@ -29,16 +28,8 @@ afterAll(async () => {
 	await close();
 });
 
-/** Build a unit vector pointing along a single axis. */
-function basisVector(axis: number, dims = 1024): number[] {
-	const vec = new Array(dims).fill(0);
-	vec[axis] = 1;
-	return vec;
-}
-
 describe("search router", () => {
 	let campaignId: string;
-	let sourceId: string;
 
 	beforeEach(async () => {
 		await db.execute(sql`BEGIN`);
@@ -49,17 +40,6 @@ describe("search router", () => {
 			theme: "fantasy",
 		});
 		campaignId = campaign.id;
-
-		const [source] = await db
-			.insert(sources)
-			.values({
-				campaignId,
-				name: "router-test-source.txt",
-				type: "file",
-				status: "done",
-			})
-			.returning();
-		sourceId = source?.id ?? "";
 	});
 
 	afterEach(async () => {
@@ -69,32 +49,14 @@ describe("search router", () => {
 
 	describe("search.searchSources", () => {
 		it("returns ranked chunks for a valid query", async () => {
-			// Insert chunks with known embeddings
-			await db.insert(chunks).values([
-				{
-					campaignId,
-					sourceId,
-					content: "Dragons breathe fire",
-					embedding: basisVector(0),
-					metadata: { position: 0 },
-				},
-				{
-					campaignId,
-					sourceId,
-					content: "Wizards cast spells",
-					embedding: basisVector(1),
-					metadata: { position: 1 },
-				},
-			]);
-
-			// Mock the search service to avoid calling Voyage API
+			// Mock the search service — real DB search is tested in search.service.test.ts
 			vi.spyOn(searchModule.searchService, "search").mockResolvedValue([
 				{
 					chunkId: "mock-id-1",
 					content: "Dragons breathe fire",
 					score: 0.95,
 					sourceName: "router-test-source.txt",
-					sourceId,
+					sourceId: "mock-source-id",
 					metadata: { position: 0 },
 				},
 			]);
