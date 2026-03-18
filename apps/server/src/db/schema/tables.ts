@@ -8,6 +8,13 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 
+/** Shape of the JSONB `sources` column on the `messages` table. */
+export interface MessageSource {
+	chunkId: string;
+	sourceName: string;
+	sourceId: string;
+}
+
 /**
  * Custom pgvector column type. Drizzle has no native pgvector support, so
  * serialization is handled manually:
@@ -170,9 +177,9 @@ export const messages = pgTable("messages", {
 	conversationId: uuid("conversation_id")
 		.references(() => conversations.id)
 		.notNull(),
-	role: text("role").notNull(),
+	role: text("role").$type<"user" | "assistant">().notNull(),
 	content: text("content").notNull(),
-	sources: jsonb("sources").$type<Record<string, unknown>[]>(),
+	sources: jsonb("sources").$type<MessageSource[]>(),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
 		.notNull(),

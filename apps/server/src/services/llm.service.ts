@@ -8,24 +8,32 @@
  */
 
 import Anthropic from "@anthropic-ai/sdk";
+import type { ConversationMessage } from "@questlog/shared";
 import { LlmApiError } from "../lib/errors.js";
 import type { AssembledContext } from "./context.service.js";
 
 // ---------------------------------------------------------------------------
-// Configuration
+// Re-export shared type for convenience
 // ---------------------------------------------------------------------------
 
-const MODEL = "claude-sonnet-4-20250514";
-const MAX_TOKENS = 4096;
+export type { ConversationMessage } from "@questlog/shared";
+
+// ---------------------------------------------------------------------------
+// Configuration — all tunable constants in one typed object
+// ---------------------------------------------------------------------------
+
+export const LLM_CONFIG = {
+	/** Claude model identifier. */
+	model: "claude-sonnet-4-20250514",
+	/** Maximum tokens in the assistant response. */
+	maxTokens: 4096,
+	/** Maximum conversation history messages sent to the LLM (oldest trimmed first). */
+	maxHistoryMessages: 40,
+} as const;
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
-
-export interface ConversationMessage {
-	role: "user" | "assistant";
-	content: string;
-}
 
 export interface CallClaudeInput {
 	assembledContext: AssembledContext;
@@ -38,8 +46,6 @@ export interface CallClaudeResult {
 	content: string;
 	usage: { inputTokens: number; outputTokens: number };
 }
-
-export { LlmApiError } from "../lib/errors.js";
 
 // ---------------------------------------------------------------------------
 // System prompt builder
@@ -76,77 +82,77 @@ ${assembledContext.text}`;
 }
 
 // ---------------------------------------------------------------------------
-// Anthropic client (lazy singleton)
+// Service factory
 // ---------------------------------------------------------------------------
 
-let client: Anthropic | null = null;
+/**
+ * Create an LLM service instance. Accepts an optional Anthropic client for
+ * dependency injection (tests pass a mock; production uses the default).
+ */
+export function createLlmService(client?: Anthropic) {
+	const anthropic = client ?? new Anthropic();
 
-function getClient(): Anthropic {
-	if (!client) {
-		client = new Anthropic();
-	}
-	return client;
-}
+	return {
+		/**
+		 * Call Claude with the assembled context, conversation history, and current query.
+		 * Returns the assistant's response text and token usage.
+		 */
+		async callClaude(input: CallClaudeInput): Promise<CallClaudeResult> {
+			const { assembledContext, query, campaignTheme, conversationHistory } =
+				input;
 
-/** Reset the cached client — used only in tests. */
-export function resetClient(): void {
-	client = null;
-}
-
-// ---------------------------------------------------------------------------
-// Service
-// ---------------------------------------------------------------------------
-
-export const llmService = {
-	/**
-	 * Call Claude with the assembled context, conversation history, and current query.
-	 * Returns the assistant's response text and token usage.
-	 */
-	async callClaude(input: CallClaudeInput): Promise<CallClaudeResult> {
-		const { assembledContext, query, campaignTheme, conversationHistory } =
-			input;
-
-		const systemPrompt = buildSystemPrompt({
-			assembledContext,
-			campaignTheme,
-		});
-
-		const messages: Array<{ role: "user" | "assistant"; content: string }> = [
-			...conversationHistory.map((msg) => ({
-				role: msg.role,
-				content: msg.content,
-			})),
-			{ role: "user", content: query },
-		];
-
-		try {
-			const response = await getClient().messages.create({
-				model: MODEL,
-				max_tokens: MAX_TOKENS,
-				system: systemPrompt,
-				messages,
+			const systemPrompt = buildSystemPrompt({
+				assembledContext,
+				campaignTheme,
 			});
 
-			const content = response.content
-				.filter((block) => block.type === "text")
-				.map((block) => ("text" in block ? block.text : ""))
-				.join("");
+			const messages: ConversationMessage[] = [
+				...conversationHistory,
+				{ role: "user", content: query },
+			];
 
-			return {
-				content,
-				usage: {
-					inputTokens: response.usage.input_tokens,
-					outputTokens: response.usage.output_tokens,
-				},
-			};
-		} catch (error) {
-			const status =
-				error instanceof Error
-					? (error as Error & { status?: number }).status
-					: undefined;
-			const message =
-				error instanceof Error ? error.message : "Unknown LLM API error";
-			throw new LlmApiError(message, status);
-		}
-	},
-};
+			try {
+				const response = await anthropic.messages.create({
+					model: LLM_CONFIG.model,
+					max_tokens: LLM_CONFIG.maxTokens,
+					system: systemPrompt,
+					messages,
+				});
+
+				const content = response.content
+					.filter((block) => block.type === "text")
+					.map((block) => ("text" in block ? block.text : ""))
+					.join("");
+
+				return {
+					content,
+					usage: {
+						inputTokens: response.usage.input_tokens,
+						outputTokens: response.usage.output_tokens,
+					},
+				};
+			} catch (error) {
+				if (error instanceof Anthropic.APIError) {
+					throw new LlmApiError(error.message, {
+						statusCode: error.status,
+						errorType:
+							typeof error.error === "object" &&
+							error.error !== null &&
+							"type" in error.error
+								? String((error.error as Record<string, unknown>).type)
+								: undefined,
+						retryAfter: error.headers?.["retry-after"]
+							? Number(error.headers["retry-after"])
+							: undefined,
+					});
+				}
+				const message =
+					error instanceof Error ? error.message : "Unknown LLM API error";
+				throw new LlmApiError(message);
+			}
+		},
+	};
+}
+
+/** Default instance for production use. */
+export const llmService = createLlmService();

@@ -1,4 +1,4 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import {
 	afterAll,
 	afterEach,
@@ -82,7 +82,10 @@ describe("embedChunks", () => {
 
 		await embedChunks(db, textChunks, { fetchFn: mockFetch });
 
-		const rows = await db.select().from(chunks);
+		const rows = await db
+			.select()
+			.from(chunks)
+			.where(eq(chunks.campaignId, campaignId));
 		expect(rows).toHaveLength(2);
 		expect(rows[0]?.content).toBe("The dragon attacked the village.");
 		expect(rows[0]?.metadata).toMatchObject({ position: 0 });
@@ -121,7 +124,10 @@ describe("embedChunks", () => {
 		// Should have made 2 API calls: batch of 128 + batch of 22
 		expect(mockFetch).toHaveBeenCalledTimes(2);
 
-		const rows = await db.select().from(chunks);
+		const rows = await db
+			.select()
+			.from(chunks)
+			.where(eq(chunks.campaignId, campaignId));
 		expect(rows).toHaveLength(150);
 	});
 
@@ -152,7 +158,10 @@ describe("embedChunks", () => {
 
 		// No API calls or DB writes for empty input
 		expect(mockFetch).not.toHaveBeenCalled();
-		const rows = await db.select().from(chunks);
+		const rows = await db
+			.select()
+			.from(chunks)
+			.where(eq(chunks.campaignId, campaignId));
 		expect(rows).toHaveLength(0);
 	});
 });

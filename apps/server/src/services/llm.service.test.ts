@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { LlmApiError } from "../lib/errors.js";
 import type { AssembledContext } from "./context.service.js";
 import {
 	type CallClaudeInput,
-	LlmApiError,
 	buildSystemPrompt,
 	llmService,
 } from "./llm.service.js";
@@ -11,12 +11,32 @@ import {
 // Mock the Anthropic SDK
 // ---------------------------------------------------------------------------
 
-const mockCreate = vi.fn();
+const { mockCreate } = vi.hoisted(() => {
+	const mockCreate = vi.fn();
+	return { mockCreate };
+});
 
 vi.mock("@anthropic-ai/sdk", () => {
 	return {
 		default: class MockAnthropic {
 			messages = { create: mockCreate };
+			static APIError = class APIError extends Error {
+				status: number;
+				error: unknown;
+				headers: Record<string, string>;
+				constructor(
+					status: number,
+					error: unknown,
+					message: string,
+					headers: Record<string, string>,
+				) {
+					super(message);
+					this.name = "APIError";
+					this.status = status;
+					this.error = error;
+					this.headers = headers;
+				}
+			};
 		},
 	};
 });
@@ -88,7 +108,7 @@ describe("buildSystemPrompt", () => {
 			}),
 			campaignTheme: "fantasy",
 		});
-		expect(prompt).toContain("0");
+		expect(prompt).toContain("0.00");
 	});
 });
 

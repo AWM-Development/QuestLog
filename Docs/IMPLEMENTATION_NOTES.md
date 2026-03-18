@@ -11,7 +11,7 @@ Read this at the start of every coding session. Add to it when you make a non-ob
 - `Docs/PRD.md` — Product specification
 - `Docs/DESIGN_SYSTEM.md` — Visual design spec (color tokens, components, entity system)
 
-**Last Updated:** 2026-03-17 (code review cleanup — Voyage client consolidation, config extraction, dead code removal)
+**Last Updated:** 2026-03-17 (task 3.2 LLM integration — conversation service extraction, DI factory, error differentiation, history cap)
 
 ---
 
@@ -203,3 +203,40 @@ interface AssembledContext {
 - Keyword only → trgm similarity score as-is
 
 The keyword search uses Drizzle's `sql` template literals, so `query` is always a parameterized value — no SQL injection risk.
+
+---
+
+## LLM Service (task 3.2)
+
+### Architecture
+`llm.service.ts` owns the Claude API integration. `conversation.service.ts` orchestrates the chat flow (validate → persist → assemble context → call LLM → persist response). The conversation router is thin — it validates input via Zod and delegates to `conversationService.chat()`.
+
+### `createLlmService()` factory
+The LLM service uses a factory function (`createLlmService(client?)`) for dependency injection. Production code uses the default export `llmService` (which creates an Anthropic client internally). Tests pass a mock client via the factory. There is no module-level singleton or `resetClient()` test helper.
+
+### `LLM_CONFIG` — tunable constants
+All LLM configuration lives in `LLM_CONFIG` (same pattern as `CONTEXT_CONFIG` in context.service.ts):
+- `model`: Claude model identifier (`claude-sonnet-4-20250514`)
+- `maxTokens`: Maximum tokens in the assistant response (4096)
+- `maxHistoryMessages`: Cap on conversation history messages sent to the LLM (40)
+
+### Transaction wrapping on chat (H2 tradeoff)
+`conversationService.chat()` wraps the entire sequence — user message insert, context assembly, LLM call, assistant message insert — in a single DB transaction. If any step fails (including the LLM call), the user message is rolled back, preventing orphaned messages that would corrupt the alternating user/assistant history pattern.
+
+**Tradeoff:** The transaction is held open for the duration of the LLM call (typically 5–30 s). At current single-user concurrency this is acceptable. If transaction duration becomes a bottleneck at scale, switch to an optimistic pattern: save the user message outside the transaction, call the LLM, and delete the user message on failure. The service JSDoc documents this tradeoff.
+
+### Conversation history cap (H4 tradeoff)
+Conversation history sent to the LLM is capped at `LLM_CONFIG.maxHistoryMessages` (40 messages, ~20 turns). Oldest messages are trimmed first. This prevents blowing past the model's context window and controls API cost growth on long conversations.
+
+**Tradeoff:** A simple message-count cap is used rather than a token-budget cap. This is less precise but more predictable and debuggable. When real usage data is available, switch to token-budget truncation using `estimateTokens()` from `lib/utils.ts` for finer control. The context service already does token-budgeted history truncation for the *context window* — the LLM history cap is a separate, coarser guard on what's sent as the `messages` array.
+
+### Error differentiation
+`LlmApiError` carries `statusCode`, `errorType`, and `retryAfter` from the Anthropic SDK. `withErrorHandling` in `trpc.ts` maps:
+- 429 / 529 → `TOO_MANY_REQUESTS` (HTTP 429) — frontend can show "try again shortly"
+- All other LLM errors → `INTERNAL_SERVER_ERROR` (HTTP 500)
+
+### `ConversationMessage` shared type
+`ConversationMessage` (`{ role: "user" | "assistant"; content: string }`) lives in `packages/shared/src/types/conversation.ts` so both server and frontend (task 3.3 chat UI) use the same type. The `messages.role` column in the DB schema is also typed as `"user" | "assistant"` via `$type<>()`.
+
+### `MessageSource` typed JSONB
+The `messages.sources` column is typed as `MessageSource[]` (not `Record<string, unknown>[]`). The `MessageSource` interface (`{ chunkId, sourceName, sourceId }`) is defined in `db/schema/tables.ts` and exported from the schema barrel.

@@ -1,9 +1,7 @@
 import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
-import { campaigns, conversations, messages } from "../db/schema/index.js";
-import { NotFoundError } from "../lib/errors.js";
-import { contextService } from "../services/context.service.js";
-import { llmService } from "../services/llm.service.js";
+import { conversations, messages } from "../db/schema/index.js";
+import { conversationService } from "../services/conversation.service.js";
 import { procedure, router, withErrorHandling } from "../trpc.js";
 
 export const conversationRouter = router({
@@ -60,83 +58,6 @@ export const conversationRouter = router({
 			}),
 		)
 		.mutation(({ ctx, input }) =>
-			withErrorHandling(async () => {
-				const { db } = ctx;
-				const { campaignId, conversationId, query } = input;
-
-				// Validate conversation exists
-				const [conv] = await db
-					.select()
-					.from(conversations)
-					.where(eq(conversations.id, conversationId));
-
-				if (!conv) {
-					throw new NotFoundError("Conversation", conversationId);
-				}
-
-				// Save user message before calling LLM
-				await db.insert(messages).values({
-					conversationId,
-					role: "user",
-					content: query,
-				});
-
-				// Fetch conversation history (excluding the message we just saved,
-				// since context assembly also fetches history separately)
-				const history = await db
-					.select({ role: messages.role, content: messages.content })
-					.from(messages)
-					.where(eq(messages.conversationId, conversationId))
-					.orderBy(asc(messages.createdAt));
-
-				// Remove the last message (the one we just inserted) from history
-				// to avoid duplication — it will be passed as the `query` parameter
-				const conversationHistory = history.slice(0, -1) as Array<{
-					role: "user" | "assistant";
-					content: string;
-				}>;
-
-				// Assemble context for this query
-				const assembledContext = await contextService.assemble(db, {
-					query,
-					campaignId,
-					conversationId,
-				});
-
-				// Get campaign theme for system prompt
-				const [campaign] = await db
-					.select({ theme: campaigns.theme })
-					.from(campaigns)
-					.where(eq(campaigns.id, campaignId));
-
-				const campaignTheme = campaign?.theme ?? "fantasy";
-
-				// Call Claude
-				const result = await llmService.callClaude({
-					assembledContext,
-					query,
-					campaignTheme,
-					conversationHistory,
-				});
-
-				// Save assistant response
-				await db.insert(messages).values({
-					conversationId,
-					role: "assistant",
-					content: result.content,
-					sources: assembledContext.citations.map((c) => ({
-						chunkId: c.chunkId,
-						sourceName: c.sourceName,
-						sourceId: c.sourceId,
-					})),
-				});
-
-				return {
-					content: result.content,
-					citations: assembledContext.citations,
-					confidence: assembledContext.confidence,
-					usage: result.usage,
-				};
-			}),
+			withErrorHandling(() => conversationService.chat(ctx.db, input)),
 		),
 });

@@ -23,10 +23,17 @@ export class ExtractionNotSupportedError extends Error {
 /** Thrown when the LLM API returns an error (rate limit, timeout, invalid key, etc.). */
 export class LlmApiError extends Error {
 	public readonly statusCode?: number;
+	public readonly errorType?: string;
+	public readonly retryAfter?: number;
 
-	constructor(message: string, statusCode?: number) {
+	constructor(
+		message: string,
+		opts?: { statusCode?: number; errorType?: string; retryAfter?: number },
+	) {
 		super(message);
 		this.name = "LlmApiError";
-		this.statusCode = statusCode;
+		this.statusCode = opts?.statusCode;
+		this.errorType = opts?.errorType;
+		this.retryAfter = opts?.retryAfter;
 	}
 }
