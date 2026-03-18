@@ -8,3 +8,4 @@ export {
 	sessions,
 	sources,
 } from "./tables.js";
+export type { MessageSource } from "./tables.js";

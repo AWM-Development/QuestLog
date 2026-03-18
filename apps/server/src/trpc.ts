@@ -4,6 +4,7 @@ import superjson from "superjson";
 import type { Database } from "./db/index.js";
 import {
 	ExtractionNotSupportedError,
+	LlmApiError,
 	NotFoundError,
 	ValidationError,
 } from "./lib/errors.js";
@@ -67,6 +68,33 @@ export async function withErrorHandling<T>(fn: () => Promise<T>): Promise<T> {
 			throw new TRPCError({
 				code: "BAD_REQUEST",
 				message: error.message,
+				cause: error,
+			});
+		}
+		if (error instanceof LlmApiError) {
+			if (error.statusCode === 429 || error.statusCode === 529) {
+				throw new TRPCError({
+					code: "TOO_MANY_REQUESTS",
+					message:
+						error.statusCode === 429
+							? "LLM rate limit exceeded. Please try again shortly."
+							: "LLM API is temporarily overloaded. Please retry.",
+					cause: error,
+				});
+			}
+			throw new TRPCError({
+				code: "INTERNAL_SERVER_ERROR",
+				message: error.message,
+				cause: error,
+			});
+		}
+		if (
+			error instanceof Error &&
+			error.message.includes("violates foreign key constraint")
+		) {
+			throw new TRPCError({
+				code: "BAD_REQUEST",
+				message: "Referenced resource does not exist",
 				cause: error,
 			});
 		}

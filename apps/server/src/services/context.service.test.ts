@@ -196,7 +196,7 @@ describe("contextService", () => {
 		await db.insert(messages).values(
 			Array.from({ length: 10 }, (_, i) => ({
 				conversationId,
-				role: i % 2 === 0 ? "user" : "assistant",
+				role: (i % 2 === 0 ? "user" : "assistant") as "user" | "assistant",
 				content: longText,
 			})),
 		);
