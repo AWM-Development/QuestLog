@@ -130,6 +130,8 @@ export const conversationService = {
 				role: "assistant",
 				content: result.content,
 				sources: citationSources,
+				inputTokens: result.usage.inputTokens,
+				outputTokens: result.usage.outputTokens,
 			});
 
 			return {
