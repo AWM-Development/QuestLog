@@ -180,6 +180,8 @@ export const messages = pgTable("messages", {
 	role: text("role").$type<"user" | "assistant">().notNull(),
 	content: text("content").notNull(),
 	sources: jsonb("sources").$type<MessageSource[]>(),
+	inputTokens: integer("input_tokens"),
+	outputTokens: integer("output_tokens"),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
 		.notNull(),

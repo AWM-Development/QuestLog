@@ -222,8 +222,12 @@ describe("conversation router", () => {
 			expect(savedMessages).toHaveLength(2);
 			expect(savedMessages[0]?.role).toBe("user");
 			expect(savedMessages[0]?.content).toBe("Who is Strahd?");
+			expect(savedMessages[0]?.inputTokens).toBeNull();
+			expect(savedMessages[0]?.outputTokens).toBeNull();
 			expect(savedMessages[1]?.role).toBe("assistant");
 			expect(savedMessages[1]?.content).toBe("Strahd is the lord of Barovia.");
+			expect(savedMessages[1]?.inputTokens).toBe(100);
+			expect(savedMessages[1]?.outputTokens).toBe(30);
 		});
 
 		it("includes conversation history in subsequent messages", async () => {
