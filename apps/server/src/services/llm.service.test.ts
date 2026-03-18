@@ -11,15 +11,16 @@ import {
 // Mock the Anthropic SDK
 // ---------------------------------------------------------------------------
 
-const { mockCreate } = vi.hoisted(() => {
+const { mockCreate, mockStream } = vi.hoisted(() => {
 	const mockCreate = vi.fn();
-	return { mockCreate };
+	const mockStream = vi.fn();
+	return { mockCreate, mockStream };
 });
 
 vi.mock("@anthropic-ai/sdk", () => {
 	return {
 		default: class MockAnthropic {
-			messages = { create: mockCreate };
+			messages = { create: mockCreate, stream: mockStream };
 			static APIError = class APIError extends Error {
 				status: number;
 				error: unknown;
@@ -63,6 +64,47 @@ function makeInput(overrides?: Partial<CallClaudeInput>): CallClaudeInput {
 		conversationHistory: [],
 		...overrides,
 	};
+}
+
+/**
+ * Creates a mock MessageStream that yields text deltas via the 'text' event
+ * and resolves finalMessage() with the given message.
+ */
+function createMockStream(opts: {
+	textDeltas: string[];
+	finalMessage: {
+		content: Array<{ type: string; text: string }>;
+		usage: { input_tokens: number; output_tokens: number };
+		stop_reason: string;
+	};
+	error?: Error;
+}) {
+	type Listener = (...args: unknown[]) => void;
+	const listeners: Record<string, Listener[]> = {};
+
+	const stream = {
+		on(event: string, listener: Listener) {
+			if (!listeners[event]) listeners[event] = [];
+			listeners[event].push(listener);
+			return stream;
+		},
+		async finalMessage() {
+			// Simulate the async text events before resolving
+			for (const delta of opts.textDeltas) {
+				for (const listener of listeners.text ?? []) {
+					listener(delta, "");
+				}
+			}
+			if (opts.error) {
+				for (const listener of listeners.error ?? []) {
+					listener(opts.error);
+				}
+				throw opts.error;
+			}
+			return opts.finalMessage;
+		},
+	};
+	return stream;
 }
 
 describe("buildSystemPrompt", () => {
@@ -246,5 +288,120 @@ describe("llmService.callClaude", () => {
 
 		const result = await llmService.callClaude(makeInput());
 		expect(result.content).toBe("Part one. Part two.");
+	});
+});
+
+describe("llmService.callClaudeStreaming", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it("yields text deltas and returns final usage", async () => {
+		const stream = createMockStream({
+			textDeltas: ["Strahd ", "is a ", "vampire lord."],
+			finalMessage: {
+				content: [{ type: "text", text: "Strahd is a vampire lord." }],
+				usage: { input_tokens: 100, output_tokens: 50 },
+				stop_reason: "end_turn",
+			},
+		});
+		mockStream.mockReturnValueOnce(stream);
+
+		const deltas: string[] = [];
+		const result = await llmService.callClaudeStreaming(
+			makeInput(),
+			(delta) => {
+				deltas.push(delta);
+			},
+		);
+
+		expect(deltas).toEqual(["Strahd ", "is a ", "vampire lord."]);
+		expect(result.usage).toEqual({ inputTokens: 100, outputTokens: 50 });
+		expect(result.content).toBe("Strahd is a vampire lord.");
+	});
+
+	it("passes system prompt and messages to the stream call", async () => {
+		const stream = createMockStream({
+			textDeltas: ["Response"],
+			finalMessage: {
+				content: [{ type: "text", text: "Response" }],
+				usage: { input_tokens: 50, output_tokens: 20 },
+				stop_reason: "end_turn",
+			},
+		});
+		mockStream.mockReturnValueOnce(stream);
+
+		await llmService.callClaudeStreaming(
+			makeInput({
+				conversationHistory: [
+					{ role: "user", content: "What is Barovia?" },
+					{ role: "assistant", content: "Barovia is a demiplane." },
+				],
+			}),
+			() => {},
+		);
+
+		const callArgs = mockStream.mock.calls[0]?.[0];
+		expect(callArgs.system).toContain("horror");
+		expect(callArgs.messages).toHaveLength(3);
+		expect(callArgs.messages[2].content).toBe("Tell me about Strahd");
+	});
+
+	it("wraps Anthropic API errors in LlmApiError", async () => {
+		const apiError = new Error("rate_limit_exceeded");
+		apiError.name = "APIError";
+		(apiError as unknown as Record<string, unknown>).status = 429;
+		mockStream.mockImplementationOnce(() => {
+			throw apiError;
+		});
+
+		await expect(
+			llmService.callClaudeStreaming(makeInput(), () => {}),
+		).rejects.toThrow(LlmApiError);
+	});
+
+	it("wraps errors that occur during streaming", async () => {
+		const streamError = new Error("stream interrupted");
+		const stream = createMockStream({
+			textDeltas: ["partial "],
+			finalMessage: {
+				content: [{ type: "text", text: "partial " }],
+				usage: { input_tokens: 50, output_tokens: 10 },
+				stop_reason: "end_turn",
+			},
+			error: streamError,
+		});
+		mockStream.mockReturnValueOnce(stream);
+
+		await expect(
+			llmService.callClaudeStreaming(makeInput(), () => {}),
+		).rejects.toThrow(LlmApiError);
+	});
+
+	it("handles empty response gracefully", async () => {
+		const stream = createMockStream({
+			textDeltas: [],
+			finalMessage: {
+				content: [],
+				usage: { input_tokens: 50, output_tokens: 0 },
+				stop_reason: "end_turn",
+			},
+		});
+		mockStream.mockReturnValueOnce(stream);
+
+		const deltas: string[] = [];
+		const result = await llmService.callClaudeStreaming(
+			makeInput(),
+			(delta) => {
+				deltas.push(delta);
+			},
+		);
+
+		expect(deltas).toEqual([]);
+		expect(result.content).toBe("");
 	});
 });

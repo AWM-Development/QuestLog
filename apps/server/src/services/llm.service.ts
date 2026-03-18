@@ -85,6 +85,9 @@ ${assembledContext.text}`;
 // Service factory
 // ---------------------------------------------------------------------------
 
+/** Callback invoked for each text delta during streaming. */
+export type StreamDeltaCallback = (textDelta: string) => void;
+
 /**
  * Create an LLM service instance. Accepts an optional Anthropic client for
  * dependency injection (tests pass a mock; production uses the default).
@@ -132,26 +135,86 @@ export function createLlmService(client?: Anthropic) {
 					},
 				};
 			} catch (error) {
-				if (error instanceof Anthropic.APIError) {
-					throw new LlmApiError(error.message, {
-						statusCode: error.status,
-						errorType:
-							typeof error.error === "object" &&
-							error.error !== null &&
-							"type" in error.error
-								? String((error.error as Record<string, unknown>).type)
-								: undefined,
-						retryAfter: error.headers?.["retry-after"]
-							? Number(error.headers["retry-after"])
-							: undefined,
-					});
-				}
-				const message =
-					error instanceof Error ? error.message : "Unknown LLM API error";
-				throw new LlmApiError(message);
+				throw wrapError(error);
+			}
+		},
+
+		/**
+		 * Stream a Claude response. Invokes `onDelta` for each text chunk as it
+		 * arrives. Returns the final response content and usage once complete.
+		 *
+		 * Uses `anthropic.messages.stream()` which returns a MessageStream with
+		 * event-based text delivery and a `finalMessage()` promise.
+		 */
+		async callClaudeStreaming(
+			input: CallClaudeInput,
+			onDelta: StreamDeltaCallback,
+		): Promise<CallClaudeResult> {
+			const { assembledContext, query, campaignTheme, conversationHistory } =
+				input;
+
+			const systemPrompt = buildSystemPrompt({
+				assembledContext,
+				campaignTheme,
+			});
+
+			const messages: ConversationMessage[] = [
+				...conversationHistory,
+				{ role: "user", content: query },
+			];
+
+			try {
+				const stream = anthropic.messages.stream({
+					model: LLM_CONFIG.model,
+					max_tokens: LLM_CONFIG.maxTokens,
+					system: systemPrompt,
+					messages,
+				});
+
+				stream.on("text", (textDelta) => {
+					onDelta(textDelta);
+				});
+
+				const finalMsg = await stream.finalMessage();
+
+				const content = finalMsg.content
+					.filter((block) => block.type === "text")
+					.map((block) => ("text" in block ? block.text : ""))
+					.join("");
+
+				return {
+					content,
+					usage: {
+						inputTokens: finalMsg.usage.input_tokens,
+						outputTokens: finalMsg.usage.output_tokens,
+					},
+				};
+			} catch (error) {
+				throw wrapError(error);
 			}
 		},
 	};
+}
+
+/** Translate Anthropic SDK errors into typed LlmApiError. */
+function wrapError(error: unknown): LlmApiError {
+	if (error instanceof Anthropic.APIError) {
+		return new LlmApiError(error.message, {
+			statusCode: error.status,
+			errorType:
+				typeof error.error === "object" &&
+				error.error !== null &&
+				"type" in error.error
+					? String((error.error as Record<string, unknown>).type)
+					: undefined,
+			retryAfter: error.headers?.["retry-after"]
+				? Number(error.headers["retry-after"])
+				: undefined,
+		});
+	}
+	const message =
+		error instanceof Error ? error.message : "Unknown LLM API error";
+	return new LlmApiError(message);
 }
 
 /** Default instance for production use. */

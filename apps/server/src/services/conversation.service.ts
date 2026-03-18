@@ -16,6 +16,7 @@ import type { MessageSource } from "../db/schema/index.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
 import type { ContextCitation } from "./context.service.js";
 import { contextService } from "./context.service.js";
+import type { StreamDeltaCallback } from "./llm.service.js";
 import { LLM_CONFIG, llmService } from "./llm.service.js";
 
 // ---------------------------------------------------------------------------
@@ -141,5 +142,117 @@ export const conversationService = {
 				usage: result.usage,
 			};
 		});
+	},
+
+	/**
+	 * Streaming variant of chat(). Streams LLM text deltas via `onDelta`,
+	 * then returns the final metadata (citations, confidence, usage).
+	 *
+	 * Unlike the non-streaming `chat()`, this uses an optimistic persistence
+	 * pattern: the user message is saved first, then the LLM is streamed.
+	 * On success, the assistant message is saved. On failure, the user message
+	 * is deleted to maintain history consistency.
+	 *
+	 * This avoids holding a DB transaction open for the duration of the stream.
+	 */
+	async chatStream(
+		db: Database,
+		input: ChatInput,
+		onDelta: StreamDeltaCallback,
+	): Promise<ChatResult> {
+		const { campaignId, conversationId, query } = input;
+
+		// Validate conversation exists and belongs to the correct campaign
+		const [conv] = await db
+			.select()
+			.from(conversations)
+			.where(eq(conversations.id, conversationId));
+
+		if (!conv) {
+			throw new NotFoundError("Conversation", conversationId);
+		}
+
+		if (conv.campaignId !== campaignId) {
+			throw new ValidationError(
+				`Conversation ${conversationId} does not belong to campaign ${campaignId}`,
+			);
+		}
+
+		// Assemble context and fetch campaign theme (reads only)
+		const [assembledContext, campaignRow] = await Promise.all([
+			contextService.assemble(db, { query, campaignId, conversationId }),
+			db
+				.select({ theme: campaigns.theme })
+				.from(campaigns)
+				.where(eq(campaigns.id, campaignId))
+				.then((rows) => rows[0]),
+		]);
+
+		const campaignTheme = campaignRow?.theme ?? "fantasy";
+
+		// Save user message optimistically (outside transaction)
+		const [userMsg] = await db
+			.insert(messages)
+			.values({
+				conversationId,
+				role: "user",
+				content: query,
+			})
+			.returning({ id: messages.id });
+
+		// Fetch conversation history (excluding the just-inserted user message)
+		const history = await db
+			.select({ role: messages.role, content: messages.content })
+			.from(messages)
+			.where(eq(messages.conversationId, conversationId))
+			.orderBy(asc(messages.createdAt));
+
+		const conversationHistory: ConversationMessage[] = history
+			.slice(0, -1)
+			.slice(-LLM_CONFIG.maxHistoryMessages);
+
+		try {
+			// Stream Claude response
+			const result = await llmService.callClaudeStreaming(
+				{
+					assembledContext,
+					query,
+					campaignTheme,
+					conversationHistory,
+				},
+				onDelta,
+			);
+
+			// Save assistant response
+			const citationSources: MessageSource[] = assembledContext.citations.map(
+				(c) => ({
+					chunkId: c.chunkId,
+					sourceName: c.sourceName ?? "",
+					sourceId: c.sourceId ?? "",
+				}),
+			);
+
+			await db.insert(messages).values({
+				conversationId,
+				role: "assistant",
+				content: result.content,
+				sources: citationSources,
+				inputTokens: result.usage.inputTokens,
+				outputTokens: result.usage.outputTokens,
+			});
+
+			return {
+				content: result.content,
+				citations: assembledContext.citations,
+				confidence: assembledContext.confidence,
+				usage: result.usage,
+			};
+		} catch (error) {
+			// Roll back the user message on LLM failure
+			if (userMsg) {
+				await db.delete(messages).where(eq(messages.id, userMsg.id));
+			}
+			throw error;
+		}
 	},
 };

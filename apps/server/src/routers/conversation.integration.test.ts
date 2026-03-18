@@ -17,8 +17,9 @@ import {
 import { basisVector, createTestDb } from "../db/test-helpers.js";
 import { buildApp } from "../server.js";
 
-const { mockCreate, MockAPIError } = vi.hoisted(() => {
+const { mockCreate, mockStream, MockAPIError } = vi.hoisted(() => {
 	const mockCreate = vi.fn();
+	const mockStream = vi.fn();
 	class MockAPIError extends Error {
 		status: number;
 		error: unknown;
@@ -36,15 +37,68 @@ const { mockCreate, MockAPIError } = vi.hoisted(() => {
 			this.headers = headers;
 		}
 	}
-	return { mockCreate, MockAPIError };
+	return { mockCreate, mockStream, MockAPIError };
 });
 
 vi.mock("@anthropic-ai/sdk", () => ({
 	default: class MockAnthropic {
-		messages = { create: mockCreate };
+		messages = { create: mockCreate, stream: mockStream };
 		static APIError = MockAPIError;
 	},
 }));
+
+/** Create a mock MessageStream for integration tests. */
+function createMockStream(opts: {
+	textDeltas: string[];
+	finalMessage: {
+		content: Array<{ type: string; text: string }>;
+		usage: { input_tokens: number; output_tokens: number };
+		stop_reason: string;
+	};
+	error?: Error;
+}) {
+	type Listener = (...args: unknown[]) => void;
+	const listeners: Record<string, Listener[]> = {};
+
+	return {
+		on(event: string, listener: Listener) {
+			if (!listeners[event]) listeners[event] = [];
+			listeners[event].push(listener);
+			return this;
+		},
+		async finalMessage() {
+			for (const delta of opts.textDeltas) {
+				for (const listener of listeners.text ?? []) {
+					listener(delta, "");
+				}
+			}
+			if (opts.error) {
+				for (const listener of listeners.error ?? []) {
+					listener(opts.error);
+				}
+				throw opts.error;
+			}
+			return opts.finalMessage;
+		},
+	};
+}
+
+/** Parse SSE text body into an array of { event, data } objects. */
+function parseSSE(body: string): Array<{ event: string; data: string }> {
+	const events: Array<{ event: string; data: string }> = [];
+	const blocks = body.split("\n\n").filter((b) => b.trim());
+	for (const block of blocks) {
+		const lines = block.split("\n");
+		let event = "";
+		let data = "";
+		for (const line of lines) {
+			if (line.startsWith("event: ")) event = line.slice(7);
+			if (line.startsWith("data: ")) data = line.slice(6);
+		}
+		if (event) events.push({ event, data });
+	}
+	return events;
+}
 
 vi.mock("../services/voyage.client.js", () => {
 	const vec = new Array(1024).fill(0);
@@ -497,6 +551,220 @@ describe("conversation router", () => {
 			expect(data).toHaveLength(2);
 			expect(data[0].role).toBe("user");
 			expect(data[1].role).toBe("assistant");
+		});
+	});
+
+	describe("SSE streaming endpoint", () => {
+		it("streams text deltas followed by a done event", async () => {
+			const convResp = await app.inject({
+				method: "POST",
+				url: "/trpc/conversation.create",
+				headers: { "content-type": "application/json" },
+				payload: { json: { campaignId } },
+			});
+			const conversationId = convResp.json().result.data.json.id;
+
+			mockStream.mockReturnValueOnce(
+				createMockStream({
+					textDeltas: ["Strahd ", "is the ", "lord of Barovia."],
+					finalMessage: {
+						content: [{ type: "text", text: "Strahd is the lord of Barovia." }],
+						usage: { input_tokens: 100, output_tokens: 30 },
+						stop_reason: "end_turn",
+					},
+				}),
+			);
+
+			const response = await app.inject({
+				method: "POST",
+				url: `/api/conversation/${conversationId}/stream`,
+				headers: { "content-type": "application/json" },
+				payload: { campaignId, query: "Tell me about Strahd" },
+			});
+
+			expect(response.statusCode).toBe(200);
+			expect(response.headers["content-type"]).toBe("text/event-stream");
+
+			const events = parseSSE(response.body);
+
+			// Should have 3 delta events + 1 done event
+			const deltas = events.filter((e) => e.event === "delta");
+			expect(deltas).toHaveLength(3);
+			expect(JSON.parse(deltas[0]?.data as string).text).toBe("Strahd ");
+			expect(JSON.parse(deltas[1]?.data as string).text).toBe("is the ");
+			expect(JSON.parse(deltas[2]?.data as string).text).toBe(
+				"lord of Barovia.",
+			);
+
+			const done = events.find((e) => e.event === "done");
+			expect(done).toBeDefined();
+			const doneData = JSON.parse(done?.data as string);
+			expect(doneData.citations).toBeDefined();
+			expect(doneData.confidence).toBeDefined();
+			expect(doneData.usage).toEqual({ inputTokens: 100, outputTokens: 30 });
+		});
+
+		it("persists user and assistant messages after streaming completes", async () => {
+			const convResp = await app.inject({
+				method: "POST",
+				url: "/trpc/conversation.create",
+				headers: { "content-type": "application/json" },
+				payload: { json: { campaignId } },
+			});
+			const conversationId = convResp.json().result.data.json.id;
+
+			mockStream.mockReturnValueOnce(
+				createMockStream({
+					textDeltas: ["Response text."],
+					finalMessage: {
+						content: [{ type: "text", text: "Response text." }],
+						usage: { input_tokens: 80, output_tokens: 20 },
+						stop_reason: "end_turn",
+					},
+				}),
+			);
+
+			await app.inject({
+				method: "POST",
+				url: `/api/conversation/${conversationId}/stream`,
+				headers: { "content-type": "application/json" },
+				payload: { campaignId, query: "Hello" },
+			});
+
+			const savedMessages = await db
+				.select()
+				.from(messagesTable)
+				.where(sql`${messagesTable.conversationId} = ${conversationId}`)
+				.orderBy(messagesTable.createdAt);
+
+			expect(savedMessages).toHaveLength(2);
+			expect(savedMessages[0]?.role).toBe("user");
+			expect(savedMessages[0]?.content).toBe("Hello");
+			expect(savedMessages[1]?.role).toBe("assistant");
+			expect(savedMessages[1]?.content).toBe("Response text.");
+			expect(savedMessages[1]?.inputTokens).toBe(80);
+			expect(savedMessages[1]?.outputTokens).toBe(20);
+		});
+
+		it("cleans up user message when LLM stream fails", async () => {
+			const convResp = await app.inject({
+				method: "POST",
+				url: "/trpc/conversation.create",
+				headers: { "content-type": "application/json" },
+				payload: { json: { campaignId } },
+			});
+			const conversationId = convResp.json().result.data.json.id;
+
+			mockStream.mockReturnValueOnce(
+				createMockStream({
+					textDeltas: ["partial "],
+					finalMessage: {
+						content: [{ type: "text", text: "partial " }],
+						usage: { input_tokens: 50, output_tokens: 10 },
+						stop_reason: "end_turn",
+					},
+					error: new Error("stream interrupted"),
+				}),
+			);
+
+			const response = await app.inject({
+				method: "POST",
+				url: `/api/conversation/${conversationId}/stream`,
+				headers: { "content-type": "application/json" },
+				payload: { campaignId, query: "Hello" },
+			});
+
+			const events = parseSSE(response.body);
+			const errorEvent = events.find((e) => e.event === "error");
+			expect(errorEvent).toBeDefined();
+
+			// User message should be cleaned up
+			const savedMessages = await db
+				.select()
+				.from(messagesTable)
+				.where(sql`${messagesTable.conversationId} = ${conversationId}`);
+
+			expect(savedMessages).toHaveLength(0);
+		});
+
+		it("sends error event for non-existent conversation", async () => {
+			const fakeId = "00000000-0000-0000-0000-000000000000";
+
+			const response = await app.inject({
+				method: "POST",
+				url: `/api/conversation/${fakeId}/stream`,
+				headers: { "content-type": "application/json" },
+				payload: { campaignId, query: "Hello" },
+			});
+
+			const events = parseSSE(response.body);
+			const errorEvent = events.find((e) => e.event === "error");
+			expect(errorEvent).toBeDefined();
+			const errorData = JSON.parse(errorEvent?.data as string);
+			expect(errorData.code).toBe(404);
+		});
+
+		it("returns 400 for missing query", async () => {
+			const convResp = await app.inject({
+				method: "POST",
+				url: "/trpc/conversation.create",
+				headers: { "content-type": "application/json" },
+				payload: { json: { campaignId } },
+			});
+			const conversationId = convResp.json().result.data.json.id;
+
+			const response = await app.inject({
+				method: "POST",
+				url: `/api/conversation/${conversationId}/stream`,
+				headers: { "content-type": "application/json" },
+				payload: { campaignId },
+			});
+
+			expect(response.statusCode).toBe(400);
+			expect(response.json().error).toContain("query");
+		});
+
+		it("returns 400 for invalid conversationId", async () => {
+			const response = await app.inject({
+				method: "POST",
+				url: "/api/conversation/not-a-uuid/stream",
+				headers: { "content-type": "application/json" },
+				payload: { campaignId, query: "Hello" },
+			});
+
+			expect(response.statusCode).toBe(400);
+		});
+
+		it("sends error event for LLM rate limit errors during streaming", async () => {
+			const convResp = await app.inject({
+				method: "POST",
+				url: "/trpc/conversation.create",
+				headers: { "content-type": "application/json" },
+				payload: { json: { campaignId } },
+			});
+			const conversationId = convResp.json().result.data.json.id;
+
+			mockStream.mockImplementationOnce(() => {
+				throw new MockAPIError(
+					429,
+					{ type: "rate_limit_error" },
+					"rate_limit_exceeded",
+					{},
+				);
+			});
+
+			const response = await app.inject({
+				method: "POST",
+				url: `/api/conversation/${conversationId}/stream`,
+				headers: { "content-type": "application/json" },
+				payload: { campaignId, query: "Tell me about Strahd" },
+			});
+
+			const events = parseSSE(response.body);
+			const errorEvent = events.find((e) => e.event === "error");
+			expect(errorEvent).toBeDefined();
+			const errorData = JSON.parse(errorEvent?.data as string);
+			expect(errorData.code).toBe(429);
 		});
 	});
 });
