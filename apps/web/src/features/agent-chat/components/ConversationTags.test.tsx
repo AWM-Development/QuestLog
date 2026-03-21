@@ -53,4 +53,21 @@ describe("ConversationTags", () => {
 		expect(screen.getByText("lore")).toBeInTheDocument();
 		expect(screen.queryByText("combat")).not.toBeInTheDocument();
 	});
+
+	it("supports arrow navigation and Enter selection", () => {
+		const onUpdateTags = vi.fn();
+		render(
+			<ConversationTags
+				tags={[]}
+				allTags={["lore", "combat", "npc"]}
+				onUpdateTags={onUpdateTags}
+			/>,
+		);
+		fireEvent.click(screen.getByText("+ tag"));
+		const input = screen.getByPlaceholderText("Add or create tag...");
+		fireEvent.change(input, { target: { value: "c" } });
+		fireEvent.keyDown(input, { key: "ArrowDown" });
+		fireEvent.keyDown(input, { key: "Enter" });
+		expect(onUpdateTags).toHaveBeenCalledWith(["npc"]);
+	});
 });

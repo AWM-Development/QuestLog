@@ -173,6 +173,28 @@ export const overlineLabel: CSSProperties = {
 	fontWeight: 500,
 };
 
+// ── Chat message chrome ──
+
+export const chatMessageHeader: CSSProperties = {
+	display: "flex",
+	alignItems: "center",
+	gap: "6px",
+	marginBottom: "8px",
+};
+
+export const chatMessageLabel: CSSProperties = {
+	fontSize: "11px",
+	fontWeight: 500,
+	color: "var(--text-muted)",
+};
+
+export const chatStatusDot: CSSProperties = {
+	width: 6,
+	height: 6,
+	borderRadius: "50%",
+	flexShrink: 0,
+};
+
 // ── Cards ──
 
 export const hoverCard: CSSProperties = {

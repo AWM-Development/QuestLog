@@ -49,9 +49,7 @@ export function ChatPage() {
 		"questlog-panel-open",
 		false,
 	);
-	const [starterFill, setStarterFill] = useState<string | undefined>(
-		undefined,
-	);
+	const [starterFill, setStarterFill] = useState<string | undefined>(undefined);
 	const pendingMessageRef = useRef<string | null>(null);
 	const creatingRef = useRef(false);
 
@@ -60,7 +58,7 @@ export function ChatPage() {
 		if (isTablet && drawerOpen) {
 			setDrawerOpen(false);
 		}
-	}, [isTablet]); // eslint-disable-line react-hooks/exhaustive-deps -- only on breakpoint change
+	}, [isTablet, drawerOpen, setDrawerOpen]);
 
 	// Campaign data
 	const campaignQuery = trpc.campaign.getById.useQuery(
@@ -108,9 +106,7 @@ export function ChatPage() {
 	}, [conversations]);
 
 	// Active conversation data
-	const activeConversation = conversations.find(
-		(c) => c.id === conversationId,
-	);
+	const activeConversation = conversations.find((c) => c.id === conversationId);
 
 	// Extract sources from agent messages for the context panel
 	const panelSources = useMemo(() => {

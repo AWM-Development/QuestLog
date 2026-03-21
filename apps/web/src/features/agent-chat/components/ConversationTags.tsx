@@ -72,6 +72,11 @@ const suggestionStyle: CSSProperties = {
 	color: "var(--text-secondary)",
 	cursor: "pointer",
 	borderRadius: "var(--r-sm)",
+	border: "none",
+	background: "transparent",
+	width: "100%",
+	textAlign: "left",
+	display: "block",
 	transition: "background 100ms ease",
 };
 
@@ -82,6 +87,7 @@ export function ConversationTags({
 }: ConversationTagsProps) {
 	const [open, setOpen] = useState(false);
 	const [search, setSearch] = useState("");
+	const [activeIndex, setActiveIndex] = useState(0);
 	const popoverRef = useRef<HTMLDivElement>(null);
 
 	// Close on outside click or Escape
@@ -126,6 +132,7 @@ export function ConversationTags({
 		search.trim() &&
 		!allTags.includes(search.trim()) &&
 		!tags.includes(search.trim());
+	const options = [...filtered, ...(showCreate ? [search.trim()] : [])];
 
 	return (
 		<div
@@ -164,7 +171,10 @@ export function ConversationTags({
 				<button
 					type="button"
 					style={addButtonStyle}
-					onClick={() => setOpen(!open)}
+					onClick={() => {
+						setOpen((prev) => !prev);
+						setActiveIndex(0);
+					}}
 				>
 					+ tag
 				</button>
@@ -174,14 +184,31 @@ export function ConversationTags({
 						<input
 							type="text"
 							value={search}
-							onChange={(e) => setSearch(e.target.value)}
+							onChange={(e) => {
+								setSearch(e.target.value);
+								setActiveIndex(0);
+							}}
 							placeholder="Add or create tag..."
 							style={popoverInputStyle}
 							// biome-ignore lint/a11y/noAutofocus: tag popover input should auto-focus
 							autoFocus
 							onKeyDown={(e) => {
-								if (e.key === "Enter" && showCreate) {
-									addTag(search.trim());
+								if (!options.length) return;
+								if (e.key === "ArrowDown") {
+									e.preventDefault();
+									setActiveIndex((idx) =>
+										Math.min(idx + 1, options.length - 1),
+									);
+									return;
+								}
+								if (e.key === "ArrowUp") {
+									e.preventDefault();
+									setActiveIndex((idx) => Math.max(idx - 1, 0));
+									return;
+								}
+								if (e.key === "Enter") {
+									e.preventDefault();
+									addTag(options[activeIndex] ?? options[0] ?? "");
 								}
 							}}
 						/>
@@ -191,41 +218,48 @@ export function ConversationTags({
 								maxHeight: "120px",
 								overflowY: "auto",
 							}}
-							role="listbox"
 						>
-							{filtered.map((tag) => (
-								<div
+							{filtered.map((tag, index) => (
+								<button
 									key={tag}
-									style={suggestionStyle}
-									onClick={() => addTag(tag)}
-									onKeyDown={(e) => {
-										if (e.key === "Enter") addTag(tag);
+									style={{
+										...suggestionStyle,
+										background:
+											activeIndex === index
+												? "var(--bg-elevated)"
+												: "transparent",
 									}}
-									// biome-ignore lint/a11y/useSemanticElements: custom dropdown option in non-native select
-									role="option"
-									aria-selected={false}
-									tabIndex={0}
+									onFocus={() => setActiveIndex(index)}
+									onClick={() => addTag(tag)}
+									onMouseEnter={() => setActiveIndex(index)}
+									type="button"
+									aria-label={`Add tag ${tag}`}
+									tabIndex={-1}
 								>
 									{tag}
-								</div>
+								</button>
 							))}
 							{showCreate && (
-								<div
+								<button
 									style={{
 										...suggestionStyle,
 										color: "var(--accent)",
+										background:
+											activeIndex === filtered.length
+												? "var(--bg-elevated)"
+												: "transparent",
+										width: "100%",
+										textAlign: "left",
+										border: "none",
 									}}
 									onClick={() => addTag(search.trim())}
-									onKeyDown={(e) => {
-										if (e.key === "Enter") addTag(search.trim());
-									}}
-									// biome-ignore lint/a11y/useSemanticElements: custom dropdown option in non-native select
-									role="option"
-									aria-selected={false}
-									tabIndex={0}
+									onMouseEnter={() => setActiveIndex(filtered.length)}
+									type="button"
+									aria-label={`Create tag ${search.trim()}`}
+									tabIndex={-1}
 								>
 									+ Create &ldquo;{search.trim()}&rdquo;
-								</div>
+								</button>
 							)}
 						</div>
 					</div>

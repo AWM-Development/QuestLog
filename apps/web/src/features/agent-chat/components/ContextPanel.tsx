@@ -111,7 +111,11 @@ function guessEntityType(sourceName: string): keyof typeof entityAvatarColors {
 	return "story_arc";
 }
 
-export function ContextPanel({ sources, onClose, isOverlay }: ContextPanelProps) {
+export function ContextPanel({
+	sources,
+	onClose,
+	isOverlay,
+}: ContextPanelProps) {
 	// Deduplicate sources by sourceId
 	const uniqueSources = Array.from(
 		new Map(sources.map((s) => [s.sourceId, s])).values(),

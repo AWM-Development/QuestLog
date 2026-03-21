@@ -1,22 +1,14 @@
 import { type CSSProperties, useEffect, useState } from "react";
+import {
+	chatMessageHeader,
+	chatMessageLabel,
+	chatStatusDot,
+} from "../../../components/styles.js";
 
 interface ChatErrorMessageProps {
 	error: { data?: { code?: string }; message?: string };
 	onRetry: () => void;
 }
-
-const agentHeaderStyle: CSSProperties = {
-	display: "flex",
-	alignItems: "center",
-	gap: "6px",
-	marginBottom: "8px",
-};
-
-const agentLabelStyle: CSSProperties = {
-	fontSize: "11px",
-	fontWeight: 500,
-	color: "var(--text-muted)",
-};
 
 const genericCardStyle: CSSProperties = {
 	background: "rgba(232,93,80,0.06)",
@@ -64,17 +56,14 @@ export function ChatErrorMessage({ error, onRetry }: ChatErrorMessageProps) {
 	if (isRateLimit) {
 		return (
 			<div style={{ animation: "msg-in 400ms ease-out" }}>
-				<div style={agentHeaderStyle}>
+				<div style={chatMessageHeader}>
 					<span
 						style={{
-							width: 6,
-							height: 6,
-							borderRadius: "50%",
+							...chatStatusDot,
 							background: "var(--status-warning)",
-							flexShrink: 0,
 						}}
 					/>
-					<span style={agentLabelStyle}>QuestLog</span>
+					<span style={chatMessageLabel}>QuestLog</span>
 				</div>
 				<div style={rateLimitCardStyle}>
 					<div>The AI service is busy right now. Try again in a moment.</div>
@@ -99,17 +88,14 @@ export function ChatErrorMessage({ error, onRetry }: ChatErrorMessageProps) {
 
 	return (
 		<div style={{ animation: "msg-in 400ms ease-out" }}>
-			<div style={agentHeaderStyle}>
+			<div style={chatMessageHeader}>
 				<span
 					style={{
-						width: 6,
-						height: 6,
-						borderRadius: "50%",
+						...chatStatusDot,
 						background: "var(--status-error)",
-						flexShrink: 0,
 					}}
 				/>
-				<span style={agentLabelStyle}>QuestLog</span>
+				<span style={chatMessageLabel}>QuestLog</span>
 			</div>
 			<div style={genericCardStyle}>
 				<div>

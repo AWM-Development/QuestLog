@@ -1,4 +1,4 @@
-import { type CSSProperties, useState } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 import { ConversationTags } from "./ConversationTags.js";
 
 interface ChatHeaderProps {
@@ -147,6 +147,12 @@ export function ChatHeader({
 }: ChatHeaderProps) {
 	const [editingTitle, setEditingTitle] = useState(false);
 	const [titleValue, setTitleValue] = useState(conversationTitle ?? "");
+
+	useEffect(() => {
+		if (!editingTitle) {
+			setTitleValue(conversationTitle ?? "");
+		}
+	}, [conversationTitle, editingTitle]);
 
 	const handleTitleSave = () => {
 		const trimmed = titleValue.trim();

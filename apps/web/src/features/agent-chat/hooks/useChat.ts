@@ -94,7 +94,65 @@ export function useChat(
 				const decoder = new TextDecoder();
 				let accumulated = "";
 				let buffer = "";
+				let currentEvent = "message";
+				let currentDataLines: string[] = [];
+				let hasDoneEvent = false;
 				setIsStreaming(true);
+
+				const flushEvent = () => {
+					if (currentDataLines.length === 0) {
+						currentEvent = "message";
+						return;
+					}
+
+					const eventType = currentEvent;
+					const rawData = currentDataLines.join("\n");
+					currentEvent = "message";
+					currentDataLines = [];
+
+					let parsed: unknown;
+					try {
+						parsed = JSON.parse(rawData);
+					} catch {
+						return;
+					}
+
+					if (
+						eventType === "delta" &&
+						parsed &&
+						typeof parsed === "object" &&
+						"text" in parsed &&
+						typeof parsed.text === "string"
+					) {
+						accumulated += parsed.text;
+						setStreamingContent(accumulated);
+						return;
+					}
+
+					if (
+						eventType === "error" &&
+						parsed &&
+						typeof parsed === "object" &&
+						"message" in parsed
+					) {
+						const code =
+							"code" in parsed && parsed.code === 429
+								? "TOO_MANY_REQUESTS"
+								: "INTERNAL_SERVER_ERROR";
+						const message =
+							typeof parsed.message === "string"
+								? parsed.message
+								: "Failed to get response";
+						throw {
+							data: { code },
+							message,
+						};
+					}
+
+					if (eventType === "done") {
+						hasDoneEvent = true;
+					}
+				};
 
 				while (true) {
 					const { done, value } = await reader.read();
@@ -105,31 +163,26 @@ export function useChat(
 					buffer = lines.pop() ?? "";
 
 					for (const line of lines) {
+						if (line.startsWith("event: ")) {
+							currentEvent = line.slice(7).trim() || "message";
+							continue;
+						}
 						if (line.startsWith("data: ")) {
-							const data = line.slice(6);
-							try {
-								const parsed = JSON.parse(data);
-								if (parsed.text !== undefined) {
-									accumulated += parsed.text;
-									setStreamingContent(accumulated);
-								}
-								if (parsed.citations !== undefined) {
-									// Stream complete — done event
-									// Will refetch messages
-								}
-								if (parsed.error !== undefined) {
-									throw {
-										data: { code: parsed.code },
-										message: parsed.message,
-									};
-								}
-							} catch (e) {
-								if (e && typeof e === "object" && "data" in e) {
-									throw e;
-								}
-							}
+							currentDataLines.push(line.slice(6));
+							continue;
+						}
+						if (line.trim() === "") {
+							flushEvent();
 						}
 					}
+				}
+				flushEvent();
+
+				if (!hasDoneEvent) {
+					throw {
+						data: { code: "INTERNAL_SERVER_ERROR" },
+						message: "Stream ended before completion",
+					};
 				}
 
 				// Stream complete — refetch messages from server

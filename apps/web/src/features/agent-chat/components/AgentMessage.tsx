@@ -1,4 +1,9 @@
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import {
+	chatMessageHeader,
+	chatMessageLabel,
+	chatStatusDot,
+} from "../../../components/styles.js";
 import type { MessageSource } from "../types.js";
 import { SourceChip } from "./SourceChip.js";
 import { StreamingCursor } from "./StreamingCursor.js";
@@ -17,27 +22,6 @@ const agentMessageStyle: CSSProperties = {
 	animation: "msg-in 400ms ease-out",
 };
 
-const agentHeaderStyle: CSSProperties = {
-	display: "flex",
-	alignItems: "center",
-	gap: "6px",
-	marginBottom: "8px",
-};
-
-const statusDotStyle: CSSProperties = {
-	width: 6,
-	height: 6,
-	borderRadius: "50%",
-	background: "var(--status-success)",
-	flexShrink: 0,
-};
-
-const agentLabelStyle: CSSProperties = {
-	fontSize: "11px",
-	fontWeight: 500,
-	color: "var(--text-muted)",
-};
-
 const sourcesRowStyle: CSSProperties = {
 	display: "flex",
 	flexWrap: "wrap",
@@ -47,20 +31,35 @@ const sourcesRowStyle: CSSProperties = {
 
 /** Render agent text with basic markdown: **bold** → <strong> */
 function renderContent(text: string) {
-	const parts = text.split(/(\*\*[^*]+\*\*)/g);
-	return parts.map((part, i) => {
-		if (part.startsWith("**") && part.endsWith("**")) {
-			return (
-				<strong
-					key={i}
-					style={{ color: "var(--text-primary)", fontWeight: 500 }}
-				>
-					{part.slice(2, -2)}
-				</strong>
-			);
+	const segments: ReactNode[] = [];
+	const boldRegex = /\*\*[^*]+\*\*/g;
+	let lastIndex = 0;
+
+	for (const match of text.matchAll(boldRegex)) {
+		const full = match[0];
+		const start = match.index ?? 0;
+
+		if (start > lastIndex) {
+			segments.push(text.slice(lastIndex, start));
 		}
-		return part;
-	});
+
+		segments.push(
+			<strong
+				key={`${start}-${full}`}
+				style={{ color: "var(--text-primary)", fontWeight: 500 }}
+			>
+				{full.slice(2, -2)}
+			</strong>,
+		);
+
+		lastIndex = start + full.length;
+	}
+
+	if (lastIndex < text.length) {
+		segments.push(text.slice(lastIndex));
+	}
+
+	return segments;
 }
 
 export function AgentMessage({
@@ -70,9 +69,14 @@ export function AgentMessage({
 }: AgentMessageProps) {
 	return (
 		<div style={agentMessageStyle}>
-			<div style={agentHeaderStyle}>
-				<span style={statusDotStyle} />
-				<span style={agentLabelStyle}>QuestLog</span>
+			<div style={chatMessageHeader}>
+				<span
+					style={{
+						...chatStatusDot,
+						background: "var(--status-success)",
+					}}
+				/>
+				<span style={chatMessageLabel}>QuestLog</span>
 			</div>
 
 			<div style={{ whiteSpace: "pre-wrap" }}>

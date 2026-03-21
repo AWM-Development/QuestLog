@@ -67,4 +67,21 @@ describe("ConversationListItem", () => {
 		fireEvent.click(screen.getByText("Test Conversation"));
 		expect(onSelect).toHaveBeenCalledWith("conv-1");
 	});
+
+	it("is keyboard-accessible and selects on Enter", () => {
+		const onSelect = vi.fn();
+		render(
+			<ConversationListItem
+				conversation={makeConversation()}
+				isActive={false}
+				onSelect={onSelect}
+				onArchive={vi.fn()}
+				onEditTitle={vi.fn()}
+			/>,
+		);
+
+		const row = screen.getByRole("button", { name: "Test Conversation" });
+		fireEvent.keyDown(row, { key: "Enter" });
+		expect(onSelect).toHaveBeenCalledWith("conv-1");
+	});
 });

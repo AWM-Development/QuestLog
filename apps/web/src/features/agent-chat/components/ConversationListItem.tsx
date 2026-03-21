@@ -80,6 +80,18 @@ const actionBtnStyle: CSSProperties = {
 	transition: "all 100ms ease",
 };
 
+const rowButtonStyle: CSSProperties = {
+	display: "block",
+	width: "100%",
+	textAlign: "left",
+	background: "none",
+	border: "none",
+	padding: 0,
+	fontFamily: "var(--font-body)",
+	color: "inherit",
+	cursor: "pointer",
+};
+
 function formatTimestamp(date: Date): string {
 	const now = new Date();
 	const diffMs = now.getTime() - date.getTime();
@@ -120,10 +132,6 @@ export function ConversationListItem({
 			}}
 			onMouseEnter={() => setHovered(true)}
 			onMouseLeave={() => setHovered(false)}
-			onClick={() => !editing && onSelect(conversation.id)}
-			onKeyDown={(e) => {
-				if (e.key === "Enter" && !editing) onSelect(conversation.id);
-			}}
 		>
 			{editing ? (
 				<input
@@ -150,44 +158,57 @@ export function ConversationListItem({
 					}}
 				/>
 			) : (
-				<p style={titleStyle}>
-					{conversation.title || (
-						<span
-							style={{
-								fontStyle: "italic",
-								color: "var(--text-muted)",
-							}}
-						>
-							Untitled conversation
-						</span>
-					)}
-				</p>
-			)}
-
-			<div style={timestampStyle}>
-				{formatTimestamp(new Date(conversation.updatedAt))}
-			</div>
-
-			{conversation.tags.length > 0 && (
-				<div style={tagsRowStyle}>
-					{conversation.tags.map((tag) => {
-						const color = getTagColor(tag);
-						return (
+				<button
+					type="button"
+					style={rowButtonStyle}
+					onClick={() => onSelect(conversation.id)}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							onSelect(conversation.id);
+						}
+					}}
+					aria-label={conversation.title ?? "Untitled conversation"}
+				>
+					<p style={titleStyle}>
+						{conversation.title || (
 							<span
-								key={tag}
 								style={{
-									fontSize: "9px",
-									borderRadius: "var(--r-sm)",
-									padding: "1px 5px",
-									background: color.bg,
-									color: color.text,
+									fontStyle: "italic",
+									color: "var(--text-muted)",
 								}}
 							>
-								{tag}
+								Untitled conversation
 							</span>
-						);
-					})}
-				</div>
+						)}
+					</p>
+
+					<div style={timestampStyle}>
+						{formatTimestamp(new Date(conversation.updatedAt))}
+					</div>
+
+					{conversation.tags.length > 0 && (
+						<div style={tagsRowStyle}>
+							{conversation.tags.map((tag) => {
+								const color = getTagColor(tag);
+								return (
+									<span
+										key={tag}
+										style={{
+											fontSize: "9px",
+											borderRadius: "var(--r-sm)",
+											padding: "1px 5px",
+											background: color.bg,
+											color: color.text,
+										}}
+									>
+										{tag}
+									</span>
+								);
+							})}
+						</div>
+					)}
+				</button>
 			)}
 
 			{hovered && !editing && (

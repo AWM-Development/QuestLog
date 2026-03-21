@@ -2,6 +2,7 @@ import {
 	type CSSProperties,
 	type KeyboardEvent,
 	useCallback,
+	useEffect,
 	useRef,
 	useState,
 } from "react";
@@ -80,12 +81,13 @@ export function ChatInput({ onSend, disabled, onStarterFill }: ChatInputProps) {
 
 	// Handle starter prompt fill
 	const lastFill = useRef<string | undefined>(undefined);
-	if (onStarterFill && onStarterFill !== lastFill.current) {
+	useEffect(() => {
+		if (!onStarterFill || onStarterFill === lastFill.current) return;
 		lastFill.current = onStarterFill;
 		setValue(onStarterFill);
 		// Focus textarea after fill
 		setTimeout(() => textareaRef.current?.focus(), 0);
-	}
+	}, [onStarterFill]);
 
 	const adjustHeight = useCallback(() => {
 		const ta = textareaRef.current;
@@ -156,9 +158,7 @@ export function ChatInput({ onSend, disabled, onStarterFill }: ChatInputProps) {
 									transform: "scale(1.04)",
 								}
 							: {}),
-						...(!isDisabled && sendActive
-							? { transform: "scale(0.96)" }
-							: {}),
+						...(!isDisabled && sendActive ? { transform: "scale(0.96)" } : {}),
 					}}
 					disabled={isDisabled}
 					onClick={handleSend}

@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
-import type { DisplayMessage } from "../types.js";
 import { useAutoScroll } from "../hooks/useAutoScroll.js";
+import type { DisplayMessage } from "../types.js";
 import { AgentMessage } from "./AgentMessage.js";
 import { ChatEmptyState } from "./ChatEmptyState.js";
 import { ChatErrorMessage } from "./ChatErrorMessage.js";
