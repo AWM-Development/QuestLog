@@ -4,7 +4,7 @@ interface PlaceholderPageProps {
 
 export function PlaceholderPage({ title }: PlaceholderPageProps) {
 	return (
-		<div>
+		<div style={{ padding: "var(--space-8)" }}>
 			<h1
 				style={{
 					fontFamily: "var(--font-display)",

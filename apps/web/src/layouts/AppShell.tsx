@@ -30,7 +30,6 @@ export function AppShell() {
 				style={{
 					flex: 1,
 					overflow: "auto",
-					padding: "var(--space-8)",
 				}}
 			>
 				<Outlet />

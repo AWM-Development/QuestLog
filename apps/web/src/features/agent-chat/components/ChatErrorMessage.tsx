@@ -1,0 +1,133 @@
+import { type CSSProperties, useEffect, useState } from "react";
+
+interface ChatErrorMessageProps {
+	error: { data?: { code?: string }; message?: string };
+	onRetry: () => void;
+}
+
+const agentHeaderStyle: CSSProperties = {
+	display: "flex",
+	alignItems: "center",
+	gap: "6px",
+	marginBottom: "8px",
+};
+
+const agentLabelStyle: CSSProperties = {
+	fontSize: "11px",
+	fontWeight: 500,
+	color: "var(--text-muted)",
+};
+
+const genericCardStyle: CSSProperties = {
+	background: "rgba(232,93,80,0.06)",
+	border: "1px solid rgba(232,93,80,0.15)",
+	borderRadius: "var(--r-lg)",
+	padding: "14px 18px",
+	fontSize: "13px",
+	lineHeight: 1.6,
+	color: "var(--text-secondary)",
+	maxWidth: "88%",
+};
+
+const rateLimitCardStyle: CSSProperties = {
+	background: "rgba(239,173,63,0.06)",
+	border: "1px solid rgba(239,173,63,0.15)",
+	borderRadius: "var(--r-lg)",
+	padding: "14px 18px",
+	fontSize: "13px",
+	lineHeight: 1.6,
+	color: "var(--text-secondary)",
+	maxWidth: "88%",
+};
+
+const retryButtonBase: CSSProperties = {
+	marginTop: "10px",
+	padding: "5px 12px",
+	borderRadius: "var(--r-sm)",
+	background: "transparent",
+	fontSize: "12px",
+	cursor: "pointer",
+	fontFamily: "var(--font-body)",
+	transition: "all 150ms ease",
+};
+
+export function ChatErrorMessage({ error, onRetry }: ChatErrorMessageProps) {
+	const isRateLimit = error.data?.code === "TOO_MANY_REQUESTS";
+	const [countdown, setCountdown] = useState(isRateLimit ? 10 : 0);
+
+	useEffect(() => {
+		if (!isRateLimit || countdown <= 0) return;
+		const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
+		return () => clearTimeout(timer);
+	}, [isRateLimit, countdown]);
+
+	if (isRateLimit) {
+		return (
+			<div style={{ animation: "msg-in 200ms ease" }}>
+				<div style={agentHeaderStyle}>
+					<span
+						style={{
+							width: 6,
+							height: 6,
+							borderRadius: "50%",
+							background: "var(--status-warning)",
+							flexShrink: 0,
+						}}
+					/>
+					<span style={agentLabelStyle}>QuestLog</span>
+				</div>
+				<div style={rateLimitCardStyle}>
+					<div>The AI service is busy right now. Try again in a moment.</div>
+					<button
+						type="button"
+						style={{
+							...retryButtonBase,
+							color: "var(--status-warning)",
+							border: "0.5px solid var(--status-warning)",
+						}}
+						disabled={countdown > 0}
+						onClick={onRetry}
+					>
+						{countdown > 0
+							? `\u21BB Retry in ${countdown}s`
+							: "\u21BB Try again"}
+					</button>
+				</div>
+			</div>
+		);
+	}
+
+	return (
+		<div style={{ animation: "msg-in 200ms ease" }}>
+			<div style={agentHeaderStyle}>
+				<span
+					style={{
+						width: 6,
+						height: 6,
+						borderRadius: "50%",
+						background: "var(--status-error)",
+						flexShrink: 0,
+					}}
+				/>
+				<span style={agentLabelStyle}>QuestLog</span>
+			</div>
+			<div style={genericCardStyle}>
+				<div>
+					Something went wrong generating a response. This might be a temporary
+					issue with the AI service.
+				</div>
+				<button
+					type="button"
+					style={{
+						...retryButtonBase,
+						color: "var(--status-error)",
+						border: "0.5px solid var(--status-error)",
+					}}
+					onClick={onRetry}
+				>
+					&#x21BB; Try again
+				</button>
+			</div>
+		</div>
+	);
+}

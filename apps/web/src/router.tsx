@@ -1,5 +1,6 @@
 import { Navigate, createBrowserRouter } from "react-router";
 import { PlaceholderPage } from "./components/PlaceholderPage.js";
+import { ChatPage } from "./features/agent-chat/index.js";
 import { CampaignListPage } from "./features/campaigns/index.js";
 import { SourcesPage } from "./features/sources/index.js";
 import { AppShell } from "./layouts/AppShell.js";
@@ -20,7 +21,11 @@ export const router = createBrowserRouter([
 					},
 					{
 						path: "chat",
-						element: <PlaceholderPage title="Agent Chat" />,
+						element: <ChatPage />,
+					},
+					{
+						path: "chat/:conversationId",
+						element: <ChatPage />,
 					},
 					{
 						path: "sessions",
