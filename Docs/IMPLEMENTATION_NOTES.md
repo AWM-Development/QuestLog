@@ -11,7 +11,7 @@ Read this at the start of every coding session. Add to it when you make a non-ob
 - `Docs/PRD.md` — Product specification
 - `Docs/DESIGN_SYSTEM.md` — Visual design spec (color tokens, components, entity system)
 
-**Last Updated:** 2026-03-17 (task 3.2 LLM integration — conversation service extraction, DI factory, error differentiation, history cap)
+**Last Updated:** 2026-03-18 (task 3.2.5 streaming LLM responses — SSE endpoint, optimistic persistence, callClaudeStreaming)
 
 ---
 
@@ -234,6 +234,15 @@ Conversation history sent to the LLM is capped at `LLM_CONFIG.maxHistoryMessages
 `LlmApiError` carries `statusCode`, `errorType`, and `retryAfter` from the Anthropic SDK. `withErrorHandling` in `trpc.ts` maps:
 - 429 / 529 → `TOO_MANY_REQUESTS` (HTTP 429) — frontend can show "try again shortly"
 - All other LLM errors → `INTERNAL_SERVER_ERROR` (HTTP 500)
+
+### Streaming LLM responses (task 3.2.5)
+`callClaudeStreaming()` in `llm.service.ts` uses `anthropic.messages.stream()` and delivers text deltas via a `StreamDeltaCallback`. The `finalMessage()` promise resolves with the complete response including usage stats.
+
+**SSE endpoint:** `POST /api/conversation/:conversationId/stream` is a Fastify route (not tRPC) that sends Server-Sent Events. Event types: `delta` (text chunks), `done` (citations/confidence/usage), `error`. SSE was chosen over tRPC subscriptions because tRPC v11 subscriptions require WebSocket transport.
+
+**Optimistic persistence:** Unlike the non-streaming `chat()` (which wraps everything in a transaction), `chatStream()` saves the user message optimistically, streams the LLM response, then saves the assistant message. If the LLM fails mid-stream, the user message is deleted. This avoids holding a DB transaction open for the duration of the stream (which could be 30+ seconds).
+
+**Existing `chat` mutation preserved:** The non-streaming `chat` tRPC mutation continues to work as a fallback. The chat UI (task 3.3) can choose either path.
 
 ### `ConversationMessage` shared type
 `ConversationMessage` (`{ role: "user" | "assistant"; content: string }`) lives in `packages/shared/src/types/conversation.ts` so both server and frontend (task 3.3 chat UI) use the same type. The `messages.role` column in the DB schema is also typed as `"user" | "assistant"` via `$type<>()`.
