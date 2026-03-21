@@ -44,7 +44,7 @@ const skeletonBarStyle = (width: string): CSSProperties => ({
 	borderRadius: "6px",
 	background: "var(--bg-elevated)",
 	width,
-	animation: "pulse 1.5s ease-in-out infinite",
+	animation: "pulse 1s ease-in-out infinite",
 });
 
 function LoadingSkeleton() {

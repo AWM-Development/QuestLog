@@ -45,9 +45,22 @@ export function ChatPage() {
 		"questlog-drawer-open",
 		false,
 	);
-	const [panelOpen, setPanelOpen] = useState(false);
-	const [starterFill, setStarterFill] = useState<string | undefined>(undefined);
+	const [panelOpen, setPanelOpen] = useLocalStorage(
+		"questlog-panel-open",
+		false,
+	);
+	const [starterFill, setStarterFill] = useState<string | undefined>(
+		undefined,
+	);
 	const pendingMessageRef = useRef<string | null>(null);
+	const creatingRef = useRef(false);
+
+	// Auto-close drawer when crossing to tablet breakpoint
+	useEffect(() => {
+		if (isTablet && drawerOpen) {
+			setDrawerOpen(false);
+		}
+	}, [isTablet]); // eslint-disable-line react-hooks/exhaustive-deps -- only on breakpoint change
 
 	// Campaign data
 	const campaignQuery = trpc.campaign.getById.useQuery(
@@ -95,7 +108,9 @@ export function ChatPage() {
 	}, [conversations]);
 
 	// Active conversation data
-	const activeConversation = conversations.find((c) => c.id === conversationId);
+	const activeConversation = conversations.find(
+		(c) => c.id === conversationId,
+	);
 
 	// Extract sources from agent messages for the context panel
 	const panelSources = useMemo(() => {
@@ -113,8 +128,14 @@ export function ChatPage() {
 	);
 
 	const handleCreateConversation = useCallback(async () => {
-		const id = await createConversation();
-		navigate(`/campaign/${campaignId}/chat/${id}`);
+		if (creatingRef.current) return;
+		creatingRef.current = true;
+		try {
+			const id = await createConversation();
+			navigate(`/campaign/${campaignId}/chat/${id}`);
+		} finally {
+			creatingRef.current = false;
+		}
 	}, [createConversation, navigate, campaignId]);
 
 	const handleSend = useCallback(
@@ -122,14 +143,13 @@ export function ChatPage() {
 			if (!conversationId) {
 				// Queue message to send after navigation
 				pendingMessageRef.current = query;
-				const id = await createConversation();
-				navigate(`/campaign/${campaignId}/chat/${id}`);
+				await handleCreateConversation();
 				return;
 			}
 			setStarterFill(undefined);
 			await sendMessage(query);
 		},
-		[conversationId, sendMessage, createConversation, navigate, campaignId],
+		[conversationId, sendMessage, handleCreateConversation],
 	);
 
 	const handleEditTitle = useCallback(
@@ -145,6 +165,10 @@ export function ChatPage() {
 		},
 		[conversationId, updateTags],
 	);
+
+	const handleClosePanel = useCallback(() => {
+		setPanelOpen(false);
+	}, [setPanelOpen]);
 
 	return (
 		<div style={chatPageStyle}>
@@ -193,7 +217,13 @@ export function ChatPage() {
 				/>
 			</div>
 
-			{panelOpen && <ContextPanel sources={panelSources} />}
+			{panelOpen && (
+				<ContextPanel
+					sources={panelSources}
+					onClose={handleClosePanel}
+					isOverlay={isTablet}
+				/>
+			)}
 		</div>
 	);
 }

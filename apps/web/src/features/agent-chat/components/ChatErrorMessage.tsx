@@ -63,7 +63,7 @@ export function ChatErrorMessage({ error, onRetry }: ChatErrorMessageProps) {
 
 	if (isRateLimit) {
 		return (
-			<div style={{ animation: "msg-in 200ms ease" }}>
+			<div style={{ animation: "msg-in 400ms ease-out" }}>
 				<div style={agentHeaderStyle}>
 					<span
 						style={{
@@ -98,7 +98,7 @@ export function ChatErrorMessage({ error, onRetry }: ChatErrorMessageProps) {
 	}
 
 	return (
-		<div style={{ animation: "msg-in 200ms ease" }}>
+		<div style={{ animation: "msg-in 400ms ease-out" }}>
 			<div style={agentHeaderStyle}>
 				<span
 					style={{

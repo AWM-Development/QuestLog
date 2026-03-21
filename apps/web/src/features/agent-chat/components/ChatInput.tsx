@@ -74,6 +74,8 @@ const toolChipsStyle: CSSProperties = {
 export function ChatInput({ onSend, disabled, onStarterFill }: ChatInputProps) {
 	const [value, setValue] = useState("");
 	const [focused, setFocused] = useState(false);
+	const [sendHovered, setSendHovered] = useState(false);
+	const [sendActive, setSendActive] = useState(false);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 	// Handle starter prompt fill
@@ -148,9 +150,25 @@ export function ChatInput({ onSend, disabled, onStarterFill }: ChatInputProps) {
 						...sendButtonStyle,
 						opacity: isDisabled ? 0.4 : 1,
 						cursor: isDisabled ? "not-allowed" : "pointer",
+						...(!isDisabled && sendHovered
+							? {
+									background: "var(--accent-hover)",
+									transform: "scale(1.04)",
+								}
+							: {}),
+						...(!isDisabled && sendActive
+							? { transform: "scale(0.96)" }
+							: {}),
 					}}
 					disabled={isDisabled}
 					onClick={handleSend}
+					onMouseEnter={() => setSendHovered(true)}
+					onMouseLeave={() => {
+						setSendHovered(false);
+						setSendActive(false);
+					}}
+					onMouseDown={() => setSendActive(true)}
+					onMouseUp={() => setSendActive(false)}
 					aria-label="Send message"
 				>
 					&#x2191;

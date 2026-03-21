@@ -11,8 +11,10 @@ const containerStyle: CSSProperties = {
 	justifyContent: "center",
 	gap: "16px",
 	flex: 1,
+	minHeight: 0,
 	textAlign: "center",
 	padding: "40px 20px",
+	overflow: "auto",
 };
 
 const mascotStyle: CSSProperties = {

@@ -163,19 +163,35 @@ export function ConversationDrawer({
 			/>
 
 			<div style={listStyle}>
-				{filtered.map((conversation) => (
-					<ConversationListItem
-						key={conversation.id}
-						conversation={conversation}
-						isActive={conversation.id === activeConversationId}
-						onSelect={(id) => {
-							onSelect(id);
-							if (isTablet) onClose();
+				{filtered.length === 0 ? (
+					<div
+						style={{
+							fontSize: "11px",
+							color: "var(--text-dim)",
+							fontStyle: "italic",
+							padding: "12px 4px",
+							textAlign: "center",
 						}}
-						onArchive={onArchive}
-						onEditTitle={onEditTitle}
-					/>
-				))}
+					>
+						{search.trim()
+							? "No matching conversations"
+							: "No conversations yet. Start one with the + button above."}
+					</div>
+				) : (
+					filtered.map((conversation) => (
+						<ConversationListItem
+							key={conversation.id}
+							conversation={conversation}
+							isActive={conversation.id === activeConversationId}
+							onSelect={(id) => {
+								onSelect(id);
+								if (isTablet) onClose();
+							}}
+							onArchive={onArchive}
+							onEditTitle={onEditTitle}
+						/>
+					))
+				)}
 			</div>
 
 			{pendingArchiveId && (

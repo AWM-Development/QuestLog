@@ -14,7 +14,7 @@ const agentMessageStyle: CSSProperties = {
 	fontSize: "14px",
 	color: "var(--text-secondary)",
 	lineHeight: 1.75,
-	animation: "msg-in 200ms ease",
+	animation: "msg-in 400ms ease-out",
 };
 
 const agentHeaderStyle: CSSProperties = {

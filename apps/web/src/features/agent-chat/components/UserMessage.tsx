@@ -11,7 +11,7 @@ const userMessageStyle: CSSProperties = {
 	color: "var(--text-primary)",
 	lineHeight: 1.5,
 	whiteSpace: "pre-wrap",
-	animation: "msg-in 200ms ease",
+	animation: "msg-in 400ms ease-out",
 };
 
 interface UserMessageProps {

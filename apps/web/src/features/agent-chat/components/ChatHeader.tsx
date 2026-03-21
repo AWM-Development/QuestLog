@@ -22,6 +22,7 @@ const headerStyle: CSSProperties = {
 	borderBottom: "0.5px solid var(--border-subtle)",
 	flexShrink: 0,
 	minHeight: "48px",
+	overflow: "hidden",
 };
 
 const toggleBtnStyle: CSSProperties = {
@@ -61,6 +62,7 @@ const titleStyle: CSSProperties = {
 	overflow: "hidden",
 	textOverflow: "ellipsis",
 	whiteSpace: "nowrap",
+	minWidth: 0,
 };
 
 const headerBtnStyle: CSSProperties = {
@@ -74,6 +76,12 @@ const headerBtnStyle: CSSProperties = {
 	fontFamily: "var(--font-body)",
 	transition: "all 150ms ease",
 	flexShrink: 0,
+	whiteSpace: "nowrap",
+};
+
+const headerBtnHoverStyle: CSSProperties = {
+	color: "var(--text-secondary)",
+	borderColor: "var(--border-hover)",
 };
 
 const panelActiveStyle: CSSProperties = {
@@ -95,7 +103,35 @@ const searchStyle: CSSProperties = {
 	display: "flex",
 	alignItems: "center",
 	gap: "6px",
+	whiteSpace: "nowrap",
 };
+
+function HeaderButton({
+	children,
+	onClick,
+	active,
+}: {
+	children: React.ReactNode;
+	onClick?: () => void;
+	active?: boolean;
+}) {
+	const [hovered, setHovered] = useState(false);
+	return (
+		<button
+			type="button"
+			style={{
+				...headerBtnStyle,
+				...(active ? panelActiveStyle : {}),
+				...(!active && hovered ? headerBtnHoverStyle : {}),
+			}}
+			onClick={onClick}
+			onMouseEnter={() => setHovered(true)}
+			onMouseLeave={() => setHovered(false)}
+		>
+			{children}
+		</button>
+	);
+}
 
 export function ChatHeader({
 	campaignName,
@@ -163,7 +199,9 @@ export function ChatHeader({
 						...titleStyle,
 						background: "none",
 						border: "none",
+						padding: 0,
 						textAlign: "left",
+						flex: "0 1 auto",
 						...(conversationTitle
 							? {}
 							: {
@@ -186,7 +224,7 @@ export function ChatHeader({
 				onUpdateTags={onUpdateTags}
 			/>
 
-			<div style={{ flex: 1 }} />
+			<div style={{ flex: 1, minWidth: 0 }} />
 
 			<span style={searchStyle}>
 				&#x1F50D; Search...{" "}
@@ -203,20 +241,11 @@ export function ChatHeader({
 				</kbd>
 			</span>
 
-			<button type="button" style={headerBtnStyle}>
-				&#x1F4DD; Notes
-			</button>
+			<HeaderButton>&#x1F4DD; Notes</HeaderButton>
 
-			<button
-				type="button"
-				style={{
-					...headerBtnStyle,
-					...(panelOpen ? panelActiveStyle : {}),
-				}}
-				onClick={onTogglePanel}
-			>
+			<HeaderButton onClick={onTogglePanel} active={panelOpen}>
 				&#x25E7; Context
-			</button>
+			</HeaderButton>
 		</div>
 	);
 }

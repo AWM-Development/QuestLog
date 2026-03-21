@@ -8,6 +8,8 @@ import type { MessageSource } from "../types.js";
 
 interface ContextPanelProps {
 	sources: MessageSource[];
+	onClose: () => void;
+	isOverlay?: boolean;
 }
 
 const panelStyle: CSSProperties = {
@@ -21,6 +23,46 @@ const panelStyle: CSSProperties = {
 	flexShrink: 0,
 };
 
+const overlayPanelStyle: CSSProperties = {
+	...panelStyle,
+	position: "fixed",
+	top: 0,
+	right: 0,
+	bottom: 0,
+	zIndex: 20,
+	animation: "panel-in 200ms ease",
+};
+
+const panelHeaderStyle: CSSProperties = {
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "space-between",
+	padding: "10px 14px",
+	borderBottom: "0.5px solid var(--border-subtle)",
+	flexShrink: 0,
+};
+
+const panelHeaderLabel: CSSProperties = {
+	fontSize: "12px",
+	fontWeight: 500,
+	color: "var(--text-secondary)",
+};
+
+const closeBtnStyle: CSSProperties = {
+	width: 24,
+	height: 24,
+	borderRadius: "var(--r-sm)",
+	border: "none",
+	background: "transparent",
+	color: "var(--text-muted)",
+	cursor: "pointer",
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
+	fontSize: "14px",
+	transition: "all 150ms ease",
+};
+
 const entityRowStyle: CSSProperties = {
 	display: "flex",
 	alignItems: "center",
@@ -29,8 +71,8 @@ const entityRowStyle: CSSProperties = {
 };
 
 const avatarStyle: CSSProperties = {
-	width: 28,
-	height: 28,
+	width: 30,
+	height: 30,
 	borderRadius: "var(--r-md)",
 	display: "flex",
 	alignItems: "center",
@@ -51,6 +93,14 @@ const entityTypeStyle: CSSProperties = {
 	opacity: 0.5,
 };
 
+const scrimStyle: CSSProperties = {
+	position: "fixed",
+	inset: 0,
+	zIndex: 19,
+	background: "rgba(9,13,18,0.5)",
+	animation: "scrim-in 150ms ease",
+};
+
 function guessEntityType(sourceName: string): keyof typeof entityAvatarColors {
 	const lower = sourceName.toLowerCase();
 	if (lower.includes("session")) return "faction";
@@ -61,14 +111,26 @@ function guessEntityType(sourceName: string): keyof typeof entityAvatarColors {
 	return "story_arc";
 }
 
-export function ContextPanel({ sources }: ContextPanelProps) {
+export function ContextPanel({ sources, onClose, isOverlay }: ContextPanelProps) {
 	// Deduplicate sources by sourceId
 	const uniqueSources = Array.from(
 		new Map(sources.map((s) => [s.sourceId, s])).values(),
 	);
 
-	return (
-		<div style={panelStyle}>
+	const panel = (
+		<div style={isOverlay ? overlayPanelStyle : panelStyle}>
+			<div style={panelHeaderStyle}>
+				<span style={panelHeaderLabel}>Context</span>
+				<button
+					type="button"
+					style={closeBtnStyle}
+					onClick={onClose}
+					aria-label="Close context panel"
+				>
+					&#x2715;
+				</button>
+			</div>
+
 			<div style={panelSection}>
 				<div style={panelSectionTitle}>Mentioned Sources</div>
 				{uniqueSources.length === 0 ? (
@@ -122,4 +184,16 @@ export function ContextPanel({ sources }: ContextPanelProps) {
 			</div>
 		</div>
 	);
+
+	if (isOverlay) {
+		return (
+			<>
+				{/* biome-ignore lint/a11y/useKeyWithClickEvents: scrim is aria-hidden, not keyboard-interactive */}
+				<div style={scrimStyle} onClick={onClose} aria-hidden="true" />
+				{panel}
+			</>
+		);
+	}
+
+	return panel;
 }
