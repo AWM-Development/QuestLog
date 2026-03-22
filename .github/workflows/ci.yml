@@ -82,6 +82,8 @@ jobs:
           fetch-depth: 0
 
       - name: Check for code changes without Docs/ update
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           # Get list of changed files in this PR
           CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
@@ -99,8 +101,6 @@ jobs:
           done <<< "$CHANGED"
 
           if $CODE_CHANGED && ! $DOCS_CHANGED; then
-            # Check if PR title includes skip marker
-            PR_TITLE="${{ github.event.pull_request.title }}"
             if echo "$PR_TITLE" | grep -q "\[skip-doc-check\]"; then
               echo "ℹ️ Doc-sync check skipped via [skip-doc-check] in PR title."
               exit 0
@@ -183,6 +183,8 @@ jobs:
           fi
 
       - name: Check write obligation for sensitive file changes
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
 
@@ -200,7 +202,6 @@ jobs:
           done <<< "$CHANGED"
 
           if $SENSITIVE_CHANGED && ! $IMPL_NOTES_CHANGED; then
-            PR_TITLE="${{ github.event.pull_request.title }}"
             if echo "$PR_TITLE" | grep -q "\[skip-impl-notes\]"; then
               echo "ℹ️ Implementation notes check skipped via [skip-impl-notes] in PR title."
               exit 0
