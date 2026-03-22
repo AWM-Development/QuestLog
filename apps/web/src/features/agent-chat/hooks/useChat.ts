@@ -59,6 +59,7 @@ export function useChat(
 	const [error, setError] = useState<UseChatReturn["error"]>(null);
 	const lastQueryRef = useRef<string>("");
 	const abortRef = useRef<AbortController | null>(null);
+	const streamIdCounter = useRef(0);
 
 	const sendMessage = useCallback(
 		async (query: string) => {
@@ -116,8 +117,10 @@ export function useChat(
 				let currentEvent = "message";
 				let currentDataLines: string[] = [];
 				let hasDoneEvent = false;
+				let streamError: UseChatReturn["error"] | null = null;
 				setIsStreaming(true);
 
+				/** Process a complete SSE event. Sets streamError on error events. */
 				const flushEvent = () => {
 					if (currentDataLines.length === 0) {
 						currentEvent = "message";
@@ -162,10 +165,8 @@ export function useChat(
 							typeof parsed.message === "string"
 								? parsed.message
 								: "Failed to get response";
-						throw {
-							data: { code },
-							message,
-						};
+						streamError = { data: { code }, message };
+						return;
 					}
 
 					if (eventType === "done") {
@@ -194,8 +195,15 @@ export function useChat(
 							flushEvent();
 						}
 					}
+
+					// Stop reading if the server sent an error event
+					if (streamError) break;
 				}
 				flushEvent();
+
+				if (streamError) {
+					throw streamError;
+				}
 
 				if (!hasDoneEvent) {
 					throw {
@@ -264,8 +272,9 @@ export function useChat(
 
 	// Add streaming message if actively streaming
 	if (isStreaming && streamingContent) {
+		streamIdCounter.current += 1;
 		allMessages.push({
-			id: "streaming",
+			id: `streaming-${streamIdCounter.current}`,
 			role: "assistant",
 			content: streamingContent,
 			isStreaming: true,

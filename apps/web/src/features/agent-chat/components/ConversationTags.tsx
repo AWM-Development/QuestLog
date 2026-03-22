@@ -156,6 +156,7 @@ export function ConversationTags({
 				<button
 					type="button"
 					style={addButtonStyle}
+					aria-label="Add tag"
 					onClick={() => {
 						setOpen((prev) => !prev);
 						setActiveIndex(0);

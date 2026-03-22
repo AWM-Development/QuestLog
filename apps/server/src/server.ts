@@ -7,7 +7,7 @@ import {
 } from "@trpc/server/adapters/fastify";
 import Fastify from "fastify";
 import type { Database } from "./db/index.js";
-import { LlmApiError, NotFoundError, ValidationError } from "./lib/errors.js";
+import { mapDomainError } from "./lib/errors.js";
 import { type AppRouter, appRouter } from "./routers/_app.js";
 import {
 	conversationStreamBodySchema,
@@ -234,20 +234,8 @@ export function buildApp({ db, storage: storageOption }: BuildAppOptions) {
 				usage: result.usage,
 			});
 		} catch (error) {
-			if (error instanceof NotFoundError) {
-				sendEvent("error", { message: error.message, code: 404 });
-			} else if (error instanceof ValidationError) {
-				sendEvent("error", { message: error.message, code: 400 });
-			} else if (error instanceof LlmApiError) {
-				const code =
-					error.statusCode === 429 || error.statusCode === 529 ? 429 : 500;
-				sendEvent("error", { message: error.message, code });
-			} else {
-				sendEvent("error", {
-					message: "An unexpected error occurred",
-					code: 500,
-				});
-			}
+			const mapped = mapDomainError(error);
+			sendEvent("error", { message: mapped.message, code: mapped.code });
 		} finally {
 			reply.raw.end();
 		}

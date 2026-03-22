@@ -84,15 +84,18 @@ function HeaderButton({
 	children,
 	onClick,
 	active,
+	ariaLabel,
 }: {
 	children: React.ReactNode;
 	onClick?: () => void;
 	active?: boolean;
+	ariaLabel?: string;
 }) {
 	const [hovered, setHovered] = useState(false);
 	return (
 		<button
 			type="button"
+			aria-label={ariaLabel}
 			style={{
 				...headerBtnStyle,
 				...(active ? panelActiveStyle : {}),
@@ -175,6 +178,7 @@ export function ChatHeader({
 			) : (
 				<button
 					type="button"
+					aria-label="Edit conversation title"
 					style={{
 						...titleStyle,
 						background: "none",
@@ -221,9 +225,13 @@ export function ChatHeader({
 				</kbd>
 			</span>
 
-			<HeaderButton>&#x1F4DD; Notes</HeaderButton>
+			<HeaderButton ariaLabel="Notes">&#x1F4DD; Notes</HeaderButton>
 
-			<HeaderButton onClick={onTogglePanel} active={panelOpen}>
+			<HeaderButton
+				onClick={onTogglePanel}
+				active={panelOpen}
+				ariaLabel="Toggle context panel"
+			>
 				&#x25E7; Context
 			</HeaderButton>
 		</div>

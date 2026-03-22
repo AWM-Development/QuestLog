@@ -37,3 +37,42 @@ export class LlmApiError extends Error {
 		this.retryAfter = opts?.retryAfter;
 	}
 }
+
+/**
+ * Maps a domain error to an HTTP status code and message.
+ * Used by both the tRPC `withErrorHandling` wrapper and the SSE streaming endpoint
+ * so error classification lives in one place.
+ */
+export function mapDomainError(error: unknown): {
+	code: number;
+	message: string;
+} {
+	if (error instanceof NotFoundError) {
+		return { code: 404, message: error.message };
+	}
+	if (error instanceof ValidationError) {
+		return { code: 400, message: error.message };
+	}
+	if (error instanceof ExtractionNotSupportedError) {
+		return { code: 400, message: error.message };
+	}
+	if (error instanceof LlmApiError) {
+		if (error.statusCode === 429 || error.statusCode === 529) {
+			return {
+				code: 429,
+				message:
+					error.statusCode === 429
+						? "LLM rate limit exceeded. Please try again shortly."
+						: "LLM API is temporarily overloaded. Please retry.",
+			};
+		}
+		return { code: 500, message: error.message };
+	}
+	if (
+		error instanceof Error &&
+		error.message.includes("violates foreign key constraint")
+	) {
+		return { code: 400, message: "Referenced resource does not exist" };
+	}
+	return { code: 500, message: "An unexpected error occurred" };
+}

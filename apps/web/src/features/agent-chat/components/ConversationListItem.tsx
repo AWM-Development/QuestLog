@@ -217,6 +217,7 @@ export function ConversationListItem({
 						type="button"
 						style={actionBtnStyle}
 						title="Edit title"
+						aria-label="Edit title"
 						onClick={(e) => {
 							e.stopPropagation();
 							setEditValue(conversation.title ?? "");
@@ -233,6 +234,7 @@ export function ConversationListItem({
 							opacity: 0.5,
 						}}
 						title="Archive"
+						aria-label="Archive conversation"
 						onClick={(e) => {
 							e.stopPropagation();
 							onArchive(conversation.id);
