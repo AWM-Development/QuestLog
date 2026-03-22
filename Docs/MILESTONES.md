@@ -113,7 +113,7 @@
     - `chunks` table: content, embedding vector, source reference, campaign reference, metadata (position, entity mentions)
   - Tests: chunking logic unit tests (verify chunk sizes, boundary respect), embedding service test (mock API, verify storage)
 
-- [ ] **2.3 — Vector similarity search**
+- [x] **2.3 — Vector similarity search**
   - Branch: `feat/import-pipeline/vector-search`
   - PRD ref: §6 RAG Pipeline (Retrieval)
   - Work:
@@ -162,7 +162,7 @@
     - Confidence score: average cosine similarity of included chunks, returned on every call for use by milestone 11.2 UI
   - Tests: 6 integration tests (full assembly, token budget, recency ranking, confidence score, empty results, history truncation) + 3 integration tests (keyword surface, deduplication, top-k budget trimming) + 7 unit tests for `mergeSearchResults` (dedup, boost, cap, keyword-only, vector-only, empty inputs)
 
-- [ ] **3.2 — LLM integration & streaming**
+- [x] **3.2 — LLM integration & streaming**
   - Branch: `feat/agent-chat/llm-integration`
   - PRD ref: §4.2 Agent Capabilities
   - Work:
@@ -184,6 +184,13 @@
     - Related entities sidebar panel
     - Conversation tagging
   - Tests: component tests for message rendering, streaming display, empty/loading/error states
+
+- [x] **3.3.5 — Documentation infrastructure & AI development philosophy**
+  - Branch: `chore/doc-infrastructure`
+  - Background & Rationale: The project has strong documentation instincts but structural gaps that cause drift as the codebase grows. Doc updates are honour-system only, there are no CI enforcement gates for doc sync, no standing AI instruction file (CLAUDE.md), no PR template, no per-feature acceptance criteria, no changelog, and no E2E test stubs derived from the user flows. This task audits the full codebase and documentation set, produces all missing infrastructure, and establishes Spec-Anchored AI Development (SAAD) as the governing methodology for all future work.
+  - Work: Run the doc infrastructure audit prompt (see DEVELOPMENT_GUIDE.md §11)
+  - Deliverables: CLAUDE.md, CHANGELOG.md, .github/pull_request_template.md, .github/workflows/ci.yml (doc-sync + migration guards), acceptance criteria added to PRD.md §4, e2e/ stub files for all 4 PRD §3 user flows, IMPLEMENTATION_NOTES.md updated with audit findings, this task entry itself
+  - Tests: CI workflow passes actionlint validation, PR template file exists, CLAUDE.md exists at repo root, e2e/ contains one stub file per PRD §3 flow, every §4 PRD feature section contains an Acceptance Criteria block
 
 ---
 
@@ -846,6 +853,13 @@ Follow TDD: write failing tests first, then implement. Use the patterns
 from the dev guide (thin routers, service layer, Zod validation).
 Run tests after implementation. Run lint and typecheck before we review.
 When done, conduct a code review using the protocol in DEVELOPMENT_GUIDE.md §10.
+
+After the code review, complete these doc updates before closing the session:
+- Check off this task in MILESTONES.md
+- Append an entry to IMPLEMENTATION_NOTES.md for any non-obvious decision made
+- Add a CHANGELOG.md entry summarising what shipped
+- Update PRD.md if implementation deviated from spec
+- If a new pattern was established, update DEVELOPMENT_GUIDE.md §5
 ```
 
 ---

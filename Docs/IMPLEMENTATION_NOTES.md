@@ -249,3 +249,21 @@ Conversation history sent to the LLM is capped at `LLM_CONFIG.maxHistoryMessages
 
 ### `MessageSource` typed JSONB
 The `messages.sources` column is typed as `MessageSource[]` (not `Record<string, unknown>[]`). The `MessageSource` interface (`{ chunkId, sourceName, sourceId }`) is defined in `db/schema/tables.ts` and exported from the schema barrel.
+
+### `conversation.service.ts` has no unit test file — known gap
+`conversation.service.ts` orchestrates the full chat flow (validate → persist → assemble context → call LLM → persist response). It is covered by `routers/conversation.integration.test.ts` (integration tests against the tRPC layer) but lacks a co-located `conversation.service.test.ts` for unit-level testing. The integration tests provide meaningful coverage for the happy path and the transaction-rollback-on-failure tradeoff. A dedicated unit test file with mocked LLM and context services would improve coverage of error branches. Add when addressing technical debt, ideally alongside task 3.3 (Chat UI).
+
+---
+
+## Doc Infrastructure Audit (2026-03-22, task 3.3.5)
+
+### Tasks 2.3 and 3.2 were implemented but not checked off in MILESTONES.md
+During the doc infrastructure audit (task 3.3.5), it was found that:
+- Task 2.3 (Vector similarity search): `search.service.ts`, `search.integration.test.ts`, and `routers/search.ts` were fully implemented, including the `2.3.5` sub-task that upgraded the embedding model to voyage-4-lite. Marked complete.
+- Task 3.2 (LLM integration & streaming): `llm.service.ts`, `conversation.service.ts`, `routers/conversation.ts`, and the SSE streaming endpoint from sub-task `3.2.5` were all fully implemented. Marked complete.
+
+Both tasks were likely implemented during contiguous sessions without a final MILESTONES.md check-off. Going forward, the CLAUDE.md standing instructions and PR template enforce this check-off obligation on every merge.
+
+### `storage.service.ts` and `voyage.client.ts` intentionally have no test files
+`storage.service.ts` is a pluggable provider interface (`createLocalStorage`, `createMemoryStorage`). It is exercised via the import service tests using `createMemoryStorage()`. No standalone unit test file is needed.
+`voyage.client.ts` is a thin HTTP wrapper. It is mocked via `fetchFn` injection in `embedding.service.test.ts` and `context.service.test.ts`. No standalone unit test file is needed.
