@@ -6,7 +6,7 @@ import postgres from "postgres";
 
 const connectionString =
 	process.env.DATABASE_URL ??
-	"postgresql://questlog:questlog@localhost:5433/questlog";
+	"postgresql://questlog:questlog@localhost:5433/questlog_test";
 
 const client = postgres(connectionString, { max: 1 });
 const db = drizzle(client);

@@ -20,7 +20,7 @@ questlog/
 ├── apps/
 │   ├── web/                    # React frontend (Vite + Tailwind)
 │   │   ├── src/
-│   │   │   ├── components/     # Shared UI components
+│   │   │   ├── components/     # Shared UI components (styles.ts for style presets)
 │   │   │   ├── features/       # Feature modules (co-located)
 │   │   │   │   ├── agent-chat/
 │   │   │   │   │   ├── components/
@@ -30,9 +30,9 @@ questlog/
 │   │   │   │   ├── session-log/
 │   │   │   │   ├── entity-graph/
 │   │   │   │   └── ...
-│   │   │   ├── layouts/
+│   │   │   ├── layouts/        # AppShell.tsx (shell), Rail.tsx (56px icon nav)
 │   │   │   ├── lib/            # Utilities, constants, types
-│   │   │   ├── styles/         # Global styles, theme tokens
+│   │   │   ├── styles/         # Global styles, theme tokens (index.css)
 │   │   │   └── App.tsx
 │   │   └── vite.config.ts
 │   └── server/                 # Fastify + tRPC backend
@@ -393,6 +393,10 @@ Run through this before merging **every** feature branch. This is your self-revi
 - [ ] Run the full test suite one more time
 - [ ] Commit history is clean (squash fixup commits)
 - [ ] Update PRD.md if the implementation deviates from spec (spec stays in sync with reality)
+- [ ] Check off this task in MILESTONES.md
+- [ ] Append an entry to IMPLEMENTATION_NOTES.md for any non-obvious decision made
+- [ ] Add a CHANGELOG.md entry summarising what shipped
+- [ ] If a new pattern was established, update DEVELOPMENT_GUIDE.md §5
 
 ---
 
@@ -497,6 +501,54 @@ The AI will flag both real issues and false positives. Common false positives in
 | **High** | Will cause bugs or fails silently in production | Fix in this PR |
 | **Medium** | Best practice violation, future risk | Fix if low effort; otherwise create a chore/ branch |
 | **Low** | Style, missing future-proofing | Defer unless trivially easy |
+
+---
+
+---
+
+## 11. Spec-Anchored AI Development (SAAD)
+
+### What It Is
+
+Spec-Anchored AI Development (SAAD) is the governing methodology for all development on QuestLog. It is the explicit answer to the question: *how do you use an AI coding assistant on a non-trivial project without accumulating silent drift between what you intended to build and what actually exists?*
+
+The methodology recognizes that AI assistants are powerful executors but weak navigators. They write correct code but forget context between sessions, re-litigate past decisions, invent solutions to solved problems, and skip documentation obligations unless explicitly instructed otherwise. SAAD addresses all of these failure modes with structure, not discipline.
+
+### The Five Pillars
+
+**1. Docs before code.**
+Every feature implementation begins with a specification read. Before writing a single line of code, the AI reads the relevant PRD section, IMPLEMENTATION_NOTES, and DEVELOPMENT_GUIDE. The spec is the source of truth; the code is the expression of the spec. When they diverge, the spec is updated to match reality — not silently abandoned.
+
+**2. AI as guided executor, not autonomous architect.**
+The AI writes code, writes tests, and runs the review protocol. The human makes product decisions: which feature to build next, how to resolve ambiguity, what the UI should look like, which trade-off to accept. The 🎨 and 🧠 gates in `CLAUDE.md` and the copy-paste session template enforce this boundary mechanically.
+
+**3. Human gates on ambiguity.**
+Any task marked 🎨 (visual spec required) or 🧠 (strategy discussion required) stops before implementation begins. The AI explicitly asks for the missing input. This is not optional — it is enforced by the session startup prompt. The cost of pausing for clarity is a few minutes; the cost of building the wrong thing is an entire session.
+
+**4. Automated enforcement via CI.**
+Good intentions drift. Automated gates do not. The CI workflow (`github/workflows/ci.yml`) enforces:
+- No `test.only` or `test.skip` in merged code.
+- A warning when code in `apps/` or `packages/` changes without a corresponding `Docs/` change.
+- A hard failure when schema files change without a migration SQL file.
+These are not perfect enforcement — they are forcing functions that surface the most common forms of drift.
+
+**5. Closed feedback loop via mandatory doc updates.**
+Every session ends with a fixed set of doc update obligations: check off the task in MILESTONES.md, append to IMPLEMENTATION_NOTES.md, add a CHANGELOG.md entry, update PRD.md if spec diverged, and update DEVELOPMENT_GUIDE.md §5 if a new pattern was established. These obligations are encoded in `CLAUDE.md` (AI-facing), the copy-paste session template in MILESTONES.md, and the PR template checklist (human-facing). Each reinforces the other.
+
+### The Single Encoding Point
+
+`CLAUDE.md` at the repo root is the single file that encodes all of SAAD for the AI agent. It includes:
+- The ordered session startup sequence
+- The TDD hard rule
+- The 🎨 and 🧠 gates verbatim
+- The code review trigger and false positives list
+- The mandatory doc update obligations
+
+Every AI coding session reads `CLAUDE.md` first. If the methodology evolves, update `CLAUDE.md` — it is the canonical instruction set.
+
+### Running the Audit
+
+To run a full doc infrastructure audit (equivalent to task 3.3.5), use the audit prompt documented in the project's internal process documentation. The audit covers: code vs. spec drift (checked vs. actual implementation), documentation freshness (stale entries, missing entries), infrastructure gaps (CLAUDE.md, PR template, CI, CHANGELOG, acceptance criteria, e2e stubs), and MILESTONES.md consistency.
 
 ---
 

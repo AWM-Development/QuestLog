@@ -254,6 +254,17 @@ The entry point to QuestLog. A user creates a campaign, chooses a visual theme, 
 - **Duplicate detection:** If a file with the same name and hash is uploaded again, prompt user: "This looks like a file you've already imported. Replace, keep both, or skip?"
 - **Incremental import:** Users can import additional material at any time; existing knowledge base is extended, not rebuilt.
 
+#### Acceptance Criteria
+
+1. A user can create a campaign by providing a name, description, and theme; the campaign is immediately visible in the campaign list.
+2. A user can upload a PDF, MD, TXT, or DOCX file; the file appears in the import queue with a processing indicator.
+3. A user can paste raw text directly; pasted text is accepted as a source and enters the same processing pipeline as file uploads.
+4. After upload, extracted text is chunked and embedded; the source status transitions to "complete" and the content is queryable through the agent.
+5. A 200-page PDF module is fully queryable within 5 minutes of upload on standard hardware.
+6. Uploading a file with the same name and hash as an existing source prompts the user with Replace / Keep Both / Skip options; each option behaves as described.
+7. Files exceeding 50 MB are rejected with a clear error message before upload begins.
+8. A campaign can have additional material imported at any time; new content extends the existing knowledge base without requiring re-processing of prior imports.
+
 ---
 
 ### 4.2 Agent Conversation
@@ -324,6 +335,17 @@ The agent constructs its context window from multiple sources for each query:
 - The agent should **cite its sources** — which document, session log, or entity page it drew from.
 - The agent should **respect the secret/known boundary** (see §4.6) and flag when an answer involves DM-only information.
 - When generating creative content, the agent should **offer 2–3 options** rather than a single output, unless the user's prompt is highly specific.
+
+#### Acceptance Criteria
+
+1. A user can send a message in the agent chat and receive a response that draws on content from the campaign's imported material or session logs.
+2. The agent response includes at least one source citation (document name, session log, or entity page) for factual claims about the campaign.
+3. When asked about a topic not present in the campaign knowledge base, the agent explicitly acknowledges the absence rather than fabricating an answer.
+4. All conversations are persisted; closing and reopening the app shows the full conversation history.
+5. A user can create a new conversation, switch between conversations, and the agent context is scoped to the active conversation.
+6. Conversations can be titled and archived.
+7. Agent responses stream to the UI (text appears progressively, not all at once after a delay).
+8. If the agent references DM-only information, that content is visually flagged with the 🔒 indicator in the response.
 
 ---
 
@@ -434,6 +456,17 @@ When a session log is saved:
 └─────────────────────────────────┘
 ```
 
+#### Acceptance Criteria
+
+1. A user can open a session notes panel from any screen in the application without navigating away from the current view.
+2. As the user types entity names in the notes panel, recognized entities are underlined with a subtle highlight in real time.
+3. Clicking a highlighted entity name opens a confirm/dismiss/create-new prompt.
+4. Unrecognized text can be selected and promoted to a new entity via a quick-create panel requiring only name, type, and optional brief description.
+5. A user can finalize a session by assigning a title, session number, date, summary note, and tags before saving.
+6. After a session is saved, the session content is chunked and embedded into the knowledge base and is queryable through the agent.
+7. A session log is never locked; a user can continue editing a saved session at any time.
+8. Session notes are auto-saved locally so that a browser crash does not result in loss of unsaved content.
+
 ---
 
 ### 4.4 Session Prep Briefs
@@ -506,6 +539,17 @@ Before a session, the user opens the prep view and QuestLog assembles a structur
 │              [Open Agent Chat]  [Save Brief]              │
 └──────────────────────────────────────────────────────────┘
 ```
+
+#### Acceptance Criteria
+
+1. A user can open a session prep view and receive an auto-generated brief without any manual curation.
+2. The brief includes a "Previously on…" section sourced from the most recent 1–2 session logs.
+3. The brief includes an Active Threads section listing unresolved story arcs with their last-touched date.
+4. The brief includes a Likely NPCs section with at least motivation and last-interaction data per NPC.
+5. The brief includes a Loose Ends section surfacing unresolved flags from prior sessions.
+6. Each section of the brief can be collapsed, pinned, or dismissed independently.
+7. Clicking any item in the brief opens the agent chat with that item's context pre-loaded.
+8. Generated briefs are saved and can be reviewed in a historical list.
 
 ---
 
@@ -585,6 +629,17 @@ An interactive node graph where:
 - Results ranked by relevance and recency.
 - Search results show entity type, brief excerpt, and last-mentioned session.
 
+#### Acceptance Criteria
+
+1. Five entity types are supported: NPC, Location, Faction, Item, and Story Arc; each has a dedicated set of structured fields.
+2. Saving a session log creates or updates entity pages for every entity referenced in that log.
+3. An entity page displays a summary, key facts, a chronological timeline of mentions, and a list of relationships to other entities.
+4. A user can manually create, edit, and delete entities at any time.
+5. The visual relationship map renders entities as nodes color-coded by type and edges labeled with relationship type.
+6. Clicking a node on the relationship map opens the entity page in a side panel without navigating away from the map.
+7. The relationship map can be filtered by entity type and story arc.
+8. Entity fuzzy search (via `pg_trgm`) returns relevant matches for partial and misspelled names.
+
 ---
 
 ### 4.6 Secret Management
@@ -616,6 +671,15 @@ When the DM reveals a secret in-game:
 - In **DM mode** (default): agent has full access to all information. Secrets are marked with 🔒 in responses so the DM can tell at a glance which information is player-known vs. hidden.
 - In **player-safe mode** (toggled for recap generation): agent only uses player-known facts.
 
+#### Acceptance Criteria
+
+1. Any entity field, fact, or note can be toggled between player-known and DM-only visibility.
+2. Imported material defaults to DM-only; session log content defaults to player-known; either default can be overridden per item.
+3. When the DM reveals a secret, a timestamp and optional note are recorded alongside the visibility change.
+4. In DM mode, agent responses that reference DM-only information display a visible 🔒 indicator on those facts.
+5. In player-safe mode, agent responses contain no DM-only information, even if that information is present in the knowledge base.
+6. Player-facing recap generation operates in player-safe mode by default and cannot be overridden to include DM-only facts.
+
 ---
 
 ### 4.7 Player-Facing Recaps
@@ -638,6 +702,15 @@ Generate narrative session recaps safe to share with players. These pull from se
 
 #### Safety Guarantee
 The recap generation explicitly filters out any DM-only facts. If a session log contains DM notes or secret tags, those are excluded from the recap's source context. The agent is instructed with a hard constraint: "This output will be shared with players. Do not include any DM-only information."
+
+#### Acceptance Criteria
+
+1. A user can generate a recap from any saved session log by clicking "Generate Recap."
+2. The user can configure tone (dramatic, casual, in-character, journalistic), length (short/medium/full), and perspective (first/second/third person) before generation.
+3. The generated recap contains no DM-only facts, regardless of what is present in the session log or knowledge base.
+4. The user can edit the generated recap before copying it.
+5. The recap is copyable to clipboard with a single action.
+6. If a campaign-wide style profile is configured, the recap conforms to that style unless a different tone is selected explicitly.
 
 ---
 
@@ -745,6 +818,26 @@ These features are lower priority but high everyday value. They support running 
 - "grapple rules" → concise rules summary.
 - "potion of healing" → item card with effect and cost.
 
+#### Acceptance Criteria
+
+##### 4.8.1 Map Reference
+1. A user can upload an image as a map and annotate it with numbered pins or rectangular regions.
+2. Each annotated region has a freeform note that can link to entities.
+3. Tapping a region during a session shows the note as an overlay without navigating away from the map.
+4. The overlay dismisses with a single tap outside it.
+
+##### 4.8.2 Combat Tracker
+1. A user can add combatants with name, initiative roll, max HP, and optional notes; the list auto-sorts by initiative.
+2. A user can increment or decrement combatant HP with tap buttons; HP never goes below 0 in the display.
+3. The current turn is highlighted; "Next Turn" advances to the next combatant in initiative order.
+4. The tracker can be reset or an encounter can be saved and re-loaded.
+
+##### 4.8.3 Quick Reference Lookup
+1. A user can invoke quick reference from any screen with a keyboard shortcut or action bar tap.
+2. Queries that exactly match a known entity return an entity card without an LLM call.
+3. Other queries return a terse, card-formatted response in under 5 seconds.
+4. The quick reference result does not persist as a regular conversation message; it is ephemeral.
+
 ---
 
 ### 4.9 Tonal & Writing Style Customization
@@ -772,6 +865,15 @@ When generating content, the system resolves style in this order (most specific 
 4. Named template (if the user selected one).
 5. Campaign-wide default.
 6. System default (clear, functional prose).
+
+#### Acceptance Criteria
+
+1. A user can provide writing samples; the system produces a structured style profile from those samples.
+2. A user can create, save, and apply named style templates (e.g., "gritty noir," "high fantasy").
+3. A specific entity can have a per-entity voice override that applies when generating content about that entity.
+4. Style application follows the resolution hierarchy: explicit instruction > per-entity override > per-content-type > named template > campaign default > system default.
+5. All generation endpoints (recaps, prep briefs, agent chat) respect the active style profile when one is configured.
+6. A user can preview a style profile by generating a short sample passage without committing to a full generation.
 
 ---
 

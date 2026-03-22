@@ -1,0 +1,239 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [master, main]
+  push:
+    branches: [master, main]
+
+jobs:
+  # ── PR Quality Gate ────────────────────────────────────────────────────────
+  pr:
+    name: Lint · Typecheck · Test
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: questlog
+          POSTGRES_PASSWORD: questlog
+          POSTGRES_DB: questlog_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://questlog:questlog@localhost:5433/questlog_test
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── Lint ──────────────────────────────────────────────────────────────
+      - name: Lint
+        run: pnpm turbo lint
+
+      # ── Typecheck ─────────────────────────────────────────────────────────
+      - name: Typecheck
+        run: pnpm turbo typecheck
+
+      # ── Guard: no test.only or test.skip ─────────────────────────────────
+      - name: Check for test.only / test.skip
+        run: |
+          if grep -rn --include="*.test.ts" --include="*.test.tsx" \
+               -E "(test|it|describe)\.(only|skip)" \
+               apps/ packages/; then
+            echo ""
+            echo "❌ Found test.only or test.skip. Remove them or link to a tracking issue."
+            exit 1
+          fi
+          echo "✅ No test.only or test.skip found."
+
+      # ── Run migrations ────────────────────────────────────────────────────
+      # TODO: remove continue-on-error once DB secrets are configured in CI
+      - name: Run database migrations
+        run: pnpm --filter @questlog/server db:migrate
+        continue-on-error: true
+
+      # ── Full test suite ───────────────────────────────────────────────────
+      # TODO: remove continue-on-error once ANTHROPIC_API_KEY and VOYAGE_API_KEY
+      # are configured as repository secrets and DB secrets are in place.
+      # Run tests locally with: pnpm turbo test
+      - name: Test
+        run: pnpm turbo test
+        continue-on-error: true
+
+  # ── Doc-Sync Warning ──────────────────────────────────────────────────────
+  doc-sync:
+    name: Doc-Sync Check
+    runs-on: ubuntu-latest
+    # Only relevant on PRs; skip on direct pushes to main (post-merge)
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for code changes without Docs/ update
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          # Get list of changed files in this PR
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          CODE_CHANGED=false
+          DOCS_CHANGED=false
+
+          while IFS= read -r file; do
+            if echo "$file" | grep -qE "^(apps|packages)/"; then
+              CODE_CHANGED=true
+            fi
+            if echo "$file" | grep -qE "^Docs/"; then
+              DOCS_CHANGED=true
+            fi
+          done <<< "$CHANGED"
+
+          if $CODE_CHANGED && ! $DOCS_CHANGED; then
+            if echo "$PR_TITLE" | grep -q "\[skip-doc-check\]"; then
+              echo "ℹ️ Doc-sync check skipped via [skip-doc-check] in PR title."
+              exit 0
+            fi
+            echo "⚠️ Code changed without a Docs/ update. If intentional, add [skip-doc-check] to your PR title."
+            # Warning only — not a hard fail
+            exit 0
+          fi
+
+          echo "✅ Doc-sync check passed."
+
+  # ── Migration Guard ───────────────────────────────────────────────────────
+  migration-guard:
+    name: Migration Guard
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check schema changes have migrations
+        run: |
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          SCHEMA_CHANGED=false
+          MIGRATION_ADDED=false
+
+          while IFS= read -r file; do
+            if echo "$file" | grep -qE ".*/schema/.*\.(ts|sql)$"; then
+              SCHEMA_CHANGED=true
+            fi
+            if echo "$file" | grep -qE ".*/migrations/.*\.sql$"; then
+              MIGRATION_ADDED=true
+            fi
+          done <<< "$CHANGED"
+
+          if $SCHEMA_CHANGED && ! $MIGRATION_ADDED; then
+            echo ""
+            echo "❌ Schema files were changed but no new migration SQL file was found."
+            echo "   Run: pnpm drizzle-kit generate"
+            echo "   Then commit the generated file from apps/server/src/db/migrations/"
+            exit 1
+          fi
+
+          if $SCHEMA_CHANGED && $MIGRATION_ADDED; then
+            echo "✅ Migration guard passed — schema change has a corresponding migration."
+          else
+            echo "✅ Migration guard passed — no schema changes detected."
+          fi
+
+  # ── IMPLEMENTATION_NOTES Health ───────────────────────────────────────────
+  impl-notes-health:
+    name: Implementation Notes Health
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check IMPLEMENTATION_NOTES.md size
+        run: |
+          FILE="Docs/IMPLEMENTATION_NOTES.md"
+          LINE_COUNT=$(wc -l < "$FILE")
+          LIMIT=300
+
+          echo "ℹ️ $FILE is $LINE_COUNT lines (limit: $LIMIT)."
+
+          if [ "$LINE_COUNT" -gt "$LIMIT" ]; then
+            echo ""
+            echo "⚠️ IMPLEMENTATION_NOTES.md has grown past $LIMIT lines ($LINE_COUNT)."
+            echo "   Consider archiving resolved or stable entries to Docs/IMPLEMENTATION_NOTES_ARCHIVE.md"
+            echo "   before merging, to keep session startup reads fast."
+            echo "   This is a warning only — not a hard failure."
+          else
+            echo "✅ Size check passed."
+          fi
+
+      - name: Check write obligation for sensitive file changes
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          SENSITIVE_CHANGED=false
+          IMPL_NOTES_CHANGED=false
+
+          while IFS= read -r file; do
+            # Sensitive patterns: service files, schema, AI/LLM layer
+            if echo "$file" | grep -qE "\.(service|schema|router)\.(ts|tsx)$|schema/tables\.ts|/ai/"; then
+              SENSITIVE_CHANGED=true
+            fi
+            if echo "$file" | grep -qE "^Docs/IMPLEMENTATION_NOTES\.md$"; then
+              IMPL_NOTES_CHANGED=true
+            fi
+          done <<< "$CHANGED"
+
+          if $SENSITIVE_CHANGED && ! $IMPL_NOTES_CHANGED; then
+            if echo "$PR_TITLE" | grep -q "\[skip-impl-notes\]"; then
+              echo "ℹ️ Implementation notes check skipped via [skip-impl-notes] in PR title."
+              exit 0
+            fi
+            echo ""
+            echo "⚠️ Service, schema, or AI files changed without updating IMPLEMENTATION_NOTES.md."
+            echo "   If a non-obvious decision was made, document it before merging."
+            echo "   If no new decision was needed, add [skip-impl-notes] to your PR title."
+            echo "   This is a warning only — not a hard failure."
+          else
+            echo "✅ Implementation notes check passed."
+          fi
+
+  # ── Workflow Self-Validation ──────────────────────────────────────────────
+  actionlint:
+    name: Validate workflow files
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install and run actionlint
+        run: |
+          bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color
