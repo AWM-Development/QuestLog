@@ -5,7 +5,7 @@ export default defineConfig({
 		globals: true,
 		sequence: { concurrent: false },
 		env: {
-			DATABASE_URL: "postgresql://questlog:questlog@localhost:5433/questlog",
+			DATABASE_URL: "postgresql://questlog:questlog@localhost:5433/questlog_test",
 		},
 	},
 });

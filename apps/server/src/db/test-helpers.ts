@@ -24,7 +24,7 @@ export function basisVector(axis: number, dims = 1024): number[] {
 export function createTestDb() {
 	const connectionString =
 		process.env.DATABASE_URL ??
-		"postgresql://questlog:questlog@localhost:5433/questlog";
+		"postgresql://questlog:questlog@localhost:5433/questlog_test";
 	const client = postgres(connectionString, { max: 1, idle_timeout: 10 });
 	const db = drizzle(client, { schema });
 
