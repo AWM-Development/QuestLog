@@ -5,6 +5,8 @@ import type { DisplayMessage } from "../types.js";
 interface UseChatReturn {
 	messages: DisplayMessage[];
 	sendMessage: (query: string) => Promise<void>;
+	/** Aborts an in-flight stream (same as unmount). Wire to a Cancel control. */
+	cancel: () => void;
 	isLoading: boolean;
 	isStreaming: boolean;
 	streamingContent: string;
@@ -12,11 +14,28 @@ interface UseChatReturn {
 	retry: () => void;
 }
 
+function jsonErrorMessage(body: unknown): string {
+	if (!body || typeof body !== "object") return "Failed to get response";
+	const o = body as Record<string, unknown>;
+	const msg = o.message;
+	const err = o.error;
+	if (typeof msg === "string" && msg.length > 0) return msg;
+	if (typeof err === "string" && err.length > 0) return err;
+	return "Failed to get response";
+}
+
+function sseErrorCode(
+	code: unknown,
+): "TOO_MANY_REQUESTS" | "NOT_FOUND" | "INTERNAL_SERVER_ERROR" {
+	if (code === 429) return "TOO_MANY_REQUESTS";
+	if (code === 404) return "NOT_FOUND";
+	return "INTERNAL_SERVER_ERROR";
+}
+
 /**
  * Core hook for sending chat messages and managing streaming state.
  *
- * Uses the SSE streaming endpoint for real-time token delivery,
- * with fallback to the tRPC mutation.
+ * Delivers assistant text via the SSE `/api/conversation/:id/stream` endpoint.
  */
 export function useChat(
 	campaignId: string,
@@ -84,7 +103,7 @@ export function useChat(
 									? "TOO_MANY_REQUESTS"
 									: "INTERNAL_SERVER_ERROR",
 						},
-						message: errBody.message || "Failed to get response",
+						message: jsonErrorMessage(errBody),
 					};
 				}
 
@@ -136,8 +155,8 @@ export function useChat(
 						"message" in parsed
 					) {
 						const code =
-							"code" in parsed && parsed.code === 429
-								? "TOO_MANY_REQUESTS"
+							"code" in parsed
+								? sseErrorCode((parsed as { code?: unknown }).code)
 								: "INTERNAL_SERVER_ERROR";
 						const message =
 							typeof parsed.message === "string"
@@ -198,6 +217,11 @@ export function useChat(
 				setIsStreaming(false);
 				setStreamingContent("");
 				if (err instanceof DOMException && err.name === "AbortError") {
+					setOptimisticMessages([]);
+					void utils.conversation.getMessages.invalidate({
+						conversationId,
+					});
+					void utils.conversation.list.invalidate({ campaignId });
 					return;
 				}
 				setError(err as { data?: { code?: string }; message?: string });
@@ -214,6 +238,10 @@ export function useChat(
 			sendMessage(lastQueryRef.current);
 		}
 	}, [sendMessage]);
+
+	const cancel = useCallback(() => {
+		abortRef.current?.abort();
+	}, []);
 
 	// Merge server messages with optimistic/streaming messages
 	const serverMessages: DisplayMessage[] = (messagesQuery.data ?? []).map(
@@ -247,6 +275,7 @@ export function useChat(
 	return {
 		messages: allMessages,
 		sendMessage,
+		cancel,
 		isLoading,
 		isStreaming,
 		streamingContent,

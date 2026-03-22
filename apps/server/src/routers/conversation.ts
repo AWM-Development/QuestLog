@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { conversationService } from "../services/conversation.service.js";
 import { procedure, router, withErrorHandling } from "../trpc.js";
+import { conversationChatInputSchema } from "./conversation.schemas.js";
 
 export const conversationRouter = router({
 	create: procedure
@@ -47,13 +48,7 @@ export const conversationRouter = router({
 		),
 
 	chat: procedure
-		.input(
-			z.object({
-				campaignId: z.string().uuid(),
-				conversationId: z.string().uuid(),
-				query: z.string().min(1).max(10_000),
-			}),
-		)
+		.input(conversationChatInputSchema)
 		.mutation(({ ctx, input }) =>
 			withErrorHandling(() => conversationService.chat(ctx.db, input)),
 		),

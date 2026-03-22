@@ -714,6 +714,42 @@ describe("conversation router", () => {
 			expect(errorData.code).toBe(404);
 		});
 
+		it("sends error event when conversation belongs to a different campaign", async () => {
+			const resp2 = await app.inject({
+				method: "POST",
+				url: "/trpc/campaign.create",
+				headers: { "content-type": "application/json" },
+				payload: { json: { name: "Other Campaign", theme: "fantasy" } },
+			});
+			const otherCampaignId = resp2.json().result.data.json.id;
+			extraCampaignIds.push(otherCampaignId);
+
+			const convResp = await app.inject({
+				method: "POST",
+				url: "/trpc/conversation.create",
+				headers: { "content-type": "application/json" },
+				payload: { json: { campaignId } },
+			});
+			const conversationId = convResp.json().result.data.json.id;
+
+			const response = await app.inject({
+				method: "POST",
+				url: `/api/conversation/${conversationId}/stream`,
+				headers: { "content-type": "application/json" },
+				payload: { campaignId: otherCampaignId, query: "Hello" },
+			});
+
+			expect(response.statusCode).toBe(200);
+			const events = parseSSE(response.body);
+			const errorEvent = events.find((e) => e.event === "error");
+			expect(errorEvent).toBeDefined();
+			const errorData = JSON.parse(errorEvent?.data as string);
+			expect(errorData.code).toBe(400);
+			expect(JSON.stringify(errorData)).toContain(
+				"does not belong to campaign",
+			);
+		});
+
 		it("returns 400 for missing query", async () => {
 			const convResp = await app.inject({
 				method: "POST",
