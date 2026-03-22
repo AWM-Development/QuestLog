@@ -65,6 +65,10 @@ jobs:
           fi
           echo "✅ No test.only or test.skip found."
 
+      # ── Run migrations ────────────────────────────────────────────────────
+      - name: Run database migrations
+        run: pnpm --filter @questlog/server db:migrate
+
       # ── Full test suite ───────────────────────────────────────────────────
       - name: Test
         run: pnpm turbo test
