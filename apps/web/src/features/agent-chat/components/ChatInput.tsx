@@ -10,6 +10,9 @@ import {
 interface ChatInputProps {
 	onSend: (message: string) => void;
 	disabled?: boolean;
+	/** When true, show Stop to abort an in-flight streamed response. */
+	canCancel?: boolean;
+	onCancel?: () => void;
 	onStarterFill?: string;
 }
 
@@ -48,20 +51,31 @@ const textareaStyle: CSSProperties = {
 	overflow: "auto",
 };
 
-const sendButtonStyle: CSSProperties = {
+const actionButtonBase: CSSProperties = {
 	width: 36,
 	height: 36,
 	borderRadius: "var(--r-md)",
-	background: "var(--accent)",
-	color: "var(--bg-void)",
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "center",
 	flexShrink: 0,
 	cursor: "pointer",
-	border: "none",
 	fontSize: "14px",
 	transition: "all 150ms ease",
+};
+
+const sendButtonStyle: CSSProperties = {
+	...actionButtonBase,
+	background: "var(--accent)",
+	color: "var(--bg-void)",
+	border: "none",
+};
+
+const stopButtonStyle: CSSProperties = {
+	...actionButtonBase,
+	background: "transparent",
+	color: "var(--text-secondary)",
+	border: "1px solid var(--border)",
 };
 
 const toolChipsStyle: CSSProperties = {
@@ -72,11 +86,19 @@ const toolChipsStyle: CSSProperties = {
 	color: "var(--text-dim)",
 };
 
-export function ChatInput({ onSend, disabled, onStarterFill }: ChatInputProps) {
+export function ChatInput({
+	onSend,
+	disabled,
+	canCancel,
+	onCancel,
+	onStarterFill,
+}: ChatInputProps) {
 	const [value, setValue] = useState("");
 	const [focused, setFocused] = useState(false);
 	const [sendHovered, setSendHovered] = useState(false);
 	const [sendActive, setSendActive] = useState(false);
+	const [stopHovered, setStopHovered] = useState(false);
+	const [stopActive, setStopActive] = useState(false);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 	// Handle starter prompt fill
@@ -119,6 +141,7 @@ export function ChatInput({ onSend, disabled, onStarterFill }: ChatInputProps) {
 
 	const isEmpty = value.trim().length === 0;
 	const isDisabled = disabled || isEmpty;
+	const showStop = Boolean(canCancel && onCancel);
 
 	return (
 		<div style={wrapperStyle}>
@@ -146,6 +169,32 @@ export function ChatInput({ onSend, disabled, onStarterFill }: ChatInputProps) {
 					rows={1}
 					aria-label="Chat message input"
 				/>
+				{showStop && (
+					<button
+						type="button"
+						style={{
+							...stopButtonStyle,
+							...(stopHovered
+								? {
+										borderColor: "var(--border-hover)",
+										color: "var(--text-primary)",
+									}
+								: {}),
+							...(stopActive ? { transform: "scale(0.96)" } : {}),
+						}}
+						onClick={() => onCancel?.()}
+						onMouseEnter={() => setStopHovered(true)}
+						onMouseLeave={() => {
+							setStopHovered(false);
+							setStopActive(false);
+						}}
+						onMouseDown={() => setStopActive(true)}
+						onMouseUp={() => setStopActive(false)}
+						aria-label="Stop generation"
+					>
+						&#x25A0;
+					</button>
+				)}
 				<button
 					type="button"
 					style={{

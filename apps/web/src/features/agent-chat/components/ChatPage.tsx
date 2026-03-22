@@ -81,11 +81,14 @@ export function ChatPage() {
 	const {
 		messages,
 		sendMessage,
+		cancel: cancelChat,
 		isLoading: chatLoading,
 		isStreaming,
 		error,
 		retry,
 	} = useChat(campaignId ?? "", conversationId);
+
+	const canCancelStream = !!conversationId && (isStreaming || chatLoading);
 
 	// Send pending message after auto-create navigates to new conversation
 	useEffect(() => {
@@ -208,6 +211,8 @@ export function ChatPage() {
 
 				<ChatInput
 					onSend={handleSend}
+					onCancel={cancelChat}
+					canCancel={canCancelStream}
 					disabled={isStreaming || (chatLoading && !!conversationId)}
 					onStarterFill={starterFill}
 				/>

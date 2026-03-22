@@ -50,4 +50,20 @@ describe("ChatInput", () => {
 		fireEvent.keyDown(textarea, { key: "Enter" });
 		expect(textarea.value).toBe("");
 	});
+
+	it("shows Stop when canCancel and calls onCancel", () => {
+		const onCancel = vi.fn();
+		render(
+			<ChatInput onSend={vi.fn()} canCancel onCancel={onCancel} disabled />,
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Stop generation" }));
+		expect(onCancel).toHaveBeenCalledOnce();
+	});
+
+	it("does not show Stop when canCancel is false", () => {
+		render(<ChatInput onSend={vi.fn()} onCancel={vi.fn()} />);
+		expect(
+			screen.queryByRole("button", { name: "Stop generation" }),
+		).not.toBeInTheDocument();
+	});
 });
