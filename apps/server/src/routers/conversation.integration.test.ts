@@ -14,7 +14,11 @@ import {
 	messages as messagesTable,
 	sources,
 } from "../db/schema/index.js";
-import { basisVector, createTestDb } from "../db/test-helpers.js";
+import {
+	basisVector,
+	createTestDb,
+	deleteCampaignTree,
+} from "../db/test-helpers.js";
 import { buildApp } from "../server.js";
 
 const { mockCreate, mockStream, MockAPIError } = vi.hoisted(() => {
@@ -127,9 +131,11 @@ afterAll(async () => {
 
 describe("conversation router", () => {
 	let campaignId: string;
+	/** Campaigns created inside individual tests (must be torn down with the primary). */
+	let extraCampaignIds: string[] = [];
 
 	beforeEach(async () => {
-		await db.execute(sql`BEGIN`);
+		extraCampaignIds = [];
 		vi.clearAllMocks();
 
 		mockCreate.mockResolvedValue({
@@ -163,7 +169,10 @@ describe("conversation router", () => {
 	});
 
 	afterEach(async () => {
-		await db.execute(sql`ROLLBACK`);
+		await deleteCampaignTree(db, campaignId);
+		for (const id of extraCampaignIds) {
+			await deleteCampaignTree(db, id);
+		}
 	});
 
 	describe("conversation.create", () => {
@@ -351,6 +360,7 @@ describe("conversation router", () => {
 				payload: { json: { name: "Other Campaign", theme: "fantasy" } },
 			});
 			const otherCampaignId = resp2.json().result.data.json.id;
+			extraCampaignIds.push(otherCampaignId);
 
 			// Create a conversation under the first campaign
 			const convResp = await app.inject({
