@@ -4,6 +4,12 @@ import {
 	panelSection,
 	panelSectionTitle,
 } from "../../../components/styles.js";
+import {
+	chatContextPanelSurface,
+	chatIconButton,
+	chatOverlayScrim,
+	chatPanelHeader,
+} from "../styles.js";
 import type { MessageSource } from "../types.js";
 
 interface ContextPanelProps {
@@ -13,14 +19,7 @@ interface ContextPanelProps {
 }
 
 const panelStyle: CSSProperties = {
-	width: 300,
-	background: "var(--bg-surface)",
-	borderLeft: "0.5px solid var(--border)",
-	display: "flex",
-	flexDirection: "column",
-	height: "100%",
-	overflow: "auto",
-	flexShrink: 0,
+	...chatContextPanelSurface,
 };
 
 const overlayPanelStyle: CSSProperties = {
@@ -33,14 +32,7 @@ const overlayPanelStyle: CSSProperties = {
 	animation: "panel-in 200ms ease",
 };
 
-const panelHeaderStyle: CSSProperties = {
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "space-between",
-	padding: "10px 14px",
-	borderBottom: "0.5px solid var(--border-subtle)",
-	flexShrink: 0,
-};
+const panelHeaderStyle: CSSProperties = chatPanelHeader;
 
 const panelHeaderLabel: CSSProperties = {
 	fontSize: "12px",
@@ -49,18 +41,10 @@ const panelHeaderLabel: CSSProperties = {
 };
 
 const closeBtnStyle: CSSProperties = {
+	...chatIconButton,
 	width: 24,
 	height: 24,
-	borderRadius: "var(--r-sm)",
-	border: "none",
-	background: "transparent",
-	color: "var(--text-muted)",
-	cursor: "pointer",
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
 	fontSize: "14px",
-	transition: "all 150ms ease",
 };
 
 const entityRowStyle: CSSProperties = {
@@ -94,11 +78,7 @@ const entityTypeStyle: CSSProperties = {
 };
 
 const scrimStyle: CSSProperties = {
-	position: "fixed",
-	inset: 0,
-	zIndex: 19,
-	background: "rgba(9,13,18,0.5)",
-	animation: "scrim-in 150ms ease",
+	...chatOverlayScrim,
 };
 
 function guessEntityType(sourceName: string): keyof typeof entityAvatarColors {

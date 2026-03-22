@@ -26,6 +26,10 @@
 	--border: #1a2838;
 	--border-hover: #1e3448;
 	--border-subtle: #14222e;
+	--state-hover-soft: rgba(208, 228, 240, 0.03);
+	--state-active-soft: rgba(96, 184, 255, 0.06);
+	--state-active-border: rgba(96, 184, 255, 0.12);
+	--overlay-scrim: rgba(9, 13, 18, 0.5);
 
 	/* ── Entity colors ── */
 	/* NPC — bright blue, high energy */

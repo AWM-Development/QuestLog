@@ -1,4 +1,11 @@
 import { type CSSProperties, useState } from "react";
+import {
+	chatDrawerSurface,
+	chatIconButton,
+	chatOverlayScrim,
+	chatPillButton,
+	chatSearchInput,
+} from "../styles.js";
 import { ConversationListItem } from "./ConversationListItem.js";
 
 interface Conversation {
@@ -22,19 +29,8 @@ interface ConversationDrawerProps {
 	onUndoArchive: (id: string) => void;
 }
 
-const drawerStyle: CSSProperties = {
-	width: 240,
-	background: "var(--bg-surface)",
-	borderRight: "0.5px solid var(--border)",
-	display: "flex",
-	flexDirection: "column",
-	height: "100%",
-	overflow: "hidden",
-	flexShrink: 0,
-};
-
 const overlayDrawerStyle: CSSProperties = {
-	...drawerStyle,
+	...chatDrawerSurface,
 	position: "fixed",
 	top: 0,
 	left: 56,
@@ -43,14 +39,9 @@ const overlayDrawerStyle: CSSProperties = {
 	animation: "drawer-in 200ms ease",
 };
 
-const scrimStyle: CSSProperties = {
-	position: "fixed",
-	inset: 0,
-	left: 56,
-	zIndex: 19,
-	background: "rgba(9,13,18,0.5)",
-	animation: "scrim-in 150ms ease",
-};
+const drawerStyle: CSSProperties = chatDrawerSurface;
+
+const scrimStyle: CSSProperties = { ...chatOverlayScrim, left: 56 };
 
 const headerStyle: CSSProperties = {
 	display: "flex",
@@ -68,30 +59,17 @@ const labelStyle: CSSProperties = {
 };
 
 const newBtnStyle: CSSProperties = {
+	...chatIconButton,
 	width: 24,
 	height: 24,
-	borderRadius: "var(--r-sm)",
-	border: "none",
 	background: "var(--accent-muted)",
 	color: "var(--accent)",
-	cursor: "pointer",
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
 	fontSize: "14px",
-	transition: "all 150ms ease",
 };
 
 const searchInputStyle: CSSProperties = {
+	...chatSearchInput,
 	margin: "0 12px 8px",
-	padding: "6px 10px",
-	background: "var(--bg-elevated)",
-	border: "1px solid var(--border)",
-	borderRadius: "var(--r-sm)",
-	fontSize: "11px",
-	color: "var(--text-primary)",
-	outline: "none",
-	fontFamily: "var(--font-body)",
 };
 
 const listStyle: CSSProperties = {
@@ -200,12 +178,10 @@ export function ConversationDrawer({
 					<button
 						type="button"
 						style={{
-							background: "none",
-							border: "none",
+							...chatPillButton,
+							padding: "2px 6px",
 							color: "var(--accent)",
-							cursor: "pointer",
 							fontSize: "11px",
-							fontFamily: "var(--font-body)",
 						}}
 						onClick={() => onUndoArchive(pendingArchiveId)}
 					>

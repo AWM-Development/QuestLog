@@ -59,6 +59,36 @@ export const buttonAction: CSSProperties = {
 	transition: "all 0.2s",
 };
 
+export const iconButtonBase: CSSProperties = {
+	width: 24,
+	height: 24,
+	borderRadius: "var(--r-sm)",
+	border: "none",
+	background: "transparent",
+	color: "var(--text-muted)",
+	cursor: "pointer",
+	display: "inline-flex",
+	alignItems: "center",
+	justifyContent: "center",
+	transition: "all 150ms ease",
+};
+
+export const chipBase: CSSProperties = {
+	display: "inline-flex",
+	alignItems: "center",
+	gap: "var(--space-1)",
+	padding: "2px 8px",
+	borderRadius: "var(--r-sm)",
+	fontFamily: "var(--font-body)",
+	fontSize: "11px",
+};
+
+export const cardSurface: CSSProperties = {
+	backgroundColor: "var(--bg-elevated)",
+	border: "1px solid var(--border-subtle)",
+	borderRadius: "var(--r-md)",
+};
+
 // ── Entity links ──
 
 /** Base inline entity link style. Apply entity-specific color via additional props. */
@@ -165,6 +195,14 @@ export const panelSectionTitle: CSSProperties = {
 	fontWeight: 500,
 };
 
+export const panelHeaderBase: CSSProperties = {
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "space-between",
+	padding: "var(--space-3) var(--space-4)",
+	borderBottom: "0.5px solid var(--border-subtle)",
+};
+
 export const overlineLabel: CSSProperties = {
 	fontSize: "0.625rem",
 	letterSpacing: "0.06em",
@@ -193,6 +231,29 @@ export const chatStatusDot: CSSProperties = {
 	height: 6,
 	borderRadius: "50%",
 	flexShrink: 0,
+};
+
+export const pageContainer: CSSProperties = {
+	maxWidth: "760px",
+};
+
+export const pageHeaderRow: CSSProperties = {
+	display: "flex",
+	justifyContent: "space-between",
+	alignItems: "center",
+	marginBottom: "var(--space-8)",
+};
+
+export const pageTitle: CSSProperties = {
+	fontFamily: "var(--font-display)",
+	fontSize: "1.75rem",
+	fontWeight: 700,
+	color: "var(--text-primary)",
+};
+
+export const pageSubtitle: CSSProperties = {
+	fontSize: "0.875rem",
+	color: "var(--text-secondary)",
 };
 
 // ── Cards ──

@@ -1,4 +1,6 @@
 import { type CSSProperties, useEffect, useRef, useState } from "react";
+import { chipBase } from "../../../components/styles.js";
+import { chatPillButton, chatSearchInput } from "../styles.js";
 import { getTagColor } from "../types.js";
 
 interface ConversationTagsProps {
@@ -8,13 +10,10 @@ interface ConversationTagsProps {
 }
 
 const tagPillStyle: CSSProperties = {
-	display: "inline-flex",
-	alignItems: "center",
+	...chipBase,
 	gap: "3px",
 	fontSize: "10px",
-	borderRadius: "var(--r-sm)",
 	padding: "2px 7px",
-	fontFamily: "var(--font-body)",
 };
 
 const removeButtonStyle: CSSProperties = {
@@ -28,15 +27,7 @@ const removeButtonStyle: CSSProperties = {
 };
 
 const addButtonStyle: CSSProperties = {
-	fontSize: "10px",
-	borderRadius: "var(--r-sm)",
-	padding: "2px 7px",
-	border: "1px dashed var(--border)",
-	background: "transparent",
-	color: "var(--text-dim)",
-	cursor: "pointer",
-	fontFamily: "var(--font-body)",
-	transition: "all 150ms ease",
+	...chatPillButton,
 };
 
 const popoverStyle: CSSProperties = {
@@ -54,15 +45,9 @@ const popoverStyle: CSSProperties = {
 };
 
 const popoverInputStyle: CSSProperties = {
+	...chatSearchInput,
 	width: "100%",
-	background: "var(--bg-elevated)",
-	border: "1px solid var(--border)",
-	borderRadius: "var(--r-sm)",
 	padding: "6px 8px",
-	fontSize: "11px",
-	color: "var(--text-primary)",
-	outline: "none",
-	fontFamily: "var(--font-body)",
 	boxSizing: "border-box",
 };
 

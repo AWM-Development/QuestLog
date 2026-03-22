@@ -1,4 +1,5 @@
 import { type CSSProperties, useEffect, useState } from "react";
+import { chatHeaderBar, chatIconButton } from "../styles.js";
 import { ConversationTags } from "./ConversationTags.js";
 
 interface ChatHeaderProps {
@@ -14,35 +15,8 @@ interface ChatHeaderProps {
 	onUpdateTags: (tags: string[]) => void;
 }
 
-const headerStyle: CSSProperties = {
-	display: "flex",
-	alignItems: "center",
-	gap: "10px",
-	padding: "10px 20px",
-	borderBottom: "0.5px solid var(--border-subtle)",
-	flexShrink: 0,
-	minHeight: "48px",
-	overflow: "hidden",
-};
-
-const toggleBtnStyle: CSSProperties = {
-	width: 28,
-	height: 28,
-	borderRadius: "var(--r-sm)",
-	border: "none",
-	background: "transparent",
-	color: "var(--text-muted)",
-	cursor: "pointer",
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-	fontSize: "14px",
-	transition: "all 150ms ease",
-	flexShrink: 0,
-};
-
 const campaignBadgeStyle: CSSProperties = {
-	padding: "3px 10px",
+	padding: "2px 10px",
 	borderRadius: "var(--r-pill)",
 	background: "var(--accent-muted)",
 	border: "0.5px solid var(--ent-npc-border)",
@@ -163,10 +137,10 @@ export function ChatHeader({
 	};
 
 	return (
-		<div style={headerStyle}>
+		<div style={chatHeaderBar}>
 			<button
 				type="button"
-				style={toggleBtnStyle}
+				style={{ ...chatIconButton, flexShrink: 0 }}
 				onClick={onToggleDrawer}
 				aria-label={drawerOpen ? "Close drawer" : "Open drawer"}
 			>

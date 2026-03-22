@@ -24,14 +24,14 @@ const itemStyle: CSSProperties = {
 };
 
 const activeStyle: CSSProperties = {
-	background: "rgba(96,184,255,0.06)",
+	background: "var(--state-active-soft)",
 	borderWidth: "0.5px",
 	borderStyle: "solid",
-	borderColor: "rgba(96,184,255,0.12)",
+	borderColor: "var(--state-active-border)",
 };
 
 const hoverStyle: CSSProperties = {
-	background: "rgba(208,228,240,0.03)",
+	background: "var(--state-hover-soft)",
 };
 
 const titleStyle: CSSProperties = {
