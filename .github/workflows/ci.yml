@@ -155,6 +155,67 @@ jobs:
             echo "✅ Migration guard passed — no schema changes detected."
           fi
 
+  # ── IMPLEMENTATION_NOTES Health ───────────────────────────────────────────
+  impl-notes-health:
+    name: Implementation Notes Health
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check IMPLEMENTATION_NOTES.md size
+        run: |
+          FILE="Docs/IMPLEMENTATION_NOTES.md"
+          LINE_COUNT=$(wc -l < "$FILE")
+          LIMIT=300
+
+          echo "ℹ️ $FILE is $LINE_COUNT lines (limit: $LIMIT)."
+
+          if [ "$LINE_COUNT" -gt "$LIMIT" ]; then
+            echo ""
+            echo "⚠️ IMPLEMENTATION_NOTES.md has grown past $LIMIT lines ($LINE_COUNT)."
+            echo "   Consider archiving resolved or stable entries to Docs/IMPLEMENTATION_NOTES_ARCHIVE.md"
+            echo "   before merging, to keep session startup reads fast."
+            echo "   This is a warning only — not a hard failure."
+          else
+            echo "✅ Size check passed."
+          fi
+
+      - name: Check write obligation for sensitive file changes
+        run: |
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          SENSITIVE_CHANGED=false
+          IMPL_NOTES_CHANGED=false
+
+          while IFS= read -r file; do
+            # Sensitive patterns: service files, schema, AI/LLM layer
+            if echo "$file" | grep -qE "\.(service|schema|router)\.(ts|tsx)$|schema/tables\.ts|/ai/"; then
+              SENSITIVE_CHANGED=true
+            fi
+            if echo "$file" | grep -qE "^Docs/IMPLEMENTATION_NOTES\.md$"; then
+              IMPL_NOTES_CHANGED=true
+            fi
+          done <<< "$CHANGED"
+
+          if $SENSITIVE_CHANGED && ! $IMPL_NOTES_CHANGED; then
+            PR_TITLE="${{ github.event.pull_request.title }}"
+            if echo "$PR_TITLE" | grep -q "\[skip-impl-notes\]"; then
+              echo "ℹ️ Implementation notes check skipped via [skip-impl-notes] in PR title."
+              exit 0
+            fi
+            echo ""
+            echo "⚠️ Service, schema, or AI files changed without updating IMPLEMENTATION_NOTES.md."
+            echo "   If a non-obvious decision was made, document it before merging."
+            echo "   If no new decision was needed, add [skip-impl-notes] to your PR title."
+            echo "   This is a warning only — not a hard failure."
+          else
+            echo "✅ Implementation notes check passed."
+          fi
+
   # ── Workflow Self-Validation ──────────────────────────────────────────────
   actionlint:
     name: Validate workflow files
