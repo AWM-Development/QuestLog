@@ -216,8 +216,8 @@ export const overlineLabel: CSSProperties = {
 export const chatMessageHeader: CSSProperties = {
 	display: "flex",
 	alignItems: "center",
-	gap: "6px",
-	marginBottom: "8px",
+	gap: "var(--space-2)",
+	marginBottom: "var(--space-2)",
 };
 
 export const chatMessageLabel: CSSProperties = {
@@ -235,6 +235,8 @@ export const chatStatusDot: CSSProperties = {
 
 export const pageContainer: CSSProperties = {
 	maxWidth: "760px",
+	margin: "0 auto",
+	padding: "var(--space-8) var(--space-6)",
 };
 
 export const pageHeaderRow: CSSProperties = {
@@ -290,7 +292,7 @@ export const inputField: CSSProperties = {
 
 export const inputFieldFocus: CSSProperties = {
 	borderColor: "var(--border-hover)",
-	boxShadow: "0 0 0 3px rgba(96, 184, 255, 0.06)",
+	boxShadow: "0 0 0 3px var(--state-active-soft)",
 };
 
 // ── Inline alerts ──

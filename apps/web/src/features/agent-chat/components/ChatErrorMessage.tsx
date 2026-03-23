@@ -11,10 +11,10 @@ interface ChatErrorMessageProps {
 }
 
 const genericCardStyle: CSSProperties = {
-	background: "rgba(232,93,80,0.06)",
-	border: "1px solid rgba(232,93,80,0.15)",
+	background: "var(--status-error-muted)",
+	border: "1px solid var(--status-error)",
 	borderRadius: "var(--r-lg)",
-	padding: "14px 18px",
+	padding: "var(--space-3) var(--space-5)",
 	fontSize: "13px",
 	lineHeight: 1.6,
 	color: "var(--text-secondary)",
@@ -22,10 +22,10 @@ const genericCardStyle: CSSProperties = {
 };
 
 const rateLimitCardStyle: CSSProperties = {
-	background: "rgba(239,173,63,0.06)",
-	border: "1px solid rgba(239,173,63,0.15)",
+	background: "var(--status-warning-muted)",
+	border: "1px solid var(--status-warning)",
 	borderRadius: "var(--r-lg)",
-	padding: "14px 18px",
+	padding: "var(--space-3) var(--space-5)",
 	fontSize: "13px",
 	lineHeight: 1.6,
 	color: "var(--text-secondary)",

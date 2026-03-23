@@ -32,15 +32,14 @@ const addButtonStyle: CSSProperties = {
 
 const popoverStyle: CSSProperties = {
 	position: "absolute",
-	top: "100%",
+	top: 0,
 	left: 0,
-	marginTop: "4px",
 	width: "220px",
 	background: "var(--bg-focal)",
 	border: "0.5px solid var(--border)",
 	borderRadius: "var(--r-md)",
-	padding: "8px",
-	boxShadow: "0 12px 40px rgba(4, 12, 24, 0.8)",
+	padding: "var(--space-2)",
+	boxShadow: "var(--shadow-focal)",
 	zIndex: 30,
 };
 
@@ -124,7 +123,7 @@ export function ConversationTags({
 			style={{
 				display: "flex",
 				alignItems: "center",
-				gap: "4px",
+				gap: "var(--space-1)",
 				position: "relative",
 			}}
 		>
@@ -153,17 +152,19 @@ export function ConversationTags({
 			})}
 
 			<div ref={popoverRef} style={{ position: "relative" }}>
-				<button
-					type="button"
-					style={addButtonStyle}
-					aria-label="Add tag"
-					onClick={() => {
-						setOpen((prev) => !prev);
-						setActiveIndex(0);
-					}}
-				>
-					+ tag
-				</button>
+				{!open && (
+					<button
+						type="button"
+						style={addButtonStyle}
+						aria-label="Add tag"
+						onClick={() => {
+							setOpen(true);
+							setActiveIndex(0);
+						}}
+					>
+						+ tag
+					</button>
+				)}
 
 				{open && (
 					<div style={popoverStyle}>

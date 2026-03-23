@@ -47,13 +47,13 @@ const headerStyle: CSSProperties = {
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "space-between",
-	padding: "14px 12px 8px",
+	padding: "var(--space-3) var(--space-3) var(--space-2)",
 };
 
 const labelStyle: CSSProperties = {
 	fontSize: "11px",
 	textTransform: "uppercase",
-	letterSpacing: "0.5px",
+	letterSpacing: "0.06em",
 	color: "var(--text-dim)",
 	fontWeight: 500,
 };
@@ -69,21 +69,21 @@ const newBtnStyle: CSSProperties = {
 
 const searchInputStyle: CSSProperties = {
 	...chatSearchInput,
-	margin: "0 12px 8px",
+	margin: "0 var(--space-3) var(--space-2)",
 };
 
 const listStyle: CSSProperties = {
 	flex: 1,
 	overflowY: "auto",
-	padding: "0 8px",
+	padding: "0 var(--space-2)",
 	display: "flex",
 	flexDirection: "column",
 	gap: "2px",
 };
 
 const toastStyle: CSSProperties = {
-	padding: "8px 12px",
-	margin: "8px 12px",
+	padding: "var(--space-2) var(--space-3)",
+	margin: "var(--space-2) var(--space-3)",
 	borderRadius: "var(--r-sm)",
 	background: "var(--bg-elevated)",
 	border: "0.5px solid var(--border)",

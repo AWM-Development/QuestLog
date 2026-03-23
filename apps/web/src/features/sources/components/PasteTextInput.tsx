@@ -68,8 +68,7 @@ export function PasteTextInput({
 				style={{
 					...buttonGhost,
 					color: "var(--accent)",
-					fontSize: "0.875rem",
-					padding: "4px 0",
+					padding: "var(--space-1) 0",
 				}}
 			>
 				{isExpanded ? "— collapse" : "+ or paste text directly"}

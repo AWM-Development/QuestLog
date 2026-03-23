@@ -216,7 +216,7 @@ export function ChatHeader({
 					style={{
 						fontSize: "10px",
 						padding: "1px 4px",
-						borderRadius: "3px",
+						borderRadius: "var(--r-sm)",
 						border: "0.5px solid var(--border)",
 						background: "var(--bg-surface)",
 					}}

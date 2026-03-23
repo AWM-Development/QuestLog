@@ -17,23 +17,23 @@ interface ChatInputProps {
 }
 
 const wrapperStyle: CSSProperties = {
-	padding: "0 20px 16px",
+	padding: "0 var(--space-5) var(--space-4)",
 };
 
 const inputContainerStyle: CSSProperties = {
 	background: "var(--bg-elevated)",
 	border: "1px solid var(--border)",
 	borderRadius: "var(--r-lg)",
-	padding: "10px 14px",
+	padding: "var(--space-2) var(--space-3)",
 	display: "flex",
-	alignItems: "flex-end",
-	gap: "8px",
+	alignItems: "center",
+	gap: "var(--space-2)",
 	transition: "border-color 200ms, box-shadow 200ms",
 };
 
 const inputContainerFocusStyle: CSSProperties = {
 	borderColor: "var(--border-hover)",
-	boxShadow: "0 0 0 3px rgba(96,184,255,0.06)",
+	boxShadow: "0 0 0 3px var(--state-active-soft)",
 };
 
 const textareaStyle: CSSProperties = {
@@ -49,11 +49,13 @@ const textareaStyle: CSSProperties = {
 	minHeight: "21px",
 	maxHeight: "126px",
 	overflow: "auto",
+	padding: 0,
+	margin: 0,
 };
 
 const actionButtonBase: CSSProperties = {
-	width: 36,
-	height: 36,
+	width: 32,
+	height: 32,
 	borderRadius: "var(--r-md)",
 	display: "flex",
 	alignItems: "center",
@@ -80,8 +82,8 @@ const stopButtonStyle: CSSProperties = {
 
 const toolChipsStyle: CSSProperties = {
 	display: "flex",
-	gap: "12px",
-	padding: "6px 4px 0",
+	gap: "var(--space-3)",
+	padding: "var(--space-1) var(--space-1) 0",
 	fontSize: "11px",
 	color: "var(--text-dim)",
 };

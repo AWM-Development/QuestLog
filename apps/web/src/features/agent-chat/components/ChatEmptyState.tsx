@@ -9,11 +9,11 @@ const containerStyle: CSSProperties = {
 	flexDirection: "column",
 	alignItems: "center",
 	justifyContent: "center",
-	gap: "16px",
+	gap: "var(--space-4)",
 	flex: 1,
 	minHeight: 0,
 	textAlign: "center",
-	padding: "40px 20px",
+	padding: "var(--space-8) var(--space-5)",
 	overflow: "auto",
 };
 
@@ -42,15 +42,15 @@ const promptsRowStyle: CSSProperties = {
 	display: "flex",
 	flexWrap: "wrap",
 	justifyContent: "center",
-	gap: "8px",
-	marginTop: "8px",
+	gap: "var(--space-2)",
+	marginTop: "var(--space-2)",
 };
 
 const starterStyle: CSSProperties = {
-	padding: "8px 14px",
-	borderRadius: "10px",
-	border: "0.5px solid rgba(208,228,240,0.1)",
-	background: "rgba(208,228,240,0.03)",
+	padding: "var(--space-2) var(--space-3)",
+	borderRadius: "var(--r-md)",
+	border: "0.5px solid var(--border)",
+	background: "var(--state-hover-soft)",
 	fontSize: "12px",
 	color: "var(--text-muted)",
 	cursor: "pointer",

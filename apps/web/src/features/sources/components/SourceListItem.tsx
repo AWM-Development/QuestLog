@@ -50,7 +50,7 @@ export function SourceListItem({ source }: SourceListItemProps) {
 				<p
 					style={{
 						fontFamily: "var(--font-display)",
-						fontSize: "0.9375rem",
+						fontSize: "15px",
 						fontWeight: 600,
 						color: "var(--text-primary)",
 						overflow: "hidden",
@@ -60,7 +60,7 @@ export function SourceListItem({ source }: SourceListItemProps) {
 				>
 					{source.name}
 				</p>
-				<p style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+				<p style={{ fontSize: "12px", color: "var(--text-muted)" }}>
 					{pageCount != null ? `${pageCount} pages · ` : ""}
 					imported {importedDate}
 				</p>

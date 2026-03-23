@@ -1,5 +1,12 @@
 import { type CSSProperties, useState } from "react";
+import { chipBase } from "../../../components/styles.js";
 import { getTagColor } from "../types.js";
+
+const tagChipStyle: CSSProperties = {
+	...chipBase,
+	fontSize: "9px",
+	padding: "1px 5px",
+};
 
 interface ConversationListItemProps {
 	conversation: {
@@ -16,7 +23,7 @@ interface ConversationListItemProps {
 }
 
 const itemStyle: CSSProperties = {
-	padding: "10px 12px",
+	padding: "var(--space-2) var(--space-3)",
 	borderRadius: "var(--r-sm)",
 	cursor: "pointer",
 	transition: "all 150ms ease",
@@ -52,14 +59,14 @@ const timestampStyle: CSSProperties = {
 
 const tagsRowStyle: CSSProperties = {
 	display: "flex",
-	gap: "3px",
-	marginTop: "4px",
+	gap: "var(--space-1)",
+	marginTop: "var(--space-1)",
 	flexWrap: "wrap",
 };
 
 const actionsStyle: CSSProperties = {
 	position: "absolute",
-	right: "8px",
+	right: "var(--space-2)",
 	top: "50%",
 	transform: "translateY(-50%)",
 	display: "flex",
@@ -67,8 +74,8 @@ const actionsStyle: CSSProperties = {
 };
 
 const actionBtnStyle: CSSProperties = {
-	width: 22,
-	height: 22,
+	width: 24,
+	height: 24,
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "center",
@@ -195,9 +202,7 @@ export function ConversationListItem({
 									<span
 										key={tag}
 										style={{
-											fontSize: "9px",
-											borderRadius: "var(--r-sm)",
-											padding: "1px 5px",
+											...tagChipStyle,
 											background: color.bg,
 											color: color.text,
 										}}

@@ -1,4 +1,4 @@
-import { PageHeader } from "@/components/PageScaffold.js";
+import { PageContainer, PageHeader } from "@/components/PageScaffold.js";
 import { buttonAccent } from "@/components/styles.js";
 import { trpc } from "@/lib/trpc.js";
 import { useState } from "react";
@@ -13,7 +13,7 @@ export function CampaignListPage() {
 	});
 
 	return (
-		<div>
+		<PageContainer style={{ maxWidth: "1080px" }}>
 			<PageHeader
 				title="Campaigns"
 				actions={
@@ -117,7 +117,7 @@ export function CampaignListPage() {
 			{showCreate && (
 				<CampaignCreateModal onClose={() => setShowCreate(false)} />
 			)}
-		</div>
+		</PageContainer>
 	);
 }
 
