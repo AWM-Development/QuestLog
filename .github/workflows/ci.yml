@@ -66,18 +66,14 @@ jobs:
           echo "✅ No test.only or test.skip found."
 
       # ── Run migrations ────────────────────────────────────────────────────
-      # TODO: remove continue-on-error once DB secrets are configured in CI
+      # Uses the Postgres service container above (DATABASE_URL is hardcoded
+      # to the local service, no secrets required).
       - name: Run database migrations
         run: pnpm --filter @questlog/server db:migrate
-        continue-on-error: true
 
       # ── Full test suite ───────────────────────────────────────────────────
-      # TODO: remove continue-on-error once ANTHROPIC_API_KEY and VOYAGE_API_KEY
-      # are configured as repository secrets and DB secrets are in place.
-      # Run tests locally with: pnpm turbo test
       - name: Test
         run: pnpm turbo test
-        continue-on-error: true
 
   # ── Doc-Sync Warning ──────────────────────────────────────────────────────
   doc-sync:

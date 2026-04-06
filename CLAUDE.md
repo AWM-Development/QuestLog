@@ -10,7 +10,7 @@ Read these documents in this order at the start of **every** session:
 
 1. **`Docs/IMPLEMENTATION_NOTES.md`** — non-obvious decisions, known gotchas, deferred gaps. Read this first so you don't re-litigate past decisions.
 2. **`Docs/DEVELOPMENT_GUIDE.md`** — coding conventions, patterns, TDD discipline, completion checklist, AI code review protocol.
-3. **`Docs/MILESTONES.md`** — current task, branch name, PRD reference, work description.
+3. **`Docs/MILESTONES_PT1.md`** — current task, branch name, PRD reference, work description. (Covers Milestones 1–9. Milestones 10–19 live in `Docs/MILESTONES_PT2.md` — read that only when working on those later milestones.)
 4. **`Docs/PRD.md §[relevant section]`** — the spec for the specific feature you are about to implement.
 5. **`Docs/DESIGN_SYSTEM.md`** — for any task that touches the frontend. Supersedes PRD §5 for all visual details.
 
