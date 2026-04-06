@@ -1,22 +1,14 @@
+import { PageContainer, PageHeader } from "./PageScaffold.js";
+
 interface PlaceholderPageProps {
 	title: string;
 }
 
 export function PlaceholderPage({ title }: PlaceholderPageProps) {
 	return (
-		<div>
-			<h1
-				style={{
-					fontFamily: "var(--font-display)",
-					fontSize: "1.75rem",
-					fontWeight: 700,
-					marginBottom: "var(--space-4)",
-					color: "var(--text-primary)",
-				}}
-			>
-				{title}
-			</h1>
+		<PageContainer style={{ padding: "var(--space-8)" }}>
+			<PageHeader title={title} />
 			<p style={{ color: "var(--text-muted)" }}>Coming soon</p>
-		</div>
+		</PageContainer>
 	);
 }

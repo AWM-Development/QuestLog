@@ -14,6 +14,8 @@ This folder contains all project documentation and planning artifacts.
   - Contains the full CSS token set, component anatomy, and old→new token migration mapping.
   - Covers the entity-driven color system, four-plane depth hierarchy, and hover card interaction spec.
 
+- **CURSOR_STYLE_LAYER_AUDIT.md** — Repeatable Cursor prompt + checklist for auditing and refactoring style layers (global tokens vs shared TS presets vs feature modules). Use after major UI growth or before theming work; paired with `.cursor/rules/frontend-style-layer-audit.mdc`.
+
 ### Development
 - **DEVELOPMENT_GUIDE.md** — Repeatable instructions for every coding session.
   - Read this at the start of each feature implementation.

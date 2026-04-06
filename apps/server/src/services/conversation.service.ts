@@ -9,7 +9,7 @@
  */
 
 import type { ConversationMessage } from "@questlog/shared";
-import { asc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import type { Database } from "../db/index.js";
 import { campaigns, conversations, messages } from "../db/schema/index.js";
 import type { MessageSource } from "../db/schema/index.js";
@@ -29,6 +29,23 @@ export interface ChatInput {
 	query: string;
 }
 
+export interface CreateConversationInput {
+	campaignId: string;
+	title?: string;
+}
+
+export interface ListConversationsInput {
+	campaignId: string;
+	status: "active" | "archived";
+}
+
+export interface UpdateConversationInput {
+	id: string;
+	title?: string;
+	tags?: string[];
+	status?: "active" | "archived";
+}
+
 export interface ChatResult {
 	content: string;
 	citations: ContextCitation[];
@@ -41,6 +58,64 @@ export interface ChatResult {
 // ---------------------------------------------------------------------------
 
 export const conversationService = {
+	async create(db: Database, input: CreateConversationInput) {
+		const rows = await db
+			.insert(conversations)
+			.values({
+				campaignId: input.campaignId,
+				title: input.title ?? null,
+			})
+			.returning();
+		return rows[0] as (typeof rows)[number];
+	},
+
+	async list(db: Database, input: ListConversationsInput) {
+		return db
+			.select()
+			.from(conversations)
+			.where(
+				and(
+					eq(conversations.campaignId, input.campaignId),
+					eq(conversations.status, input.status),
+				),
+			)
+			.orderBy(desc(conversations.updatedAt));
+	},
+
+	async update(db: Database, input: UpdateConversationInput) {
+		const { id, ...fields } = input;
+		const updateData: Record<string, unknown> = {};
+		if (fields.title !== undefined) updateData.title = fields.title;
+		if (fields.tags !== undefined) updateData.tags = fields.tags;
+		if (fields.status !== undefined) updateData.status = fields.status;
+
+		if (Object.keys(updateData).length === 0) {
+			const rows = await db
+				.select()
+				.from(conversations)
+				.where(eq(conversations.id, id));
+			if (rows.length === 0) throw new NotFoundError("Conversation", id);
+			return rows[0] as (typeof rows)[number];
+		}
+
+		const rows = await db
+			.update(conversations)
+			.set(updateData)
+			.where(eq(conversations.id, id))
+			.returning();
+
+		if (rows.length === 0) throw new NotFoundError("Conversation", id);
+		return rows[0] as (typeof rows)[number];
+	},
+
+	async getMessages(db: Database, conversationId: string) {
+		return db
+			.select()
+			.from(messages)
+			.where(eq(messages.conversationId, conversationId))
+			.orderBy(asc(messages.createdAt), asc(messages.id));
+	},
+
 	/**
 	 * Process a user chat message: validate, persist, assemble context,
 	 * call LLM, and persist the assistant response.
@@ -88,11 +163,15 @@ export const conversationService = {
 		const campaignTheme = campaignRow?.theme ?? "fantasy";
 
 		return await db.transaction(async (tx) => {
+			const userCreatedAt = new Date();
+			const assistantCreatedAt = new Date(userCreatedAt.getTime() + 1);
+
 			// Save user message
 			await tx.insert(messages).values({
 				conversationId,
 				role: "user",
 				content: query,
+				createdAt: userCreatedAt,
 			});
 
 			// Fetch conversation history (excluding the message we just saved,
@@ -101,7 +180,7 @@ export const conversationService = {
 				.select({ role: messages.role, content: messages.content })
 				.from(messages)
 				.where(eq(messages.conversationId, conversationId))
-				.orderBy(asc(messages.createdAt));
+				.orderBy(asc(messages.createdAt), asc(messages.id));
 
 			// Remove the just-inserted user message, then cap to avoid blowing
 			// the model's context window. Oldest messages are trimmed first.
@@ -133,6 +212,7 @@ export const conversationService = {
 				sources: citationSources,
 				inputTokens: result.usage.inputTokens,
 				outputTokens: result.usage.outputTokens,
+				createdAt: assistantCreatedAt,
 			});
 
 			return {
@@ -191,12 +271,15 @@ export const conversationService = {
 		const campaignTheme = campaignRow?.theme ?? "fantasy";
 
 		// Save user message optimistically (outside transaction)
+		const userCreatedAt = new Date();
+		const assistantCreatedAt = new Date(userCreatedAt.getTime() + 1);
 		const [userMsg] = await db
 			.insert(messages)
 			.values({
 				conversationId,
 				role: "user",
 				content: query,
+				createdAt: userCreatedAt,
 			})
 			.returning({ id: messages.id });
 
@@ -205,7 +288,7 @@ export const conversationService = {
 			.select({ role: messages.role, content: messages.content })
 			.from(messages)
 			.where(eq(messages.conversationId, conversationId))
-			.orderBy(asc(messages.createdAt));
+			.orderBy(asc(messages.createdAt), asc(messages.id));
 
 		const conversationHistory: ConversationMessage[] = history
 			.slice(0, -1)
@@ -239,6 +322,7 @@ export const conversationService = {
 				sources: citationSources,
 				inputTokens: result.usage.inputTokens,
 				outputTokens: result.usage.outputTokens,
+				createdAt: assistantCreatedAt,
 			});
 
 			return {

@@ -7,8 +7,12 @@ import {
 } from "@trpc/server/adapters/fastify";
 import Fastify from "fastify";
 import type { Database } from "./db/index.js";
-import { LlmApiError, NotFoundError, ValidationError } from "./lib/errors.js";
+import { mapDomainError } from "./lib/errors.js";
 import { type AppRouter, appRouter } from "./routers/_app.js";
+import {
+	conversationStreamBodySchema,
+	conversationStreamParamsSchema,
+} from "./routers/conversation.schemas.js";
 import { conversationService } from "./services/conversation.service.js";
 import { importService } from "./services/import.service.js";
 import { sourceService } from "./services/source.service.js";
@@ -186,26 +190,22 @@ export function buildApp({ db, storage: storageOption }: BuildAppOptions) {
 		Params: { conversationId: string };
 		Body: { campaignId: string; query: string };
 	}>("/api/conversation/:conversationId/stream", async (request, reply) => {
-		const { conversationId } = request.params;
-		const { campaignId, query } = request.body ?? {};
+		const paramsResult = conversationStreamParamsSchema.safeParse(
+			request.params,
+		);
+		if (!paramsResult.success) {
+			const msg =
+				paramsResult.error.issues[0]?.message ?? "Invalid conversationId";
+			return reply.status(400).send({ error: msg });
+		}
+		const bodyResult = conversationStreamBodySchema.safeParse(request.body);
+		if (!bodyResult.success) {
+			const msg = bodyResult.error.issues[0]?.message ?? "Invalid body";
+			return reply.status(400).send({ error: msg });
+		}
 
-		// Validate input
-		const uuidPattern =
-			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-		if (!conversationId || !uuidPattern.test(conversationId)) {
-			return reply.status(400).send({ error: "Invalid conversationId" });
-		}
-		if (!campaignId || !uuidPattern.test(campaignId)) {
-			return reply.status(400).send({ error: "Invalid campaignId" });
-		}
-		if (!query || typeof query !== "string" || query.length === 0) {
-			return reply.status(400).send({ error: "query is required" });
-		}
-		if (query.length > 10_000) {
-			return reply
-				.status(400)
-				.send({ error: "query exceeds 10000 characters" });
-		}
+		const { conversationId } = paramsResult.data;
+		const { campaignId, query } = bodyResult.data;
 
 		// Set SSE headers
 		reply.raw.writeHead(200, {
@@ -234,20 +234,8 @@ export function buildApp({ db, storage: storageOption }: BuildAppOptions) {
 				usage: result.usage,
 			});
 		} catch (error) {
-			if (error instanceof NotFoundError) {
-				sendEvent("error", { message: error.message, code: 404 });
-			} else if (error instanceof ValidationError) {
-				sendEvent("error", { message: error.message, code: 400 });
-			} else if (error instanceof LlmApiError) {
-				const code =
-					error.statusCode === 429 || error.statusCode === 529 ? 429 : 500;
-				sendEvent("error", { message: error.message, code });
-			} else {
-				sendEvent("error", {
-					message: "An unexpected error occurred",
-					code: 500,
-				});
-			}
+			const mapped = mapDomainError(error);
+			sendEvent("error", { message: mapped.message, code: mapped.code });
 		} finally {
 			reply.raw.end();
 		}

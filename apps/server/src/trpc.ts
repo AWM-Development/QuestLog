@@ -2,12 +2,7 @@ import { TRPCError, initTRPC } from "@trpc/server";
 import type { CreateFastifyContextOptions } from "@trpc/server/adapters/fastify";
 import superjson from "superjson";
 import type { Database } from "./db/index.js";
-import {
-	ExtractionNotSupportedError,
-	LlmApiError,
-	NotFoundError,
-	ValidationError,
-} from "./lib/errors.js";
+import { mapDomainError } from "./lib/errors.js";
 import type { StorageProvider } from "./services/storage.service.js";
 
 export interface Context {
@@ -46,58 +41,34 @@ export const procedure = t.procedure;
  * them, so a middleware-based approach doesn't work. This wrapper is called
  * explicitly in each handler instead.
  */
+/** Map numeric HTTP status to the closest tRPC error code. */
+const httpToTrpcCode: Record<number, TRPCError["code"]> = {
+	400: "BAD_REQUEST",
+	404: "NOT_FOUND",
+	429: "TOO_MANY_REQUESTS",
+	500: "INTERNAL_SERVER_ERROR",
+};
+
 export async function withErrorHandling<T>(fn: () => Promise<T>): Promise<T> {
 	try {
 		return await fn();
 	} catch (error) {
-		if (error instanceof NotFoundError) {
-			throw new TRPCError({
-				code: "NOT_FOUND",
-				message: error.message,
-				cause: error,
-			});
-		}
-		if (error instanceof ValidationError) {
-			throw new TRPCError({
-				code: "BAD_REQUEST",
-				message: error.message,
-				cause: error,
-			});
-		}
-		if (error instanceof ExtractionNotSupportedError) {
-			throw new TRPCError({
-				code: "BAD_REQUEST",
-				message: error.message,
-				cause: error,
-			});
-		}
-		if (error instanceof LlmApiError) {
-			if (error.statusCode === 429 || error.statusCode === 529) {
-				throw new TRPCError({
-					code: "TOO_MANY_REQUESTS",
-					message:
-						error.statusCode === 429
-							? "LLM rate limit exceeded. Please try again shortly."
-							: "LLM API is temporarily overloaded. Please retry.",
-					cause: error,
-				});
-			}
-			throw new TRPCError({
-				code: "INTERNAL_SERVER_ERROR",
-				message: error.message,
-				cause: error,
-			});
-		}
+		const mapped = mapDomainError(error);
+		const trpcCode = httpToTrpcCode[mapped.code] ?? "INTERNAL_SERVER_ERROR";
+
+		// For truly unknown errors (mapDomainError returns 500 fallback),
+		// re-throw as-is so tRPC's built-in handler preserves the stack.
 		if (
-			error instanceof Error &&
-			error.message.includes("violates foreign key constraint")
+			mapped.code === 500 &&
+			mapped.message === "An unexpected error occurred"
 		) {
-			throw new TRPCError({
-				code: "BAD_REQUEST",
-				message: "Referenced resource does not exist",
-				cause: error,
-			});
+			throw error;
 		}
-		throw error;
+
+		throw new TRPCError({
+			code: trpcCode,
+			message: mapped.message,
+			cause: error instanceof Error ? error : undefined,
+		});
 	}
 }

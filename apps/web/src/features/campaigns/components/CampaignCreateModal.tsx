@@ -80,7 +80,7 @@ export function CampaignCreateModal({ onClose }: CampaignCreateModalProps) {
 			style={{
 				position: "fixed",
 				inset: 0,
-				backgroundColor: "rgba(9, 13, 18, 0.92)",
+				backgroundColor: "var(--overlay-scrim)",
 				display: "flex",
 				alignItems: "center",
 				justifyContent: "center",

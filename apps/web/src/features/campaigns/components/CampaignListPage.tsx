@@ -1,3 +1,4 @@
+import { PageContainer, PageHeader } from "@/components/PageScaffold.js";
 import { buttonAccent } from "@/components/styles.js";
 import { trpc } from "@/lib/trpc.js";
 import { useState } from "react";
@@ -12,33 +13,19 @@ export function CampaignListPage() {
 	});
 
 	return (
-		<div>
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					marginBottom: "var(--space-8)",
-				}}
-			>
-				<h1
-					style={{
-						fontFamily: "var(--font-display)",
-						fontSize: "1.75rem",
-						fontWeight: 700,
-						color: "var(--text-primary)",
-					}}
-				>
-					Campaigns
-				</h1>
-				<button
-					type="button"
-					onClick={() => setShowCreate(true)}
-					style={buttonAccent}
-				>
-					New Campaign
-				</button>
-			</div>
+		<PageContainer style={{ maxWidth: "1080px" }}>
+			<PageHeader
+				title="Campaigns"
+				actions={
+					<button
+						type="button"
+						onClick={() => setShowCreate(true)}
+						style={buttonAccent}
+					>
+						New Campaign
+					</button>
+				}
+			/>
 
 			{campaignsQuery.isLoading && <CampaignListSkeleton />}
 
@@ -130,7 +117,7 @@ export function CampaignListPage() {
 			{showCreate && (
 				<CampaignCreateModal onClose={() => setShowCreate(false)} />
 			)}
-		</div>
+		</PageContainer>
 	);
 }
 

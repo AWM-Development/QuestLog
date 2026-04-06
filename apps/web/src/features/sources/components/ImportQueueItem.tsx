@@ -104,7 +104,7 @@ export function ImportQueueItem({
 							style={{
 								marginTop: "var(--space-3)",
 								height: 4,
-								borderRadius: 2,
+								borderRadius: "var(--r-sm)",
 								backgroundColor: "var(--border-subtle)",
 								overflow: "hidden",
 							}}
@@ -113,7 +113,7 @@ export function ImportQueueItem({
 								style={{
 									height: "100%",
 									width: `${progress}%`,
-									borderRadius: 2,
+									borderRadius: "var(--r-sm)",
 									backgroundColor: progressColor,
 									transition: "width 0.4s ease",
 								}}

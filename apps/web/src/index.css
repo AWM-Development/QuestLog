@@ -26,6 +26,10 @@
 	--border: #1a2838;
 	--border-hover: #1e3448;
 	--border-subtle: #14222e;
+	--state-hover-soft: rgba(208, 228, 240, 0.03);
+	--state-active-soft: rgba(96, 184, 255, 0.06);
+	--state-active-border: rgba(96, 184, 255, 0.12);
+	--overlay-scrim: rgba(9, 13, 18, 0.5);
 
 	/* ── Entity colors ── */
 	/* NPC — bright blue, high energy */
@@ -170,15 +174,21 @@
 	--border-subtle: #1e1e24;
 }
 
+/* ── Focus ring ── */
+:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 3px rgba(96, 184, 255, 0.06);
+}
+
 /* ── Animation keyframes ── */
 
 @keyframes pulse {
 	0%,
 	100% {
-		opacity: 1;
+		opacity: 0.4;
 	}
 	50% {
-		opacity: 0.4;
+		opacity: 1;
 	}
 }
 
@@ -206,6 +216,56 @@
 	}
 }
 
+@keyframes blink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0;
+	}
+}
+
+@keyframes drawer-in {
+	from {
+		transform: translateX(-100%);
+	}
+	to {
+		transform: translateX(0);
+	}
+}
+
+@keyframes scrim-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes panel-in {
+	from {
+		opacity: 0;
+		transform: translateX(12px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+/* Respect reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+	}
+}
+
 @keyframes typing-bounce {
 	0%,
 	60%,
@@ -216,18 +276,6 @@
 	30% {
 		transform: translateY(-4px);
 		opacity: 1;
-	}
-}
-
-/* ── Reduced motion ── */
-
-@media (prefers-reduced-motion: reduce) {
-	*,
-	*::before,
-	*::after {
-		animation-duration: 0.01ms !important;
-		animation-iteration-count: 1 !important;
-		transition-duration: 0.01ms !important;
 	}
 }
 

@@ -91,6 +91,42 @@ After the code review, complete these doc updates **before closing the session**
 
 ---
 
+## Repeatable Commands
+
+### `/style-audit` — Design Token Compliance Sweep
+
+When the user asks for a "style audit", "styling consistency check", or similar, run this procedure:
+
+**Phase 1 — Scan.** For every `.tsx` file under `apps/web/src`, check inline `style={{...}}` objects and top-level `CSSProperties` constants for:
+
+1. **Hardcoded colors** — any raw `#hex`, `rgb(...)`, or `rgba(...)` that has an equivalent CSS variable in `apps/web/src/index.css` (e.g. `rgba(96,184,255,0.06)` → `var(--state-active-soft)`).
+2. **Hardcoded spacing** — pixel values like `8px`, `12px`, `16px` that map to `var(--space-*)` tokens.
+3. **Hardcoded border-radius** — numeric `borderRadius` values that should use `var(--r-sm)` / `var(--r-md)` / `var(--r-lg)` / `var(--r-xl)` / `var(--r-pill)`.
+4. **Hardcoded shadows** — any `boxShadow` string that duplicates a `var(--shadow-*)` token.
+5. **Copy-pasted style blocks** — the same style object (or near-duplicate) appearing in 2+ files, which should be extracted to `apps/web/src/components/styles.ts` or a feature-level `styles.ts`.
+6. **Inconsistent sizing** — icon buttons, chip elements, or similar components using different dimensions without reason.
+
+**Phase 2 — Report.** Present findings in a table grouped by severity (HIGH / MEDIUM / LOW):
+- **HIGH** — hardcoded color or shadow with an exact token equivalent; copy-pasted style block across 3+ files.
+- **MEDIUM** — hardcoded spacing/radius with a close token equivalent; inconsistent sizing across similar components.
+- **LOW** — minor spacing mismatch; one-off value that could use a token for consistency but isn't visually broken.
+
+For each finding: file path, line (approx), the hardcoded value, and the suggested token replacement.
+
+**Phase 3 — Fix.** After user approval, apply fixes:
+- Replace hardcoded values → token references.
+- Extract repeated style blocks → named exports in `styles.ts` (shared) or feature `styles.ts`.
+- Standardize sizing for similar component types (icon buttons → `iconButtonBase` size, chips → `chipBase`, etc.).
+- Run `tsc --noEmit`, `biome check`, and `vitest run` to confirm no regressions.
+
+**Reference files:**
+- Token definitions: `apps/web/src/index.css`
+- Shared style presets: `apps/web/src/components/styles.ts`
+- Design system spec: `Docs/DESIGN_SYSTEM.md`
+- Structural layer audit (complementary): `Docs/CURSOR_STYLE_LAYER_AUDIT.md`
+
+---
+
 ## Governing Methodology
 
 This project follows **Spec-Anchored AI Development (SAAD)** — see `Docs/DEVELOPMENT_GUIDE.md §11` for the full description. The five pillars are: docs before code, AI as guided executor, human gates on ambiguity, automated enforcement via CI, and a closed feedback loop via mandatory doc updates. This file (`CLAUDE.md`) is the single encoding of that methodology for the AI agent.

@@ -1,3 +1,4 @@
+import { PageContainer, PageHeader } from "@/components/PageScaffold.js";
 import { trpc } from "@/lib/trpc.js";
 import { useState } from "react";
 import { useParams } from "react-router";
@@ -63,23 +64,11 @@ export function SourcesPage() {
 	const hasActiveSection = queueItems.length > 0 || activeSources.length > 0;
 
 	return (
-		<div style={{ maxWidth: 760 }}>
-			<div style={{ marginBottom: "var(--space-8)" }}>
-				<h1
-					style={{
-						fontFamily: "var(--font-display)",
-						fontSize: "1.75rem",
-						fontWeight: 700,
-						color: "var(--text-primary)",
-						marginBottom: "var(--space-2)",
-					}}
-				>
-					Import campaign material
-				</h1>
-				<p style={{ fontSize: "0.875rem", color: "var(--text-secondary)" }}>
-					Add documents to your campaign's knowledge base
-				</p>
-			</div>
+		<PageContainer>
+			<PageHeader
+				title="Import campaign material"
+				subtitle="Add documents to your campaign's knowledge base"
+			/>
 
 			<div style={{ marginBottom: "var(--space-4)" }}>
 				<FileDropZone onFilesSelected={uploadFiles} />
@@ -159,6 +148,6 @@ export function SourcesPage() {
 			<section style={{ marginTop: "var(--space-8)" }}>
 				<SuggestedEntities />
 			</section>
-		</div>
+		</PageContainer>
 	);
 }

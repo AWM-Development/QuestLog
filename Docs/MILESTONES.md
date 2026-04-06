@@ -458,7 +458,23 @@
     - GitHub Actions CI: lint, typecheck, test on PR; deploy on merge to main
     - Environment variable management for production
 
-- [ ] **9.4 — Real-campaign testing**
+- [ ] **9.4 — Navigation rail redesign**
+  - Branch: `feat/polish/nav-rail`
+  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
+  - PRD ref: §5 Layout Structure
+  - Background: The nav rail (`Rail.tsx`) currently uses emoji icons with no section grouping, no headers, and minimal spacing. As more features land (sessions, entities, combat tracker, settings) the rail needs visual hierarchy to remain navigable at a glance. This task redesigns the rail with proper spacing, section headers, and icon consistency.
+  - Work:
+    - Add section grouping with subtle headers or dividers (e.g., "Campaign", "At the Table", "Admin")
+    - Replace emoji icons with a consistent icon set (Lucide or Phosphor — evaluate which matches the design system better)
+    - Add proper spacing between groups using design system tokens (`--space-*`)
+    - Add tooltips on hover (icon-only nav needs discoverability)
+    - Ensure all nav items have `aria-label` attributes for accessibility
+    - Add active state indicator (left accent bar or background highlight)
+    - Mascot placement: keep at bottom but with breathing room from nav items
+    - Responsive behavior: collapse to icons-only on tablet (already icon-only, but verify touch targets are ≥44px per WCAG)
+  - Tests: Rail rendering tests (correct links, active states, section grouping), accessibility audit (aria-labels present on all nav items)
+
+- [ ] **9.5 — Real-campaign testing**
   - Branch: n/a (manual testing, file bugs as fix/ branches)
   - Work:
     - Import real campaign material

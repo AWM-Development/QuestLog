@@ -27,7 +27,7 @@ const railStyle: React.CSSProperties = {
 	display: "flex",
 	flexDirection: "column",
 	alignItems: "center",
-	padding: "14px 0",
+	padding: "var(--space-3) 0",
 	gap: "2px",
 	overflow: "hidden",
 };
@@ -40,7 +40,7 @@ const logoStyle: React.CSSProperties = {
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "center",
-	marginBottom: "12px",
+	marginBottom: "var(--space-3)",
 	textDecoration: "none",
 	transition: "background 0.2s",
 };
@@ -61,7 +61,7 @@ const separatorStyle: React.CSSProperties = {
 	width: "20px",
 	height: "1px",
 	backgroundColor: "var(--border-subtle)",
-	margin: "6px 0",
+	margin: "var(--space-2) 0",
 };
 
 const mascotStyle: React.CSSProperties = {
