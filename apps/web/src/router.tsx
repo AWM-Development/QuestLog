@@ -3,6 +3,7 @@ import { RouteErrorBoundary } from "./components/ErrorBoundary.js";
 import { PlaceholderPage } from "./components/PlaceholderPage.js";
 import { ChatPage } from "./features/agent-chat/index.js";
 import { CampaignListPage } from "./features/campaigns/index.js";
+import { SessionListPage } from "./features/session-log/index.js";
 import { SourcesPage } from "./features/sources/index.js";
 import { AppShell } from "./layouts/AppShell.js";
 
@@ -32,7 +33,7 @@ export const router = createBrowserRouter([
 					},
 					{
 						path: "sessions",
-						element: <PlaceholderPage title="Session Logs" />,
+						element: <SessionListPage />,
 					},
 					{
 						path: "entities",

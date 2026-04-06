@@ -36,6 +36,13 @@
       "when": 1775499448507,
       "tag": "0004_reconcile_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1775508315917,
+      "tag": "0005_nosy_proudstar",
+      "breakpoints": true
     }
   ]
 }

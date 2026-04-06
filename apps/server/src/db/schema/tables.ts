@@ -67,6 +67,7 @@ export const sessions = pgTable("sessions", {
 	title: text("title"),
 	summary: text("summary"),
 	content: text("content").notNull(),
+	status: text("status").notNull().default("draft"),
 	tags: jsonb("tags").$type<string[]>().default([]),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()

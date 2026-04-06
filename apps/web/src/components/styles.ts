@@ -312,3 +312,80 @@ export const inlineAlertWarning: CSSProperties = {
 	borderRadius: "var(--r-sm)",
 	backgroundColor: "var(--status-warning-muted)",
 };
+
+// ── Session notes editor (Milestone 4.1) ──
+
+export const editorSurface: CSSProperties = {
+	backgroundColor: "var(--bg-surface)",
+	color: "var(--text-primary)",
+	fontFamily: "var(--font-body)",
+	fontSize: "0.875rem",
+	lineHeight: 1.75,
+	outline: "none",
+	flex: 1,
+	overflow: "auto",
+	padding: "var(--space-4)",
+};
+
+export const floatingMenu: CSSProperties = {
+	backgroundColor: "var(--bg-focal)",
+	border: "1px solid var(--border-hover)",
+	borderRadius: "var(--r-md)",
+	boxShadow: "var(--shadow-focal)",
+	padding: "var(--space-1)",
+	display: "flex",
+	gap: "2px",
+	flexWrap: "wrap",
+};
+
+export const floatingMenuDropdown: CSSProperties = {
+	backgroundColor: "var(--bg-focal)",
+	border: "1px solid var(--border-hover)",
+	borderRadius: "var(--r-md)",
+	boxShadow: "var(--shadow-focal)",
+	padding: "var(--space-1) 0",
+	maxHeight: "240px",
+	overflowY: "auto" as const,
+	minWidth: "180px",
+};
+
+export const floatingMenuOption: CSSProperties = {
+	padding: "var(--space-2) var(--space-3)",
+	fontSize: "0.8125rem",
+	color: "var(--text-secondary)",
+	cursor: "pointer",
+	display: "flex",
+	alignItems: "center",
+	gap: "var(--space-2)",
+};
+
+export const saveStatusText: CSSProperties = {
+	fontFamily: "var(--font-mono)",
+	fontSize: "0.6875rem",
+	color: "var(--text-muted)",
+};
+
+export const sessionMetaNumber: CSSProperties = {
+	fontFamily: "var(--font-mono)",
+	fontSize: "0.6875rem",
+	color: "var(--text-muted)",
+	letterSpacing: "0.04em",
+};
+
+export const sessionMetaTitle: CSSProperties = {
+	fontFamily: "var(--font-display)",
+	fontSize: "17px",
+	fontWeight: 600,
+	color: "var(--text-primary)",
+	background: "transparent",
+	border: "none",
+	outline: "none",
+	width: "100%",
+	padding: 0,
+};
+
+export const sessionMetaDate: CSSProperties = {
+	fontFamily: "var(--font-mono)",
+	fontSize: "0.6875rem",
+	color: "var(--text-muted)",
+};

@@ -10,6 +10,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — Milestone 4.1: Session CRUD & Editor Foundation
+
+- Migration `0005_nosy_proudstar.sql`: `sessions.status` (`draft` | `finalized`, default `draft`)
+- `session` tRPC router: `create`, `getById`, `list`, `update`, `finalize`; Zod inputs in `packages/shared`
+- `session.service.ts`: auto-increment `sessionNumber` per campaign, list ordered by `sessionNumber` descending
+- TipTap v3 editor (`SessionEditor`): StarterKit (H2/H3 only), placeholder, bubble menu (bold/italic/strike/code/link/heading), floating slash menu for block inserts; content stored as TipTap JSON string in `sessions.content`
+- `CampaignChromeProvider` + right-hand `Panel` (Context / Session notes tabs) in `AppShell`; chat registers context via `setContextPanelContent`; ⌘⇧N opens notes; panel width uses `--panel-width`
+- `SessionNotesPanel` with metadata, `FinalizeForm`, debounced server auto-save (2s) via `session.update`, footer save status
+- `SessionListPage` at `/campaign/:id/sessions`; tests: `session.service.test.ts`, `session.integration.test.ts`, `SessionEditor.test.tsx`
+- Resilience: `campaign.service` list-order test now asserts relative positions of created rows (extra campaigns in DB no longer break the assertion)
+
 ### Added — Milestone 1: Foundation
 
 #### 1.1 — Project Scaffolding

@@ -465,7 +465,7 @@ When a session log is saved:
 5. A user can finalize a session by assigning a title, session number, date, summary note, and tags before saving.
 6. After a session is saved, the session content is chunked and embedded into the knowledge base and is queryable through the agent.
 7. A session log is never locked; a user can continue editing a saved session at any time.
-8. Session notes are auto-saved locally so that a browser crash does not result in loss of unsaved content.
+8. Session notes auto-save: debounced persistence to the server (Milestone 4.1); additional localStorage crash recovery is planned (Milestone 12).
 
 ---
 

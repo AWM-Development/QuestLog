@@ -4,6 +4,20 @@
 
 **Last Updated:** 2026-04-06
 
+## Session notes (Milestone 4.1)
+
+### TipTap storage
+`sessions.content` is a **string** storing `JSON.stringify(editor.getJSON())` (TipTap document JSON). Plain text or legacy rows are still parsed: if `JSON.parse` fails, the editor wraps the string in a single paragraph.
+
+### Auto-save debounce
+`useSessionAutoSave` debounces **2 seconds** after the last edit, then calls `session.update` with the full JSON document. This is server-side persistence; Milestone 12 adds localStorage crash recovery as a separate layer (see PRD §4.3 acceptance criterion 8).
+
+### Right panel shell
+`CampaignChromeProvider` holds `panelOpen`, `panelTab`, and `activeSessionId` (for the session list → notes panel handoff). `ChatPage` registers `ContextPanel` via `setContextPanelContent` so the AppShell `Panel` can show agent chat sources on the Context tab without lifting `useChat` into the shell.
+
+### Test DB migrations
+If `questlog_test` predates a migration, run `pnpm --filter @questlog/server db:migrate` with `DATABASE_URL` pointing at that database. Vitest uses `questlog_test` (see `apps/server/vitest.config.ts`); CI should apply migrations fresh.
+
 ## Database Migrations
 
 ### Always use `db:migrate` (the journal), never `drizzle-kit push` for shared envs

@@ -301,7 +301,14 @@ export function useSessionNotes(campaignId: string) {
 }
 ```
 
-### 5.5 Error Handling Pattern
+### 5.5 TipTap session editor (Milestone 4.1+)
+
+- **Packages:** `@tiptap/react`, `@tiptap/react/menus` (`BubbleMenu`, `FloatingMenu`), `@tiptap/starter-kit`, `@tiptap/extension-placeholder`, `@tiptap/core` (types). Keep versions aligned (same minor as other `@tiptap/*` packages).
+- **Storage:** Persist `sessions.content` as a JSON string of `editor.getJSON()` (not HTML). On load, pass `JSON.parse` into `useEditor({ content })` or parse failure → wrap plain text in a paragraph node.
+- **Styles:** Shared presets live in `apps/web/src/components/styles.ts` (`editorSurface`, `floatingMenu`, `floatingMenuDropdown`); ProseMirror defaults in `apps/web/src/index.css` under `.session-editor-root`.
+- **Slash menu:** Implemented with `FloatingMenu` + `shouldShow` when the current line is exactly `/`; choosing an item deletes the slash and runs the appropriate `editor.chain()` command.
+
+### 5.6 Error Handling Pattern
 
 Use typed errors, not string messages. Services throw; routers catch and translate to tRPC errors.
 

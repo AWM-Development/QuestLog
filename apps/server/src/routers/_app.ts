@@ -3,6 +3,7 @@ import { campaignRouter } from "./campaign.js";
 import { conversationRouter } from "./conversation.js";
 import { importRouter } from "./import.js";
 import { searchRouter } from "./search.js";
+import { sessionRouter } from "./session.js";
 import { sourceRouter } from "./source.js";
 
 export const appRouter = router({
@@ -10,6 +11,7 @@ export const appRouter = router({
 	conversation: conversationRouter,
 	import: importRouter,
 	search: searchRouter,
+	session: sessionRouter,
 	source: sourceRouter,
 });
 

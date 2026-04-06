@@ -8,9 +8,11 @@ interface ChatHeaderProps {
 	conversationTags: string[];
 	allTags: string[];
 	drawerOpen: boolean;
-	panelOpen: boolean;
+	contextPanelActive: boolean;
+	notesPanelActive: boolean;
 	onToggleDrawer: () => void;
-	onTogglePanel: () => void;
+	onOpenNotes: () => void;
+	onToggleContextPanel: () => void;
 	onEditTitle: (title: string) => void;
 	onUpdateTags: (tags: string[]) => void;
 }
@@ -116,9 +118,11 @@ export function ChatHeader({
 	conversationTags,
 	allTags,
 	drawerOpen,
-	panelOpen,
+	contextPanelActive,
+	notesPanelActive,
 	onToggleDrawer,
-	onTogglePanel,
+	onOpenNotes,
+	onToggleContextPanel,
 	onEditTitle,
 	onUpdateTags,
 }: ChatHeaderProps) {
@@ -225,11 +229,17 @@ export function ChatHeader({
 				</kbd>
 			</span>
 
-			<HeaderButton ariaLabel="Notes">&#x1F4DD; Notes</HeaderButton>
+			<HeaderButton
+				onClick={onOpenNotes}
+				active={notesPanelActive}
+				ariaLabel="Open session notes"
+			>
+				&#x1F4DD; Notes
+			</HeaderButton>
 
 			<HeaderButton
-				onClick={onTogglePanel}
-				active={panelOpen}
+				onClick={onToggleContextPanel}
+				active={contextPanelActive}
 				ariaLabel="Toggle context panel"
 			>
 				&#x25E7; Context

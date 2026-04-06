@@ -7,6 +7,7 @@ import {
 	useState,
 } from "react";
 import { useNavigate, useParams } from "react-router";
+import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../lib/trpc.js";
 import { useChat } from "../hooks/useChat.js";
 import { useConversations } from "../hooks/useConversations.js";
@@ -45,10 +46,14 @@ export function ChatPage() {
 		"questlog-drawer-open",
 		false,
 	);
-	const [panelOpen, setPanelOpen] = useLocalStorage(
-		"questlog-panel-open",
-		false,
-	);
+	const {
+		panelOpen,
+		panelTab,
+		setPanelOpen,
+		openContext,
+		openNotes,
+		setContextPanelContent,
+	} = useCampaignChrome();
 	const [starterFill, setStarterFill] = useState<string | undefined>(undefined);
 	const pendingMessageRef = useRef<string | null>(null);
 	const creatingRef = useRef(false);
@@ -165,9 +170,24 @@ export function ChatPage() {
 		[conversationId, updateTags],
 	);
 
-	const handleClosePanel = useCallback(() => {
-		setPanelOpen(false);
-	}, [setPanelOpen]);
+	useEffect(() => {
+		setContextPanelContent(
+			<ContextPanel
+				sources={panelSources}
+				onClose={() => setPanelOpen(false)}
+				isOverlay={isTablet}
+			/>,
+		);
+		return () => setContextPanelContent(null);
+	}, [panelSources, isTablet, setContextPanelContent, setPanelOpen]);
+
+	const handleToggleContextPanel = useCallback(() => {
+		if (panelOpen && panelTab === "context") {
+			setPanelOpen(false);
+		} else {
+			openContext();
+		}
+	}, [panelOpen, panelTab, setPanelOpen, openContext]);
 
 	return (
 		<div style={chatPageStyle}>
@@ -193,9 +213,11 @@ export function ChatPage() {
 					conversationTags={activeConversation?.tags ?? []}
 					allTags={allTags}
 					drawerOpen={drawerOpen}
-					panelOpen={panelOpen}
+					contextPanelActive={panelOpen && panelTab === "context"}
+					notesPanelActive={panelOpen && panelTab === "notes"}
 					onToggleDrawer={() => setDrawerOpen(!drawerOpen)}
-					onTogglePanel={() => setPanelOpen(!panelOpen)}
+					onOpenNotes={openNotes}
+					onToggleContextPanel={handleToggleContextPanel}
 					onEditTitle={handleEditTitle}
 					onUpdateTags={handleUpdateTags}
 				/>
@@ -217,14 +239,6 @@ export function ChatPage() {
 					onStarterFill={starterFill}
 				/>
 			</div>
-
-			{panelOpen && (
-				<ContextPanel
-					sources={panelSources}
-					onClose={handleClosePanel}
-					isOverlay={isTablet}
-				/>
-			)}
 		</div>
 	);
 }

@@ -211,7 +211,7 @@
 
 ### Tasks
 
-- [ ] **4.1 — Session CRUD & editor foundation**
+- [x] **4.1 — Session CRUD & editor foundation**
   - Branch: `feat/session-log/crud-editor`
   - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §4.3 Session Log Object, The Notes Panel
