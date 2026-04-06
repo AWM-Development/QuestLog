@@ -111,3 +111,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 - Updated `Docs/MILESTONES.md`: checked off tasks 2.3 and 3.2 (implemented but not marked complete); inserted task 3.3.5; extended copy-paste template with doc update obligations
 - Updated `Docs/DEVELOPMENT_GUIDE.md`: fixed stale sidebar/three-panel layout reference; added pre-merge doc obligations to §7 completion checklist; added §11 (Spec-Anchored AI Development)
 - Updated `Docs/IMPLEMENTATION_NOTES.md`: documented `conversation.service.ts` test gap, confirmed storage/voyage client test omissions are intentional, noted 2.3/3.2 check-off correction
+
+### Changed — Milestone 3.3.6: CI Test Enforcement Enabled
+
+- `ANTHROPIC_API_KEY` and `VOYAGE_API_KEY` configured as repository secrets; Anthropic key has a $10/month spend cap
+- Removed `continue-on-error: true` from the Test step in `.github/workflows/ci.yml`; CI now hard-fails on test failures
+- Removed `continue-on-error: true` from the Run database migrations step (migrations run against the Postgres service container, no secrets needed); fixed the misleading TODO comment that implied DB secrets were required
+- Split `Docs/MILESTONES.md` into `Docs/MILESTONES_PT1.md` (Milestones 1–9) and `Docs/MILESTONES_PT2.md` (Milestones 10–19 + task template) so each part fits within tool read limits; updated `CLAUDE.md` startup sequence to source from PT1 and acknowledge PT2
+- Checked off task 3.3 (Chat UI) in `Docs/MILESTONES_PT1.md` — code shipped in PR #16 but the box was never ticked
+
+### Fixed — Migration Journal & `chunks.embedding` Dimension
+
+- Added migration `0003_resize_chunks_embedding_to_1024.sql`: drops and recreates `chunks.embedding` as `vector(1024)` to match Voyage `voyage-3`. The original `0000` migration created `vector(1536)`; the schema definition was later changed to 1024 but no ALTER migration was generated, so CI got a fresh 1536 column and every chunk-insert test failed with a dimension mismatch
+- Registered migration `0002_add_messages_token_usage` in `_journal.json` — the SQL file existed on disk but was never journaled, so `db:migrate` skipped it. Local dev was unaffected because the schema had been `drizzle-kit push`'d directly, but CI ran from the journal and ended up missing both columns
+- Documented the `db:migrate` vs `drizzle-kit push` discipline in `Docs/IMPLEMENTATION_NOTES.md` to prevent recurrence
+- Both bugs were latent and masked by `continue-on-error: true` on the CI Test step until milestone 3.3.6 removed it

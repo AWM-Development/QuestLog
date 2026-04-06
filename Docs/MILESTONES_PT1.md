@@ -194,7 +194,7 @@
   - Deliverables: CLAUDE.md, CHANGELOG.md, .github/pull_request_template.md, .github/workflows/ci.yml (doc-sync + migration guards), acceptance criteria added to PRD.md §4, e2e/ stub files for all 4 PRD §3 user flows, IMPLEMENTATION_NOTES.md updated with audit findings, this task entry itself
   - Tests: CI workflow passes actionlint validation, PR template file exists, CLAUDE.md exists at repo root, e2e/ contains one stub file per PRD §3 flow, every §4 PRD feature section contains an Acceptance Criteria block
 
-- [ ] **3.3.6 — Enable CI test enforcement**
+- [x] **3.3.6 — Enable CI test enforcement**
   - Branch: any
   - Work:
     - Configure `ANTHROPIC_API_KEY` and `VOYAGE_API_KEY` as repository secrets
