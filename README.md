@@ -123,4 +123,6 @@ If you want to see the methodology in practice, read `CLAUDE.md` first — it's 
 
 ## License
 
-Personal project, no license granted yet. If you're interested in using or extending it, get in touch.
+**Copyright © 2026 Alexander Meyer. All rights reserved.**
+
+This repository is published for viewing as a portfolio and methodology reference. No license is granted to use, copy, modify, distribute, or run this software, in whole or in part, for any purpose.
