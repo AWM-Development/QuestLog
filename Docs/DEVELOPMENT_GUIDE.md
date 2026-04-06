@@ -417,11 +417,22 @@ Run through this before merging **every** feature branch. This is your self-revi
 ### First-Time Setup
 ```bash
 pnpm install
-docker compose up -d              # Start Postgres + pgvector
-cp .env.example .env              # Configure local env vars
-pnpm drizzle-kit push             # Apply schema to local DB
-pnpm turbo dev                    # Start both frontend and backend
+docker compose up -d                        # Postgres + pgvector on port 5433
+cp .env.example .env                        # Fill keys; see .env.example
+pnpm --filter @questlog/server db:migrate   # Journaled migrations (preferred)
+pnpm dev                                    # Same as `pnpm turbo dev`
 ```
+
+### Local URLs
+- **Web UI:** http://localhost:5173
+- **API:** http://localhost:3000 — tRPC: `http://localhost:3000/trpc` (`VITE_API_URL` in `.env` must match)
+
+### Turborepo
+- Root **Turborepo** (`turbo`) orchestrates `dev`, `build`, `test`, etc. `turbo.json` should keep `"$schema": "https://v{major}-{minor}-{patch}.turborepo.dev/schema.json"` in sync with the resolved version in `pnpm-lock.yaml`. After upgrading `turbo`, update the schema URL or run `npx @turbo/codemod migrate`.
+
+### Troubleshooting: API won’t start / UI can’t connect
+- **`EADDRINUSE` … `port: 3000`:** Another process is using port 3000 (often a previous `pnpm dev`). Free it: `lsof -i :3000` (macOS/Linux), then stop that PID. Or set `PORT=3001` (or similar) in `.env` and set `VITE_API_URL=http://localhost:3001/trpc`, then restart web + server.
+- **“Failed to load campaigns”** in the browser usually means Vite is running but the Fastify server never bound to the port — fix the server terminal error first.
 
 ### Common Commands
 ```bash
@@ -430,16 +441,17 @@ pnpm turbo build                  # Build all apps
 pnpm turbo test                   # Run all tests
 pnpm turbo lint                   # Lint all apps
 pnpm turbo typecheck              # Type-check all apps
-pnpm drizzle-kit generate         # Generate migration from schema changes
-pnpm drizzle-kit push             # Push schema directly (dev only)
+pnpm drizzle-kit generate         # Generate migration from schema changes (from server package / configured cwd)
 ```
 
 ### Environment Variables
 ```bash
-# .env.example
-DATABASE_URL=postgresql://questlog:questlog@localhost:5432/questlog
-ANTHROPIC_API_KEY=sk-ant-...       # For Claude API (agent conversation)
-VOYAGE_API_KEY=pa-...              # For embeddings (Voyage AI voyage-4-lite)
+# Full list: repo .env.example. Highlights:
+DATABASE_URL=postgresql://questlog:questlog@localhost:5433/questlog
+VITE_API_URL=http://localhost:3000/trpc
+# PORT=3000                       # Optional; default 3000. If changed, update VITE_API_URL.
+ANTHROPIC_API_KEY=sk-ant-...
+VOYAGE_API_KEY=pa-...
 ```
 
 ---

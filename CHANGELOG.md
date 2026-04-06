@@ -10,6 +10,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Changed
+
+- **`db:migrate` / `process-imports`:** `tsx` now uses **`--env-file=../../.env`** so migrations run against the same **`DATABASE_URL`** as `pnpm dev` (avoids applying migrations to the fallback DB while the app uses repo-root `.env`)
+- **Turborepo** on **2.9.x**; `turbo.json` uses a versioned `$schema` URL aligned with the lockfile for editor validation
+- **Docs:** local dev URLs (5173 / 3000 / `VITE_API_URL`), DEVELOPMENT_GUIDE first-time setup uses `db:migrate` and Postgres **5433**; README troubleshooting for API connection / **EADDRINUSE**
+- **Server:** clearer startup error when **PORT** is already in use; `.env.example` documents optional **PORT**
+
 ### Changed — Session notes UX (4.1 follow-up)
 
 - Session **date** and **session number** persist on **blur** (no per-keystroke `session.update` spam)

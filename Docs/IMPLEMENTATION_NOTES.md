@@ -27,6 +27,9 @@
 ### Test DB migrations
 If `questlog_test` predates a migration, run `pnpm --filter @questlog/server db:migrate` with `DATABASE_URL` pointing at that database. Vitest uses `questlog_test` (see `apps/server/vitest.config.ts`); CI should apply migrations fresh.
 
+### `db:migrate` must use the same `DATABASE_URL` as `pnpm dev`
+The server dev script loads **repo-root** `.env` via `tsx --env-file=../../.env`. The migrate script does the same (`apps/server/package.json` → `db:migrate`). Before that fix, `dotenv/config` in `migrate.ts` only looked for `.env` in `apps/server/` (usually missing), so the migrator fell back to a default DB while dev used root `.env` — **migrations could run against the wrong database** and the app would still log `relation "campaigns" does not exist` on the DB you actually connect to.
+
 ## Database Migrations
 
 ### Always use `db:migrate` (the journal), never `drizzle-kit push` for shared envs
@@ -40,6 +43,12 @@ The original migration created `vector(1536)` (OpenAI default). Voyage's `voyage
 ---
 
 ## Tooling
+
+### Turborepo version and `turbo.json` schema
+Root **Turborepo** is pinned in `package.json` (e.g. **2.9.x**). Keep `turbo.json` `"$schema": "https://v{major}-{minor}-{patch}.turborepo.dev/schema.json"` aligned with the **resolved** version in `pnpm-lock.yaml`. After upgrading `turbo`, update the schema URL or run `npx @turbo/codemod migrate`.
+
+### Dev server port (`EADDRINUSE`)
+The API listens on **`PORT`** (default **3000**). If `pnpm dev` logs `EADDRINUSE`, something else already owns that port — the web app at :5173 will show connection errors. Free the port or set `PORT` and matching `VITE_API_URL` in `.env`.
 
 ### Biome is the sole linter + formatter — not ESLint or Prettier
 Config is at root `biome.json`. Auto-fix: `pnpm exec biome check --write .` inside a package directory.

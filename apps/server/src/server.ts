@@ -50,6 +50,15 @@ export interface BuildAppOptions {
 	storage?: StorageProvider;
 }
 
+/** Postgres SQLSTATE from driver-wrapped errors (42P01 = undefined_table). */
+function pgErrorCode(err: unknown): string | undefined {
+	if (!err || typeof err !== "object") return undefined;
+	const cause = (err as { cause?: unknown }).cause;
+	if (!cause || typeof cause !== "object") return undefined;
+	const code = (cause as { code?: unknown }).code;
+	return typeof code === "string" ? code : undefined;
+}
+
 export function buildApp({ db, storage: storageOption }: BuildAppOptions) {
 	const storage =
 		storageOption ??
@@ -260,7 +269,13 @@ export function buildApp({ db, storage: storageOption }: BuildAppOptions) {
 					);
 				}
 			})
-			.catch((err) => {
+			.catch((err: unknown) => {
+				if (pgErrorCode(err) === "42P01") {
+					console.error(
+						"[import] Startup import queue skipped: database tables missing. Run: pnpm --filter @questlog/server db:migrate (and ensure DATABASE_URL in .env points at that DB).",
+					);
+					return;
+				}
 				console.error(
 					"[import] Error processing pending sources on startup:",
 					err,
