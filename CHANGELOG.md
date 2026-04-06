@@ -10,6 +10,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Changed — Session notes UX (4.1 follow-up)
+
+- Session **date** and **session number** persist on **blur** (no per-keystroke `session.update` spam)
+- **Full-width notes mode**: expand (⤢) from the panel header moves the session editor into the main column; **Back to panel** restores the right panel; layout resets when the route or campaign changes
+- **Rail**: Session logs icon shows a **7px draft indicator** (`--ent-faction`) when any session in the campaign is `draft` (`session.list` with 60s stale time)
+- **Slash menu**: ArrowUp/ArrowDown, Enter to apply, Escape to dismiss; keyboard highlight matches hover
+- **Finalize session** form uses a **CSS grid height reveal** (`0fr` → `1fr`) with reduced-motion respect
+- Milestone **9.6** (Polish & Deploy): deferred **TipTap link URL popover** replacing `window.prompt`
+
 ### Added — Milestone 4.1: Session CRUD & Editor Foundation
 
 - Migration `0005_nosy_proudstar.sql`: `sessions.status` (`draft` | `finalized`, default `draft`)

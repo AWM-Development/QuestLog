@@ -10,6 +10,8 @@ import { useLocalStorage } from "../features/agent-chat/hooks/useLocalStorage.js
 
 export type PanelTab = "context" | "notes";
 
+export type NotesLayout = "panel" | "full";
+
 export interface CampaignChromeContextValue {
 	panelOpen: boolean;
 	panelTab: PanelTab;
@@ -18,6 +20,11 @@ export interface CampaignChromeContextValue {
 	openNotes: () => void;
 	openContext: () => void;
 	togglePanel: () => void;
+	notesLayout: NotesLayout;
+	expandNotesToFull: () => void;
+	collapseNotesFromFull: () => void;
+	/** Collapse full-width notes back to panel layout without opening the panel. */
+	resetNotesLayout: () => void;
 	activeSessionId: string | null;
 	setActiveSessionId: (id: string | null) => void;
 	contextPanelContent: ReactNode | null;
@@ -40,11 +47,28 @@ export function CampaignChromeProvider({ children }: { children: ReactNode }) {
 	const [contextPanelContent, setContextPanelContent] =
 		useState<ReactNode | null>(null);
 	const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+	const [notesLayout, setNotesLayout] = useState<NotesLayout>("panel");
 
 	const openNotes = useCallback(() => {
+		setNotesLayout("panel");
 		setPanelTab("notes");
 		setPanelOpen(true);
 	}, [setPanelOpen, setPanelTab]);
+
+	const expandNotesToFull = useCallback(() => {
+		setNotesLayout("full");
+		setPanelOpen(false);
+	}, [setPanelOpen]);
+
+	const collapseNotesFromFull = useCallback(() => {
+		setNotesLayout("panel");
+		setPanelTab("notes");
+		setPanelOpen(true);
+	}, [setPanelOpen, setPanelTab]);
+
+	const resetNotesLayout = useCallback(() => {
+		setNotesLayout("panel");
+	}, []);
 
 	const openContext = useCallback(() => {
 		setPanelTab("context");
@@ -64,6 +88,10 @@ export function CampaignChromeProvider({ children }: { children: ReactNode }) {
 			openNotes,
 			openContext,
 			togglePanel,
+			notesLayout,
+			expandNotesToFull,
+			collapseNotesFromFull,
+			resetNotesLayout,
 			activeSessionId,
 			setActiveSessionId,
 			contextPanelContent,
@@ -77,6 +105,10 @@ export function CampaignChromeProvider({ children }: { children: ReactNode }) {
 			openNotes,
 			openContext,
 			togglePanel,
+			notesLayout,
+			expandNotesToFull,
+			collapseNotesFromFull,
+			resetNotesLayout,
 			activeSessionId,
 			contextPanelContent,
 		],

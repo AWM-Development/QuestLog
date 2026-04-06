@@ -345,6 +345,25 @@ dialog[open] {
 	margin: var(--space-4) 0;
 }
 
+/* Session finalize form — height reveal (grid 0fr → 1fr) */
+.finalize-form-reveal {
+	display: grid;
+	grid-template-rows: 0fr;
+	transition: grid-template-rows 220ms ease-out;
+}
+.finalize-form-reveal.finalize-form-reveal-open {
+	grid-template-rows: 1fr;
+}
+.finalize-form-reveal-inner {
+	min-height: 0;
+	overflow: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+	.finalize-form-reveal {
+		transition: none;
+	}
+}
+
 @keyframes save-pulse {
 	0%,
 	100% {

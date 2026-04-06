@@ -484,4 +484,12 @@
     - Document bugs, UX friction, and missing features
     - Fix critical issues before calling v1 "done"
 
+- [ ] **9.6 — TipTap link URL UI (session editor)**
+  - Branch: `feat/polish/session-editor-link`
+  - Background: Milestone 4.1 ships `window.prompt` for bubble-menu link href as a deliberate shortcut; production polish needs an in-app URL field (popover anchored to the bubble menu or inline), keyboard focus order, and design-token styling.
+  - Work:
+    - Replace `window.prompt` in `SessionEditor` bubble menu with an accessible URL control
+    - Validate / cancel flows; preserve existing link toggle behavior from StarterKit
+  - Tests: component test or integration check for link set/remove
+
 ---

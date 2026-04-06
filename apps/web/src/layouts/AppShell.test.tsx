@@ -1,11 +1,11 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { renderWithRouter } from "../test-utils.js";
+import { renderWithRouterAndTrpc } from "../test-utils.js";
 import { AppShell } from "./AppShell.js";
 
 describe("AppShell", () => {
 	it("renders the rail navigation", () => {
-		renderWithRouter(
+		renderWithRouterAndTrpc(
 			[
 				{
 					path: "/",
@@ -20,7 +20,7 @@ describe("AppShell", () => {
 	});
 
 	it("renders the main content area", () => {
-		renderWithRouter(
+		renderWithRouterAndTrpc(
 			[
 				{
 					path: "/",
@@ -35,7 +35,7 @@ describe("AppShell", () => {
 	});
 
 	it("renders the QuestLog logo link", () => {
-		renderWithRouter(
+		renderWithRouterAndTrpc(
 			[
 				{
 					path: "/",
@@ -50,7 +50,7 @@ describe("AppShell", () => {
 	});
 
 	it("renders campaign nav icons when a campaignId is in the URL", () => {
-		renderWithRouter(
+		renderWithRouterAndTrpc(
 			[
 				{
 					path: "/campaign/:id",
@@ -70,7 +70,7 @@ describe("AppShell", () => {
 	});
 
 	it("does not render campaign nav icons when on /campaigns", () => {
-		renderWithRouter(
+		renderWithRouterAndTrpc(
 			[
 				{
 					path: "/campaigns",
@@ -85,7 +85,7 @@ describe("AppShell", () => {
 	});
 
 	it("renders the mascot", () => {
-		renderWithRouter(
+		renderWithRouterAndTrpc(
 			[
 				{
 					path: "/",

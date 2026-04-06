@@ -1,5 +1,5 @@
 import { type CSSProperties, useEffect } from "react";
-import { Outlet, useParams } from "react-router";
+import { Outlet, useLocation, useParams } from "react-router";
 import { SessionNotesPanel } from "../features/session-log/components/SessionNotesPanel.js";
 import {
 	CampaignChromeProvider,
@@ -21,8 +21,19 @@ const placeholderContext: CSSProperties = {
 	lineHeight: 1.5,
 };
 
+const fullNotesMainWrap: CSSProperties = {
+	height: "100%",
+	display: "flex",
+	flexDirection: "column",
+	maxWidth: "900px",
+	margin: "0 auto",
+	width: "100%",
+	minHeight: 0,
+};
+
 function AppShellInner() {
 	const { id: campaignId } = useParams();
+	const location = useLocation();
 	const {
 		panelOpen,
 		panelTab,
@@ -30,7 +41,19 @@ function AppShellInner() {
 		setPanelTab,
 		openNotes,
 		contextPanelContent,
+		notesLayout,
+		resetNotesLayout,
 	} = useCampaignChrome();
+
+	// Reset full-width notes when the user navigates; effect must track pathname.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: run on pathname change only
+	useEffect(() => {
+		resetNotesLayout();
+	}, [location.pathname, resetNotesLayout]);
+
+	useEffect(() => {
+		if (!campaignId) resetNotesLayout();
+	}, [campaignId, resetNotesLayout]);
 
 	useEffect(() => {
 		const onKey = (e: KeyboardEvent) => {
@@ -52,7 +75,8 @@ function AppShellInner() {
 		typeof window.matchMedia === "function" &&
 		window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-	const showPanel = Boolean(panelOpen && campaignId);
+	const showPanel = Boolean(panelOpen && campaignId && notesLayout !== "full");
+	const fullNotesMode = Boolean(campaignId && notesLayout === "full");
 
 	return (
 		<div
@@ -74,7 +98,13 @@ function AppShellInner() {
 			<Rail campaignId={campaignId} />
 
 			<main className="main-content" style={mainStyle}>
-				<Outlet />
+				{fullNotesMode && campaignId ? (
+					<div style={fullNotesMainWrap}>
+						<SessionNotesPanel campaignId={campaignId} layout="full" />
+					</div>
+				) : (
+					<Outlet />
+				)}
 			</main>
 
 			{showPanel && campaignId ? (
@@ -82,7 +112,9 @@ function AppShellInner() {
 					activeTab={panelTab}
 					onTabChange={(t) => setPanelTab(t)}
 					onClose={() => setPanelOpen(false)}
-					notesContent={<SessionNotesPanel campaignId={campaignId} />}
+					notesContent={
+						<SessionNotesPanel campaignId={campaignId} layout="panel" />
+					}
 					contextContent={
 						contextPanelContent ?? (
 							<div style={placeholderContext}>

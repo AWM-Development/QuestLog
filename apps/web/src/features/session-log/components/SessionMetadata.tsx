@@ -11,8 +11,8 @@ interface SessionMetadataProps {
 	title: string | null;
 	date: Date;
 	onTitleCommit: (title: string) => void;
-	onSessionNumberChange: (n: number) => void;
-	onDateChange: (d: Date) => void;
+	onSessionNumberCommit: (n: number) => void;
+	onDateCommit: (d: Date) => void;
 }
 
 const sepStyle: CSSProperties = {
@@ -26,16 +26,27 @@ export function SessionMetadata({
 	title,
 	date,
 	onTitleCommit,
-	onSessionNumberChange,
-	onDateChange,
+	onSessionNumberCommit,
+	onDateCommit,
 }: SessionMetadataProps) {
 	const [titleDraft, setTitleDraft] = useState(title ?? "");
+	const [numberDraft, setNumberDraft] = useState(String(sessionNumber));
+	const [dateDraft, setDateDraft] = useState(() =>
+		date.toISOString().slice(0, 10),
+	);
 
 	useEffect(() => {
 		setTitleDraft(title ?? "");
 	}, [title]);
 
-	const dateStr = date.toISOString().slice(0, 10);
+	useEffect(() => {
+		setNumberDraft(String(sessionNumber));
+	}, [sessionNumber]);
+
+	const dateKey = date.toISOString().slice(0, 10);
+	useEffect(() => {
+		setDateDraft(dateKey);
+	}, [dateKey]);
 
 	return (
 		<div style={{ flexShrink: 0, padding: "0 var(--space-4)" }}>
@@ -70,10 +81,14 @@ export function SessionMetadata({
 					<span style={sessionMetaDate}>Date</span>
 					<input
 						type="date"
-						value={dateStr}
-						onChange={(e) => {
-							const v = e.target.value;
-							if (v) onDateChange(new Date(`${v}T12:00:00.000Z`));
+						value={dateDraft}
+						onChange={(e) => setDateDraft(e.target.value)}
+						onBlur={() => {
+							if (!dateDraft) {
+								setDateDraft(date.toISOString().slice(0, 10));
+								return;
+							}
+							onDateCommit(new Date(`${dateDraft}T12:00:00.000Z`));
 						}}
 						style={{ ...inputField, fontSize: "0.75rem", padding: "6px 10px" }}
 					/>
@@ -89,10 +104,15 @@ export function SessionMetadata({
 					<input
 						type="number"
 						min={1}
-						value={sessionNumber}
-						onChange={(e) => {
-							const n = Number.parseInt(e.target.value, 10);
-							if (!Number.isNaN(n) && n > 0) onSessionNumberChange(n);
+						value={numberDraft}
+						onChange={(e) => setNumberDraft(e.target.value)}
+						onBlur={() => {
+							const n = Number.parseInt(numberDraft, 10);
+							if (!Number.isNaN(n) && n > 0) {
+								onSessionNumberCommit(n);
+							} else {
+								setNumberDraft(String(sessionNumber));
+							}
 						}}
 						style={{ ...inputField, fontSize: "0.75rem", padding: "6px 10px" }}
 					/>

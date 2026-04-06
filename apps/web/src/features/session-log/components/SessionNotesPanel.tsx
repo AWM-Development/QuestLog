@@ -1,5 +1,9 @@
 import { type CSSProperties, useCallback, useEffect, useState } from "react";
-import { buttonAccent, buttonSecondary } from "../../../components/styles.js";
+import {
+	buttonAccent,
+	buttonSecondary,
+	iconButtonBase,
+} from "../../../components/styles.js";
 import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../lib/trpc.js";
 import { useSessionAutoSave } from "../hooks/useSessionAutoSave.js";
@@ -29,10 +33,19 @@ const bannerStyle: CSSProperties = {
 
 interface SessionNotesPanelProps {
 	campaignId: string;
+	layout?: "panel" | "full";
 }
 
-export function SessionNotesPanel({ campaignId }: SessionNotesPanelProps) {
-	const { activeSessionId, setActiveSessionId } = useCampaignChrome();
+export function SessionNotesPanel({
+	campaignId,
+	layout = "panel",
+}: SessionNotesPanelProps) {
+	const {
+		activeSessionId,
+		setActiveSessionId,
+		expandNotesToFull,
+		collapseNotesFromFull,
+	} = useCampaignChrome();
 	const [finalizeOpen, setFinalizeOpen] = useState(false);
 
 	const listQuery = trpc.session.list.useQuery({ campaignId });
@@ -86,17 +99,28 @@ export function SessionNotesPanel({ campaignId }: SessionNotesPanelProps) {
 
 	const session = sessionQuery.data;
 
-	const handleMetaUpdate = useCallback(
-		(patch: {
-			title?: string | null;
-			sessionNumber?: number;
-			date?: Date;
-		}) => {
+	const handleTitleCommit = useCallback(
+		(raw: string) => {
 			if (!session) return;
-			updateMutation.mutate({
-				id: session.id,
-				...patch,
-			});
+			const title = raw.trim() || null;
+			if ((session.title ?? "") === (title ?? "")) return;
+			updateMutation.mutate({ id: session.id, title });
+		},
+		[session, updateMutation],
+	);
+
+	const handleSessionNumberCommit = useCallback(
+		(sessionNumber: number) => {
+			if (!session || session.sessionNumber === sessionNumber) return;
+			updateMutation.mutate({ id: session.id, sessionNumber });
+		},
+		[session, updateMutation],
+	);
+
+	const handleDateCommit = useCallback(
+		(date: Date) => {
+			if (!session || session.date.getTime() === date.getTime()) return;
+			updateMutation.mutate({ id: session.id, date });
 		},
 		[session, updateMutation],
 	);
@@ -162,35 +186,79 @@ export function SessionNotesPanel({ campaignId }: SessionNotesPanelProps) {
 			}}
 		>
 			<div style={headerRow}>
-				<span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-					{isFinal ? "✓" : "📝"} Session {session.sessionNumber} ·{" "}
-					{isFinal ? (session.title ?? "Untitled") : "draft"}
-				</span>
-				{isFinal ? (
-					<button
-						type="button"
-						style={{
-							...buttonSecondary,
-							padding: "4px 12px",
-							fontSize: "0.75rem",
-						}}
-						onClick={() => setFinalizeOpen(true)}
-					>
-						Update
-					</button>
-				) : (
-					<button
-						type="button"
-						style={{
-							...buttonAccent,
-							padding: "4px 12px",
-							fontSize: "0.75rem",
-						}}
-						onClick={() => setFinalizeOpen(true)}
-					>
-						Save Session
-					</button>
-				)}
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						gap: "var(--space-2)",
+						flexWrap: "wrap",
+						minWidth: 0,
+						flex: "1 1 auto",
+					}}
+				>
+					{layout === "full" ? (
+						<button
+							type="button"
+							style={{
+								...buttonSecondary,
+								padding: "4px 12px",
+								fontSize: "0.75rem",
+							}}
+							onClick={collapseNotesFromFull}
+						>
+							Back to panel
+						</button>
+					) : null}
+					<span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+						{isFinal ? "✓" : "📝"} Session {session.sessionNumber} ·{" "}
+						{isFinal ? (session.title ?? "Untitled") : "draft"}
+					</span>
+				</div>
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						gap: "var(--space-2)",
+						flexShrink: 0,
+					}}
+				>
+					{layout === "panel" ? (
+						<button
+							type="button"
+							title="Expand session notes to full width"
+							aria-label="Expand session notes to full width"
+							style={iconButtonBase}
+							onClick={expandNotesToFull}
+						>
+							⤢
+						</button>
+					) : null}
+					{isFinal ? (
+						<button
+							type="button"
+							style={{
+								...buttonSecondary,
+								padding: "4px 12px",
+								fontSize: "0.75rem",
+							}}
+							onClick={() => setFinalizeOpen(true)}
+						>
+							Update
+						</button>
+					) : (
+						<button
+							type="button"
+							style={{
+								...buttonAccent,
+								padding: "4px 12px",
+								fontSize: "0.75rem",
+							}}
+							onClick={() => setFinalizeOpen(true)}
+						>
+							Save Session
+						</button>
+					)}
+				</div>
 			</div>
 
 			{isFinal && (
@@ -199,39 +267,41 @@ export function SessionNotesPanel({ campaignId }: SessionNotesPanelProps) {
 				</div>
 			)}
 
-			{finalizeOpen && (
-				<FinalizeForm
-					initialTitle={session.title}
-					initialSessionNumber={session.sessionNumber}
-					initialDate={session.date}
-					initialSummary={session.summary}
-					initialTags={session.tags ?? []}
-					isSubmitting={finalizeMutation.isPending}
-					onCancel={() => setFinalizeOpen(false)}
-					onConfirm={(data) => {
-						finalizeMutation.mutate({
-							id: session.id,
-							title: data.title,
-							summary: data.summary,
-							tags: data.tags,
-							sessionNumber: data.sessionNumber,
-							date: data.date,
-						});
-					}}
-				/>
-			)}
+			<div
+				className={`finalize-form-reveal${finalizeOpen ? " finalize-form-reveal-open" : ""}`}
+			>
+				<div className="finalize-form-reveal-inner">
+					{finalizeOpen ? (
+						<FinalizeForm
+							initialTitle={session.title}
+							initialSessionNumber={session.sessionNumber}
+							initialDate={session.date}
+							initialSummary={session.summary}
+							initialTags={session.tags ?? []}
+							isSubmitting={finalizeMutation.isPending}
+							onCancel={() => setFinalizeOpen(false)}
+							onConfirm={(data) => {
+								finalizeMutation.mutate({
+									id: session.id,
+									title: data.title,
+									summary: data.summary,
+									tags: data.tags,
+									sessionNumber: data.sessionNumber,
+									date: data.date,
+								});
+							}}
+						/>
+					) : null}
+				</div>
+			</div>
 
 			<SessionMetadata
 				sessionNumber={session.sessionNumber}
 				title={session.title}
 				date={session.date}
-				onTitleCommit={(title) =>
-					handleMetaUpdate({ title: title.trim() || null })
-				}
-				onSessionNumberChange={(sessionNumber) =>
-					handleMetaUpdate({ sessionNumber })
-				}
-				onDateChange={(date) => handleMetaUpdate({ date })}
+				onTitleCommit={handleTitleCommit}
+				onSessionNumberCommit={handleSessionNumberCommit}
+				onDateCommit={handleDateCommit}
 			/>
 
 			<div

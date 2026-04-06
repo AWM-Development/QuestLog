@@ -3,6 +3,7 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { BubbleMenu, FloatingMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
+import { useEffect, useRef, useState } from "react";
 import {
 	editorSurface,
 	floatingMenu,
@@ -60,6 +61,58 @@ function cycleHeading(editor: Editor) {
 	}
 }
 
+const SLASH_MENU_ITEMS: { label: string; run: (ed: Editor) => void }[] = [
+	{
+		label: "Heading 2",
+		run: (ed) =>
+			deleteSlashAndRun(ed, () => {
+				ed.chain().focus().toggleHeading({ level: 2 }).run();
+			}),
+	},
+	{
+		label: "Heading 3",
+		run: (ed) =>
+			deleteSlashAndRun(ed, () => {
+				ed.chain().focus().toggleHeading({ level: 3 }).run();
+			}),
+	},
+	{
+		label: "Bullet list",
+		run: (ed) =>
+			deleteSlashAndRun(ed, () => {
+				ed.chain().focus().toggleBulletList().run();
+			}),
+	},
+	{
+		label: "Numbered list",
+		run: (ed) =>
+			deleteSlashAndRun(ed, () => {
+				ed.chain().focus().toggleOrderedList().run();
+			}),
+	},
+	{
+		label: "Quote",
+		run: (ed) =>
+			deleteSlashAndRun(ed, () => {
+				ed.chain().focus().toggleBlockquote().run();
+			}),
+	},
+	{
+		label: "Code block",
+		run: (ed) =>
+			deleteSlashAndRun(ed, () => {
+				ed.chain().focus().toggleCodeBlock().run();
+			}),
+	},
+	{
+		label: "Horizontal rule",
+		run: (ed) =>
+			deleteSlashAndRun(ed, () => {
+				ed.chain().focus().setHorizontalRule().run();
+			}),
+	},
+];
+
 interface SessionEditorProps {
 	sessionId: string;
 	content: string;
@@ -73,6 +126,11 @@ export function SessionEditor({
 	placeholder,
 	onContentChange,
 }: SessionEditorProps) {
+	const [slashHighlightIndex, setSlashHighlightIndex] = useState(0);
+	const slashHighlightRef = useRef(0);
+	slashHighlightRef.current = slashHighlightIndex;
+	const prevSlashVisible = useRef(false);
+
 	const editor = useEditor(
 		{
 			extensions: [
@@ -104,64 +162,63 @@ export function SessionEditor({
 		[sessionId],
 	);
 
+	useEffect(() => {
+		if (!editor) return;
+		const onTransaction = () => {
+			const now = slashShouldShow({ editor });
+			if (now && !prevSlashVisible.current) {
+				setSlashHighlightIndex(0);
+			}
+			prevSlashVisible.current = now;
+		};
+		editor.on("transaction", onTransaction);
+		return () => {
+			editor.off("transaction", onTransaction);
+		};
+	}, [editor]);
+
+	useEffect(() => {
+		if (!editor) return;
+		const max = SLASH_MENU_ITEMS.length - 1;
+		const onKeyDown = (e: KeyboardEvent) => {
+			if (!slashShouldShow({ editor })) return;
+			if (e.key === "ArrowDown") {
+				e.preventDefault();
+				e.stopPropagation();
+				setSlashHighlightIndex((i) => Math.min(i + 1, max));
+			} else if (e.key === "ArrowUp") {
+				e.preventDefault();
+				e.stopPropagation();
+				setSlashHighlightIndex((i) => Math.max(i - 1, 0));
+			} else if (e.key === "Enter") {
+				e.preventDefault();
+				e.stopPropagation();
+				const item = SLASH_MENU_ITEMS[slashHighlightRef.current];
+				if (item) item.run(editor);
+				setSlashHighlightIndex(0);
+				prevSlashVisible.current = false;
+			} else if (e.key === "Escape") {
+				e.preventDefault();
+				e.stopPropagation();
+				const { state } = editor;
+				const { $from } = state.selection;
+				const pos = $from.pos;
+				editor
+					.chain()
+					.focus()
+					.deleteRange({ from: pos - 1, to: pos })
+					.run();
+				prevSlashVisible.current = false;
+			}
+		};
+		const dom = editor.view.dom as HTMLElement;
+		dom.addEventListener("keydown", onKeyDown, true);
+		return () => dom.removeEventListener("keydown", onKeyDown, true);
+	}, [editor]);
+
 	if (!editor) {
 		return null;
 	}
-
-	const slashItems: {
-		label: string;
-		run: (ed: Editor) => void;
-	}[] = [
-		{
-			label: "Heading 2",
-			run: (ed) =>
-				deleteSlashAndRun(ed, () => {
-					ed.chain().focus().toggleHeading({ level: 2 }).run();
-				}),
-		},
-		{
-			label: "Heading 3",
-			run: (ed) =>
-				deleteSlashAndRun(ed, () => {
-					ed.chain().focus().toggleHeading({ level: 3 }).run();
-				}),
-		},
-		{
-			label: "Bullet list",
-			run: (ed) =>
-				deleteSlashAndRun(ed, () => {
-					ed.chain().focus().toggleBulletList().run();
-				}),
-		},
-		{
-			label: "Numbered list",
-			run: (ed) =>
-				deleteSlashAndRun(ed, () => {
-					ed.chain().focus().toggleOrderedList().run();
-				}),
-		},
-		{
-			label: "Quote",
-			run: (ed) =>
-				deleteSlashAndRun(ed, () => {
-					ed.chain().focus().toggleBlockquote().run();
-				}),
-		},
-		{
-			label: "Code block",
-			run: (ed) =>
-				deleteSlashAndRun(ed, () => {
-					ed.chain().focus().toggleCodeBlock().run();
-				}),
-		},
-		{
-			label: "Horizontal rule",
-			run: (ed) =>
-				deleteSlashAndRun(ed, () => {
-					ed.chain().focus().setHorizontalRule().run();
-				}),
-		},
-	];
 
 	return (
 		<div style={{ ...editorSurface, display: "flex", flexDirection: "column" }}>
@@ -223,7 +280,7 @@ export function SessionEditor({
 
 			<FloatingMenu editor={editor} shouldShow={slashShouldShow}>
 				<div style={floatingMenuDropdown}>
-					{slashItems.map((item) => (
+					{SLASH_MENU_ITEMS.map((item, index) => (
 						<button
 							key={item.label}
 							type="button"
@@ -231,9 +288,13 @@ export function SessionEditor({
 								...floatingMenuOption,
 								width: "100%",
 								border: "none",
-								background: "transparent",
+								background:
+									index === slashHighlightIndex
+										? "var(--state-active-soft)"
+										: "transparent",
 								textAlign: "left",
 							}}
+							onMouseEnter={() => setSlashHighlightIndex(index)}
 							onMouseDown={(e) => e.preventDefault()}
 							onClick={() => item.run(editor)}
 						>
