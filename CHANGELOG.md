@@ -10,6 +10,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Fixed
+
+- **Navigation after agent chat / conversation:** `campaign/:id` uses **`<Outlet />`**; **`AppShell`** derives **`campaignId`** from **`location.pathname`** (not `useMatch`). **Context** tablet overlay scrim no longer covers the **nav rail** (`left: var(--rail-width)`); rail gets **`z-index: 25`**. Agent chat cites sync via **`agentChatContextSources`**; **`AppShell`** renders **one** **`ContextPanel`** on chat routes (no per-tick React node replacement). Leaving **`/campaign/:id/chat`** clears **`agentChatContextSources`**. **`useMediaQuery`** tolerates environments without **`window.matchMedia`** (e.g. jsdom)
+- **Chat infinite re-render:** **`useChat`** returned a **new `messages` array every render** (and bumped streaming message ids every frame), so **`ChatPage`**’s sync to **`setAgentChatContextSources`** re-fired endlessly. **`useChat`** now memoizes merged **`messages`**, uses a **stable streaming assistant id**, and exposes **`agentContextSources`** derived only from **`getMessages` query data** so context updates stop looping
+
 ### Changed
 
 - **`db:migrate` / `process-imports`:** `tsx` now uses **`--env-file=../../.env`** so migrations run against the same **`DATABASE_URL`** as `pnpm dev` (avoids applying migrations to the fallback DB while the app uses repo-root `.env`)
@@ -32,7 +37,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 - `session` tRPC router: `create`, `getById`, `list`, `update`, `finalize`; Zod inputs in `packages/shared`
 - `session.service.ts`: auto-increment `sessionNumber` per campaign, list ordered by `sessionNumber` descending
 - TipTap v3 editor (`SessionEditor`): StarterKit (H2/H3 only), placeholder, bubble menu (bold/italic/strike/code/link/heading), floating slash menu for block inserts; content stored as TipTap JSON string in `sessions.content`
-- `CampaignChromeProvider` + right-hand `Panel` (Context / Session notes tabs) in `AppShell`; chat registers context via `setContextPanelContent`; ⌘⇧N opens notes; panel width uses `--panel-width`
+- `CampaignChromeProvider` + right-hand `Panel` (Context / Session notes tabs) in `AppShell`; agent chat syncs cited sources into chrome state for the Context tab; ⌘⇧N opens notes; panel width uses `--panel-width`
 - `SessionNotesPanel` with metadata, `FinalizeForm`, debounced server auto-save (2s) via `session.update`, footer save status
 - `SessionListPage` at `/campaign/:id/sessions`; tests: `session.service.test.ts`, `session.integration.test.ts`, `SessionEditor.test.tsx`
 - Resilience: `campaign.service` list-order test now asserts relative positions of created rows (extra campaigns in DB no longer break the assertion)

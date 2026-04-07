@@ -77,8 +77,10 @@ const entityTypeStyle: CSSProperties = {
 	opacity: 0.5,
 };
 
-const scrimStyle: CSSProperties = {
+/** Tablet overlay: dim main + panel only; keep the nav rail clickable (matches ConversationDrawer). */
+const overlayScrimStyle: CSSProperties = {
 	...chatOverlayScrim,
+	left: "var(--rail-width)",
 };
 
 function guessEntityType(sourceName: string): keyof typeof entityAvatarColors {
@@ -173,7 +175,7 @@ export function ContextPanel({
 		return (
 			<>
 				{/* biome-ignore lint/a11y/useKeyWithClickEvents: scrim is aria-hidden, not keyboard-interactive */}
-				<div style={scrimStyle} onClick={onClose} aria-hidden="true" />
+				<div style={overlayScrimStyle} onClick={onClose} aria-hidden="true" />
 				{panel}
 			</>
 		);

@@ -1,4 +1,5 @@
 import { screen } from "@testing-library/react";
+import { Outlet } from "react-router";
 import { describe, expect, it } from "vitest";
 import { renderWithRouterAndTrpc } from "../test-utils.js";
 import { AppShell } from "./AppShell.js";
@@ -53,9 +54,15 @@ describe("AppShell", () => {
 		renderWithRouterAndTrpc(
 			[
 				{
-					path: "/campaign/:id",
+					path: "/",
 					element: <AppShell />,
-					children: [{ index: true, element: <p>Campaign Home</p> }],
+					children: [
+						{
+							path: "campaign/:id",
+							element: <Outlet />,
+							children: [{ index: true, element: <p>Campaign Home</p> }],
+						},
+					],
 				},
 			],
 			{ initialEntries: ["/campaign/abc-123"] },
@@ -67,6 +74,35 @@ describe("AppShell", () => {
 		expect(screen.getByTitle("Entities")).toBeInTheDocument();
 		expect(screen.getByTitle("Sources")).toBeInTheDocument();
 		expect(screen.getByTitle("Settings")).toBeInTheDocument();
+	});
+
+	it("keeps rail campaign links correct on nested chat/:conversationId (matches prod route shape)", () => {
+		renderWithRouterAndTrpc(
+			[
+				{
+					path: "/",
+					element: <AppShell />,
+					children: [
+						{
+							path: "campaign/:id",
+							element: <Outlet />,
+							children: [
+								{
+									path: "chat/:conversationId",
+									element: <p>Chat</p>,
+								},
+							],
+						},
+					],
+				},
+			],
+			{ initialEntries: ["/campaign/abc-123/chat/conv-456"] },
+		);
+
+		expect(screen.getByTitle("Session logs")).toHaveAttribute(
+			"href",
+			"/campaign/abc-123/sessions",
+		);
 	});
 
 	it("does not render campaign nav icons when on /campaigns", () => {

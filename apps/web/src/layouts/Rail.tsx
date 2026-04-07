@@ -36,6 +36,8 @@ const draftSessionDot: CSSProperties = {
 };
 
 const railStyle: CSSProperties = {
+	position: "relative",
+	zIndex: 25,
 	width: "var(--rail-width)",
 	backgroundColor: "var(--bg-surface)",
 	borderRight: "1px solid var(--border-subtle)",

@@ -7,6 +7,7 @@ import {
 	useState,
 } from "react";
 import { useLocalStorage } from "../features/agent-chat/hooks/useLocalStorage.js";
+import type { MessageSource } from "../features/agent-chat/types.js";
 
 export type PanelTab = "context" | "notes";
 
@@ -27,8 +28,9 @@ export interface CampaignChromeContextValue {
 	resetNotesLayout: () => void;
 	activeSessionId: string | null;
 	setActiveSessionId: (id: string | null) => void;
-	contextPanelContent: ReactNode | null;
-	setContextPanelContent: (node: ReactNode | null) => void;
+	/** Cited sources for the agent chat Context tab (synced from `useChat`, rendered by AppShell). */
+	agentChatContextSources: MessageSource[];
+	setAgentChatContextSources: (sources: MessageSource[]) => void;
 }
 
 const CampaignChromeContext = createContext<CampaignChromeContextValue | null>(
@@ -44,8 +46,9 @@ export function CampaignChromeProvider({ children }: { children: ReactNode }) {
 		"questlog-panel-tab",
 		"notes",
 	);
-	const [contextPanelContent, setContextPanelContent] =
-		useState<ReactNode | null>(null);
+	const [agentChatContextSources, setAgentChatContextSources] = useState<
+		MessageSource[]
+	>([]);
 	const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
 	const [notesLayout, setNotesLayout] = useState<NotesLayout>("panel");
 
@@ -94,8 +97,8 @@ export function CampaignChromeProvider({ children }: { children: ReactNode }) {
 			resetNotesLayout,
 			activeSessionId,
 			setActiveSessionId,
-			contextPanelContent,
-			setContextPanelContent,
+			agentChatContextSources,
+			setAgentChatContextSources,
 		}),
 		[
 			panelOpen,
@@ -110,7 +113,7 @@ export function CampaignChromeProvider({ children }: { children: ReactNode }) {
 			collapseNotesFromFull,
 			resetNotesLayout,
 			activeSessionId,
-			contextPanelContent,
+			agentChatContextSources,
 		],
 	);
 

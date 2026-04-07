@@ -1,4 +1,4 @@
-import { Navigate, createBrowserRouter } from "react-router";
+import { Navigate, Outlet, createBrowserRouter } from "react-router";
 import { RouteErrorBoundary } from "./components/ErrorBoundary.js";
 import { PlaceholderPage } from "./components/PlaceholderPage.js";
 import { ChatPage } from "./features/agent-chat/index.js";
@@ -17,6 +17,7 @@ export const router = createBrowserRouter([
 			{ path: "campaigns", element: <CampaignListPage /> },
 			{
 				path: "campaign/:id",
+				element: <Outlet />,
 				errorElement: <RouteErrorBoundary />,
 				children: [
 					{

@@ -15,7 +15,6 @@ import { useLocalStorage } from "../hooks/useLocalStorage.js";
 import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import { ChatHeader } from "./ChatHeader.js";
 import { ChatInput } from "./ChatInput.js";
-import { ContextPanel } from "./ContextPanel.js";
 import { ConversationDrawer } from "./ConversationDrawer.js";
 import { MessageList } from "./MessageList.js";
 
@@ -52,7 +51,7 @@ export function ChatPage() {
 		setPanelOpen,
 		openContext,
 		openNotes,
-		setContextPanelContent,
+		setAgentChatContextSources,
 	} = useCampaignChrome();
 	const [starterFill, setStarterFill] = useState<string | undefined>(undefined);
 	const pendingMessageRef = useRef<string | null>(null);
@@ -85,6 +84,7 @@ export function ChatPage() {
 	// Chat
 	const {
 		messages,
+		agentContextSources,
 		sendMessage,
 		cancel: cancelChat,
 		isLoading: chatLoading,
@@ -115,13 +115,6 @@ export function ChatPage() {
 
 	// Active conversation data
 	const activeConversation = conversations.find((c) => c.id === conversationId);
-
-	// Extract sources from agent messages for the context panel
-	const panelSources = useMemo(() => {
-		return messages
-			.filter((m) => m.role === "assistant" && m.sources)
-			.flatMap((m) => m.sources ?? []);
-	}, [messages]);
 
 	// Handlers
 	const handleSelectConversation = useCallback(
@@ -171,15 +164,8 @@ export function ChatPage() {
 	);
 
 	useEffect(() => {
-		setContextPanelContent(
-			<ContextPanel
-				sources={panelSources}
-				onClose={() => setPanelOpen(false)}
-				isOverlay={isTablet}
-			/>,
-		);
-		return () => setContextPanelContent(null);
-	}, [panelSources, isTablet, setContextPanelContent, setPanelOpen]);
+		setAgentChatContextSources(agentContextSources);
+	}, [agentContextSources, setAgentChatContextSources]);
 
 	const handleToggleContextPanel = useCallback(() => {
 		if (panelOpen && panelTab === "context") {

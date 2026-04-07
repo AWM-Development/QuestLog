@@ -1,5 +1,7 @@
-import { type CSSProperties, useEffect } from "react";
-import { Outlet, useLocation, useParams } from "react-router";
+import { type CSSProperties, useEffect, useMemo } from "react";
+import { Outlet, useLocation } from "react-router";
+import { ContextPanel } from "../features/agent-chat/components/ContextPanel.js";
+import { useMediaQuery } from "../features/agent-chat/hooks/useMediaQuery.js";
 import { SessionNotesPanel } from "../features/session-log/components/SessionNotesPanel.js";
 import {
 	CampaignChromeProvider,
@@ -31,19 +33,42 @@ const fullNotesMainWrap: CSSProperties = {
 	minHeight: 0,
 };
 
+/** Campaign segment from URL — avoids relying on layout `useParams` / `useMatch` edge cases. */
+function campaignIdFromPathname(pathname: string): string | undefined {
+	const m = /^\/campaign\/([^/]+)/.exec(pathname);
+	return m?.[1];
+}
+
+function isAgentChatPathname(pathname: string): boolean {
+	return /\/campaign\/[^/]+\/chat/.test(pathname);
+}
+
 function AppShellInner() {
-	const { id: campaignId } = useParams();
 	const location = useLocation();
+	const campaignId = useMemo(
+		() => campaignIdFromPathname(location.pathname),
+		[location.pathname],
+	);
+	const isNarrowForContext = useMediaQuery("(max-width: 1199px)");
 	const {
 		panelOpen,
 		panelTab,
 		setPanelOpen,
 		setPanelTab,
 		openNotes,
-		contextPanelContent,
+		agentChatContextSources,
+		setAgentChatContextSources,
 		notesLayout,
 		resetNotesLayout,
 	} = useCampaignChrome();
+
+	const onAgentChatRoute = isAgentChatPathname(location.pathname);
+
+	useEffect(() => {
+		if (!isAgentChatPathname(location.pathname)) {
+			setAgentChatContextSources([]);
+		}
+	}, [location.pathname, setAgentChatContextSources]);
 
 	// Reset full-width notes when the user navigates; effect must track pathname.
 	// biome-ignore lint/correctness/useExhaustiveDependencies: run on pathname change only
@@ -116,7 +141,13 @@ function AppShellInner() {
 						<SessionNotesPanel campaignId={campaignId} layout="panel" />
 					}
 					contextContent={
-						contextPanelContent ?? (
+						onAgentChatRoute ? (
+							<ContextPanel
+								sources={agentChatContextSources}
+								onClose={() => setPanelOpen(false)}
+								isOverlay={isNarrowForContext}
+							/>
+						) : (
 							<div style={placeholderContext}>
 								Open Agent chat to see cited sources and context for this
 								campaign.
