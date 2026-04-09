@@ -352,15 +352,22 @@ The agent constructs its context window from multiple sources for each query:
 ### 4.3 Session Logging & Entity Linking
 
 #### Overview
-Session notes are captured in a persistent sidebar panel that's open throughout the session — not as a post-session brain dump. The DM jots notes as things happen: a quick line when the party enters a new room, a name when an NPC improvises something unexpected, a reminder about a ruling they made on the fly. The system detects entities in real time, links them to existing entries or suggests creating new ones, and updates the knowledge graph when the session is saved.
+Session notes are captured as the DM runs the session — not as a post-session brain dump. The DM jots notes as things happen: a quick line when the party enters a new room, a name when an NPC improvises something unexpected, a reminder about a ruling they made on the fly. The system detects entities in real time, links them to existing entries or suggests creating new ones, and updates the knowledge graph when the session is saved.
 
-#### The Notes Panel
-- **Always accessible:** a collapsible sidebar or panel that's available from any screen (agent chat, map, combat tracker). One tap to open, one tap to collapse. Never blocks the primary view.
-- Rich text with markdown support (headers, bold, italic, lists, blockquotes).
-- **Inline entity detection:** as the DM types, recognized entity names are underlined with a subtle highlight. Tap to confirm the link, dismiss it, or create a new entity if the name is unrecognized.
-- **Entity creation inline:** selecting any text and pressing a hotkey (or right-click) opens a quick-create panel: name (pre-filled from selection), type (NPC/Location/Faction/Item/Arc), brief description. Minimal friction — the full entity page can be fleshed out later.
-- **Detected entities list:** the bottom of the panel shows all detected/linked entities for the current session, grouped by type.
-- **Auto-save draft:** notes are continuously saved locally so nothing is lost if the app crashes mid-session. The DM never has to worry about losing notes.
+#### The Session Editor — Two Modes
+The editor is a **main-area view** with an optional **dockable right rail** for mid-session quick capture.
+
+1. **Full editor (main area, default).** Route: `/campaign/:id/sessions/:sessionId`. The editor fills the main content area as a centered, max-width writing surface (720px). Intended for focused writing — pre-session setup, post-session notes, dedicated writing time. Sticky header contains a "← Sessions" back link, save-status indicator, "Dock" action, and "Save Session" action.
+2. **Docked panel (right rail).** Clicking **Dock** moves the active session into a narrow right-rail panel (`--dock-width`, 360px) and returns the main area to whatever the DM navigates to (agent chat, entities, sources, session list). This is the "always accessible during the session" surface the original PRD described.
+
+The docked panel and the full editor share the same underlying session via **save-and-remount**: the content persists to the server on every debounced autosave, and remounting the editor on the other surface picks up the latest content without data loss. One session is active at a time; a session switcher dropdown in the dock header allows switching between recent sessions or creating a new one.
+
+- Rich text with markdown support (headers, bold, italic, lists, blockquotes, code, quotes).
+- **Contextual chrome only:** no persistent toolbar. A **bubble menu** appears on text selection for inline marks; a **slash menu** appears when `/` is typed at the start of an empty block for block-level insertions.
+- **Inline entity detection:** (Milestone 4.2) as the DM types, recognized entity names are underlined with a subtle highlight. Tap to confirm the link, dismiss it, or create a new entity if the name is unrecognized. The `@`-mention trigger follows the same floating-dropdown pattern as the slash menu.
+- **Entity creation inline:** (Milestone 4.2) selecting any text and pressing a hotkey (or right-click) opens a quick-create panel: name (pre-filled from selection), type (NPC/Location/Faction/Item/Arc), brief description. Minimal friction — the full entity page can be fleshed out later.
+- **Detected entities list:** (Milestone 4.2) the bottom of the panel shows all detected/linked entities for the current session, grouped by type.
+- **Auto-save draft:** notes are continuously saved to the server (2s debounce). A subtle save-status indicator in the header bar shows current state ("Unsaved changes" → "Saving…" → "Saved · 2s ago"). Additional localStorage crash recovery is planned for Milestone 12.
 
 #### Finalizing a Session Log
 At the end of a session (or whenever the DM is ready), they hit **Save Session**. This opens a lightweight finalization step:
@@ -389,39 +396,49 @@ When a session log is saved:
 4. The relationship graph is updated: if two entities appear in proximity within the same passage, a relationship edge is suggested.
 5. Session metadata (number, date) is used for recency weighting in future queries.
 
-#### Session Notes Panel UX Concept (During Session — Sidebar Mode)
+#### Session Editor UX Concept — Full Editor Mode (main area)
 
 ```
-┌─────────────────────────────────────┬──── Session Notes ─────┐
-│                                     │                        │
-│     Main View                       │ 📝 Session 9 (draft)  │
-│     (Agent Chat / Map /             │                        │
-│      Combat Tracker /               │ Party arrived at       │
-│      whatever the DM                │ [Vallaki] before dusk. │
-│      is using right now)            │                        │
-│                                     │ [Father Lucian] met    │
-│                                     │ them at the gates —    │
-│                                     │ bones stolen from      │
-│                                     │ [St. Andral's Church]. │
-│                                     │                        │
-│                                     │ Avoided [Izek Strazni] │
-│                                     │ in the square.         │
-│                                     │                        │
-│                                     │ Found [Henrik] hiding  │
-│                                     │ in coffin shop. Vampire│
-│                                     │ spawn in the basement. │
-│                                     │                        │
-│                                     │ ── Entities (6) ────── │
-│                                     │ 👤 Father Lucian       │
-│                                     │ 👤 Izek Strazni        │
-│                                     │ 👤 Henrik (new)        │
-│                                     │ 📍 Vallaki             │
-│                                     │ 📍 St. Andral's        │
-│                                     │ 📍 Coffin Shop         │
-│                                     │                        │
-│                                     │ [+ Add Entity]         │
-│                                     │         [Save Session] │
-└─────────────────────────────────────┴────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│ ← Sessions                              Saved · 4s ago       │
+│                                          [Dock] [Save Session]│
+├──────────────────────────────────────────────────────────────┤
+│                                                              │
+│           ┌────────────────────────────────────┐             │
+│           │ SESSION 9 · MAR 15, 2026 · DRAFT   │             │
+│           │                                    │             │
+│           │ The Feast of St. Andral            │             │
+│           │ ────────────────────────────────── │             │
+│           │                                    │             │
+│           │ Party arrived at Vallaki before    │             │
+│           │ dusk. Father Lucian met them at    │             │
+│           │ the gates — bones stolen from      │             │
+│           │ St. Andral's Church.               │             │
+│           │                                    │             │
+│           │ Type / for formatting options.     │             │
+│           └────────────────────────────────────┘             │
+│                         max-width: 720px                     │
+└──────────────────────────────────────────────────────────────┘
+```
+
+#### Session Editor UX Concept — Docked Panel (right rail, mid-session)
+
+```
+┌─────────────────────────┬──── Session 9 ▾   Saved · 2s ────┐
+│                         │ [Undock] [✕]                      │
+│    Main View            ├───────────────────────────────────┤
+│    (Agent Chat / Map /  │ SESSION 9 · MAR 15, 2026 · DRAFT │
+│     Combat Tracker /    │ The Feast of St. Andral           │
+│     whatever the DM     │ ───────────────────────────────── │
+│     is using right now) │                                   │
+│                         │ Party arrived at Vallaki before   │
+│                         │ dusk. Father Lucian met them at   │
+│                         │ the gates — bones stolen from     │
+│                         │ St. Andral's Church.              │
+│                         │                                   │
+│                         │ Avoided Izek Strazni in the       │
+│                         │ square.                           │
+└─────────────────────────┴───────────────────────────────────┘
 ```
 
 #### Save Session Dialog
@@ -458,7 +475,7 @@ When a session log is saved:
 
 #### Acceptance Criteria
 
-1. A user can open a session notes panel from any screen in the application without navigating away from the current view.
+1. A user can open the session editor as a centered main-area view (`/campaign/:id/sessions/:sessionId`), and can dock it to a right-rail panel to continue writing while navigating to any other screen (chat, entities, sources, session list).
 2. As the user types entity names in the notes panel, recognized entities are underlined with a subtle highlight in real time.
 3. Clicking a highlighted entity name opens a confirm/dismiss/create-new prompt.
 4. Unrecognized text can be selected and promoted to a new entity via a quick-create panel requiring only name, type, and optional brief description.

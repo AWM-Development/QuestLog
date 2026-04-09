@@ -1,4 +1,10 @@
-import { type CSSProperties, useCallback, useEffect, useState } from "react";
+import {
+	type CSSProperties,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import {
 	buttonAccent,
 	buttonSecondary,
@@ -21,14 +27,6 @@ const headerRow: CSSProperties = {
 	borderBottom: "1px solid var(--border-subtle)",
 	flexShrink: 0,
 	flexWrap: "wrap",
-};
-
-const bannerStyle: CSSProperties = {
-	padding: "var(--space-2) var(--space-4)",
-	fontSize: "12px",
-	color: "var(--text-muted)",
-	backgroundColor: "var(--bg-elevated)",
-	borderBottom: "1px solid var(--border-subtle)",
 };
 
 interface SessionNotesPanelProps {
@@ -78,15 +76,18 @@ export function SessionNotesPanel({
 		},
 	});
 
+	const updateMutateAsyncRef = useRef(updateMutation.mutateAsync);
+	updateMutateAsyncRef.current = updateMutation.mutateAsync;
+
 	const saveContent = useCallback(
 		async (contentJson: string) => {
 			if (!activeSessionId) return;
-			await updateMutation.mutateAsync({
+			await updateMutateAsyncRef.current({
 				id: activeSessionId,
 				content: contentJson,
 			});
 		},
-		[activeSessionId, updateMutation],
+		[activeSessionId],
 	);
 
 	const { saveState, scheduleSave } = useSessionAutoSave(saveContent);
@@ -105,14 +106,6 @@ export function SessionNotesPanel({
 			const title = raw.trim() || null;
 			if ((session.title ?? "") === (title ?? "")) return;
 			updateMutation.mutate({ id: session.id, title });
-		},
-		[session, updateMutation],
-	);
-
-	const handleSessionNumberCommit = useCallback(
-		(sessionNumber: number) => {
-			if (!session || session.sessionNumber === sessionNumber) return;
-			updateMutation.mutate({ id: session.id, sessionNumber });
 		},
 		[session, updateMutation],
 	);
@@ -209,10 +202,7 @@ export function SessionNotesPanel({
 							Back to panel
 						</button>
 					) : null}
-					<span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
-						{isFinal ? "✓" : "📝"} Session {session.sessionNumber} ·{" "}
-						{isFinal ? (session.title ?? "Untitled") : "draft"}
-					</span>
+					<SaveStatus saveState={saveState} />
 				</div>
 				<div
 					style={{
@@ -261,12 +251,6 @@ export function SessionNotesPanel({
 				</div>
 			</div>
 
-			{isFinal && (
-				<div style={bannerStyle}>
-					This session has been saved. Edits will be re-processed.
-				</div>
-			)}
-
 			<div
 				className={`finalize-form-reveal${finalizeOpen ? " finalize-form-reveal-open" : ""}`}
 			>
@@ -295,43 +279,91 @@ export function SessionNotesPanel({
 				</div>
 			</div>
 
-			<SessionMetadata
-				sessionNumber={session.sessionNumber}
-				title={session.title}
-				date={session.date}
-				onTitleCommit={handleTitleCommit}
-				onSessionNumberCommit={handleSessionNumberCommit}
-				onDateCommit={handleDateCommit}
-			/>
-
 			<div
 				style={{
 					flex: 1,
 					minHeight: 0,
 					display: "flex",
 					flexDirection: "column",
+					overflow: "auto",
 				}}
 			>
-				<SessionEditor
-					key={session.id}
-					sessionId={session.id}
-					content={session.content}
-					placeholder="Start writing your session notes here. Type / for formatting options."
-					onContentChange={(json) => {
-						scheduleSave(json);
-					}}
-				/>
-			</div>
-
-			<div
-				style={{
-					padding: "var(--space-2) var(--space-4)",
-					borderTop: "1px solid var(--border-subtle)",
-					flexShrink: 0,
-				}}
-			>
-				<SaveStatus saveState={saveState} />
+				<div
+					style={
+						layout === "full"
+							? {
+									width: "100%",
+									maxWidth: "var(--sessionlog-max-width)",
+									margin: "0 auto",
+									padding: "var(--space-6) var(--space-5)",
+									display: "flex",
+									flexDirection: "column",
+									flex: 1,
+									minHeight: 0,
+								}
+							: {
+									display: "flex",
+									flexDirection: "column",
+									flex: 1,
+									minHeight: 0,
+									padding: "var(--space-4)",
+								}
+					}
+				>
+					<SessionMetadataHost
+						session={session}
+						isFinal={isFinal}
+						onTitleCommit={handleTitleCommit}
+						onDateCommit={handleDateCommit}
+					/>
+					<div
+						style={{
+							flex: 1,
+							minHeight: 0,
+							display: "flex",
+							flexDirection: "column",
+						}}
+					>
+						<SessionEditor
+							key={session.id}
+							sessionId={session.id}
+							content={session.content}
+							placeholder="Start writing your session notes here. Type / for formatting options."
+							onContentChange={(json) => {
+								scheduleSave(json);
+							}}
+						/>
+					</div>
+				</div>
 			</div>
 		</div>
+	);
+}
+
+/** Small adapter so the metadata block doesn't carry the panel/full padding decision. */
+function SessionMetadataHost({
+	session,
+	isFinal,
+	onTitleCommit,
+	onDateCommit,
+}: {
+	session: {
+		sessionNumber: number;
+		title: string | null;
+		date: Date;
+	};
+	isFinal: boolean;
+	onTitleCommit: (title: string) => void;
+	onDateCommit: (d: Date) => void;
+}) {
+	return (
+		<SessionMetadata
+			sessionNumber={session.sessionNumber}
+			title={session.title}
+			date={session.date}
+			status={isFinal ? "finalized" : "draft"}
+			onTitleCommit={onTitleCommit}
+			onDateCommit={onDateCommit}
+		/>
 	);
 }

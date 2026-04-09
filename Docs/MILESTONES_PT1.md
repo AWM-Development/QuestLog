@@ -211,17 +211,18 @@
 
 ### Tasks
 
-- [x] **4.1 — Session CRUD & editor foundation**
+- [ ] **4.1 — Session CRUD & editor foundation**
   - Branch: `feat/session-log/crud-editor`
-  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
+  - 🎨 **Visual spec required** — See `Docs/IMPLEMENTATION_NOTES.md` for the revised main-area + dock model (supersedes the original sidebar-only spec).
   - PRD ref: §4.3 Session Log Object, The Notes Panel
   - Work:
-    - Session tRPC router: `create`, `getById`, `list`, `update`, `finalize`
-    - Session service with business logic
-    - Rich text editor integration (TipTap — best fit for inline entity linking)
-    - Session notes panel as collapsible sidebar component
-    - Auto-save draft (debounced local persistence)
-  - Tests: session service CRUD tests, editor rendering tests
+    - Session tRPC router: `create`, `getById`, `list`, `update`, `finalize` ✅ (from initial pass)
+    - Session service with business logic ✅
+    - Rich text editor integration (TipTap) ✅
+    - **Main-area SessionEditorPage** at `/campaign/:id/sessions/:sessionId` with 720px centered column, Notion-style overline metadata, borderless title, contextual chrome (bubble + slash menus, no persistent toolbar)
+    - **Dockable right-rail DockedSessionPanel** for mid-session quick capture (`--dock-width: 360px`), session switcher dropdown, share-via-save-and-remount model with the main editor
+    - Auto-save draft (debounced server persistence via tRPC) ✅
+  - Tests: session service CRUD tests ✅, editor rendering tests ✅, SessionEditorPage routing + navigation tests, DockedSessionPanel test
 
 - [ ] **4.2 — Entity detection & linking**
   - Branch: `feat/session-log/entity-linking`

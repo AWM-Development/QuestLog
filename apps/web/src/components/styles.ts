@@ -365,16 +365,23 @@ export const saveStatusText: CSSProperties = {
 	color: "var(--text-muted)",
 };
 
-export const sessionMetaNumber: CSSProperties = {
+/** Notion-style overline above the session title — `SESSION N · MAR 15, 2026 · DRAFT`. */
+export const sessionOverline: CSSProperties = {
 	fontFamily: "var(--font-mono)",
-	fontSize: "0.6875rem",
+	fontSize: "0.625rem",
+	letterSpacing: "0.06em",
+	textTransform: "uppercase",
 	color: "var(--text-muted)",
-	letterSpacing: "0.04em",
+	display: "inline-flex",
+	alignItems: "center",
+	gap: "0.5em",
+	flexWrap: "wrap",
 };
 
-export const sessionMetaTitle: CSSProperties = {
+/** Borderless title input styled as a display heading. */
+export const sessionTitleInput: CSSProperties = {
 	fontFamily: "var(--font-display)",
-	fontSize: "17px",
+	fontSize: "24px",
 	fontWeight: 600,
 	color: "var(--text-primary)",
 	background: "transparent",
@@ -382,10 +389,6 @@ export const sessionMetaTitle: CSSProperties = {
 	outline: "none",
 	width: "100%",
 	padding: 0,
-};
-
-export const sessionMetaDate: CSSProperties = {
-	fontFamily: "var(--font-mono)",
-	fontSize: "0.6875rem",
-	color: "var(--text-muted)",
+	marginTop: "var(--space-2)",
+	marginBottom: "var(--space-3)",
 };

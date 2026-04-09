@@ -130,6 +130,8 @@ export function SessionEditor({
 	const slashHighlightRef = useRef(0);
 	slashHighlightRef.current = slashHighlightIndex;
 	const prevSlashVisible = useRef(false);
+	const onContentChangeRef = useRef(onContentChange);
+	onContentChangeRef.current = onContentChange;
 
 	const editor = useEditor(
 		{
@@ -156,7 +158,7 @@ export function SessionEditor({
 				},
 			},
 			onUpdate: ({ editor: ed }) => {
-				onContentChange(JSON.stringify(ed.getJSON()));
+				onContentChangeRef.current(JSON.stringify(ed.getJSON()));
 			},
 		},
 		[sessionId],
@@ -221,7 +223,14 @@ export function SessionEditor({
 	}
 
 	return (
-		<div style={{ ...editorSurface, display: "flex", flexDirection: "column" }}>
+		<div
+			style={{
+				...editorSurface,
+				padding: 0,
+				display: "flex",
+				flexDirection: "column",
+			}}
+		>
 			<BubbleMenu editor={editor}>
 				<div style={floatingMenu}>
 					<button

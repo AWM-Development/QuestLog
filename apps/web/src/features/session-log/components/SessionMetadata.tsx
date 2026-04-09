@@ -1,124 +1,152 @@
-import { type CSSProperties, useEffect, useState } from "react";
+import { type CSSProperties, useEffect, useRef, useState } from "react";
 import {
-	inputField,
-	sessionMetaDate,
-	sessionMetaNumber,
-	sessionMetaTitle,
+	sessionOverline,
+	sessionTitleInput,
 } from "../../../components/styles.js";
+
+export type SessionStatus = "draft" | "finalized";
 
 interface SessionMetadataProps {
 	sessionNumber: number;
 	title: string | null;
 	date: Date;
+	status: SessionStatus;
 	onTitleCommit: (title: string) => void;
-	onSessionNumberCommit: (n: number) => void;
 	onDateCommit: (d: Date) => void;
 }
 
-const sepStyle: CSSProperties = {
+const separatorStyle: CSSProperties = {
 	borderBottom: "1px solid var(--border-subtle)",
-	marginTop: "var(--space-3)",
-	marginBottom: "var(--space-3)",
+	marginTop: "var(--space-2)",
+	marginBottom: "var(--space-4)",
 };
+
+const dateButtonStyle: CSSProperties = {
+	background: "transparent",
+	border: "none",
+	padding: 0,
+	margin: 0,
+	color: "var(--text-muted)",
+	font: "inherit",
+	cursor: "pointer",
+	textTransform: "inherit",
+	letterSpacing: "inherit",
+};
+
+const hiddenDateInputStyle: CSSProperties = {
+	position: "absolute",
+	inset: 0,
+	opacity: 0,
+	pointerEvents: "none",
+	width: "100%",
+	height: "100%",
+};
+
+function formatLocalYMD(d: Date): string {
+	const y = d.getFullYear();
+	const m = String(d.getMonth() + 1).padStart(2, "0");
+	const day = String(d.getDate()).padStart(2, "0");
+	return `${y}-${m}-${day}`;
+}
+
+function formatOverlineDate(d: Date): string {
+	return d
+		.toLocaleDateString("en-US", {
+			month: "short",
+			day: "numeric",
+			year: "numeric",
+		})
+		.toUpperCase();
+}
 
 export function SessionMetadata({
 	sessionNumber,
 	title,
 	date,
+	status,
 	onTitleCommit,
-	onSessionNumberCommit,
 	onDateCommit,
 }: SessionMetadataProps) {
 	const [titleDraft, setTitleDraft] = useState(title ?? "");
-	const [numberDraft, setNumberDraft] = useState(String(sessionNumber));
-	const [dateDraft, setDateDraft] = useState(() =>
-		date.toISOString().slice(0, 10),
-	);
+	const dateInputRef = useRef<HTMLInputElement | null>(null);
 
 	useEffect(() => {
 		setTitleDraft(title ?? "");
 	}, [title]);
 
-	useEffect(() => {
-		setNumberDraft(String(sessionNumber));
-	}, [sessionNumber]);
+	const commitTitle = () => {
+		onTitleCommit(titleDraft);
+	};
 
-	const dateKey = date.toISOString().slice(0, 10);
-	useEffect(() => {
-		setDateDraft(dateKey);
-	}, [dateKey]);
+	const openDatePicker = () => {
+		const input = dateInputRef.current;
+		if (!input) return;
+		// showPicker() is the modern affordance; fall back to focus+click.
+		if (typeof input.showPicker === "function") {
+			try {
+				input.showPicker();
+				return;
+			} catch {
+				/* fall through */
+			}
+		}
+		input.focus();
+		input.click();
+	};
+
+	const handleDateChange = (raw: string) => {
+		if (!raw) return;
+		const [y, m, d] = raw.split("-").map(Number);
+		if (y === undefined || m === undefined || d === undefined) return;
+		onDateCommit(new Date(y, m - 1, d));
+	};
+
+	const finalized = status === "finalized";
 
 	return (
-		<div style={{ flexShrink: 0, padding: "0 var(--space-4)" }}>
-			<div style={sessionMetaNumber}>Session {sessionNumber}</div>
+		<div>
+			<div data-testid="session-overline" style={sessionOverline}>
+				{finalized ? (
+					<span style={{ color: "var(--status-success)" }}>✓</span>
+				) : null}
+				<span>SESSION {sessionNumber}</span>
+				<span aria-hidden="true">·</span>
+				<span style={{ position: "relative", display: "inline-block" }}>
+					<button
+						type="button"
+						aria-label="Edit session date"
+						onClick={openDatePicker}
+						style={dateButtonStyle}
+					>
+						{formatOverlineDate(date)}
+					</button>
+					<input
+						ref={dateInputRef}
+						type="date"
+						aria-label="Session date"
+						tabIndex={-1}
+						defaultValue={formatLocalYMD(date)}
+						onChange={(e) => handleDateChange(e.target.value)}
+						style={hiddenDateInputStyle}
+					/>
+				</span>
+				{!finalized ? (
+					<>
+						<span aria-hidden="true">·</span>
+						<span>DRAFT</span>
+					</>
+				) : null}
+			</div>
 			<input
 				type="text"
 				aria-label="Session title"
 				placeholder="Untitled session"
 				value={titleDraft}
 				onChange={(e) => setTitleDraft(e.target.value)}
-				onBlur={() => onTitleCommit(titleDraft)}
-				style={{
-					...sessionMetaTitle,
-					marginTop: "var(--space-2)",
-					marginBottom: "var(--space-2)",
-				}}
+				onBlur={commitTitle}
+				style={sessionTitleInput}
 			/>
-			<div
-				style={{
-					display: "flex",
-					flexDirection: "column",
-					gap: "var(--space-2)",
-				}}
-			>
-				<label
-					style={{
-						display: "flex",
-						flexDirection: "column",
-						gap: "var(--space-1)",
-					}}
-				>
-					<span style={sessionMetaDate}>Date</span>
-					<input
-						type="date"
-						value={dateDraft}
-						onChange={(e) => setDateDraft(e.target.value)}
-						onBlur={() => {
-							if (!dateDraft) {
-								setDateDraft(date.toISOString().slice(0, 10));
-								return;
-							}
-							onDateCommit(new Date(`${dateDraft}T12:00:00.000Z`));
-						}}
-						style={{ ...inputField, fontSize: "0.75rem", padding: "6px 10px" }}
-					/>
-				</label>
-				<label
-					style={{
-						display: "flex",
-						flexDirection: "column",
-						gap: "var(--space-1)",
-					}}
-				>
-					<span style={sessionMetaDate}>Session #</span>
-					<input
-						type="number"
-						min={1}
-						value={numberDraft}
-						onChange={(e) => setNumberDraft(e.target.value)}
-						onBlur={() => {
-							const n = Number.parseInt(numberDraft, 10);
-							if (!Number.isNaN(n) && n > 0) {
-								onSessionNumberCommit(n);
-							} else {
-								setNumberDraft(String(sessionNumber));
-							}
-						}}
-						style={{ ...inputField, fontSize: "0.75rem", padding: "6px 10px" }}
-					/>
-				</label>
-			</div>
-			<div style={sepStyle} />
+			<div style={separatorStyle} />
 		</div>
 	);
 }

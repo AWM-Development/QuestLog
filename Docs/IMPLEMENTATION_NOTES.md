@@ -2,9 +2,48 @@
 
 **Purpose:** Non-obvious decisions and gotchas that aren't derivable from reading the code. Read at the start of every session. Add an entry when you make a non-obvious decision.
 
-**Last Updated:** 2026-04-06
+**Last Updated:** 2026-04-08
 
-## Session notes (Milestone 4.1)
+## Session notes (Milestone 4.1) — Main-area editor + dock model (revised)
+
+### Editor surfaces: two, not one
+As of the 4.1 revision, the session editor has **two surfaces** that share state via save-and-remount:
+
+1. **Full editor** at `/campaign/:id/sessions/:sessionId` — main-area view, centered at `var(--sessionlog-max-width)` (720px). This is the default writing surface.
+2. **Dock** — narrow right-rail panel at `var(--dock-width)` (360px). Activated by the **Dock** button in the full editor; the main area then shows whatever route the DM navigates to. Deactivated by **Undock** (returns to the full editor) or the close button.
+
+### Why save-and-remount instead of a single shared TipTap instance
+The revised visual spec asked for a single TipTap instance lifted into context so it could swap mount points without losing state. We rejected this because:
+- TipTap's `EditorContent` can only be mounted in one DOM location at a time, so moving the instance still requires unmount/remount — the "shared" aspect only preserves **unsaved** in-memory state between the swap.
+- Autosave debounces at 2s; the only scenario where save-and-remount loses state is if the user docks/undocks within that 2s window while typing. To mitigate, docking **flushes the autosave** before navigating — no data loss in practice.
+- In exchange for covering that edge case, we get a dramatically simpler state model (no lifted-editor context, no manual mount-point forwarding); each surface owns its own `useEditor` call keyed on `sessionId`.
+
+### Route structure
+```
+/campaign/:id/sessions                → SessionListPage
+/campaign/:id/sessions/:sessionId     → SessionEditorPage  (main-area full editor)
+```
+Clicking a session card navigates to the editor page. Clicking "Dock" flushes the save, sets `isDocked = true`, and navigates back to `/campaign/:id/sessions` (or whatever the previous route was). The dock panel reads the active session id from context.
+
+### CampaignChromeContext semantics (revised)
+The context was extended rather than replaced:
+- `panelOpen` / `panelTab` / `agentChatContextSources` — unchanged, still powers the agent-chat right panel.
+- `activeSessionId` — the session currently loaded in the editor (full or docked).
+- `isDocked: boolean` — replaces the old `notesLayout: 'panel' | 'full'` pairing. When `true`, the dock panel renders in the third grid column.
+- `dockSession(id)` / `undock()` — helpers that set state and flush autosave before transitions.
+
+`notesLayout` and related full/panel helpers were removed because the main-area editor is now a real route, not a conditional overlay on `<Outlet />`.
+
+### Metadata block: Notion-style, not form-style
+`SessionMetadata` now renders:
+1. Overline: `SESSION N · FORMATTED_DATE · DRAFT` (or `✓ SESSION N · ...` in `--status-success` when finalized). Font: `--font-mono` 10px uppercase. The date portion is a click-to-edit span that reveals a styled native date picker.
+2. Title: borderless `<input>` styled as a display heading (`--font-display` 17px weight 600). Commits on blur.
+3. Separator: 1px `--border-subtle`.
+
+Session number is **not inline-editable** — it's auto-incremented on create and only editable from the finalize form.
+
+### Deleted: `SessionNotesPanel.tsx`
+The original 4.1 pass created a single `SessionNotesPanel` component used in both panel and full layouts. It was deleted in the revision because the full editor is now a route-backed page with its own header chrome, and the dock panel has different header chrome (session switcher, undock) that didn't share code with the full editor's header (back link, dock button). The real reusables — `SessionMetadata`, `SessionEditor`, `SaveStatus`, `FinalizeForm` — are shared between `SessionEditorPage` and `DockedSessionPanel` directly.
 
 ### TipTap storage
 `sessions.content` is a **string** storing `JSON.stringify(editor.getJSON())` (TipTap document JSON). Plain text or legacy rows are still parsed: if `JSON.parse` fails, the editor wraps the string in a single paragraph.
