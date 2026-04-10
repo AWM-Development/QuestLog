@@ -14,8 +14,7 @@ The workflow has three phases:
 |-------|------|-----|------|
 | **Plan** | Daytime (interactive) | Human + Claude | Resolve design decisions, break task into checkpoints, write `NEXT_TASK_PLAN.md`, create feature branch, set status to `ready` |
 | **Implement** | 1 AM MT (scheduled) | Claude agent | Read plan, implement checkpoint-by-checkpoint with TDD, commit after each |
-| **Review** | 5 AM MT (scheduled) | Claude agent | Continue unfinished checkpoints OR run code review + doc updates |
-| **Approve** | Morning (interactive) | Human | Review overnight report and diff, merge or adjust |
+| **Review** | Morning (interactive) | Human + Claude | Run `/morning-review` — code review, doc updates, overnight report, merge |
 
 ---
 
@@ -119,47 +118,36 @@ For each checkpoint in order:
 
 - The agent commits after each checkpoint, so progress survives token exhaustion
 - If tokens are running low, the agent should commit current progress and update the report
-- The 5 AM agent will pick up where this agent left off
 
 ### Completion
 
 After the last checkpoint:
 - Set status to `done`
 - Commit the final report update
-- Do NOT run code review (that's the 5 AM agent's job, or a continuation task)
 
 ---
 
-## 5 AM Agent (Review / Continue)
+## Morning Review (Human + Claude)
 
-**Schedule:** Daily at 5:00 AM Mountain Time (12:00 UTC)
+The review phase runs manually in the morning via `/morning-review` in an interactive Claude Code session. This saves the scheduled task slot for implementation and gives the human direct control over the review.
 
-### Decision Tree
+### How to run
+
+Start a Claude Code session in the QuestLog directory and type:
 
 ```
-Read NEXT_TASK_PLAN.md status
-├── "in-progress" → Continue implementation from last completed checkpoint
-├── "done" → Run code review protocol and doc updates
-├── "ready" → Continue implementation (1 AM agent may not have run)
-├── "none" → Exit, no work
-└── "reviewed" → Exit, human already approved
+/morning-review
 ```
 
-### Code Review Protocol
+This triggers the full review protocol defined in CLAUDE.md (§ Repeatable Commands). It will:
 
-When status is `done`, the 5 AM agent:
-
-1. Check out the feature branch
-2. Run the full code review from CLAUDE.md (§ Code Review Trigger)
-3. Fix any Critical/High issues, re-run tests
-4. Run doc update obligations from CLAUDE.md:
-   - Update `MILESTONES.md` — check off the completed task
-   - Update `IMPLEMENTATION_NOTES.md` — add entries for non-obvious decisions
-   - Update `CHANGELOG.md` — add entry under `[Unreleased]`
-   - Update `PRD.md` if implementation deviated from spec
-5. Write the overnight report to `Docs/reports/OVERNIGHT_REPORT_M{milestone}.md`
-6. Commit all doc updates
-7. Do NOT change status — leave as `done` for human to review and set to `reviewed`
+1. Check `NEXT_TASK_PLAN.md` status and report what the overnight agent accomplished
+2. Show commits, files changed, and any issues the agent flagged
+3. Run the code review protocol on all changed files
+4. Fix Critical/High issues
+5. Update docs (MILESTONES, IMPLEMENTATION_NOTES, CHANGELOG, PRD if needed)
+6. Write the overnight report to `Docs/reports/OVERNIGHT_REPORT_M{milestone}.md`
+7. After your approval, set status to `reviewed` and offer to merge
 
 ### Overnight Report
 
@@ -175,25 +163,10 @@ Contents:
 
 ---
 
-## Morning Review (Human)
-
-1. Read `Docs/reports/OVERNIGHT_REPORT_M{X}.md`
-2. Review the diff: `git diff develop...feature-branch`
-3. If satisfied:
-   - Set `NEXT_TASK_PLAN.md` status to `reviewed`
-   - Merge feature branch to `develop`
-   - Clear or reset `NEXT_TASK_PLAN.md` for the next task
-4. If adjustments needed:
-   - Fix in an interactive session
-   - Then merge
-
----
-
-## Lock / Conflict Prevention
+## Status as Lock
 
 - The status field is the single lock mechanism
-- If the 1 AM agent sets status to `in-progress` and the 5 AM agent fires while it's still running, the 5 AM agent sees `in-progress` and continues from the last committed checkpoint (no conflict — they work on the same branch sequentially)
-- If the 1 AM agent crashes without updating status, it remains `ready` and the 5 AM agent starts fresh from the first incomplete checkpoint
+- If the overnight agent crashes without updating status, it remains `ready` — next run picks up from the first incomplete checkpoint
 - The human should not set status to `ready` while an agent is running
 
 ---

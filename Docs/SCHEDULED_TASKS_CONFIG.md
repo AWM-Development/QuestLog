@@ -1,8 +1,10 @@
 # Scheduled Tasks Configuration
 
-These are the two scheduled tasks for the overnight workflow. Create them via `/schedule` or at https://claude.ai/code/scheduled once authentication is set up.
+The overnight workflow uses one scheduled task (implementation) and one manual command (review).
 
-**Timezone note:** Cron expressions are UTC. 1 AM Mountain (MDT/UTC-6) = 7 AM UTC. 5 AM MDT = 11 AM UTC. When DST ends (November), these shift by 1 hour — update cron expressions or accept the 1-hour drift.
+**Timezone note:** Cron expressions are UTC. 1 AM Mountain (MDT/UTC-6) = 7 AM UTC. When DST ends (November), this shifts by 1 hour — update cron expression or accept the drift.
+
+**Review:** Run `/morning-review` manually in an interactive Claude Code session. See CLAUDE.md § Repeatable Commands.
 
 ---
 
@@ -52,62 +54,3 @@ Work through each checkpoint in order. For each:
 - Output a brief summary of what was accomplished
 ```
 
----
-
-## Task 2: QuestLog Overnight Review
-
-- **Name:** `QuestLog Overnight Review`
-- **Schedule:** `0 11 * * *` (5 AM Mountain / 11 AM UTC, daily)
-- **Model:** `claude-sonnet-4-6`
-- **Repo:** `https://github.com/alexmeyer27/QuestLog`
-- **Tools:** Bash, Read, Write, Edit, Glob, Grep
-
-### Prompt
-
-```
-You are the QuestLog overnight review/continuation agent. Your token budget is limited — read only what you need.
-
-## Step 1: Check the gate
-Read Docs/NEXT_TASK_PLAN.md. Check the Status field in the Metadata table.
-
-Decision tree:
-- `in-progress` → Go to Step 2A (continue implementation)
-- `ready` → Go to Step 2A (1 AM agent may not have run)
-- `done` → Go to Step 2B (run code review)
-- `none` → EXIT. Output: 'No plan found. Exiting.'
-- `reviewed` → EXIT. Output: 'Plan already reviewed. Exiting.'
-
-## Step 2A: Continue implementation
-Follow the same implementation loop as the 1 AM agent:
-1. Read the Key Context section of the plan (do NOT read full docs).
-2. Read only the Reference Files listed in the plan.
-3. Check out the feature branch.
-4. Find the last completed checkpoint in the Agent Report table.
-5. Continue from the next incomplete checkpoint.
-6. For each checkpoint: TDD (Red → Green → Refactor), run tests + lint, commit, update report.
-7. When all checkpoints are done: set status to `done`, then proceed to Step 2B.
-
-## Step 2B: Code review and doc updates
-1. Check out the feature branch.
-2. Run: git diff develop...HEAD to see all changes.
-3. Conduct a code review of all changed files. For each file, evaluate:
-   - Correctness — does it do what it's supposed to?
-   - Consistency — do configs and imports agree across files?
-   - Gaps — anything missing that will bite us in future milestones?
-   - Pattern compliance — does it follow the patterns in the plan's Key Context?
-4. Organize findings by severity: Critical, High, Medium, Low.
-5. Fix Critical and High issues immediately, re-run tests.
-6. Update docs:
-   - Docs/MILESTONES_PT1.md (or PT2) — check off the completed task
-   - Docs/IMPLEMENTATION_NOTES.md — add entries for non-obvious decisions
-   - CHANGELOG.md — add entry under [Unreleased]
-7. Get the milestone number from NEXT_TASK_PLAN.md metadata.
-8. Write the overnight report to Docs/reports/OVERNIGHT_REPORT_M{milestone}.md with:
-   - Milestone/task reference
-   - Checkpoints completed vs skipped
-   - Test results summary
-   - Code review findings and fixes applied
-   - Any issues or blockers for human review
-9. Commit all updates.
-10. Do NOT change the plan status — leave as `done` for human review.
-```

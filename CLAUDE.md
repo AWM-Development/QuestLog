@@ -127,6 +127,51 @@ After the code review, complete these doc updates **before closing the session**
 
 ## Repeatable Commands
 
+### `/morning-review` — Review Overnight Agent Work
+
+When the user runs `/morning-review`, execute this procedure:
+
+**Phase 1 — Assess.** Read `Docs/NEXT_TASK_PLAN.md` and check the status field.
+
+- If status is `none` or `reviewed`: report "No overnight work to review" and stop.
+- If status is `ready`: report "Plan was not picked up by the overnight agent" and stop.
+- If status is `in-progress`: report incomplete work — proceed to Phase 2, note unfinished checkpoints.
+- If status is `done`: proceed to Phase 2.
+
+**Phase 2 — Review overnight work.**
+
+1. Read the Agent Report section of `NEXT_TASK_PLAN.md` for the summary, run log, and any issues.
+2. Check out the feature branch listed in the plan metadata.
+3. Run `git log develop..HEAD --oneline` to see all overnight commits.
+4. Run `git diff develop...HEAD --stat` to see files changed.
+5. Present a summary to the user:
+   - Checkpoints completed vs skipped (and why)
+   - Files changed (with line counts)
+   - Any issues or gates the agent flagged
+   - Test status: run `pnpm turbo test` and report results
+
+**Phase 3 — Code review.** Run the code review protocol (§ Code Review Trigger above) on all files changed since `develop`. Fix Critical and High issues.
+
+**Phase 4 — Doc updates.** Run the doc update obligations (§ Doc Update Obligations above):
+- Check off the task in MILESTONES
+- Update IMPLEMENTATION_NOTES.md with any non-obvious decisions
+- Update CHANGELOG.md under `[Unreleased]`
+- Update PRD.md if implementation deviated from spec
+
+**Phase 5 — Report.** Write the overnight report to `Docs/reports/OVERNIGHT_REPORT_M{milestone}.md` (get milestone number from plan metadata). Include:
+- Milestone/task reference
+- Checkpoints completed vs skipped
+- Test results summary
+- Code review findings and fixes applied
+- Any issues or blockers
+
+**Phase 6 — Wrap up.** After the user approves:
+- Set `NEXT_TASK_PLAN.md` status to `reviewed`
+- Commit all changes
+- Ask the user if they want to merge the feature branch to `develop`
+
+---
+
 ### `/style-audit` — Design Token Compliance Sweep
 
 When the user asks for a "style audit", "styling consistency check", or similar, run this procedure:
