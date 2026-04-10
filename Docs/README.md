@@ -32,6 +32,15 @@ This folder contains all project documentation and planning artifacts.
   - Add an entry any time you make a decision that isn't obvious from the code.
   - Covers: tooling quirks, architectural choices and their reasons, deferred work, and testing patterns.
 
+### Overnight Agent Workflow
+- **OVERNIGHT_AGENT.md** — Full documentation of the plan-implement-review loop. Describes the daytime planning phase, the two scheduled agents (1 AM implement, 5 AM review/continue), branch strategy, and morning approval process.
+
+- **PLAN_TEMPLATE.md** — Copy-paste template for creating a new task plan. Contains metadata, checkpoint structure, constraints, human gates, and agent report sections.
+
+- **NEXT_TASK_PLAN.md** — The live plan file. Its `status` field gates whether the overnight agent runs. Lives on the `develop` branch. Only one active plan at a time.
+
+- **reports/OVERNIGHT_REPORT_M*.md** — Per-task overnight reports written by the 5 AM agent. Committed to the feature branch. Filename includes the milestone number (e.g., `OVERNIGHT_REPORT_M4.2.md`).
+
 ### Analysis
 - **QuestLog_API_Cost_Model.xlsx** — Token usage and cost estimation for Anthropic API + Voyage AI embeddings.
   - Modular spreadsheet with Assumptions (pricing, usage patterns), Monthly Cost Model (per-operation breakdown), and Summary (total cost scenarios).

@@ -1,0 +1,208 @@
+# Overnight Agent Workflow
+
+**Purpose:** Describes the plan-implement-review loop that lets a human plan tasks during the day and a scheduled Claude Code agent implement them overnight.
+
+**Last Updated:** 2026-04-09
+
+---
+
+## Overview
+
+The workflow has three phases:
+
+| Phase | When | Who | What |
+|-------|------|-----|------|
+| **Plan** | Daytime (interactive) | Human + Claude | Resolve design decisions, break task into checkpoints, write `NEXT_TASK_PLAN.md`, create feature branch, set status to `ready` |
+| **Implement** | 1 AM MT (scheduled) | Claude agent | Read plan, implement checkpoint-by-checkpoint with TDD, commit after each |
+| **Review** | 5 AM MT (scheduled) | Claude agent | Continue unfinished checkpoints OR run code review + doc updates |
+| **Approve** | Morning (interactive) | Human | Review overnight report and diff, merge or adjust |
+
+---
+
+## Branch Strategy
+
+- **`main`** — reviewed and deployed code only
+- **`develop`** — completed work and process documentation, not yet deployed
+- **Feature branches** — created off `develop` during daytime planning, worked on by the overnight agent
+
+The overnight agent never pushes to `main`. Feature branches merge to `develop` after human review. `develop` merges to `main` for deployment.
+
+---
+
+## The Plan File
+
+### Location
+
+`Docs/NEXT_TASK_PLAN.md` on the `develop` branch. The overnight agent checks this file to decide whether to work.
+
+### Status Field (the gate)
+
+| Status | Meaning | Who sets it |
+|--------|---------|-------------|
+| `none` | No task planned | Default / human after clearing |
+| `ready` | Plan is complete, agent may begin | Human (daytime) |
+| `in-progress` | Agent is actively working | Agent (1 AM job) |
+| `done` | All checkpoints complete | Agent (1 AM or 5 AM job) |
+| `reviewed` | Human approved, ready to merge | Human (morning) |
+
+**Rules:**
+- The 1 AM agent only starts work when status is `ready`
+- If status is `in-progress`, the 5 AM agent continues where the 1 AM agent left off
+- If status is `done`, the 5 AM agent runs the code review protocol and doc updates
+- If status is `none` or `reviewed`, both agents exit immediately
+
+### Template
+
+See `Docs/PLAN_TEMPLATE.md` for the full template with all sections.
+
+---
+
+## Daytime Planning Session
+
+During an interactive session, the human and Claude:
+
+1. Identify the next unchecked task in `MILESTONES_PT1.md` or `MILESTONES_PT2.md`
+2. Read the relevant PRD section and any design specs
+3. Resolve 🎨 Visual Spec and 🧠 Strategy gates — make all design decisions upfront
+4. Break the task into numbered checkpoints (each = one testable behavior change)
+5. For each checkpoint: list target files, describe the failing test, define acceptance criteria
+6. **Extract key context into the plan** (this is critical for token efficiency):
+   - Copy the specific DEVELOPMENT_GUIDE.md subsections the agent needs (not the whole file)
+   - Copy relevant IMPLEMENTATION_NOTES.md entries
+   - Paste resolved design decisions verbatim
+   - List specific reference files the agent should read (existing code to extend, test patterns to follow)
+7. Create the feature branch off `develop`
+8. Fill in `Docs/NEXT_TASK_PLAN.md` with all the above
+9. Set the status field to `ready`
+10. Commit and push to `develop`
+
+**Checkpoint scoping:** Each checkpoint should represent one testable behavior change — small enough that partial progress is useful, large enough that it's a meaningful commit.
+
+**Why extract context?** The overnight agent has a fixed token budget. Every doc it reads consumes tokens that could go toward implementation. By front-loading context extraction during planning (when you have full docs open anyway), the agent can skip reading 5+ large files and go straight to coding.
+
+---
+
+## 1 AM Agent (Implement)
+
+**Schedule:** Daily at 1:00 AM Mountain Time (08:00 UTC)
+
+### Startup Sequence (Scheduled Session)
+
+The overnight agent uses a **minimal-context preamble** to conserve tokens. Every file read costs tokens — only read what the plan tells you to.
+
+1. Read `Docs/NEXT_TASK_PLAN.md` — check the status field. If not `ready` or `in-progress`: exit immediately.
+2. Read the **Key Context** section of the plan — this contains pre-extracted snippets from DEVELOPMENT_GUIDE.md, IMPLEMENTATION_NOTES.md, and other docs. Do NOT read the full source documents.
+3. Read only the **Reference Files** listed in the plan's Key Context section.
+4. Check out the feature branch specified in the plan metadata.
+
+**Token conservation rules:**
+- Do NOT read MILESTONES, PRD, or DESIGN_SYSTEM — the plan contains everything needed.
+- Do NOT read full docs when the plan has already extracted the relevant snippets.
+- If you need context not in the plan, use `grep` to find specific patterns rather than reading entire files.
+- Read implementation files on-demand per checkpoint, not all at once upfront.
+
+### Implementation Loop
+
+For each checkpoint in order:
+
+1. **Check for 🎨/🧠 gates** — if the checkpoint is gated, skip it and note in the report
+2. **Write failing test** (Red) — TDD is non-negotiable even for the agent
+3. **Write minimum implementation** (Green)
+4. **Refactor** if needed
+5. **Run tests** — `pnpm turbo test`
+6. **Run lint/typecheck** — `pnpm turbo lint` and `tsc --noEmit`
+7. **Commit** with message: `feat(M?.?): CP-N — short description`
+8. **Update the Agent Report** section in `NEXT_TASK_PLAN.md`
+9. Move to next checkpoint
+
+### Token Budget Management
+
+- The agent commits after each checkpoint, so progress survives token exhaustion
+- If tokens are running low, the agent should commit current progress and update the report
+- The 5 AM agent will pick up where this agent left off
+
+### Completion
+
+After the last checkpoint:
+- Set status to `done`
+- Commit the final report update
+- Do NOT run code review (that's the 5 AM agent's job, or a continuation task)
+
+---
+
+## 5 AM Agent (Review / Continue)
+
+**Schedule:** Daily at 5:00 AM Mountain Time (12:00 UTC)
+
+### Decision Tree
+
+```
+Read NEXT_TASK_PLAN.md status
+├── "in-progress" → Continue implementation from last completed checkpoint
+├── "done" → Run code review protocol and doc updates
+├── "ready" → Continue implementation (1 AM agent may not have run)
+├── "none" → Exit, no work
+└── "reviewed" → Exit, human already approved
+```
+
+### Code Review Protocol
+
+When status is `done`, the 5 AM agent:
+
+1. Check out the feature branch
+2. Run the full code review from CLAUDE.md (§ Code Review Trigger)
+3. Fix any Critical/High issues, re-run tests
+4. Run doc update obligations from CLAUDE.md:
+   - Update `MILESTONES.md` — check off the completed task
+   - Update `IMPLEMENTATION_NOTES.md` — add entries for non-obvious decisions
+   - Update `CHANGELOG.md` — add entry under `[Unreleased]`
+   - Update `PRD.md` if implementation deviated from spec
+5. Write the overnight report to `Docs/reports/OVERNIGHT_REPORT_M{milestone}.md`
+6. Commit all doc updates
+7. Do NOT change status — leave as `done` for human to review and set to `reviewed`
+
+### Overnight Report
+
+The report file goes in `Docs/reports/` on the feature branch. Filename format: `OVERNIGHT_REPORT_M{milestone_number}.md` (e.g., `OVERNIGHT_REPORT_M4.2.md`).
+
+Contents:
+- Milestone/task reference
+- Checkpoints completed vs skipped
+- Test results summary
+- Code review findings and fixes applied
+- Any issues or blockers for human review
+- Diff summary (files changed, lines added/removed)
+
+---
+
+## Morning Review (Human)
+
+1. Read `Docs/reports/OVERNIGHT_REPORT_M{X}.md`
+2. Review the diff: `git diff develop...feature-branch`
+3. If satisfied:
+   - Set `NEXT_TASK_PLAN.md` status to `reviewed`
+   - Merge feature branch to `develop`
+   - Clear or reset `NEXT_TASK_PLAN.md` for the next task
+4. If adjustments needed:
+   - Fix in an interactive session
+   - Then merge
+
+---
+
+## Lock / Conflict Prevention
+
+- The status field is the single lock mechanism
+- If the 1 AM agent sets status to `in-progress` and the 5 AM agent fires while it's still running, the 5 AM agent sees `in-progress` and continues from the last committed checkpoint (no conflict — they work on the same branch sequentially)
+- If the 1 AM agent crashes without updating status, it remains `ready` and the 5 AM agent starts fresh from the first incomplete checkpoint
+- The human should not set status to `ready` while an agent is running
+
+---
+
+## File Reference
+
+| File | Purpose |
+|------|---------|
+| `Docs/PLAN_TEMPLATE.md` | Copy-paste template for new task plans |
+| `Docs/NEXT_TASK_PLAN.md` | Live plan file — the gate for overnight agents |
+| `Docs/OVERNIGHT_AGENT.md` | This file — workflow documentation |
+| `Docs/reports/OVERNIGHT_REPORT_M*.md` | Per-task overnight reports |

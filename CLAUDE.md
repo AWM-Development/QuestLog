@@ -4,15 +4,41 @@ QuestLog is a single-user, AI-powered campaign management tool for tabletop RPG 
 
 ---
 
-## Session Startup Sequence
+## Session Types
 
-Read these documents in this order at the start of **every** session:
+This project uses two session types. Follow the startup sequence that matches your context.
 
-1. **`Docs/IMPLEMENTATION_NOTES.md`** — non-obvious decisions, known gotchas, deferred gaps. Read this first so you don't re-litigate past decisions.
+### Interactive Session (Daytime — Human Present)
+
+Focus: planning, design decisions, resolving gates, reviewing overnight work.
+
+Read these documents in this order:
+
+1. **`Docs/IMPLEMENTATION_NOTES.md`** — non-obvious decisions, known gotchas, deferred gaps.
 2. **`Docs/DEVELOPMENT_GUIDE.md`** — coding conventions, patterns, TDD discipline, completion checklist, AI code review protocol.
 3. **`Docs/MILESTONES_PT1.md`** — current task, branch name, PRD reference, work description. (Covers Milestones 1–9. Milestones 10–19 live in `Docs/MILESTONES_PT2.md` — read that only when working on those later milestones.)
 4. **`Docs/PRD.md §[relevant section]`** — the spec for the specific feature you are about to implement.
 5. **`Docs/DESIGN_SYSTEM.md`** — for any task that touches the frontend. Supersedes PRD §5 for all visual details.
+6. **`Docs/NEXT_TASK_PLAN.md`** — check the status field. If `done`, review the overnight report before planning the next task.
+
+### Scheduled Session (Overnight — No Human)
+
+Focus: implementing checkpoints from the plan file, TDD, committing progress. Token budget is limited — read only what you need.
+
+**Minimal-context preamble:**
+
+1. **`Docs/NEXT_TASK_PLAN.md`** — read the status field FIRST. If status is not `ready` or `in-progress` (for the 5 AM job: also `done`), exit immediately.
+2. **Key Context section of the plan** — contains pre-extracted snippets from DEVELOPMENT_GUIDE.md, IMPLEMENTATION_NOTES.md, and design decisions. Do NOT read the full source documents.
+3. **Reference Files listed in the plan** — read only these specific files for implementation context.
+4. Check out the feature branch specified in the plan's metadata.
+5. Implement checkpoints in order per `Docs/OVERNIGHT_AGENT.md`.
+
+**Token conservation rules:**
+- Do NOT read MILESTONES, PRD, DESIGN_SYSTEM, or full docs — the plan extracts everything needed.
+- If you need context not in the plan, use `grep` to find specific patterns rather than reading entire files.
+- Read implementation files on-demand per checkpoint, not all at once upfront.
+
+See `Docs/OVERNIGHT_AGENT.md` for the full overnight workflow.
 
 ---
 
@@ -46,6 +72,14 @@ If the current MILESTONES.md task is marked **"🧠 Strategy discussion required
 > "This task requires upfront design decisions before implementation. Please share your chosen approach or constraints so I can implement accordingly."
 
 Do **not** proceed with implementation until the user provides that direction.
+
+### Overnight Agent Gate Behavior
+
+In **scheduled sessions**, the agent cannot ask the user for input. If a checkpoint is gated by 🎨 or 🧠:
+- **Skip** the gated checkpoint entirely
+- **Log** it in the Agent Report section of `NEXT_TASK_PLAN.md`
+- **Continue** with the next non-gated checkpoint
+- The human resolves the gate in the next interactive session
 
 ---
 
@@ -130,3 +164,13 @@ For each finding: file path, line (approx), the hardcoded value, and the suggest
 ## Governing Methodology
 
 This project follows **Spec-Anchored AI Development (SAAD)** — see `Docs/DEVELOPMENT_GUIDE.md §11` for the full description. The five pillars are: docs before code, AI as guided executor, human gates on ambiguity, automated enforcement via CI, and a closed feedback loop via mandatory doc updates. This file (`CLAUDE.md`) is the single encoding of that methodology for the AI agent.
+
+---
+
+## Branch Strategy
+
+- **`main`** — reviewed and deployed code only
+- **`develop`** — completed work and documentation, not yet deployed
+- **Feature branches** — created off `develop` during daytime planning
+
+The overnight agent works on feature branches and never pushes to `main`. See `Docs/OVERNIGHT_AGENT.md` for the full plan-implement-review workflow.
