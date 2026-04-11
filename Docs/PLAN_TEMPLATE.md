@@ -27,7 +27,7 @@ _One-sentence description of what this task delivers._
 
 ## Checkpoints
 
-Each checkpoint is one testable behavior change. The overnight agent works through them in order, committing after each one passes.
+Each checkpoint is one testable behavior change. Aim for ~200 lines of new code or less per checkpoint — if it feels larger, split it. The overnight agent works through them in order, committing after each one passes.
 
 ### CP-1: _short title_
 - **Files:** `path/to/file.ts`, ...
@@ -72,6 +72,16 @@ _List specific files the agent should read for context (existing code to extend,
 ### Files/Areas NOT to Touch
 - _List any off-limits files or directories_
 
+### Self-Sufficiency Checklist
+
+Before setting status to `ready`, confirm:
+
+- [ ] Key Context has the specific DEVELOPMENT_GUIDE.md patterns the agent needs
+- [ ] Key Context has all relevant IMPLEMENTATION_NOTES.md gotchas
+- [ ] All design decisions are documented verbatim (not just referenced)
+- [ ] Reference Files list is minimal — only files the agent must read
+- [ ] Each checkpoint is implementable without reading any doc not listed here
+
 ---
 
 ## Constraints
@@ -95,6 +105,14 @@ _Delete this section if no gates apply._
 
 _Filled in by the overnight agent. Do not edit manually._
 
+### Progress
+
+_Agent checks each box as it completes. On resume, start from the first unchecked item._
+
+- [ ] CP-1
+- [ ] CP-2
+- [ ] CP-3
+
 ### Run Log
 
 | Checkpoint | Status | Commit | Notes |
@@ -109,6 +127,6 @@ _Agent writes a brief summary of what was accomplished, any issues encountered, 
 
 ### Tokens / Timing
 
-- **Started:** _timestamp_
-- **Ended:** _timestamp_
+- **Started:** _(`date` via bash)_
+- **Ended:** _(`date` via bash)_
 - **Checkpoints completed:** _N of M_

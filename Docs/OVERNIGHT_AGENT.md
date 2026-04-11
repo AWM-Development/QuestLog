@@ -41,14 +41,14 @@ The overnight agent never pushes to `main`. Feature branches merge to `develop` 
 | `none` | No task planned | Default / human after clearing |
 | `ready` | Plan is complete, agent may begin | Human (daytime) |
 | `in-progress` | Agent is actively working | Agent (1 AM job) |
-| `done` | All checkpoints complete | Agent (1 AM or 5 AM job) |
+| `done` | All checkpoints complete | Agent (1 AM job) |
 | `reviewed` | Human approved, ready to merge | Human (morning) |
 
 **Rules:**
 - The 1 AM agent only starts work when status is `ready`
-- If status is `in-progress`, the 5 AM agent continues where the 1 AM agent left off
-- If status is `done`, the 5 AM agent runs the code review protocol and doc updates
-- If status is `none` or `reviewed`, both agents exit immediately
+- If status is `in-progress` (e.g. agent exhausted token budget mid-task), the next run picks up from the first incomplete checkpoint
+- If status is `none`, `done`, or `reviewed`, the agent exits immediately
+- If the agent exhausts its token budget mid-task, it commits current progress, updates the Agent Report, leaves status as `in-progress`, and stops — the morning review handles remaining checkpoints
 
 ### Template
 
@@ -105,19 +105,22 @@ The overnight agent uses a **minimal-context preamble** to conserve tokens. Ever
 For each checkpoint in order:
 
 1. **Check for 🎨/🧠 gates** — if the checkpoint is gated, skip it and note in the report
-2. **Write failing test** (Red) — TDD is non-negotiable even for the agent
-3. **Write minimum implementation** (Green)
-4. **Refactor** if needed
-5. **Run tests** — `pnpm turbo test`
-6. **Run lint/typecheck** — `pnpm turbo lint` and `tsc --noEmit`
-7. **Commit** with message: `feat(M?.?): CP-N — short description`
-8. **Update the Agent Report** section in `NEXT_TASK_PLAN.md`
-9. Move to next checkpoint
+2. **Assess token budget** — if fewer than ~10,000 tokens remain, go to Completion rather than starting a checkpoint you cannot finish
+3. **Write failing test** (Red) — TDD is non-negotiable even for the agent
+4. **Write minimum implementation** (Green)
+5. **Refactor** if needed
+6. **Run tests with minimal output** — `pnpm turbo test -- --reporter=dot`
+7. **Run lint/typecheck** — `pnpm exec biome check . && pnpm exec tsc --noEmit`
+8. **Commit** with message: `feat(M?.?): CP-N — short description`
+9. **Check the box** for this checkpoint in the Agent Report Progress list
+10. **Update the Run Log** in the Agent Report with status, commit hash, and notes
+11. Commit the report update: `chore: update agent report for CP-N`
 
 ### Token Budget Management
 
 - The agent commits after each checkpoint, so progress survives token exhaustion
-- If tokens are running low, the agent should commit current progress and update the report
+- If tokens are running low, stop before starting the next checkpoint — a partial checkpoint is worse than none (nothing to commit, nothing to resume from)
+- The Progress checklist in the Agent Report is the resume mechanism: the next run starts from the first unchecked item
 
 ### Completion
 
