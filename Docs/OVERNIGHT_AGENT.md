@@ -2,7 +2,7 @@
 
 **Purpose:** Describes the plan-implement-review loop that lets a human plan tasks during the day and a scheduled Claude Code agent implement them overnight.
 
-**Last Updated:** 2026-04-09
+**Last Updated:** 2026-04-12
 
 ---
 
@@ -12,27 +12,84 @@ The workflow has three phases:
 
 | Phase | When | Who | What |
 |-------|------|-----|------|
-| **Plan** | Daytime (interactive) | Human + Claude | Resolve design decisions, break task into checkpoints, write `NEXT_TASK_PLAN.md`, create feature branch, set status to `ready` |
-| **Implement** | 1 AM MT (scheduled) | Claude agent | Read plan, implement checkpoint-by-checkpoint with TDD, commit after each |
-| **Review** | Morning (interactive) | Human + Claude | Run `/morning-review` — code review, doc updates, overnight report, merge |
+| **Plan** | Daytime (interactive) | Human + Claude | Resolve design decisions, break task into checkpoints, write plan file, create feature branch, set status to `ready` |
+| **Implement** | 1 AM MT (scheduled) | Claude agent | Read plan, check out feature branch, implement checkpoint-by-checkpoint with TDD, commit after each |
+| **Review** | Morning (interactive) | Human + Claude | Run `/morning-review` — code review, doc updates, overnight report, merge to develop |
 
 ---
 
 ## Branch Strategy
 
 - **`main`** — reviewed and deployed code only
-- **`develop`** — completed work and process documentation, not yet deployed
-- **Feature branches** — created off `develop` during daytime planning, worked on by the overnight agent
+- **`develop`** — orchestration layer: contains the plan file (`NEXT_TASK_PLAN.md`) and process documentation. No in-progress feature code.
+- **Feature branches** — created off `develop` during daytime planning. All implementation happens here. The overnight agent checks out the branch specified in the plan — it never works on `develop` directly.
 
-The overnight agent never pushes to `main`. Feature branches merge to `develop` after human review. `develop` merges to `main` for deployment.
+**Code flow:** feature branch → develop (after human review) → main (for deployment)
+
+The overnight agent never pushes to `main` or `develop`. It only commits to the feature branch.
+
+---
+
+## Milestone Directory Structure
+
+Each milestone gets a dedicated directory under `Docs/milestones/`. This is the one-stop shop for all milestone-specific documentation.
+
+```
+Docs/
+├── milestones/
+│   ├── M4.1/
+│   │   ├── PLAN.md          ← detailed plan with checkpoints
+│   │   ├── DESIGN_SPEC.md   ← visual specs, interaction states (if applicable)
+│   │   └── REPORT.md        ← overnight agent writes this after work
+│   ├── M4.2/
+│   │   ├── PLAN.md
+│   │   ├── DESIGN_SPEC.md
+│   │   └── REPORT.md
+│   └── ...
+├── milestones-archive/       ← completed milestones move here
+│   └── M3.3/
+│       ├── PLAN.md
+│       └── REPORT.md
+├── NEXT_TASK_PLAN.md         ← control file on develop (status + pointer to milestone dir)
+├── PLAN_TEMPLATE.md          ← copy to Docs/milestones/M{X}/PLAN.md
+├── DESIGN_SYSTEM.md          ← overarching design tokens, not milestone-specific
+└── OVERNIGHT_AGENT.md        ← this file
+```
+
+### What goes where
+
+| Document | Location | Purpose |
+|----------|----------|---------|
+| **DESIGN_SYSTEM.md** | `Docs/DESIGN_SYSTEM.md` | Overarching: CSS tokens, spacing scale, color system, component anatomy. Stable across milestones. |
+| **DESIGN_SPEC.md** | `Docs/milestones/M{X}/DESIGN_SPEC.md` | Milestone-specific: wireframes, visual specs, layout decisions, interaction states. Created during planning when 🎨 gates are resolved. |
+| **PLAN.md** | `Docs/milestones/M{X}/PLAN.md` | Full plan with checkpoints, key context, constraints. Copy from `PLAN_TEMPLATE.md`. |
+| **REPORT.md** | `Docs/milestones/M{X}/REPORT.md` | Overnight report. Written by the agent or `/morning-review`. |
+| **NEXT_TASK_PLAN.md** | `Docs/NEXT_TASK_PLAN.md` | Control file on develop. Contains only status, milestone number, and branch — points to `Docs/milestones/M{X}/PLAN.md` for details. |
+
+### Plan archival
+
+When a milestone is completed and merged:
+1. Move `Docs/milestones/M{X}/` → `Docs/milestones-archive/M{X}/`
+2. Reset `NEXT_TASK_PLAN.md` status to `none`
+3. The next planning session creates a new `Docs/milestones/M{Y}/` directory
 
 ---
 
 ## The Plan File
 
-### Location
+### Control file: `Docs/NEXT_TASK_PLAN.md`
 
-`Docs/NEXT_TASK_PLAN.md` on the `develop` branch. The overnight agent checks this file to decide whether to work.
+Lives on the `develop` branch. The overnight agent checks this file first to decide whether to work.
+
+Contains only:
+- **Status field** (the gate)
+- **Milestone number** (e.g., `M4.2`)
+- **Feature branch name** (e.g., `feat/session-log/dock-model`)
+- **Pointer** to the full plan: `Docs/milestones/M{X}/PLAN.md`
+
+### Detail file: `Docs/milestones/M{X}/PLAN.md`
+
+The full plan with checkpoints, key context, constraints, and agent report sections. Lives on the feature branch (committed during planning). Copy from `Docs/PLAN_TEMPLATE.md`.
 
 ### Status Field (the gate)
 
@@ -50,10 +107,6 @@ The overnight agent never pushes to `main`. Feature branches merge to `develop` 
 - If status is `none`, `done`, or `reviewed`, the agent exits immediately
 - If the agent exhausts its token budget mid-task, it commits current progress, updates the Agent Report, leaves status as `in-progress`, and stops — the morning review handles remaining checkpoints
 
-### Template
-
-See `Docs/PLAN_TEMPLATE.md` for the full template with all sections.
-
 ---
 
 ## Daytime Planning Session
@@ -61,19 +114,23 @@ See `Docs/PLAN_TEMPLATE.md` for the full template with all sections.
 During an interactive session, the human and Claude:
 
 1. Identify the next unchecked task in `MILESTONES_PT1.md` or `MILESTONES_PT2.md`
-2. Read the relevant PRD section and any design specs
+2. Read the relevant PRD section and `Docs/DESIGN_SYSTEM.md` (overarching tokens)
 3. Resolve 🎨 Visual Spec and 🧠 Strategy gates — make all design decisions upfront
-4. Break the task into numbered checkpoints (each = one testable behavior change)
-5. For each checkpoint: list target files, describe the failing test, define acceptance criteria
-6. **Extract key context into the plan** (this is critical for token efficiency):
+4. Create the milestone directory: `Docs/milestones/M{X}/`
+5. If visual specs were resolved, write them to `Docs/milestones/M{X}/DESIGN_SPEC.md`
+6. Break the task into numbered checkpoints (each = one testable behavior change)
+7. For each checkpoint: list target files, describe the failing test, define acceptance criteria
+8. **Extract key context into the plan** (critical for token efficiency):
    - Copy the specific DEVELOPMENT_GUIDE.md subsections the agent needs (not the whole file)
    - Copy relevant IMPLEMENTATION_NOTES.md entries
    - Paste resolved design decisions verbatim
+   - Reference `Docs/milestones/M{X}/DESIGN_SPEC.md` if visual specs exist
    - List specific reference files the agent should read (existing code to extend, test patterns to follow)
-7. Create the feature branch off `develop`
-8. Fill in `Docs/NEXT_TASK_PLAN.md` with all the above
-9. Set the status field to `ready`
-10. Commit and push to `develop`
+9. Copy `Docs/PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md` and fill in all sections
+10. Create the feature branch off `develop`
+11. Commit the milestone directory to the feature branch
+12. Update `Docs/NEXT_TASK_PLAN.md` on develop with status `ready`, milestone number, branch name, and pointer to the plan
+13. Commit and push develop
 
 **Checkpoint scoping:** Each checkpoint should represent one testable behavior change — small enough that partial progress is useful, large enough that it's a meaningful commit.
 
@@ -90,15 +147,23 @@ During an interactive session, the human and Claude:
 The overnight agent uses a **minimal-context preamble** to conserve tokens. Every file read costs tokens — only read what the plan tells you to.
 
 1. Read `Docs/NEXT_TASK_PLAN.md` — check the status field. If not `ready` or `in-progress`: exit immediately.
-2. Read the **Key Context** section of the plan — this contains pre-extracted snippets from DEVELOPMENT_GUIDE.md, IMPLEMENTATION_NOTES.md, and other docs. Do NOT read the full source documents.
-3. Read only the **Reference Files** listed in the plan's Key Context section.
-4. Check out the feature branch specified in the plan metadata.
+2. Note the milestone number and feature branch from the control file.
+3. Check out the feature branch.
+4. Read `Docs/milestones/M{X}/PLAN.md` — the full plan with checkpoints and key context.
+5. If `Docs/milestones/M{X}/DESIGN_SPEC.md` exists, read it for visual/interaction specs.
+6. Read only the **Reference Files** listed in the plan's Key Context section.
 
 **Token conservation rules:**
-- Do NOT read MILESTONES, PRD, or DESIGN_SYSTEM — the plan contains everything needed.
+- Do NOT read MILESTONES, PRD, or the overarching DESIGN_SYSTEM.md — the plan contains everything needed.
 - Do NOT read full docs when the plan has already extracted the relevant snippets.
 - If you need context not in the plan, use `grep` to find specific patterns rather than reading entire files.
 - Read implementation files on-demand per checkpoint, not all at once upfront.
+
+**Search path for milestone context (in order):**
+1. `Docs/milestones/M{X}/PLAN.md` — checkpoints, key context, constraints
+2. `Docs/milestones/M{X}/DESIGN_SPEC.md` — visual specs (if exists)
+3. Reference files listed in the plan
+4. `grep` for specific patterns if none of the above cover a need
 
 ### Implementation Loop
 
@@ -124,8 +189,9 @@ For each checkpoint in order:
 
 ### Completion
 
-After the last checkpoint:
-- Set status to `done`
+After the last checkpoint (or when token budget is exhausted):
+- Write/update `Docs/milestones/M{X}/REPORT.md`
+- Set status to `done` (if all checkpoints complete) or leave as `in-progress` (if partial)
 - Commit the final report update
 
 ---
@@ -145,24 +211,18 @@ Start a Claude Code session in the QuestLog directory and type:
 This triggers the full review protocol defined in CLAUDE.md (§ Repeatable Commands). It will:
 
 1. Check `NEXT_TASK_PLAN.md` status and report what the overnight agent accomplished
-2. Show commits, files changed, and any issues the agent flagged
+2. Check out the feature branch and show commits/files changed
 3. Run the code review protocol on all changed files
 4. Fix Critical/High issues
 5. Update docs (MILESTONES, IMPLEMENTATION_NOTES, CHANGELOG, PRD if needed)
-6. Write the overnight report to `Docs/reports/OVERNIGHT_REPORT_M{milestone}.md`
-7. After your approval, set status to `reviewed` and offer to merge
+6. Write/update `Docs/milestones/M{X}/REPORT.md`
+7. After your approval, set status to `reviewed` and offer to merge to develop
 
-### Overnight Report
+### Milestone completion
 
-The report file goes in `Docs/reports/` on the feature branch. Filename format: `OVERNIGHT_REPORT_M{milestone_number}.md` (e.g., `OVERNIGHT_REPORT_M4.2.md`).
-
-Contents:
-- Milestone/task reference
-- Checkpoints completed vs skipped
-- Test results summary
-- Code review findings and fixes applied
-- Any issues or blockers for human review
-- Diff summary (files changed, lines added/removed)
+When a milestone is fully completed and merged to develop:
+1. Move `Docs/milestones/M{X}/` → `Docs/milestones-archive/M{X}/`
+2. Reset `NEXT_TASK_PLAN.md` to `status: none`
 
 ---
 
@@ -176,9 +236,13 @@ Contents:
 
 ## File Reference
 
-| File | Purpose |
-|------|---------|
-| `Docs/PLAN_TEMPLATE.md` | Copy-paste template for new task plans |
-| `Docs/NEXT_TASK_PLAN.md` | Live plan file — the gate for overnight agents |
-| `Docs/OVERNIGHT_AGENT.md` | This file — workflow documentation |
-| `Docs/reports/OVERNIGHT_REPORT_M*.md` | Per-task overnight reports |
+| File | Location | Purpose |
+|------|----------|---------|
+| `Docs/PLAN_TEMPLATE.md` | develop | Copy-paste template for new plans |
+| `Docs/NEXT_TASK_PLAN.md` | develop | Control file — status gate for overnight agents |
+| `Docs/OVERNIGHT_AGENT.md` | develop | This file — workflow documentation |
+| `Docs/DESIGN_SYSTEM.md` | develop | Overarching design tokens (stable across milestones) |
+| `Docs/milestones/M{X}/PLAN.md` | feature branch | Full plan with checkpoints and key context |
+| `Docs/milestones/M{X}/DESIGN_SPEC.md` | feature branch | Visual specs for this milestone (if applicable) |
+| `Docs/milestones/M{X}/REPORT.md` | feature branch | Overnight report for this milestone |
+| `Docs/milestones-archive/M{X}/` | develop | Completed milestone docs (archived after merge) |

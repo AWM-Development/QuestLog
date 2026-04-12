@@ -1,44 +1,26 @@
 # Next Task Plan
 
-## Metadata
+<!--
+Control file for the overnight agent. Lives on `develop`.
+The full plan lives at Docs/milestones/M{X}/PLAN.md on the feature branch.
 
-| Field       | Value                          |
-|-------------|--------------------------------|
-| **Status**  | `none`                         |
-| **Milestone** |                              |
-| **Branch**  |                                |
-| **PRD ref** |                                |
-| **Created** |                                |
-| **Author**  |                                |
+STATUS VALUES:
+  none        — No task planned. Agent exits immediately.
+  ready       — Plan is complete, agent may begin.
+  in-progress — Agent is currently working.
+  done        — All checkpoints complete. Awaiting human review.
+  reviewed    — Human approved. Safe to overwrite with next plan.
+-->
 
-> No task is currently planned. Copy from `PLAN_TEMPLATE.md` and set status to `ready` when the plan is complete.
+| Field         | Value |
+|---------------|-------|
+| **Status**    | `none` |
+| **Milestone** | |
+| **Branch**    | |
+| **Plan**      | |
 
----
-
-## Goal
-
-_Empty — fill in during daytime planning session._
-
----
-
-## Checkpoints
-
-_Empty — fill in during daytime planning session._
-
----
-
-## Constraints
-
-_Empty — fill in during daytime planning session._
-
----
-
-## Human Gates
-
-_Empty — fill in during daytime planning session._
-
----
-
-## Agent Report
-
-_Empty — filled in by overnight agent._
+> No task is currently planned. During a daytime planning session:
+> 1. Create `Docs/milestones/M{X}/` on the feature branch
+> 2. Copy `PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md` and fill in
+> 3. Update this file with status `ready`, milestone, branch, and plan path
+> 4. Commit and push develop

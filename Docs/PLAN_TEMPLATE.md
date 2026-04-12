@@ -1,6 +1,6 @@
-# Task Plan Template
+# Task Plan — M?.?: _Title_
 
-Copy this file to `NEXT_TASK_PLAN.md` and fill in the sections when planning a new task.
+Copy this file to `Docs/milestones/M{X}/PLAN.md` and fill in the sections when planning a new task.
 
 ---
 
@@ -65,6 +65,14 @@ _Paste any entries that apply to this task. Example:_
 ### Design Decisions (already resolved)
 _Any 🎨/🧠 decisions made during planning. Paste the actual decisions, not just "we decided."_
 
+### Visual / Design Spec
+_If this milestone has visual specs, they live in `Docs/milestones/M{X}/DESIGN_SPEC.md`. Reference that file here._
+
+- Design spec location: `Docs/milestones/M{X}/DESIGN_SPEC.md`
+- Overarching tokens: reference `Docs/DESIGN_SYSTEM.md` for CSS variables, spacing scale, color system
+
+_If no visual specs are needed, delete this subsection._
+
 ### Reference Files
 _List specific files the agent should read for context (existing code to extend, test files to follow as patterns, etc.):_
 - `path/to/existing_similar_file.ts` — _why to read it_
@@ -79,6 +87,7 @@ Before setting status to `ready`, confirm:
 - [ ] Key Context has the specific DEVELOPMENT_GUIDE.md patterns the agent needs
 - [ ] Key Context has all relevant IMPLEMENTATION_NOTES.md gotchas
 - [ ] All design decisions are documented verbatim (not just referenced)
+- [ ] Visual specs are in `Docs/milestones/M{X}/DESIGN_SPEC.md` (if applicable)
 - [ ] Reference Files list is minimal — only files the agent must read
 - [ ] Each checkpoint is implementable without reading any doc not listed here
 

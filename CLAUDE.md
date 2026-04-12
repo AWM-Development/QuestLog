@@ -10,7 +10,7 @@ This project uses two session types. Follow the startup sequence that matches yo
 
 ### Interactive Session (Daytime — Human Present)
 
-Focus: planning, design decisions, resolving gates, reviewing overnight work.
+Focus: planning, design decisions, resolving gates, reviewing overnight work, and **generating plans for the overnight agent**.
 
 Read these documents in this order:
 
@@ -21,22 +21,42 @@ Read these documents in this order:
 5. **`Docs/DESIGN_SYSTEM.md`** — for any task that touches the frontend. Supersedes PRD §5 for all visual details.
 6. **`Docs/NEXT_TASK_PLAN.md`** — check the status field. If `done`, review the overnight report before planning the next task.
 
+#### Planning Session Deliverables
+
+When planning a new task for overnight implementation:
+
+1. Create `Docs/milestones/M{X}/` directory
+2. Copy `Docs/PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md` and fill in all sections
+3. If 🎨 gates were resolved, write visual specs to `Docs/milestones/M{X}/DESIGN_SPEC.md`
+4. Create the feature branch off `develop` and commit the milestone directory there
+5. Update `Docs/NEXT_TASK_PLAN.md` on develop with status `ready`, milestone, branch, and pointer to the plan
+6. Commit and push develop
+
+See `Docs/OVERNIGHT_AGENT.md §Daytime Planning Session` for the full procedure.
+
 ### Scheduled Session (Overnight — No Human)
 
 Focus: implementing checkpoints from the plan file, TDD, committing progress. Token budget is limited — read only what you need.
 
 **Minimal-context preamble:**
 
-1. **`Docs/NEXT_TASK_PLAN.md`** — read the status field FIRST. If status is not `ready` or `in-progress`, exit immediately.
-2. **Key Context section of the plan** — contains pre-extracted snippets from DEVELOPMENT_GUIDE.md, IMPLEMENTATION_NOTES.md, and design decisions. Do NOT read the full source documents.
-3. **Reference Files listed in the plan** — read only these specific files for implementation context.
-4. Check out the feature branch specified in the plan's metadata.
-5. Implement checkpoints in order per `Docs/OVERNIGHT_AGENT.md`.
+1. **`Docs/NEXT_TASK_PLAN.md`** — read the status field FIRST. If status is not `ready` or `in-progress`, exit immediately. Note the milestone number and branch name.
+2. Check out the feature branch specified in the control file.
+3. **`Docs/milestones/M{X}/PLAN.md`** — read the full plan. The Key Context section contains pre-extracted snippets from DEVELOPMENT_GUIDE.md, IMPLEMENTATION_NOTES.md, and design decisions. Do NOT read the full source documents.
+4. **`Docs/milestones/M{X}/DESIGN_SPEC.md`** — read if it exists (visual specs for this milestone).
+5. **Reference Files listed in the plan** — read only these specific files for implementation context.
+6. Implement checkpoints in order per `Docs/OVERNIGHT_AGENT.md`.
 
 **Token conservation rules:**
-- Do NOT read MILESTONES, PRD, DESIGN_SYSTEM, or full docs — the plan extracts everything needed.
+- Do NOT read MILESTONES, PRD, overarching DESIGN_SYSTEM.md, or full docs — the plan extracts everything needed.
 - If you need context not in the plan, use `grep` to find specific patterns rather than reading entire files.
 - Read implementation files on-demand per checkpoint, not all at once upfront.
+
+**Search path for milestone context (in priority order):**
+1. `Docs/milestones/M{X}/PLAN.md` — checkpoints, key context, constraints
+2. `Docs/milestones/M{X}/DESIGN_SPEC.md` — visual specs (if exists)
+3. Reference files listed in the plan
+4. `grep` for specific patterns if none of the above cover a need
 
 See `Docs/OVERNIGHT_AGENT.md` for the full overnight workflow.
 

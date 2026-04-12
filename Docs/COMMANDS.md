@@ -8,7 +8,7 @@ Full procedure definitions for Claude Code slash commands. CLAUDE.md references 
 
 When the user runs `/morning-review`, execute this procedure:
 
-**Phase 1 — Assess.** Read `Docs/NEXT_TASK_PLAN.md` and check the status field.
+**Phase 1 — Assess.** Read `Docs/NEXT_TASK_PLAN.md` and check the status field. Note the milestone number (e.g., `M4.1`) and branch name.
 
 - If status is `none` or `reviewed`: report "No overnight work to review" and stop.
 - If status is `ready`: report "Plan was not picked up by the overnight agent" and stop.
@@ -17,11 +17,12 @@ When the user runs `/morning-review`, execute this procedure:
 
 **Phase 2 — Review overnight work.**
 
-1. Read the Agent Report section of `NEXT_TASK_PLAN.md` for the summary, run log, and any issues.
-2. Check out the feature branch listed in the plan metadata.
-3. Run `git log develop..HEAD --oneline` to see all overnight commits.
-4. Run `git diff develop...HEAD --stat` to see files changed.
-5. Present a summary to the user:
+1. Check out the feature branch listed in the plan metadata.
+2. Read the Agent Report section of `Docs/milestones/M{X}/PLAN.md` for the summary, run log, and any issues.
+3. Read `Docs/milestones/M{X}/REPORT.md` if it exists.
+4. Run `git log develop..HEAD --oneline` to see all overnight commits.
+5. Run `git diff develop...HEAD --stat` to see files changed.
+6. Present a summary to the user:
    - Checkpoints completed vs skipped (and why)
    - Files changed (with line counts)
    - Any issues or gates the agent flagged
@@ -35,7 +36,7 @@ When the user runs `/morning-review`, execute this procedure:
 - Update CHANGELOG.md under `[Unreleased]`
 - Update PRD.md if implementation deviated from spec
 
-**Phase 5 — Report.** Write the overnight report to `Docs/reports/OVERNIGHT_REPORT_M{milestone}.md` (get milestone number from plan metadata). Include:
+**Phase 5 — Report.** Write/update the overnight report to `Docs/milestones/M{X}/REPORT.md` (get milestone number from plan metadata). Include:
 - Milestone/task reference
 - Checkpoints completed vs skipped
 - Test results summary
@@ -43,9 +44,10 @@ When the user runs `/morning-review`, execute this procedure:
 - Any issues or blockers
 
 **Phase 6 — Wrap up.** After the user approves:
-- Set `NEXT_TASK_PLAN.md` status to `reviewed`
+- Set `Docs/NEXT_TASK_PLAN.md` status to `reviewed`
 - Commit all changes
 - Ask the user if they want to merge the feature branch to `develop`
+- If the milestone is fully complete, offer to archive: move `Docs/milestones/M{X}/` → `Docs/milestones-archive/M{X}/`
 
 ---
 
