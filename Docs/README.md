@@ -14,8 +14,6 @@ This folder contains all project documentation and planning artifacts.
   - Contains the full CSS token set, component anatomy, and old→new token migration mapping.
   - Covers the entity-driven color system, four-plane depth hierarchy, and hover card interaction spec.
 
-- **CURSOR_STYLE_LAYER_AUDIT.md** — Repeatable Cursor prompt + checklist for auditing and refactoring style layers (global tokens vs shared TS presets vs feature modules). Use after major UI growth or before theming work; paired with `.cursor/rules/frontend-style-layer-audit.mdc`.
-
 ### Development
 - **DEVELOPMENT_GUIDE.md** — Repeatable instructions for every coding session.
   - Read this at the start of each feature implementation.
@@ -33,13 +31,16 @@ This folder contains all project documentation and planning artifacts.
   - Covers: tooling quirks, architectural choices and their reasons, deferred work, and testing patterns.
 
 ### Overnight Agent Workflow
-- **OVERNIGHT_AGENT.md** — Full documentation of the plan-implement-review loop. Describes the daytime planning phase, the 12 AM scheduled agent, branch strategy, milestone directory structure, and morning approval process.
-
-- **PLAN_TEMPLATE.md** — Copy-paste template for creating a new task plan. Copy to `Docs/milestones/M{X}/PLAN.md` when planning a new task.
 
 - **NEXT_TASK_PLAN.md** — Control file on `develop`. Contains status, milestone number, branch name, and pointer to the full plan. Its `status` field gates whether the overnight agent runs.
 
-- **COMMANDS.md** — Full procedure definitions for repeatable slash commands (`/morning-review`, `/style-audit`).
+- **workflow/OVERNIGHT_AGENT.md** — Full documentation of the plan-implement-review loop. Describes the daytime planning phase, the 12 AM scheduled agent, branch strategy, milestone directory structure, and morning approval process.
+
+- **workflow/PLAN_TEMPLATE.md** — Copy-paste template for creating a new task plan. Copy to `Docs/milestones/M{X}/PLAN.md` when planning a new task.
+
+- **workflow/COMMANDS.md** — Full procedure definitions for repeatable slash commands (`/morning-review`, `/plan`, `/style-audit`).
+
+- **workflow/SCHEDULED_TASKS_CONFIG.md** — Cron schedule, model selection, and prompt for the overnight implementation agent.
 
 ### Milestone Directories
 - **milestones/M{X}/PLAN.md** — Full plan with checkpoints, key context, constraints, and agent report. Lives on the feature branch.

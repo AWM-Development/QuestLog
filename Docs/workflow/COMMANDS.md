@@ -65,7 +65,7 @@ When the user runs `/plan M4.1` (or any milestone number), execute this procedur
 
 All gates must be resolved before proceeding. Do not continue to Phase 3 with unresolved gates.
 
-**Phase 3 — Write the plan.** Create `Docs/milestones/M{X}/` directory. Copy `Docs/PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md`. Fill in:
+**Phase 3 — Write the plan.** Create `Docs/milestones/M{X}/` directory. Copy `Docs/workflow/PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md`. Fill in:
 - **Checkpoints** — ordered, each one a testable behavior change
 - **Decisions** — only what the agent can't derive from code
 - **Gotchas** — only traps that would trip the agent
@@ -117,4 +117,4 @@ For each finding: file path, line (approx), the hardcoded value, and the suggest
 - Token definitions: `apps/web/src/index.css`
 - Shared style presets: `apps/web/src/components/styles.ts`
 - Design system spec: `Docs/DESIGN_SYSTEM.md`
-- Structural layer audit (complementary): `Docs/CURSOR_STYLE_LAYER_AUDIT.md`
+- Design system spec: `Docs/DESIGN_SYSTEM.md` (for token reference and component anatomy)
