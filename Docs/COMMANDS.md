@@ -28,7 +28,9 @@ When the user runs `/morning-review`, execute this procedure:
    - Any issues or gates the agent flagged
    - Test status: run `pnpm turbo test` and report results
 
-**Phase 3 — Code review.** Run the code review protocol (§ Code Review Trigger in CLAUDE.md) on all files changed since `develop`. Fix Critical and High issues.
+**Phase 3 — Code review.** Run the code review protocol (§ Code Review Trigger in CLAUDE.md) on all files changed since `develop`. Present all findings organized by severity (Critical / High / Medium / Low). **Do not fix anything yet** — wait for the user to review findings and approve fixes.
+
+**Phase 3.5 — Style audit.** Run the `/style-audit` protocol (defined below) scoped to files changed since `develop`. Present findings alongside the code review. Wait for user approval before applying any fixes.
 
 **Phase 4 — Doc updates.**
 - Check off the task in MILESTONES

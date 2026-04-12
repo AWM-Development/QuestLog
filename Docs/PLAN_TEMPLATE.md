@@ -77,10 +77,12 @@ _Point the agent where to look. It will read these files itself — don't paste 
 
 ## Human Gates
 
-_If any checkpoints require 🎨 or 🧠 input, note them here. The overnight agent skips these and notes them in the report._
+_If the milestone task has 🎨 or 🧠 gates, they must be resolved during the planning session before setting status to `ready`. Check each box as it's resolved and document the outcome in the Decisions section above or in `Docs/milestones/M{X}/DESIGN_SPEC.md`._
 
-- [ ] 🎨 Visual spec required for: _describe_
-- [ ] 🧠 Strategy discussion required for: _describe_
+- [ ] 🎨 Visual spec required for: _describe_ → resolved in: _DESIGN_SPEC.md / Decisions section_
+- [ ] 🧠 Strategy discussion required for: _describe_ → resolved in: _Decisions section_
+
+_If any gate is unresolved, do NOT set status to `ready`. The overnight agent will stop and flag it as a blocker if it encounters an unresolved gate._
 
 _Delete this section if no gates apply._
 
