@@ -79,12 +79,12 @@ Do NOT re-implement these — they exist and their tests pass:
   1. A button with accessible name `"Dock"` is present in the header for a draft session
   2. (Optional if mock is complex) Clicking Dock calls `dockSession` — mock `useCampaignChrome` if needed
 - **Implementation:**
-  - Import `useCampaignChrome` and destructure `dockSession`
-  - Destructure `flushSave` from `useSessionAutoSave` (it already returns it — check `useSessionAutoSave.ts`)
+  - Add `flushSave` to `useSessionAutoSave.ts` — it does not currently exist. `flushSave` should cancel the pending debounce timer and immediately invoke `saveFn` with the last scheduled content (captured in a ref). Return it alongside `saveState` and `scheduleSave`. Also fix `DockedSessionPanel.tsx` which already destructures `flushSave` from the hook but currently receives `undefined`.
+  - In `SessionEditorPage.tsx`: import `useCampaignChrome` and destructure `dockSession`; destructure `flushSave` from `useSessionAutoSave`
   - Add a Dock button in the left `headerGroup` (after the back link): `iconButtonBase` style, label "Dock", symbol `⇥`
   - On click: `flushSave()` → `dockSession(sessionId)` → `navigate(\`/campaign/${campaignId}/sessions\`)`
   - Import `useNavigate` from `react-router`
-- **Done when:** Dock button is visible in the header; tests pass.
+- **Done when:** `flushSave` is exported from `useSessionAutoSave`; Dock button is visible in the header; tests pass.
 
 ---
 
@@ -153,7 +153,7 @@ Do NOT re-implement these — they exist and their tests pass:
 - `apps/web/src/layouts/CampaignChromeContext.tsx` — add dock state here (CP-1)
 - `apps/web/src/layouts/AppShell.tsx` — wire dock here (CP-4)
 - `apps/web/src/router.tsx` — add route here (CP-2)
-- `apps/web/src/features/session-log/hooks/useSessionAutoSave.ts` — verify `flushSave` is already exported before CP-3
+- `apps/web/src/features/session-log/hooks/useSessionAutoSave.ts` — add `flushSave` here in CP-3 (currently returns `{ saveState, scheduleSave, lastSavedRef }` only)
 - `Docs/milestones/M4.1/DESIGN_SPEC.md` — visual spec and layout decisions
 - `Docs/IMPLEMENTATION_NOTES.md §Session notes (Milestone 4.1)` — authoritative decisions on save-and-remount, context semantics, route structure
 
