@@ -4,15 +4,53 @@ QuestLog is a single-user, AI-powered campaign management tool for tabletop RPG 
 
 ---
 
-## Session Startup Sequence
+## Session Types
 
-Read these documents in this order at the start of **every** session:
+This project uses two session types. Follow the startup sequence that matches your context.
 
-1. **`Docs/IMPLEMENTATION_NOTES.md`** — non-obvious decisions, known gotchas, deferred gaps. Read this first so you don't re-litigate past decisions.
+### Interactive Session (Daytime — Human Present)
+
+Focus: planning, design decisions, resolving gates, reviewing overnight work, and **generating plans for the overnight agent**.
+
+Read these documents in this order:
+
+1. **`Docs/IMPLEMENTATION_NOTES.md`** — non-obvious decisions, known gotchas, deferred gaps.
 2. **`Docs/DEVELOPMENT_GUIDE.md`** — coding conventions, patterns, TDD discipline, completion checklist, AI code review protocol.
 3. **`Docs/MILESTONES_PT1.md`** — current task, branch name, PRD reference, work description. (Covers Milestones 1–9. Milestones 10–19 live in `Docs/MILESTONES_PT2.md` — read that only when working on those later milestones.)
 4. **`Docs/PRD.md §[relevant section]`** — the spec for the specific feature you are about to implement.
 5. **`Docs/DESIGN_SYSTEM.md`** — for any task that touches the frontend. Supersedes PRD §5 for all visual details.
+6. **`Docs/NEXT_TASK_PLAN.md`** — check the status field. If `done`, review the overnight report before planning the next task.
+
+#### Planning Session Deliverables
+
+When planning a new task for overnight implementation:
+
+1. Create `Docs/milestones/M{X}/` directory
+2. Copy `Docs/PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md` — fill in checkpoints, decisions, gotchas, and references (keep it brief — the agent reads the codebase itself)
+3. If 🎨 gates were resolved, write visual specs to `Docs/milestones/M{X}/DESIGN_SPEC.md`
+4. Create the feature branch off `develop` and commit the milestone directory there
+5. Update `Docs/NEXT_TASK_PLAN.md` on develop with status `ready`, milestone, branch, and pointer to the plan
+6. Commit and push develop
+
+See `Docs/OVERNIGHT_AGENT.md §Daytime Planning Session` for the full procedure.
+
+### Scheduled Session (Overnight — No Human)
+
+Focus: implementing checkpoints from the plan file, TDD, committing progress.
+
+**Startup:**
+
+1. **`Docs/NEXT_TASK_PLAN.md`** — read the status field FIRST. If status is not `ready` or `in-progress`, exit immediately. Note the milestone number and branch name.
+2. Check out the feature branch specified in the control file.
+3. **`Docs/milestones/M{X}/PLAN.md`** — the plan with checkpoints, decisions, gotchas, and references.
+4. **`Docs/milestones/M{X}/DESIGN_SPEC.md`** — read if it exists (visual specs for this milestone).
+5. **`CLAUDE.md`** and **`Docs/DEVELOPMENT_GUIDE.md`** — project conventions and TDD rules.
+6. Read reference files listed in the plan, then implementation files as needed per checkpoint.
+7. Implement checkpoints in order per `Docs/OVERNIGHT_AGENT.md`.
+
+**The agent has full codebase access.** Read any file needed to understand patterns, conventions, or implementation context. The plan provides scope and decisions; the codebase provides everything else.
+
+See `Docs/OVERNIGHT_AGENT.md` for the full overnight workflow.
 
 ---
 
@@ -46,6 +84,14 @@ If the current MILESTONES.md task is marked **"🧠 Strategy discussion required
 > "This task requires upfront design decisions before implementation. Please share your chosen approach or constraints so I can implement accordingly."
 
 Do **not** proceed with implementation until the user provides that direction.
+
+### Overnight Agent Gate Behavior
+
+In **scheduled sessions**, the agent cannot ask the user for input. If a checkpoint is gated by 🎨 or 🧠:
+- **Skip** the gated checkpoint entirely
+- **Log** it in the Agent Report section of `NEXT_TASK_PLAN.md`
+- **Continue** with the next non-gated checkpoint
+- The human resolves the gate in the next interactive session
 
 ---
 
@@ -93,40 +139,28 @@ After the code review, complete these doc updates **before closing the session**
 
 ## Repeatable Commands
 
+Full procedure definitions live in `Docs/COMMANDS.md`. Read that file when executing a command.
+
+### `/morning-review` — Review Overnight Agent Work
+
+When the user runs `/morning-review`, read and execute the full procedure in `Docs/COMMANDS.md §morning-review`.
+
 ### `/style-audit` — Design Token Compliance Sweep
 
-When the user asks for a "style audit", "styling consistency check", or similar, run this procedure:
-
-**Phase 1 — Scan.** For every `.tsx` file under `apps/web/src`, check inline `style={{...}}` objects and top-level `CSSProperties` constants for:
-
-1. **Hardcoded colors** — any raw `#hex`, `rgb(...)`, or `rgba(...)` that has an equivalent CSS variable in `apps/web/src/index.css` (e.g. `rgba(96,184,255,0.06)` → `var(--state-active-soft)`).
-2. **Hardcoded spacing** — pixel values like `8px`, `12px`, `16px` that map to `var(--space-*)` tokens.
-3. **Hardcoded border-radius** — numeric `borderRadius` values that should use `var(--r-sm)` / `var(--r-md)` / `var(--r-lg)` / `var(--r-xl)` / `var(--r-pill)`.
-4. **Hardcoded shadows** — any `boxShadow` string that duplicates a `var(--shadow-*)` token.
-5. **Copy-pasted style blocks** — the same style object (or near-duplicate) appearing in 2+ files, which should be extracted to `apps/web/src/components/styles.ts` or a feature-level `styles.ts`.
-6. **Inconsistent sizing** — icon buttons, chip elements, or similar components using different dimensions without reason.
-
-**Phase 2 — Report.** Present findings in a table grouped by severity (HIGH / MEDIUM / LOW):
-- **HIGH** — hardcoded color or shadow with an exact token equivalent; copy-pasted style block across 3+ files.
-- **MEDIUM** — hardcoded spacing/radius with a close token equivalent; inconsistent sizing across similar components.
-- **LOW** — minor spacing mismatch; one-off value that could use a token for consistency but isn't visually broken.
-
-For each finding: file path, line (approx), the hardcoded value, and the suggested token replacement.
-
-**Phase 3 — Fix.** After user approval, apply fixes:
-- Replace hardcoded values → token references.
-- Extract repeated style blocks → named exports in `styles.ts` (shared) or feature `styles.ts`.
-- Standardize sizing for similar component types (icon buttons → `iconButtonBase` size, chips → `chipBase`, etc.).
-- Run `tsc --noEmit`, `biome check`, and `vitest run` to confirm no regressions.
-
-**Reference files:**
-- Token definitions: `apps/web/src/index.css`
-- Shared style presets: `apps/web/src/components/styles.ts`
-- Design system spec: `Docs/DESIGN_SYSTEM.md`
-- Structural layer audit (complementary): `Docs/CURSOR_STYLE_LAYER_AUDIT.md`
+When the user asks for a "style audit", "styling consistency check", or similar, read and execute the full procedure in `Docs/COMMANDS.md §style-audit`.
 
 ---
 
 ## Governing Methodology
 
 This project follows **Spec-Anchored AI Development (SAAD)** — see `Docs/DEVELOPMENT_GUIDE.md §11` for the full description. The five pillars are: docs before code, AI as guided executor, human gates on ambiguity, automated enforcement via CI, and a closed feedback loop via mandatory doc updates. This file (`CLAUDE.md`) is the single encoding of that methodology for the AI agent.
+
+---
+
+## Branch Strategy
+
+- **`main`** — reviewed and deployed code only
+- **`develop`** — completed work and documentation, not yet deployed
+- **Feature branches** — created off `develop` during daytime planning
+
+The overnight agent works on feature branches and never pushes to `main`. See `Docs/OVERNIGHT_AGENT.md` for the full plan-implement-review workflow.

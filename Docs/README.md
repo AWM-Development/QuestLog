@@ -32,6 +32,21 @@ This folder contains all project documentation and planning artifacts.
   - Add an entry any time you make a decision that isn't obvious from the code.
   - Covers: tooling quirks, architectural choices and their reasons, deferred work, and testing patterns.
 
+### Overnight Agent Workflow
+- **OVERNIGHT_AGENT.md** — Full documentation of the plan-implement-review loop. Describes the daytime planning phase, the 12 AM scheduled agent, branch strategy, milestone directory structure, and morning approval process.
+
+- **PLAN_TEMPLATE.md** — Copy-paste template for creating a new task plan. Copy to `Docs/milestones/M{X}/PLAN.md` when planning a new task.
+
+- **NEXT_TASK_PLAN.md** — Control file on `develop`. Contains status, milestone number, branch name, and pointer to the full plan. Its `status` field gates whether the overnight agent runs.
+
+- **COMMANDS.md** — Full procedure definitions for repeatable slash commands (`/morning-review`, `/style-audit`).
+
+### Milestone Directories
+- **milestones/M{X}/PLAN.md** — Full plan with checkpoints, key context, constraints, and agent report. Lives on the feature branch.
+- **milestones/M{X}/DESIGN_SPEC.md** — Visual specs, interaction states, layout decisions for this milestone (if applicable). Created during planning when 🎨 gates are resolved.
+- **milestones/M{X}/REPORT.md** — Overnight report for this milestone. Written by the agent or `/morning-review`.
+- **milestones-archive/M{X}/** — Completed milestone docs are moved here after merge.
+
 ### Analysis
 - **QuestLog_API_Cost_Model.xlsx** — Token usage and cost estimation for Anthropic API + Voyage AI embeddings.
   - Modular spreadsheet with Assumptions (pricing, usage patterns), Monthly Cost Model (per-operation breakdown), and Summary (total cost scenarios).
