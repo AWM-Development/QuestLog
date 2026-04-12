@@ -53,6 +53,40 @@ When the user runs `/morning-review`, execute this procedure:
 
 ---
 
+## `/plan M{X}` — Plan a Milestone for Overnight Implementation
+
+When the user runs `/plan M4.1` (or any milestone number), execute this procedure. Replace `{X}` with the provided milestone number throughout.
+
+**Phase 1 — Identify task.** Read `Docs/MILESTONES_PT1.md` (or `MILESTONES_PT2.md` for milestones 10+). Find the task matching M{X}. Read the relevant PRD section. If the task touches the frontend, also read `Docs/DESIGN_SYSTEM.md`.
+
+**Phase 2 — Resolve gates.** If the task has 🎨 or 🧠 gates, stop and work through them with the user now. Document outcomes:
+- 🎨 visual specs → `Docs/milestones/M{X}/DESIGN_SPEC.md`
+- 🧠 strategy decisions → Decisions section of the plan
+
+All gates must be resolved before proceeding. Do not continue to Phase 3 with unresolved gates.
+
+**Phase 3 — Write the plan.** Create `Docs/milestones/M{X}/` directory. Copy `Docs/PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md`. Fill in:
+- **Checkpoints** — ordered, each one a testable behavior change
+- **Decisions** — only what the agent can't derive from code
+- **Gotchas** — only traps that would trip the agent
+- **References** — pointers to files, not content
+- **Human Gates** — check off all resolved gates (or delete section if none)
+
+**Phase 4 — Review with human.** Present the completed plan to the user for review. Walk through:
+- Checkpoint order and scope
+- Key decisions and their rationale
+- Any risks or concerns
+
+Wait for user approval before proceeding. Incorporate feedback.
+
+**Phase 5 — Set up for overnight.** After user approves:
+1. Commit the milestone directory to `develop`
+2. Update `Docs/NEXT_TASK_PLAN.md` on `develop` with status `ready`, milestone `M{X}`, branch name, and pointer to the plan
+3. Create the feature branch off `develop` (the overnight agent checks out this branch — it does not create branches)
+4. Push both `develop` and the feature branch to remote
+
+---
+
 ## `/style-audit` — Design Token Compliance Sweep
 
 When the user asks for a "style audit", "styling consistency check", or similar, run this procedure:
