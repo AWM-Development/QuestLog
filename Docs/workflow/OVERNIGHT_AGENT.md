@@ -51,9 +51,12 @@ Docs/
 │       ├── PLAN.md
 │       └── REPORT.md
 ├── NEXT_TASK_PLAN.md         ← control file on develop (status + pointer to milestone dir)
-├── PLAN_TEMPLATE.md          ← copy to Docs/milestones/M{X}/PLAN.md
 ├── DESIGN_SYSTEM.md          ← overarching design tokens, not milestone-specific
-└── OVERNIGHT_AGENT.md        ← this file
+└── workflow/
+    ├── OVERNIGHT_AGENT.md    ← this file
+    ├── PLAN_TEMPLATE.md      ← copy to Docs/milestones/M{X}/PLAN.md
+    ├── COMMANDS.md           ← slash command procedure definitions
+    └── SCHEDULED_TASKS_CONFIG.md ← cron schedule and agent prompt
 ```
 
 ### What goes where
@@ -62,7 +65,7 @@ Docs/
 |----------|----------|---------|
 | **DESIGN_SYSTEM.md** | `Docs/DESIGN_SYSTEM.md` | Overarching: CSS tokens, spacing scale, color system, component anatomy. Stable across milestones. |
 | **DESIGN_SPEC.md** | `Docs/milestones/M{X}/DESIGN_SPEC.md` | Milestone-specific: wireframes, visual specs, layout decisions, interaction states. Created during planning when 🎨 gates are resolved. |
-| **PLAN.md** | `Docs/milestones/M{X}/PLAN.md` | Full plan with checkpoints, key context, constraints. Copy from `PLAN_TEMPLATE.md`. |
+| **PLAN.md** | `Docs/milestones/M{X}/PLAN.md` | Full plan with checkpoints, key context, constraints. Copy from `Docs/workflow/PLAN_TEMPLATE.md`. |
 | **REPORT.md** | `Docs/milestones/M{X}/REPORT.md` | Overnight report. Written by the agent or `/morning-review`. |
 | **NEXT_TASK_PLAN.md** | `Docs/NEXT_TASK_PLAN.md` | Control file on develop. Contains only status, milestone number, and branch — points to `Docs/milestones/M{X}/PLAN.md` for details. |
 
@@ -89,7 +92,7 @@ Contains only:
 
 ### Detail file: `Docs/milestones/M{X}/PLAN.md`
 
-The full plan with checkpoints, key context, constraints, and agent report sections. Lives on the feature branch (committed during planning). Copy from `Docs/PLAN_TEMPLATE.md`.
+The full plan with checkpoints, key context, constraints, and agent report sections. Lives on the feature branch (committed during planning). Copy from `Docs/workflow/PLAN_TEMPLATE.md`.
 
 ### Status Field (the gate)
 
@@ -120,7 +123,7 @@ During an interactive session, the human and Claude:
 5. If visual specs were resolved, write them to `Docs/milestones/M{X}/DESIGN_SPEC.md`
 6. Break the task into numbered checkpoints (each = one testable behavior change)
 7. For each checkpoint: list target files, describe the failing test, define acceptance criteria
-8. Write the plan: copy `Docs/PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md`
+8. Write the plan: copy `Docs/workflow/PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md`
    - **Decisions:** resolved design choices the agent must follow (not derivable from code)
    - **Gotchas:** non-obvious traps from IMPLEMENTATION_NOTES.md that apply
    - **References:** point the agent to files worth reading — don't paste their contents
@@ -227,9 +230,11 @@ When a milestone is fully completed and merged to develop:
 
 | File | Location | Purpose |
 |------|----------|---------|
-| `Docs/PLAN_TEMPLATE.md` | develop | Copy-paste template for new plans |
+| `Docs/workflow/PLAN_TEMPLATE.md` | develop | Copy-paste template for new plans |
 | `Docs/NEXT_TASK_PLAN.md` | develop | Control file — status gate for overnight agents |
-| `Docs/OVERNIGHT_AGENT.md` | develop | This file — workflow documentation |
+| `Docs/workflow/OVERNIGHT_AGENT.md` | develop | This file — workflow documentation |
+| `Docs/workflow/COMMANDS.md` | develop | Slash command procedure definitions |
+| `Docs/workflow/SCHEDULED_TASKS_CONFIG.md` | develop | Cron schedule and agent prompt |
 | `Docs/DESIGN_SYSTEM.md` | develop | Overarching design tokens (stable across milestones) |
 | `Docs/milestones/M{X}/PLAN.md` | feature branch | Full plan with checkpoints and key context |
 | `Docs/milestones/M{X}/DESIGN_SPEC.md` | feature branch | Visual specs for this milestone (if applicable) |

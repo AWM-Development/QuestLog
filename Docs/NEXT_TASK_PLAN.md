@@ -21,6 +21,6 @@ STATUS VALUES:
 
 > No task is currently planned. During a daytime planning session:
 > 1. Create `Docs/milestones/M{X}/` on the feature branch
-> 2. Copy `PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md` and fill in
+> 2. Copy `Docs/workflow/PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md` and fill in
 > 3. Update this file with status `ready`, milestone, branch, and plan path
 > 4. Commit and push develop
