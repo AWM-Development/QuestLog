@@ -26,7 +26,7 @@ Read these documents in this order:
 When planning a new task for overnight implementation:
 
 1. Create `Docs/milestones/M{X}/` directory
-2. Copy `Docs/PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md` and fill in all sections
+2. Copy `Docs/PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md` — fill in checkpoints, decisions, gotchas, and references (keep it brief — the agent reads the codebase itself)
 3. If 🎨 gates were resolved, write visual specs to `Docs/milestones/M{X}/DESIGN_SPEC.md`
 4. Create the feature branch off `develop` and commit the milestone directory there
 5. Update `Docs/NEXT_TASK_PLAN.md` on develop with status `ready`, milestone, branch, and pointer to the plan
@@ -36,27 +36,19 @@ See `Docs/OVERNIGHT_AGENT.md §Daytime Planning Session` for the full procedure.
 
 ### Scheduled Session (Overnight — No Human)
 
-Focus: implementing checkpoints from the plan file, TDD, committing progress. Token budget is limited — read only what you need.
+Focus: implementing checkpoints from the plan file, TDD, committing progress.
 
-**Minimal-context preamble:**
+**Startup:**
 
 1. **`Docs/NEXT_TASK_PLAN.md`** — read the status field FIRST. If status is not `ready` or `in-progress`, exit immediately. Note the milestone number and branch name.
 2. Check out the feature branch specified in the control file.
-3. **`Docs/milestones/M{X}/PLAN.md`** — read the full plan. The Key Context section contains pre-extracted snippets from DEVELOPMENT_GUIDE.md, IMPLEMENTATION_NOTES.md, and design decisions. Do NOT read the full source documents.
+3. **`Docs/milestones/M{X}/PLAN.md`** — the plan with checkpoints, decisions, gotchas, and references.
 4. **`Docs/milestones/M{X}/DESIGN_SPEC.md`** — read if it exists (visual specs for this milestone).
-5. **Reference Files listed in the plan** — read only these specific files for implementation context.
-6. Implement checkpoints in order per `Docs/OVERNIGHT_AGENT.md`.
+5. **`CLAUDE.md`** and **`Docs/DEVELOPMENT_GUIDE.md`** — project conventions and TDD rules.
+6. Read reference files listed in the plan, then implementation files as needed per checkpoint.
+7. Implement checkpoints in order per `Docs/OVERNIGHT_AGENT.md`.
 
-**Token conservation rules:**
-- Do NOT read MILESTONES, PRD, overarching DESIGN_SYSTEM.md, or full docs — the plan extracts everything needed.
-- If you need context not in the plan, use `grep` to find specific patterns rather than reading entire files.
-- Read implementation files on-demand per checkpoint, not all at once upfront.
-
-**Search path for milestone context (in priority order):**
-1. `Docs/milestones/M{X}/PLAN.md` — checkpoints, key context, constraints
-2. `Docs/milestones/M{X}/DESIGN_SPEC.md` — visual specs (if exists)
-3. Reference files listed in the plan
-4. `grep` for specific patterns if none of the above cover a need
+**The agent has full codebase access.** Read any file needed to understand patterns, conventions, or implementation context. The plan provides scope and decisions; the codebase provides everything else.
 
 See `Docs/OVERNIGHT_AGENT.md` for the full overnight workflow.
 

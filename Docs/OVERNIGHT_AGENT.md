@@ -114,27 +114,24 @@ The full plan with checkpoints, key context, constraints, and agent report secti
 During an interactive session, the human and Claude:
 
 1. Identify the next unchecked task in `MILESTONES_PT1.md` or `MILESTONES_PT2.md`
-2. Read the relevant PRD section and `Docs/DESIGN_SYSTEM.md` (overarching tokens)
+2. Read the relevant PRD section and `Docs/DESIGN_SYSTEM.md`
 3. Resolve 🎨 Visual Spec and 🧠 Strategy gates — make all design decisions upfront
 4. Create the milestone directory: `Docs/milestones/M{X}/`
 5. If visual specs were resolved, write them to `Docs/milestones/M{X}/DESIGN_SPEC.md`
 6. Break the task into numbered checkpoints (each = one testable behavior change)
 7. For each checkpoint: list target files, describe the failing test, define acceptance criteria
-8. **Extract key context into the plan** (critical for token efficiency):
-   - Copy the specific DEVELOPMENT_GUIDE.md subsections the agent needs (not the whole file)
-   - Copy relevant IMPLEMENTATION_NOTES.md entries
-   - Paste resolved design decisions verbatim
-   - Reference `Docs/milestones/M{X}/DESIGN_SPEC.md` if visual specs exist
-   - List specific reference files the agent should read (existing code to extend, test patterns to follow)
-9. Copy `Docs/PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md` and fill in all sections
-10. Create the feature branch off `develop`
-11. Commit the milestone directory to the feature branch
-12. Update `Docs/NEXT_TASK_PLAN.md` on develop with status `ready`, milestone number, branch name, and pointer to the plan
-13. Commit and push develop
+8. Write the plan: copy `Docs/PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md`
+   - **Decisions:** resolved design choices the agent must follow (not derivable from code)
+   - **Gotchas:** non-obvious traps from IMPLEMENTATION_NOTES.md that apply
+   - **References:** point the agent to files worth reading — don't paste their contents
+9. Create the feature branch off `develop`
+10. Commit the milestone directory to the feature branch
+11. Update `Docs/NEXT_TASK_PLAN.md` on develop with status `ready`, milestone number, branch name, and pointer to the plan
+12. Commit and push develop
+
+**Plan philosophy:** The plan is a *brief*, not a *transcript*. Tell the agent what to build and what decisions have been made. The agent has full access to `Read`, `Grep`, `Glob`, and all project files — trust it to read the codebase for patterns, conventions, and implementation details. Don't pre-extract code or copy doc sections into the plan.
 
 **Checkpoint scoping:** Each checkpoint should represent one testable behavior change — small enough that partial progress is useful, large enough that it's a meaningful commit.
-
-**Why extract context?** The overnight agent has a fixed token budget. Every doc it reads consumes tokens that could go toward implementation. By front-loading context extraction during planning (when you have full docs open anyway), the agent can skip reading 5+ large files and go straight to coding.
 
 ---
 
@@ -144,26 +141,17 @@ During an interactive session, the human and Claude:
 
 ### Startup Sequence (Scheduled Session)
 
-The overnight agent uses a **minimal-context preamble** to conserve tokens. Every file read costs tokens — only read what the plan tells you to.
-
 1. Read `Docs/NEXT_TASK_PLAN.md` — check the status field. If not `ready` or `in-progress`: exit immediately.
 2. Note the milestone number and feature branch from the control file.
 3. Check out the feature branch.
-4. Read `Docs/milestones/M{X}/PLAN.md` — the full plan with checkpoints and key context.
+4. Read `Docs/milestones/M{X}/PLAN.md` — the plan with checkpoints, decisions, and references.
 5. If `Docs/milestones/M{X}/DESIGN_SPEC.md` exists, read it for visual/interaction specs.
-6. Read only the **Reference Files** listed in the plan's Key Context section.
+6. Read `CLAUDE.md` for project-wide conventions, TDD rules, and code review protocol.
+7. Read `Docs/DEVELOPMENT_GUIDE.md` for coding patterns.
+8. Read reference files listed in the plan.
+9. Read implementation files as needed per checkpoint — the agent has full codebase access.
 
-**Token conservation rules:**
-- Do NOT read MILESTONES, PRD, or the overarching DESIGN_SYSTEM.md — the plan contains everything needed.
-- Do NOT read full docs when the plan has already extracted the relevant snippets.
-- If you need context not in the plan, use `grep` to find specific patterns rather than reading entire files.
-- Read implementation files on-demand per checkpoint, not all at once upfront.
-
-**Search path for milestone context (in order):**
-1. `Docs/milestones/M{X}/PLAN.md` — checkpoints, key context, constraints
-2. `Docs/milestones/M{X}/DESIGN_SPEC.md` — visual specs (if exists)
-3. Reference files listed in the plan
-4. `grep` for specific patterns if none of the above cover a need
+**The agent can and should read any file it needs.** The plan provides scope and decisions; the codebase provides patterns and context. Use `Read`, `Grep`, and `Glob` freely. Don't guess at file contents or conventions — look them up.
 
 ### Implementation Loop
 
@@ -184,8 +172,9 @@ For each checkpoint in order:
 ### Token Budget Management
 
 - The agent commits after each checkpoint, so progress survives token exhaustion
-- If tokens are running low, stop before starting the next checkpoint — a partial checkpoint is worse than none (nothing to commit, nothing to resume from)
+- If tokens are running low, stop before starting the next checkpoint — a partial checkpoint is worse than none
 - The Progress checklist in the Agent Report is the resume mechanism: the next run starts from the first unchecked item
+- With ~200k tokens, the agent can comfortably read docs and implementation files — don't skip reads to "save tokens"
 
 ### Completion
 
