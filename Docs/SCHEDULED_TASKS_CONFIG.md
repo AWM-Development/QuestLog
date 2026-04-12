@@ -2,7 +2,7 @@
 
 The overnight workflow uses one scheduled task (implementation) and one manual command (review).
 
-**Timezone note:** Cron expressions are UTC. 1 AM Mountain (MDT/UTC-6) = 7 AM UTC. When DST ends (November), this shifts by 1 hour — update cron expression or accept the drift.
+**Timezone note:** Cron expressions are UTC. 12 AM Mountain (MDT/UTC-6) = 7 AM UTC. When DST ends (November), this shifts by 1 hour — update cron expression or accept the drift.
 
 **Review:** Run `/morning-review` manually in an interactive Claude Code session. See CLAUDE.md § Repeatable Commands.
 
@@ -11,7 +11,7 @@ The overnight workflow uses one scheduled task (implementation) and one manual c
 ## Task 1: QuestLog Overnight Implement
 
 - **Name:** `QuestLog Overnight Implement`
-- **Schedule:** `0 7 * * *` (1 AM Mountain / 7 AM UTC, daily)
+- **Schedule:** `0 7 * * *` (12 AM Mountain / 7 AM UTC, daily)
 - **Model:** `claude-sonnet-4-6`
 - **Repo:** `https://github.com/alexmeyer27/QuestLog`
 - **Tools:** Bash, Read, Write, Edit, Glob, Grep

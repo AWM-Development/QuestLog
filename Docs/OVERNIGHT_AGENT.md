@@ -13,7 +13,7 @@ The workflow has three phases:
 | Phase | When | Who | What |
 |-------|------|-----|------|
 | **Plan** | Daytime (interactive) | Human + Claude | Resolve design decisions, break task into checkpoints, write plan file, create feature branch, set status to `ready` |
-| **Implement** | 1 AM MT (scheduled) | Claude agent | Read plan, check out feature branch, implement checkpoint-by-checkpoint with TDD, commit after each |
+| **Implement** | 12 am MT (scheduled) | Claude agent | Read plan, check out feature branch, implement checkpoint-by-checkpoint with TDD, commit after each |
 | **Review** | Morning (interactive) | Human + Claude | Run `/morning-review` — code review, doc updates, overnight report, merge to develop |
 
 ---
@@ -97,12 +97,12 @@ The full plan with checkpoints, key context, constraints, and agent report secti
 |--------|---------|-------------|
 | `none` | No task planned | Default / human after clearing |
 | `ready` | Plan is complete, agent may begin | Human (daytime) |
-| `in-progress` | Agent is actively working | Agent (1 AM job) |
-| `done` | All checkpoints complete | Agent (1 AM job) |
+| `in-progress` | Agent is actively working | Agent (12 am job) |
+| `done` | All checkpoints complete | Agent (12 am job) |
 | `reviewed` | Human approved, ready to merge | Human (morning) |
 
 **Rules:**
-- The 1 AM agent only starts work when status is `ready`
+- The 12 am agent only starts work when status is `ready`
 - If status is `in-progress` (e.g. agent exhausted token budget mid-task), the next run picks up from the first incomplete checkpoint
 - If status is `none`, `done`, or `reviewed`, the agent exits immediately
 - If the agent exhausts its token budget mid-task, it commits current progress, updates the Agent Report, leaves status as `in-progress`, and stops — the morning review handles remaining checkpoints
@@ -135,9 +135,9 @@ During an interactive session, the human and Claude:
 
 ---
 
-## 1 AM Agent (Implement)
+## 12 AM Agent (Implement)
 
-**Schedule:** Daily at 1:00 AM Mountain Time (08:00 UTC)
+**Schedule:** Daily at 12:00 AM Mountain Time (07:00 UTC)
 
 ### Startup Sequence (Scheduled Session)
 

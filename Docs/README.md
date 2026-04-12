@@ -33,7 +33,7 @@ This folder contains all project documentation and planning artifacts.
   - Covers: tooling quirks, architectural choices and their reasons, deferred work, and testing patterns.
 
 ### Overnight Agent Workflow
-- **OVERNIGHT_AGENT.md** — Full documentation of the plan-implement-review loop. Describes the daytime planning phase, the 1 AM scheduled agent, branch strategy, milestone directory structure, and morning approval process.
+- **OVERNIGHT_AGENT.md** — Full documentation of the plan-implement-review loop. Describes the daytime planning phase, the 12 AM scheduled agent, branch strategy, milestone directory structure, and morning approval process.
 
 - **PLAN_TEMPLATE.md** — Copy-paste template for creating a new task plan. Copy to `Docs/milestones/M{X}/PLAN.md` when planning a new task.
 
