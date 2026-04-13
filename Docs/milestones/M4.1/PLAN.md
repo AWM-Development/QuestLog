@@ -182,7 +182,7 @@ _Filled in by the overnight agent. Do not edit manually._
 ### Progress
 
 - [x] CP-1 — Dock state in CampaignChromeContext
-- [ ] CP-2 — Route + SessionListPage navigation
+- [x] CP-2 — Route + SessionListPage navigation
 - [ ] CP-3 — Dock button in SessionEditorPage
 - [ ] CP-4 — DockedSessionPanel wired into AppShell
 - [ ] CP-5 — DockedSessionPanel tests
@@ -192,7 +192,7 @@ _Filled in by the overnight agent. Do not edit manually._
 | Checkpoint | Status | Commit | Notes |
 |------------|--------|--------|-------|
 | CP-1       | done   | c3a8d15 | Added `isDocked`, `dockSession`, `undock` to context interface and provider. All 121 tests pass. Pre-existing TS errors in `trpc.Provider` are not introduced by this change. |
-| CP-2       |        |        |       |
+| CP-2       | done   | 9ec6d3b | Added `sessions/:sessionId` route in router.tsx, exported `SessionEditorPage` from index.ts, replaced `setActiveSessionId+openNotes` with `navigate` in SessionListPage. 123 tests pass, lint clean. |
 | CP-3       |        |        |       |
 | CP-4       |        |        |       |
 | CP-5       |        |        |       |
