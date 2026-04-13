@@ -211,7 +211,7 @@
 
 ### Tasks
 
-- [ ] **4.1 — Session CRUD & editor foundation**
+- [x] **4.1 — Session CRUD & editor foundation**
   - Branch: `feat/session-log/crud-editor`
   - 🎨 **Visual spec required** — See `Docs/IMPLEMENTATION_NOTES.md` for the revised main-area + dock model (supersedes the original sidebar-only spec).
   - PRD ref: §4.3 Session Log Object, The Notes Panel

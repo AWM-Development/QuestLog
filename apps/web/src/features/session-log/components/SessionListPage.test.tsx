@@ -2,6 +2,12 @@ import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithRouter } from "../../../test-utils.js";
 
+const mockNavigate = vi.fn();
+vi.mock("react-router", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("react-router")>();
+	return { ...actual, useNavigate: () => mockNavigate };
+});
+
 // Mock trpc before any imports that reference it
 vi.mock("@/lib/trpc.js", () => {
 	const mockTrpc = {
@@ -60,6 +66,7 @@ function draftSession() {
 
 describe("SessionListPage", () => {
 	it("clicking a session card navigates to /campaign/:id/sessions/:sessionId", async () => {
+		mockNavigate.mockClear();
 		mockList.mockReturnValue({
 			data: [draftSession()],
 			isLoading: false,
@@ -69,16 +76,7 @@ describe("SessionListPage", () => {
 		mockCreate.mockReturnValue({ mutate: vi.fn(), isPending: false });
 
 		renderWithRouter(
-			[
-				{
-					path: "/campaign/:id/sessions",
-					element: <SessionListPage />,
-				},
-				{
-					path: "/campaign/:id/sessions/:sessionId",
-					element: <div data-testid="editor-page">SESSION EDITOR PAGE</div>,
-				},
-			],
+			[{ path: "/campaign/:id/sessions", element: <SessionListPage /> }],
 			{ initialEntries: [`/campaign/${CAMPAIGN_ID}/sessions`] },
 		);
 
@@ -86,11 +84,14 @@ describe("SessionListPage", () => {
 		fireEvent.click(card);
 
 		await waitFor(() => {
-			expect(screen.getByTestId("editor-page")).toBeTruthy();
+			expect(mockNavigate).toHaveBeenCalledWith(
+				`/campaign/${CAMPAIGN_ID}/sessions/${SESSION_ID}`,
+			);
 		});
 	});
 
 	it("after successful create mutation, navigates to /campaign/:id/sessions/:newId", async () => {
+		mockNavigate.mockClear();
 		let capturedOnSuccess: ((row: { id: string }) => void) | undefined;
 
 		mockList.mockReturnValue({
@@ -107,16 +108,7 @@ describe("SessionListPage", () => {
 		);
 
 		renderWithRouter(
-			[
-				{
-					path: "/campaign/:id/sessions",
-					element: <SessionListPage />,
-				},
-				{
-					path: "/campaign/:id/sessions/:sessionId",
-					element: <div data-testid="editor-page">SESSION EDITOR PAGE</div>,
-				},
-			],
+			[{ path: "/campaign/:id/sessions", element: <SessionListPage /> }],
 			{ initialEntries: [`/campaign/${CAMPAIGN_ID}/sessions`] },
 		);
 
@@ -126,7 +118,9 @@ describe("SessionListPage", () => {
 		});
 
 		await waitFor(() => {
-			expect(screen.getByTestId("editor-page")).toBeTruthy();
+			expect(mockNavigate).toHaveBeenCalledWith(
+				`/campaign/${CAMPAIGN_ID}/sessions/${NEW_SESSION_ID}`,
+			);
 		});
 	});
 });

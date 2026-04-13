@@ -313,6 +313,18 @@ export const inlineAlertWarning: CSSProperties = {
 	backgroundColor: "var(--status-warning-muted)",
 };
 
+export const buttonSmallAccent: CSSProperties = {
+	...buttonAccent,
+	padding: "var(--space-1) var(--space-3)",
+	fontSize: "0.75rem",
+};
+
+export const buttonSmallSecondary: CSSProperties = {
+	...buttonSecondary,
+	padding: "var(--space-1) var(--space-3)",
+	fontSize: "0.75rem",
+};
+
 // ── Session notes editor (Milestone 4.1) ──
 
 export const editorSurface: CSSProperties = {

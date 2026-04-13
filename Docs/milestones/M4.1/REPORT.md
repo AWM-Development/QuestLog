@@ -56,6 +56,16 @@ All 5 checkpoints implemented successfully. The session dock model is fully wire
 
 ---
 
-## What Remains
+## Morning Review Fixes (2026-04-13)
 
-Nothing. All 5 checkpoints are complete and all tests pass. Branch is ready for human review.
+Applied during human review — all 130 tests still pass, lint and typecheck clean.
+
+| Fix | Files |
+|-----|-------|
+| Navigation tests used `waitFor(getByTestId)` to assert cross-route renders; Node 24 undici rejects `AbortSignal` in test `Request` objects, so destination never rendered. Replaced with `useNavigate` mock + `expect(mockNavigate).toHaveBeenCalledWith(...)`. | `SessionListPage.test.tsx`, `DockedSessionPanel.test.tsx` |
+| `DockedSessionPanel` not exported from feature barrel | `features/session-log/index.ts`, `layouts/AppShell.tsx` |
+| `setActiveSessionId` / `setAgentChatContextSources` missing from `useMemo` dep array (Biome exhaustive-deps). They ARE stable `useState` setters so no runtime bug — confirmed they should be omitted per Biome's guidance. | `CampaignChromeContext.tsx` |
+| `lastSavedRef` removed from `useSessionAutoSave` return (leaked internal state, no consumer used it) | `useSessionAutoSave.ts` |
+| Undock test description + assertion updated to document that `activeSessionId` is intentionally preserved after `undock()` | `CampaignChromeContext.test.tsx` |
+| `buttonSmallAccent` / `buttonSmallSecondary` presets extracted to `styles.ts`; 8 inline style-spread occurrences replaced across `DockedSessionPanel`, `SessionEditorPage`, `SessionNotesPanel`, `FinalizeForm` | `components/styles.ts` + 4 component files |
+| `FinalizeForm` spacing: `gap: "4px"` → `var(--space-1)`, `marginTop: "4px"` → `var(--space-1)` | `FinalizeForm.tsx` |

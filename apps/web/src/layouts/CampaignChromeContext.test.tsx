@@ -26,7 +26,7 @@ describe("CampaignChromeContext — dock state", () => {
 		expect(result.current.activeSessionId).toBe("abc");
 	});
 
-	it("undock() sets isDocked=false", () => {
+	it("undock() sets isDocked=false and preserves activeSessionId for navigation", () => {
 		const { result } = renderHook(() => useCampaignChrome(), { wrapper });
 		act(() => {
 			result.current.dockSession("abc");
@@ -36,5 +36,8 @@ describe("CampaignChromeContext — dock state", () => {
 			result.current.undock();
 		});
 		expect(result.current.isDocked).toBe(false);
+		// activeSessionId is intentionally preserved after undock so the caller
+		// can navigate to the full editor using the id before it clears.
+		expect(result.current.activeSessionId).toBe("abc");
 	});
 });

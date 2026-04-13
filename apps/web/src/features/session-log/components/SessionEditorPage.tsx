@@ -1,9 +1,9 @@
 import { type CSSProperties, useCallback, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import {
-	buttonAccent,
 	buttonGhost,
-	buttonSecondary,
+	buttonSmallAccent,
+	buttonSmallSecondary,
 	iconButtonBase,
 } from "../../../components/styles.js";
 import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
@@ -178,11 +178,7 @@ export function SessionEditorPage() {
 						<button
 							type="button"
 							onClick={() => setFinalizeOpen(true)}
-							style={{
-								...buttonSecondary,
-								padding: "4px 12px",
-								fontSize: "0.75rem",
-							}}
+							style={buttonSmallSecondary}
 						>
 							Update
 						</button>
@@ -190,11 +186,7 @@ export function SessionEditorPage() {
 						<button
 							type="button"
 							onClick={() => setFinalizeOpen(true)}
-							style={{
-								...buttonAccent,
-								padding: "4px 12px",
-								fontSize: "0.75rem",
-							}}
+							style={buttonSmallAccent}
 						>
 							Save Session
 						</button>

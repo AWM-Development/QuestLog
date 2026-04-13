@@ -1,7 +1,7 @@
 import { type CSSProperties, useState } from "react";
 import {
-	buttonAccent,
 	buttonGhost,
+	buttonSmallAccent,
 	inputField,
 } from "../../../components/styles.js";
 
@@ -74,7 +74,13 @@ export function FinalizeForm({
 			>
 				Finalize session
 			</span>
-			<label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+			<label
+				style={{
+					display: "flex",
+					flexDirection: "column",
+					gap: "var(--space-1)",
+				}}
+			>
 				<span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
 					Title
 				</span>
@@ -98,7 +104,7 @@ export function FinalizeForm({
 						onChange={(e) =>
 							setSessionNumber(Number.parseInt(e.target.value, 10) || 1)
 						}
-						style={{ ...inputField, marginTop: "4px" }}
+						style={{ ...inputField, marginTop: "var(--space-1)" }}
 					/>
 				</label>
 				<label style={{ flex: "1 1 120px" }}>
@@ -109,11 +115,17 @@ export function FinalizeForm({
 						type="date"
 						value={dateStr}
 						onChange={(e) => setDateStr(e.target.value)}
-						style={{ ...inputField, marginTop: "4px" }}
+						style={{ ...inputField, marginTop: "var(--space-1)" }}
 					/>
 				</label>
 			</div>
-			<label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+			<label
+				style={{
+					display: "flex",
+					flexDirection: "column",
+					gap: "var(--space-1)",
+				}}
+			>
 				<span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
 					Summary
 				</span>
@@ -125,7 +137,13 @@ export function FinalizeForm({
 					style={inputField}
 				/>
 			</label>
-			<label style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+			<label
+				style={{
+					display: "flex",
+					flexDirection: "column",
+					gap: "var(--space-1)",
+				}}
+			>
 				<span style={{ fontSize: "0.6875rem", color: "var(--text-muted)" }}>
 					Tags (comma-separated)
 				</span>
@@ -154,11 +172,7 @@ export function FinalizeForm({
 				</button>
 				<button
 					type="button"
-					style={{
-						...buttonAccent,
-						padding: "4px 12px",
-						fontSize: "0.75rem",
-					}}
+					style={buttonSmallAccent}
 					onClick={handleSubmit}
 					disabled={isSubmitting}
 				>

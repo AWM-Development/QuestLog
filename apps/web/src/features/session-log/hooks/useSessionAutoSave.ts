@@ -75,5 +75,5 @@ export function useSessionAutoSave(
 		};
 	}, []);
 
-	return { saveState, scheduleSave, flushSave, lastSavedRef };
+	return { saveState, scheduleSave, flushSave };
 }

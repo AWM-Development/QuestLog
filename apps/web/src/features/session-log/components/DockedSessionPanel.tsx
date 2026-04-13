@@ -1,9 +1,9 @@
 import { type CSSProperties, useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import {
-	buttonAccent,
 	buttonGhost,
-	buttonSecondary,
+	buttonSmallAccent,
+	buttonSmallSecondary,
 	iconButtonBase,
 } from "../../../components/styles.js";
 import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
@@ -177,11 +177,7 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 					{isFinal ? (
 						<button
 							type="button"
-							style={{
-								...buttonSecondary,
-								padding: "4px 12px",
-								fontSize: "0.75rem",
-							}}
+							style={buttonSmallSecondary}
 							onClick={() => setFinalizeOpen(true)}
 						>
 							Update
@@ -189,11 +185,7 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 					) : (
 						<button
 							type="button"
-							style={{
-								...buttonAccent,
-								padding: "4px 12px",
-								fontSize: "0.75rem",
-							}}
+							style={buttonSmallAccent}
 							onClick={() => setFinalizeOpen(true)}
 						>
 							Save Session

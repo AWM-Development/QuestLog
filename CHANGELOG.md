@@ -22,6 +22,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 - **Docs:** local dev URLs (5173 / 3000 / `VITE_API_URL`), DEVELOPMENT_GUIDE first-time setup uses `db:migrate` and Postgres **5433**; README troubleshooting for API connection / **EADDRINUSE**
 - **Server:** clearer startup error when **PORT** is already in use; `.env.example` documents optional **PORT**
 
+### Added — M4.1 Session CRUD & Editor Foundation
+
+- **`/campaign/:id/sessions/:sessionId`** route renders `SessionEditorPage` (Notion-style main-area editor at 720px centered column)
+- **Dock button** (⇥) in `SessionEditorPage` header: flushes autosave, docks the session, navigates back to the session list
+- **`DockedSessionPanel`** wired into `AppShell` third column — renders at `var(--dock-width)` (360px) when `isDocked=true`, suppressing the side panel
+- **`isDocked` / `dockSession` / `undock`** added to `CampaignChromeContext`; dock and panel are mutually exclusive in the grid
+- **`flushSave`** added to `useSessionAutoSave` — cancels the debounce timer and immediately persists pending content
+- **`buttonSmallAccent` / `buttonSmallSecondary`** style presets in `components/styles.ts` (compact header buttons used across all session editor surfaces)
+- Session card clicks in `SessionListPage` now navigate to `/campaign/:id/sessions/:id` instead of opening the notes panel
+
 ### Changed — Session notes UX (4.1 follow-up)
 
 - Session **date** and **session number** persist on **blur** (no per-keystroke `session.update` spam)

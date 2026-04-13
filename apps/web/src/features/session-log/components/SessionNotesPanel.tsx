@@ -6,8 +6,8 @@ import {
 	useState,
 } from "react";
 import {
-	buttonAccent,
-	buttonSecondary,
+	buttonSmallAccent,
+	buttonSmallSecondary,
 	iconButtonBase,
 } from "../../../components/styles.js";
 import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
@@ -192,11 +192,7 @@ export function SessionNotesPanel({
 					{layout === "full" ? (
 						<button
 							type="button"
-							style={{
-								...buttonSecondary,
-								padding: "4px 12px",
-								fontSize: "0.75rem",
-							}}
+							style={buttonSmallSecondary}
 							onClick={collapseNotesFromFull}
 						>
 							Back to panel
@@ -226,11 +222,7 @@ export function SessionNotesPanel({
 					{isFinal ? (
 						<button
 							type="button"
-							style={{
-								...buttonSecondary,
-								padding: "4px 12px",
-								fontSize: "0.75rem",
-							}}
+							style={buttonSmallSecondary}
 							onClick={() => setFinalizeOpen(true)}
 						>
 							Update
@@ -238,11 +230,7 @@ export function SessionNotesPanel({
 					) : (
 						<button
 							type="button"
-							style={{
-								...buttonAccent,
-								padding: "4px 12px",
-								fontSize: "0.75rem",
-							}}
+							style={buttonSmallAccent}
 							onClick={() => setFinalizeOpen(true)}
 						>
 							Save Session

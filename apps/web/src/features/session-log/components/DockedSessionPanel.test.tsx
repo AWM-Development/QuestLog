@@ -2,6 +2,12 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithRouter } from "../../../test-utils.js";
 
+const mockNavigate = vi.fn();
+vi.mock("react-router", async (importOriginal) => {
+	const actual = await importOriginal<typeof import("react-router")>();
+	return { ...actual, useNavigate: () => mockNavigate };
+});
+
 // Mock trpc before any imports that reference it
 vi.mock("@/lib/trpc.js", () => {
 	const mockTrpc = {
@@ -82,14 +88,6 @@ function renderPanel(campaignId = CAMPAIGN_ID) {
 	return renderWithRouter(
 		[
 			{
-				path: "/campaign/:id/sessions",
-				element: <div data-testid="sessions-list">SESSION LIST</div>,
-			},
-			{
-				path: "/campaign/:id/sessions/:sessionId",
-				element: <div data-testid="session-editor">SESSION EDITOR</div>,
-			},
-			{
 				path: "/campaign/:id",
 				element: <DockedSessionPanel campaignId={campaignId} />,
 			},
@@ -140,6 +138,7 @@ describe("DockedSessionPanel", () => {
 	it("clicking the undock button calls undock() and navigates to the full editor", async () => {
 		mockActiveSessionId = SESSION_ID;
 		mockUndock.mockClear();
+		mockNavigate.mockClear();
 		setupMutationMocks();
 		mockGetById.mockReturnValue({
 			data: draftSession(),
@@ -155,7 +154,9 @@ describe("DockedSessionPanel", () => {
 		expect(mockUndock).toHaveBeenCalledTimes(1);
 
 		await waitFor(() => {
-			expect(screen.getByTestId("session-editor")).toBeTruthy();
+			expect(mockNavigate).toHaveBeenCalledWith(
+				`/campaign/${CAMPAIGN_ID}/sessions/${SESSION_ID}`,
+			);
 		});
 	});
 });

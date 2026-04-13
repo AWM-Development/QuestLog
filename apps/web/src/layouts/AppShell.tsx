@@ -2,8 +2,10 @@ import { type CSSProperties, useEffect, useMemo } from "react";
 import { Outlet, useLocation } from "react-router";
 import { ContextPanel } from "../features/agent-chat/components/ContextPanel.js";
 import { useMediaQuery } from "../features/agent-chat/hooks/useMediaQuery.js";
-import { DockedSessionPanel } from "../features/session-log/components/DockedSessionPanel.js";
-import { SessionNotesPanel } from "../features/session-log/components/SessionNotesPanel.js";
+import {
+	DockedSessionPanel,
+	SessionNotesPanel,
+} from "../features/session-log/index.js";
 import {
 	CampaignChromeProvider,
 	useCampaignChrome,
