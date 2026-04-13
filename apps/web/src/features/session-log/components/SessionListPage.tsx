@@ -1,8 +1,7 @@
 import type { CSSProperties } from "react";
-import { useParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 import { PageContainer, PageHeader } from "../../../components/PageScaffold.js";
 import { buttonAccent, elevatedCard } from "../../../components/styles.js";
-import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../lib/trpc.js";
 
 const cardInner: CSSProperties = {
@@ -21,7 +20,7 @@ const cardInner: CSSProperties = {
 
 export function SessionListPage() {
 	const { id: campaignId } = useParams<{ id: string }>();
-	const { setActiveSessionId, openNotes } = useCampaignChrome();
+	const navigate = useNavigate();
 
 	const listQuery = trpc.session.list.useQuery(
 		{ campaignId: campaignId ?? "" },
@@ -30,9 +29,7 @@ export function SessionListPage() {
 
 	const createMutation = trpc.session.create.useMutation({
 		onSuccess: (row) => {
-			setActiveSessionId(row.id);
-			openNotes();
-			void listQuery.refetch();
+			void navigate(`/campaign/${campaignId}/sessions/${row.id}`);
 		},
 	});
 
@@ -99,8 +96,7 @@ export function SessionListPage() {
 							type="button"
 							style={elevatedCard}
 							onClick={() => {
-								setActiveSessionId(s.id);
-								openNotes();
+								void navigate(`/campaign/${campaignId}/sessions/${s.id}`);
 							}}
 						>
 							<div style={cardInner}>
