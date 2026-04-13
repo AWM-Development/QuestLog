@@ -4,7 +4,7 @@
 
 | Field         | Value                                          |
 |---------------|------------------------------------------------|
-| **Status**    | `in-progress`                                  |
+| **Status**    | `done`                                         |
 | **Milestone** | M4.1 — Session CRUD & Editor Foundation        |
 | **Branch**    | `feat/session-log/dock-model`                  |
 | **PRD ref**   | §4.3 Session Logging & Entity Linking          |
@@ -185,7 +185,7 @@ _Filled in by the overnight agent. Do not edit manually._
 - [x] CP-2 — Route + SessionListPage navigation
 - [x] CP-3 — Dock button in SessionEditorPage
 - [x] CP-4 — DockedSessionPanel wired into AppShell
-- [ ] CP-5 — DockedSessionPanel tests
+- [x] CP-5 — DockedSessionPanel tests
 
 ### Run Log
 
@@ -195,8 +195,15 @@ _Filled in by the overnight agent. Do not edit manually._
 | CP-2       | done   | 9ec6d3b | Added `sessions/:sessionId` route in router.tsx, exported `SessionEditorPage` from index.ts, replaced `setActiveSessionId+openNotes` with `navigate` in SessionListPage. 123 tests pass, lint clean. |
 | CP-3       | done   | 758848c | Added `flushSave` to `useSessionAutoSave` (tracks pending content via ref, cancels debounce and calls saveFn immediately). Added Dock button (⇥) in `SessionEditorPage` header. Mocked `useCampaignChrome` in existing test file. 124 tests pass, lint clean. |
 | CP-4       | done   | 8287868 | Imported `DockedSessionPanel`, added `isDocked` destructure, computed `showDock = Boolean(isDocked && campaignId)`, suppressed `showPanel` when `showDock` is true, updated grid template to use `--dock-width` when docked. Added 2 dock tests using real `CampaignChromeProvider` + `DockTrigger` helper. 126 tests pass. |
-| CP-5       |        |        |       |
+| CP-5       | done   | 5c11d96 | Created DockedSessionPanel.test.tsx with 4 tests: null session, loading state, session content rendered, undock navigation. All 130 tests pass, lint clean. |
 
 ### Summary
 
-_Agent writes a brief summary of what was accomplished, any issues encountered, and what remains._
+All 5 checkpoints completed. 130 tests pass (up from 121 at start). Lint and typecheck clean (pre-existing TS errors in `trpc.Provider` were not introduced by this work — confirmed by stash check).
+
+**Issues encountered:**
+- Pre-existing TypeScript errors in `main.tsx` and `test-utils.tsx` (`trpc.Provider` type error) — pre-existing, not introduced.
+- Biome formatter required line-length fixes in 4 places across the session (standard formatting cleanup).
+- `AppShell.test.tsx` already existed — dock tests were appended to the existing file using a real `CampaignChromeProvider` + `DockTrigger` helper component strategy (avoids module-level mocking conflicts with existing `renderWithRouterAndTrpc` tests).
+
+**What remains:** None — all checkpoints complete.
