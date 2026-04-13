@@ -4,7 +4,7 @@
 
 | Field         | Value                                          |
 |---------------|------------------------------------------------|
-| **Status**    | `ready`                                        |
+| **Status**    | `in-progress`                                  |
 | **Milestone** | M4.1 — Session CRUD & Editor Foundation        |
 | **Branch**    | `feat/session-log/dock-model`                  |
 | **PRD ref**   | §4.3 Session Logging & Entity Linking          |
