@@ -2,6 +2,7 @@ import { type CSSProperties, useEffect, useMemo } from "react";
 import { Outlet, useLocation } from "react-router";
 import { ContextPanel } from "../features/agent-chat/components/ContextPanel.js";
 import { useMediaQuery } from "../features/agent-chat/hooks/useMediaQuery.js";
+import { DockedSessionPanel } from "../features/session-log/components/DockedSessionPanel.js";
 import { SessionNotesPanel } from "../features/session-log/components/SessionNotesPanel.js";
 import {
 	CampaignChromeProvider,
@@ -60,6 +61,7 @@ function AppShellInner() {
 		setAgentChatContextSources,
 		notesLayout,
 		resetNotesLayout,
+		isDocked,
 	} = useCampaignChrome();
 
 	const onAgentChatRoute = isAgentChatPathname(location.pathname);
@@ -100,7 +102,10 @@ function AppShellInner() {
 		typeof window.matchMedia === "function" &&
 		window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-	const showPanel = Boolean(panelOpen && campaignId && notesLayout !== "full");
+	const showDock = Boolean(isDocked && campaignId);
+	const showPanel = Boolean(
+		panelOpen && campaignId && notesLayout !== "full" && !showDock,
+	);
 	const fullNotesMode = Boolean(campaignId && notesLayout === "full");
 
 	return (
@@ -108,9 +113,11 @@ function AppShellInner() {
 			className="app-shell"
 			style={{
 				display: "grid",
-				gridTemplateColumns: showPanel
-					? "var(--rail-width) 1fr var(--panel-width)"
-					: "var(--rail-width) 1fr",
+				gridTemplateColumns: showDock
+					? "var(--rail-width) 1fr var(--dock-width)"
+					: showPanel
+						? "var(--rail-width) 1fr var(--panel-width)"
+						: "var(--rail-width) 1fr",
 				height: "100vh",
 				backgroundColor: "var(--bg-void)",
 				color: "var(--text-primary)",
@@ -155,6 +162,10 @@ function AppShellInner() {
 						)
 					}
 				/>
+			) : null}
+
+			{showDock && campaignId ? (
+				<DockedSessionPanel campaignId={campaignId} />
 			) : null}
 		</div>
 	);
