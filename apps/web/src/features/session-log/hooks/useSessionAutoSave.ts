@@ -15,6 +15,7 @@ export function useSessionAutoSave(
 	const [saveState, setSaveState] = useState<SaveState>({ kind: "idle" });
 	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const lastSavedRef = useRef<string | null>(null);
+	const pendingContentRef = useRef<string | null>(null);
 
 	const scheduleSave = useCallback(
 		(contentJson: string) => {
@@ -22,6 +23,7 @@ export function useSessionAutoSave(
 				return;
 			}
 			setSaveState({ kind: "pending" });
+			pendingContentRef.current = contentJson;
 			if (timerRef.current) {
 				clearTimeout(timerRef.current);
 			}
@@ -43,11 +45,35 @@ export function useSessionAutoSave(
 		[saveFn],
 	);
 
+	/** Cancel the pending debounce timer and immediately invoke saveFn with the last scheduled content. */
+	const flushSave = useCallback(() => {
+		if (timerRef.current) {
+			clearTimeout(timerRef.current);
+			timerRef.current = null;
+		}
+		const content = pendingContentRef.current;
+		if (content !== null && content !== lastSavedRef.current) {
+			setSaveState({ kind: "saving" });
+			void saveFn(content).then(
+				() => {
+					lastSavedRef.current = content;
+					setSaveState({ kind: "saved", at: new Date() });
+				},
+				() => {
+					setSaveState({
+						kind: "error",
+						message: "Save failed — retrying...",
+					});
+				},
+			);
+		}
+	}, [saveFn]);
+
 	useEffect(() => {
 		return () => {
 			if (timerRef.current) clearTimeout(timerRef.current);
 		};
 	}, []);
 
-	return { saveState, scheduleSave, lastSavedRef };
+	return { saveState, scheduleSave, flushSave, lastSavedRef };
 }

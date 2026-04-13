@@ -1,10 +1,12 @@
 import { type CSSProperties, useCallback, useRef, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useNavigate, useParams } from "react-router";
 import {
 	buttonAccent,
 	buttonGhost,
 	buttonSecondary,
+	iconButtonBase,
 } from "../../../components/styles.js";
+import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../lib/trpc.js";
 import { useSessionAutoSave } from "../hooks/useSessionAutoSave.js";
 import { FinalizeForm } from "./FinalizeForm.js";
@@ -73,6 +75,8 @@ export function SessionEditorPage() {
 		id: string;
 		sessionId: string;
 	}>();
+	const navigate = useNavigate();
+	const { dockSession } = useCampaignChrome();
 	const [finalizeOpen, setFinalizeOpen] = useState(false);
 
 	const sessionQuery = trpc.session.getById.useQuery(
@@ -111,7 +115,8 @@ export function SessionEditorPage() {
 		[sessionId],
 	);
 
-	const { saveState, scheduleSave } = useSessionAutoSave(saveContent);
+	const { saveState, scheduleSave, flushSave } =
+		useSessionAutoSave(saveContent);
 
 	const handleTitleCommit = useCallback(
 		(raw: string) => {
@@ -152,6 +157,20 @@ export function SessionEditorPage() {
 					<Link to={`/campaign/${campaignId}/sessions`} style={backLinkStyle}>
 						← Sessions
 					</Link>
+					<button
+						type="button"
+						aria-label="Dock"
+						title="Dock — keep editing while you navigate"
+						style={iconButtonBase}
+						onClick={() => {
+							if (!sessionId || !campaignId) return;
+							flushSave();
+							dockSession(sessionId);
+							void navigate(`/campaign/${campaignId}/sessions`);
+						}}
+					>
+						⇥
+					</button>
 				</div>
 				<div style={headerGroup}>
 					<SaveStatus saveState={saveState} />

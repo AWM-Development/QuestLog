@@ -2,6 +2,17 @@ import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { renderWithRouter } from "../../../test-utils.js";
 
+// Mock CampaignChromeContext before any imports that reference it
+vi.mock("@/layouts/CampaignChromeContext.js", () => ({
+	useCampaignChrome: vi.fn(() => ({
+		isDocked: false,
+		dockSession: vi.fn(),
+		undock: vi.fn(),
+		setActiveSessionId: vi.fn(),
+		openNotes: vi.fn(),
+	})),
+}));
+
 // Mock trpc before any imports that reference it
 vi.mock("@/lib/trpc.js", () => {
 	const mockTrpc = {
@@ -130,5 +141,11 @@ describe("SessionEditorPage", () => {
 		const overline = screen.getByTestId("session-overline");
 		expect(overline.textContent).toMatch(/✓/);
 		expect(overline.textContent).not.toMatch(/DRAFT/);
+	});
+
+	it("renders a Dock button in the header for a draft session", () => {
+		setupMocks({});
+		renderPage();
+		expect(screen.getByRole("button", { name: /dock/i })).toBeTruthy();
 	});
 });
