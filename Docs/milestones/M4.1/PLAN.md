@@ -184,7 +184,7 @@ _Filled in by the overnight agent. Do not edit manually._
 - [x] CP-1 — Dock state in CampaignChromeContext
 - [x] CP-2 — Route + SessionListPage navigation
 - [x] CP-3 — Dock button in SessionEditorPage
-- [ ] CP-4 — DockedSessionPanel wired into AppShell
+- [x] CP-4 — DockedSessionPanel wired into AppShell
 - [ ] CP-5 — DockedSessionPanel tests
 
 ### Run Log
@@ -194,7 +194,7 @@ _Filled in by the overnight agent. Do not edit manually._
 | CP-1       | done   | c3a8d15 | Added `isDocked`, `dockSession`, `undock` to context interface and provider. All 121 tests pass. Pre-existing TS errors in `trpc.Provider` are not introduced by this change. |
 | CP-2       | done   | 9ec6d3b | Added `sessions/:sessionId` route in router.tsx, exported `SessionEditorPage` from index.ts, replaced `setActiveSessionId+openNotes` with `navigate` in SessionListPage. 123 tests pass, lint clean. |
 | CP-3       | done   | 758848c | Added `flushSave` to `useSessionAutoSave` (tracks pending content via ref, cancels debounce and calls saveFn immediately). Added Dock button (⇥) in `SessionEditorPage` header. Mocked `useCampaignChrome` in existing test file. 124 tests pass, lint clean. |
-| CP-4       |        |        |       |
+| CP-4       | done   | 8287868 | Imported `DockedSessionPanel`, added `isDocked` destructure, computed `showDock = Boolean(isDocked && campaignId)`, suppressed `showPanel` when `showDock` is true, updated grid template to use `--dock-width` when docked. Added 2 dock tests using real `CampaignChromeProvider` + `DockTrigger` helper. 126 tests pass. |
 | CP-5       |        |        |       |
 
 ### Summary
