@@ -14,7 +14,7 @@ STATUS VALUES:
 
 | Field         | Value                                              |
 |---------------|----------------------------------------------------|
-| **Status**    | `in-progress`                                      |
+| **Status**    | `done`                                             |
 | **Milestone** | M4.1 — Session CRUD & Editor Foundation            |
 | **Branch**    | `feat/session-log/dock-model`                      |
 | **Plan**      | `Docs/milestones/M4.1/PLAN.md`                     |
