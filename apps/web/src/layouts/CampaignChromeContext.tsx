@@ -28,6 +28,12 @@ export interface CampaignChromeContextValue {
 	resetNotesLayout: () => void;
 	activeSessionId: string | null;
 	setActiveSessionId: (id: string | null) => void;
+	/** Whether the dock panel is open. */
+	isDocked: boolean;
+	/** Open the dock panel with the given session. */
+	dockSession: (id: string) => void;
+	/** Close the dock panel (does not navigate). */
+	undock: () => void;
 	/** Cited sources for the agent chat Context tab (synced from `useChat`, rendered by AppShell). */
 	agentChatContextSources: MessageSource[];
 	setAgentChatContextSources: (sources: MessageSource[]) => void;
@@ -50,6 +56,7 @@ export function CampaignChromeProvider({ children }: { children: ReactNode }) {
 		MessageSource[]
 	>([]);
 	const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
+	const [isDocked, setIsDocked] = useState(false);
 	const [notesLayout, setNotesLayout] = useState<NotesLayout>("panel");
 
 	const openNotes = useCallback(() => {
@@ -71,6 +78,15 @@ export function CampaignChromeProvider({ children }: { children: ReactNode }) {
 
 	const resetNotesLayout = useCallback(() => {
 		setNotesLayout("panel");
+	}, []);
+
+	const dockSession = useCallback((id: string) => {
+		setActiveSessionId(id);
+		setIsDocked(true);
+	}, []);
+
+	const undock = useCallback(() => {
+		setIsDocked(false);
 	}, []);
 
 	const openContext = useCallback(() => {
@@ -97,6 +113,9 @@ export function CampaignChromeProvider({ children }: { children: ReactNode }) {
 			resetNotesLayout,
 			activeSessionId,
 			setActiveSessionId,
+			isDocked,
+			dockSession,
+			undock,
 			agentChatContextSources,
 			setAgentChatContextSources,
 		}),
@@ -113,6 +132,9 @@ export function CampaignChromeProvider({ children }: { children: ReactNode }) {
 			collapseNotesFromFull,
 			resetNotesLayout,
 			activeSessionId,
+			isDocked,
+			dockSession,
+			undock,
 			agentChatContextSources,
 		],
 	);
