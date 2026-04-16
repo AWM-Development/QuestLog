@@ -87,6 +87,8 @@
 	/* ── Layout ── */
 	--rail-width: 56px;
 	--panel-width: 300px;
+	--dock-width: 360px;
+	--sessionlog-max-width: 720px;
 
 	/* ── Typography ── */
 	--font-display: "Crimson Pro", Georgia, "Times New Roman", serif;
@@ -289,6 +291,92 @@ dialog[open] {
 	color: inherit;
 	max-width: none;
 	max-height: none;
+}
+
+/* ── Session notes editor (TipTap) ── */
+.session-editor-root {
+	min-height: 100%;
+	height: 100%;
+	outline: none;
+	padding: var(--space-4);
+	box-sizing: border-box;
+}
+.session-editor-root p.is-editor-empty:first-child::before {
+	content: attr(data-placeholder);
+	color: var(--text-dim);
+	font-style: italic;
+	pointer-events: none;
+	float: left;
+	height: 0;
+}
+.session-editor-root h2 {
+	font-family: var(--font-display);
+	font-size: 17px;
+	font-weight: 600;
+	color: var(--text-primary);
+	margin: var(--space-3) 0 var(--space-2);
+}
+.session-editor-root h3 {
+	font-family: var(--font-display);
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--text-primary);
+	margin: var(--space-2) 0;
+}
+.session-editor-root blockquote {
+	border-left: 3px solid var(--border);
+	padding-left: var(--space-3);
+	color: var(--text-secondary);
+	margin: var(--space-2) 0;
+}
+.session-editor-root code {
+	font-family: var(--font-mono);
+	background: var(--bg-elevated);
+	border-radius: var(--r-sm);
+	padding: 1px 4px;
+	font-size: 0.8125rem;
+}
+.session-editor-root pre {
+	font-family: var(--font-mono);
+	background: var(--bg-elevated);
+	border-radius: var(--r-md);
+	padding: var(--space-3);
+	font-size: 0.8125rem;
+	overflow-x: auto;
+}
+.session-editor-root hr {
+	border: none;
+	border-top: 1px solid var(--border-subtle);
+	margin: var(--space-4) 0;
+}
+
+/* Session finalize form — height reveal (grid 0fr → 1fr) */
+.finalize-form-reveal {
+	display: grid;
+	grid-template-rows: 0fr;
+	transition: grid-template-rows 220ms ease-out;
+}
+.finalize-form-reveal.finalize-form-reveal-open {
+	grid-template-rows: 1fr;
+}
+.finalize-form-reveal-inner {
+	min-height: 0;
+	overflow: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+	.finalize-form-reveal {
+		transition: none;
+	}
+}
+
+@keyframes save-pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.45;
+	}
 }
 
 /* ── Scrollbar styling ── */

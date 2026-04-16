@@ -6,12 +6,12 @@
 	"scripts": {
 		"dev": "tsx watch --env-file=../../.env src/main.ts",
 		"build": "tsc",
-		"process-imports": "tsx src/process-imports.ts",
+		"process-imports": "tsx --env-file=../../.env src/process-imports.ts",
 		"test": "vitest run",
 		"typecheck": "tsc -b",
 		"lint": "biome check .",
 		"db:generate": "drizzle-kit generate",
-		"db:migrate": "tsx src/db/migrate.ts",
+		"db:migrate": "tsx --env-file=../../.env src/db/migrate.ts",
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio"
 	},

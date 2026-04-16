@@ -7,6 +7,7 @@ import {
 	useState,
 } from "react";
 import { useNavigate, useParams } from "react-router";
+import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../lib/trpc.js";
 import { useChat } from "../hooks/useChat.js";
 import { useConversations } from "../hooks/useConversations.js";
@@ -14,7 +15,6 @@ import { useLocalStorage } from "../hooks/useLocalStorage.js";
 import { useMediaQuery } from "../hooks/useMediaQuery.js";
 import { ChatHeader } from "./ChatHeader.js";
 import { ChatInput } from "./ChatInput.js";
-import { ContextPanel } from "./ContextPanel.js";
 import { ConversationDrawer } from "./ConversationDrawer.js";
 import { MessageList } from "./MessageList.js";
 
@@ -45,10 +45,14 @@ export function ChatPage() {
 		"questlog-drawer-open",
 		false,
 	);
-	const [panelOpen, setPanelOpen] = useLocalStorage(
-		"questlog-panel-open",
-		false,
-	);
+	const {
+		panelOpen,
+		panelTab,
+		setPanelOpen,
+		openContext,
+		openNotes,
+		setAgentChatContextSources,
+	} = useCampaignChrome();
 	const [starterFill, setStarterFill] = useState<string | undefined>(undefined);
 	const pendingMessageRef = useRef<string | null>(null);
 	const creatingRef = useRef(false);
@@ -80,6 +84,7 @@ export function ChatPage() {
 	// Chat
 	const {
 		messages,
+		agentContextSources,
 		sendMessage,
 		cancel: cancelChat,
 		isLoading: chatLoading,
@@ -110,13 +115,6 @@ export function ChatPage() {
 
 	// Active conversation data
 	const activeConversation = conversations.find((c) => c.id === conversationId);
-
-	// Extract sources from agent messages for the context panel
-	const panelSources = useMemo(() => {
-		return messages
-			.filter((m) => m.role === "assistant" && m.sources)
-			.flatMap((m) => m.sources ?? []);
-	}, [messages]);
 
 	// Handlers
 	const handleSelectConversation = useCallback(
@@ -165,9 +163,17 @@ export function ChatPage() {
 		[conversationId, updateTags],
 	);
 
-	const handleClosePanel = useCallback(() => {
-		setPanelOpen(false);
-	}, [setPanelOpen]);
+	useEffect(() => {
+		setAgentChatContextSources(agentContextSources);
+	}, [agentContextSources, setAgentChatContextSources]);
+
+	const handleToggleContextPanel = useCallback(() => {
+		if (panelOpen && panelTab === "context") {
+			setPanelOpen(false);
+		} else {
+			openContext();
+		}
+	}, [panelOpen, panelTab, setPanelOpen, openContext]);
 
 	return (
 		<div style={chatPageStyle}>
@@ -193,9 +199,11 @@ export function ChatPage() {
 					conversationTags={activeConversation?.tags ?? []}
 					allTags={allTags}
 					drawerOpen={drawerOpen}
-					panelOpen={panelOpen}
+					contextPanelActive={panelOpen && panelTab === "context"}
+					notesPanelActive={panelOpen && panelTab === "notes"}
 					onToggleDrawer={() => setDrawerOpen(!drawerOpen)}
-					onTogglePanel={() => setPanelOpen(!panelOpen)}
+					onOpenNotes={openNotes}
+					onToggleContextPanel={handleToggleContextPanel}
 					onEditTitle={handleEditTitle}
 					onUpdateTags={handleUpdateTags}
 				/>
@@ -217,14 +225,6 @@ export function ChatPage() {
 					onStarterFill={starterFill}
 				/>
 			</div>
-
-			{panelOpen && (
-				<ContextPanel
-					sources={panelSources}
-					onClose={handleClosePanel}
-					isOverlay={isTablet}
-				/>
-			)}
 		</div>
 	);
 }

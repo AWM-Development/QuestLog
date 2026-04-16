@@ -211,17 +211,18 @@
 
 ### Tasks
 
-- [ ] **4.1 — Session CRUD & editor foundation**
+- [x] **4.1 — Session CRUD & editor foundation**
   - Branch: `feat/session-log/crud-editor`
-  - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
+  - 🎨 **Visual spec required** — See `Docs/IMPLEMENTATION_NOTES.md` for the revised main-area + dock model (supersedes the original sidebar-only spec).
   - PRD ref: §4.3 Session Log Object, The Notes Panel
   - Work:
-    - Session tRPC router: `create`, `getById`, `list`, `update`, `finalize`
-    - Session service with business logic
-    - Rich text editor integration (TipTap — best fit for inline entity linking)
-    - Session notes panel as collapsible sidebar component
-    - Auto-save draft (debounced local persistence)
-  - Tests: session service CRUD tests, editor rendering tests
+    - Session tRPC router: `create`, `getById`, `list`, `update`, `finalize` ✅ (from initial pass)
+    - Session service with business logic ✅
+    - Rich text editor integration (TipTap) ✅
+    - **Main-area SessionEditorPage** at `/campaign/:id/sessions/:sessionId` with 720px centered column, Notion-style overline metadata, borderless title, contextual chrome (bubble + slash menus, no persistent toolbar)
+    - **Dockable right-rail DockedSessionPanel** for mid-session quick capture (`--dock-width: 360px`), session switcher dropdown, share-via-save-and-remount model with the main editor
+    - Auto-save draft (debounced server persistence via tRPC) ✅
+  - Tests: session service CRUD tests ✅, editor rendering tests ✅, SessionEditorPage routing + navigation tests, DockedSessionPanel test
 
 - [ ] **4.2 — Entity detection & linking**
   - Branch: `feat/session-log/entity-linking`
@@ -244,6 +245,40 @@
     - Suggest relationship edges from entity co-occurrence
     - Session finalization dialog (title, number, summary, tags)
   - Tests: integration test for full save→process→verify pipeline
+
+---
+
+## Milestone 4.5: UI Component Library Refactor
+
+**Goal:** Replace the style-preset pattern (spreading `buttonAccent` onto raw `<button>` elements) with proper React component abstractions. Hover state, disabled handling, `type="button"`, aria attributes, and loading states are defined once — never duplicated at callsites.
+
+**Estimated effort:** 1–2 sessions
+
+**Background & Rationale:** A full codebase audit (2026-04-16) found that `styles.ts` exports style presets but every callsite still re-implements behavior: `type="button"`, `useState` hover/active hooks, inconsistent disabled opacity (0.4 vs 0.5), and bespoke loading state handling. This milestone creates 8 shared component primitives (Button, IconButton, Input, FormField, Chip, Card, Alert, EntityAvatar, Modal) and migrates all callsites. Pixels do not change — this is a pure refactor. Three lower-tier components (EmptyState, SkeletonBlock, Toast) are deferred to the milestones where they are first needed.
+
+**Plan:** `Docs/milestones/M4.5/PLAN.md`
+
+### Tasks
+
+- [ ] **4.5.1 — Button + IconButton**
+  - Branch: `refactor/ui-component-library`
+  - Work: Create `Button.tsx` (variants: accent/secondary/ghost/action, sizes: md/sm, loading state) and `IconButton.tsx` (sizes: 24/28/32, active state, required aria-label). Migrate all callsites. Remove per-callsite `useState` hover/active hooks, inconsistent disabled styles.
+  - Tests: Component tests for each variant, disabled, loading states; verify all migrated callsites still pass their existing tests.
+
+- [ ] **4.5.2 — Input + FormField**
+  - Branch: `refactor/ui-component-library` (same branch)
+  - Work: Create `Input.tsx` (consistent focus ring, background token) and `FormField.tsx` (label, hint, error layout wrapper). Refactor `FinalizeForm` (5 repeated label+input blocks) and `CampaignCreateModal` (4 local inputStyle usages) to use `<FormField>`.
+  - Tests: FormField renders label, error, required indicator. Input focus ring applies correct tokens.
+
+- [ ] **4.5.3 — Chip + Card + Alert**
+  - Branch: `refactor/ui-component-library` (same branch)
+  - Work: Create `Chip.tsx` (entity/tag/badge/source variants), `Card.tsx` (div/button/link rendering, encapsulated hover), `Alert.tsx` (error/warning). Migrate campaign badges, tag chips, campaign cards, session cards, error blocks.
+  - Tests: Chip maps entityType to correct color tokens. Card renders correct element type. Alert has role="alert".
+
+- [ ] **4.5.4 — EntityAvatar + Modal**
+  - Branch: `refactor/ui-component-library` (same branch)
+  - Work: Create `EntityAvatar.tsx` (entityType → color, initials, size). Create `Modal.tsx` (scrim, focus trap, Escape key, title). Refactor `ContextPanel` avatar and `CampaignCreateModal` chrome.
+  - Tests: EntityAvatar maps entity types to correct colors. Modal traps focus, calls onClose on Escape and scrim click.
 
 ---
 
@@ -483,5 +518,13 @@
     - Run through 2–3 actual sessions using QuestLog
     - Document bugs, UX friction, and missing features
     - Fix critical issues before calling v1 "done"
+
+- [ ] **9.6 — TipTap link URL UI (session editor)**
+  - Branch: `feat/polish/session-editor-link`
+  - Background: Milestone 4.1 ships `window.prompt` for bubble-menu link href as a deliberate shortcut; production polish needs an in-app URL field (popover anchored to the bubble menu or inline), keyboard focus order, and design-token styling.
+  - Work:
+    - Replace `window.prompt` in `SessionEditor` bubble menu with an accessible URL control
+    - Validate / cancel flows; preserve existing link toggle behavior from StarterKit
+  - Tests: component test or integration check for link set/remove
 
 ---

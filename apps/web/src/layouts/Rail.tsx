@@ -1,4 +1,6 @@
+import type { CSSProperties } from "react";
 import { NavLink } from "react-router";
+import { trpc } from "../lib/trpc.js";
 
 /**
  * Rail navigation — replaces the old Sidebar.tsx.
@@ -20,7 +22,22 @@ interface RailProps {
 	campaignId: string | undefined;
 }
 
-const railStyle: React.CSSProperties = {
+const draftSessionDot: CSSProperties = {
+	position: "absolute",
+	top: 2,
+	right: 2,
+	width: 7,
+	height: 7,
+	borderRadius: "50%",
+	backgroundColor: "var(--ent-faction)",
+	border: "2px solid var(--bg-surface)",
+	boxSizing: "content-box",
+	pointerEvents: "none",
+};
+
+const railStyle: CSSProperties = {
+	position: "relative",
+	zIndex: 25,
 	width: "var(--rail-width)",
 	backgroundColor: "var(--bg-surface)",
 	borderRight: "1px solid var(--border-subtle)",
@@ -32,7 +49,7 @@ const railStyle: React.CSSProperties = {
 	overflow: "hidden",
 };
 
-const logoStyle: React.CSSProperties = {
+const logoStyle: CSSProperties = {
 	width: "34px",
 	height: "34px",
 	borderRadius: "var(--r-md)",
@@ -45,7 +62,7 @@ const logoStyle: React.CSSProperties = {
 	transition: "background 0.2s",
 };
 
-const iconBaseStyle: React.CSSProperties = {
+const iconBaseStyle: CSSProperties = {
 	width: "38px",
 	height: "38px",
 	borderRadius: "var(--r-md)",
@@ -57,14 +74,14 @@ const iconBaseStyle: React.CSSProperties = {
 	transition: "all 0.15s",
 };
 
-const separatorStyle: React.CSSProperties = {
+const separatorStyle: CSSProperties = {
 	width: "20px",
 	height: "1px",
 	backgroundColor: "var(--border-subtle)",
 	margin: "var(--space-2) 0",
 };
 
-const mascotStyle: React.CSSProperties = {
+const mascotStyle: CSSProperties = {
 	width: "38px",
 	height: "38px",
 	borderRadius: "var(--r-md)",
@@ -78,6 +95,13 @@ const mascotStyle: React.CSSProperties = {
 };
 
 export function Rail({ campaignId }: RailProps) {
+	const listQuery = trpc.session.list.useQuery(
+		{ campaignId: campaignId ?? "" },
+		{ enabled: Boolean(campaignId), staleTime: 60_000 },
+	);
+	const hasDraftSession =
+		listQuery.data?.some((s) => s.status === "draft") ?? false;
+
 	return (
 		<nav style={railStyle}>
 			{/* Logo */}
@@ -96,22 +120,35 @@ export function Rail({ campaignId }: RailProps) {
 
 			{/* Campaign nav items */}
 			{campaignId
-				? navItems.map((item) => (
-						<NavLink
-							key={item.to}
-							to={`/campaign/${campaignId}/${item.to}`}
-							title={item.label}
-							style={({ isActive }) => ({
-								...iconBaseStyle,
-								color: isActive ? "var(--accent)" : "var(--text-muted)",
-								backgroundColor: isActive
-									? "var(--accent-muted)"
-									: "transparent",
-							})}
-						>
-							{item.icon}
-						</NavLink>
-					))
+				? navItems.map((item) => {
+						const showDraftDot = item.to === "sessions" && hasDraftSession;
+						return (
+							<span
+								key={item.to}
+								style={{ position: "relative", display: "inline-flex" }}
+							>
+								<NavLink
+									to={`/campaign/${campaignId}/${item.to}`}
+									title={item.label}
+									style={({ isActive }) => ({
+										...iconBaseStyle,
+										color: isActive ? "var(--accent)" : "var(--text-muted)",
+										backgroundColor: isActive
+											? "var(--accent-muted)"
+											: "transparent",
+									})}
+								>
+									{item.icon}
+								</NavLink>
+								{showDraftDot ? (
+									<span
+										style={draftSessionDot}
+										aria-label="Draft session in progress"
+									/>
+								) : null}
+							</span>
+						);
+					})
 				: null}
 
 			{/* Separator */}

@@ -53,6 +53,7 @@ const textareaStyle: CSSProperties = {
 	margin: 0,
 };
 
+// 32×32 is intentionally larger than iconButtonBase (24) — send/stop are primary actions
 const actionButtonBase: CSSProperties = {
 	width: 32,
 	height: 32,

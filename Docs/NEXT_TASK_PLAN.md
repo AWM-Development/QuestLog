@@ -14,7 +14,7 @@ STATUS VALUES:
 
 | Field         | Value                                              |
 |---------------|----------------------------------------------------|
-| **Status**    | `reviewed`                                         |
-| **Milestone** | M4.1 — Session CRUD & Editor Foundation            |
-| **Branch**    | `feat/session-log/dock-model`                      |
-| **Plan**      | `Docs/milestones/M4.1/PLAN.md`                     |
+| **Status**    | `ready`                                            |
+| **Milestone** | M4.5 — UI Component Library Refactor               |
+| **Branch**    | `refactor/ui-component-library`                    |
+| **Plan**      | `Docs/milestones/M4.5/PLAN.md`                     |

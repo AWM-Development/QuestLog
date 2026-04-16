@@ -3,6 +3,12 @@ export {
 	CampaignUpdateInput,
 } from "./campaign.js";
 export {
+	SessionCreateInput,
+	SessionFinalizeInput,
+	SessionListInput,
+	SessionUpdateInput,
+} from "./session.js";
+export {
 	GetSourceInput,
 	ListSourcesInput,
 	SourceKindSchema,

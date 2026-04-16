@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "../../../lib/trpc.js";
-import type { DisplayMessage } from "../types.js";
+import type { DisplayMessage, MessageSource } from "../types.js";
 
 interface UseChatReturn {
 	messages: DisplayMessage[];
+	/** Citations from persisted assistant messages — stable when `getMessages` data is unchanged (for context panel sync). */
+	agentContextSources: MessageSource[];
 	sendMessage: (query: string) => Promise<void>;
 	/** Aborts an in-flight stream (same as unmount). Wire to a Cancel control. */
 	cancel: () => void;
@@ -59,7 +61,6 @@ export function useChat(
 	const [error, setError] = useState<UseChatReturn["error"]>(null);
 	const lastQueryRef = useRef<string>("");
 	const abortRef = useRef<AbortController | null>(null);
-	const streamIdCounter = useRef(0);
 
 	const sendMessage = useCallback(
 		async (query: string) => {
@@ -251,15 +252,19 @@ export function useChat(
 		abortRef.current?.abort();
 	}, []);
 
-	// Merge server messages with optimistic/streaming messages
-	const serverMessages: DisplayMessage[] = (messagesQuery.data ?? []).map(
-		(m) => ({
+	const { serverMessages, agentContextSources } = useMemo(() => {
+		const raw = messagesQuery.data ?? [];
+		const serverMessages: DisplayMessage[] = raw.map((m) => ({
 			id: m.id,
 			role: m.role,
 			content: m.content,
 			sources: m.sources,
-		}),
-	);
+		}));
+		const agentContextSources: MessageSource[] = raw
+			.filter((m) => m.role === "assistant" && m.sources?.length)
+			.flatMap((m) => m.sources ?? []);
+		return { serverMessages, agentContextSources };
+	}, [messagesQuery.data]);
 
 	// Abort in-progress stream on unmount
 	useEffect(() => {
@@ -268,21 +273,22 @@ export function useChat(
 		};
 	}, []);
 
-	const allMessages = [...serverMessages, ...optimisticMessages];
-
-	// Add streaming message if actively streaming
-	if (isStreaming && streamingContent) {
-		streamIdCounter.current += 1;
-		allMessages.push({
-			id: `streaming-${streamIdCounter.current}`,
-			role: "assistant",
-			content: streamingContent,
-			isStreaming: true,
-		});
-	}
+	const allMessages: DisplayMessage[] = useMemo(() => {
+		const merged = [...serverMessages, ...optimisticMessages];
+		if (isStreaming && streamingContent) {
+			merged.push({
+				id: "streaming-assistant",
+				role: "assistant",
+				content: streamingContent,
+				isStreaming: true,
+			});
+		}
+		return merged;
+	}, [serverMessages, optimisticMessages, isStreaming, streamingContent]);
 
 	return {
 		messages: allMessages,
+		agentContextSources,
 		sendMessage,
 		cancel,
 		isLoading,

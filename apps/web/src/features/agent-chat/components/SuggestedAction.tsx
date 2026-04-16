@@ -1,4 +1,5 @@
 import { type CSSProperties, useState } from "react";
+import { buttonAction } from "../../../components/styles.js";
 
 interface SuggestedActionProps {
 	label: string;
@@ -6,15 +7,10 @@ interface SuggestedActionProps {
 }
 
 const actionStyle: CSSProperties = {
+	...buttonAction,
 	padding: "6px 12px",
-	borderRadius: "6px",
-	border: "0.5px solid var(--border)",
-	background: "rgba(14,24,32,0.6)",
-	fontSize: "12px",
-	color: "var(--text-secondary)",
-	cursor: "pointer",
+	borderRadius: "var(--r-sm)",
 	transition: "all 150ms ease",
-	fontFamily: "var(--font-body)",
 };
 
 const actionHoverStyle: CSSProperties = {

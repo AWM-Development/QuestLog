@@ -9,8 +9,8 @@
 		},
 		{
 			"name": "web-client",
-			"runtimeExecutable": "pnpm",
-			"runtimeArgs": ["--filter", "@questlog/web", "dev"],
+			"runtimeExecutable": "/bin/bash",
+			"runtimeArgs": ["-c", "source ~/.nvm/nvm.sh && nvm use 24 && pnpm --filter @questlog/web dev"],
 			"port": 5173
 		}
 	]

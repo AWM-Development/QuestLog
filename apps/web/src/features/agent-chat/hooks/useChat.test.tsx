@@ -61,6 +61,32 @@ describe("useChat", () => {
 		useQueryMock.mockReturnValue({ data: [] });
 	});
 
+	it("exposes agentContextSources from persisted assistant messages only", () => {
+		useQueryMock.mockReturnValue({
+			data: [
+				{ id: "u1", role: "user", content: "hi", sources: null },
+				{
+					id: "a1",
+					role: "assistant",
+					content: "yo",
+					sources: [{ chunkId: "c1", sourceName: "Doc", sourceId: "s1" }],
+				},
+			],
+		});
+
+		function SourcesHarness() {
+			const { agentContextSources } = useChat("campaign-1", "conversation-1");
+			return (
+				<div data-testid="sources">{JSON.stringify(agentContextSources)}</div>
+			);
+		}
+
+		render(<SourcesHarness />);
+		expect(screen.getByTestId("sources")).toHaveTextContent(
+			JSON.stringify([{ chunkId: "c1", sourceName: "Doc", sourceId: "s1" }]),
+		);
+	});
+
 	it("handles streaming success and invalidates on done", async () => {
 		invalidateMessages.mockResolvedValue(undefined);
 		invalidateList.mockResolvedValue(undefined);

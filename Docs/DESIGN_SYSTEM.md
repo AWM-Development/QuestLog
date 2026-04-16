@@ -271,8 +271,10 @@ Single column. Bottom tab bar replaces rail. Panel is full-screen sheet.
 
 ```css
 :root {
-  --rail-width:    56px;
-  --panel-width:   300px;
+  --rail-width:           56px;
+  --panel-width:          300px;  /* agent-chat context panel */
+  --dock-width:           360px;  /* session editor docked panel */
+  --sessionlog-max-width: 720px;  /* centered writing column */
 }
 ```
 
@@ -285,10 +287,33 @@ Single column. Bottom tab bar replaces rail. Panel is full-screen sheet.
   height: 100vh;
 }
 
+/* agent chat → right panel (Context / cited sources) */
 .app.panel-open {
   grid-template-columns: var(--rail-width) 1fr var(--panel-width);
 }
+
+/* session editor → right rail dock (mid-session quick capture) */
+.app.dock-open {
+  grid-template-columns: var(--rail-width) 1fr var(--dock-width);
+}
 ```
+
+### Session Editor — Main Area vs. Dock
+
+The session editor has two surfaces that share state via save-and-remount (content persists to the server on every debounced autosave, so remounting picks up the latest state without loss):
+
+- **Main area (full editor, default).** Route: `/campaign/:id/sessions/:sessionId`. Content column is centered at `var(--sessionlog-max-width)` (720px). Sticky top header contains: `← Sessions` back link · overline (session number + date) · save-status · `Dock` · `Save Session`.
+- **Dock (right rail).** Width `var(--dock-width)` (360px). Dock header contains a session-switcher dropdown (last 10 sessions + "+ New") · save-status · `Undock` · close. Body is the same metadata block + TipTap editor, but without the 720px max-width constraint (fills the 360px column).
+
+**Metadata block pattern (shared between both surfaces):**
+```
+SESSION 9 · MAR 15, 2026 · DRAFT        ← overline, font-mono 10px, uppercase, text-muted
+The Feast of St. Andral                 ← borderless input, font-display 17px weight 600
+─────────────────────────────────────   ← 1px border-subtle
+```
+- Session number is **not** inline-editable (edited via the Save Session / finalize form).
+- Date is **click-to-edit** (reveals a native date picker styled to match).
+- Finalized state replaces `DRAFT` with a `✓` prefix in `--status-success`.
 
 ---
 

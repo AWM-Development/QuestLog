@@ -1,11 +1,11 @@
 import { screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { AppShell } from "./layouts/AppShell.js";
-import { renderWithRouter } from "./test-utils.js";
+import { renderWithRouterAndTrpc } from "./test-utils.js";
 
 describe("App", () => {
 	it("renders the QuestLog brand", () => {
-		renderWithRouter(
+		renderWithRouterAndTrpc(
 			[
 				{
 					path: "/",
