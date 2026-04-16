@@ -6,6 +6,7 @@ import {
 	useState,
 } from "react";
 import {
+	buttonAccent,
 	buttonSmallAccent,
 	buttonSmallSecondary,
 	iconButtonBase,

@@ -147,7 +147,7 @@ export function ConversationDrawer({
 							fontSize: "11px",
 							color: "var(--text-dim)",
 							fontStyle: "italic",
-							padding: "12px 4px",
+							padding: "var(--space-3) var(--space-1)",
 							textAlign: "center",
 						}}
 					>

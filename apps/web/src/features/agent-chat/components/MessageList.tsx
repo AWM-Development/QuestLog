@@ -18,7 +18,7 @@ interface MessageListProps {
 const messageListStyle: CSSProperties = {
 	flex: 1,
 	overflowY: "auto",
-	padding: "24px 20px",
+	padding: "var(--space-6) var(--space-5)",
 	display: "flex",
 	flexDirection: "column",
 	gap: "24px",
@@ -29,19 +29,19 @@ const skeletonContainerStyle: CSSProperties = {
 	display: "flex",
 	flexDirection: "column",
 	gap: "24px",
-	padding: "24px 20px",
+	padding: "var(--space-6) var(--space-5)",
 };
 
 const skeletonHeaderStyle: CSSProperties = {
 	display: "flex",
 	alignItems: "center",
 	gap: "6px",
-	marginBottom: "8px",
+	marginBottom: "var(--space-2)",
 };
 
 const skeletonBarStyle = (width: string): CSSProperties => ({
 	height: "12px",
-	borderRadius: "6px",
+	borderRadius: "var(--r-sm)",
 	background: "var(--bg-elevated)",
 	width,
 	animation: "pulse 1s ease-in-out infinite",

@@ -26,7 +26,7 @@ const sourcesRowStyle: CSSProperties = {
 	display: "flex",
 	flexWrap: "wrap",
 	gap: "6px",
-	marginTop: "12px",
+	marginTop: "var(--space-3)",
 };
 
 /** Render agent text with basic markdown: **bold** → <strong> */

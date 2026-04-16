@@ -301,7 +301,48 @@ export function useSessionNotes(campaignId: string) {
 }
 ```
 
-### 5.5 TipTap session editor (Milestone 4.1+)
+### 5.5 Component-First UI Pattern (Milestone 4.5+)
+
+**The rule: always reach for a shared component before touching a raw HTML element.**
+
+After Milestone 4.5, `apps/web/src/components/` contains a set of primitive UI components. Use them everywhere. Do not spread style presets onto raw elements at a feature callsite — that is the old pattern.
+
+#### Available shared components
+
+| Component | Use for | Do NOT use |
+|-----------|---------|------------|
+| `Button` | Any clickable button with text | Raw `<button>` with `style={buttonAccent}` etc. |
+| `IconButton` | Icon-only buttons (no visible text label) | Raw `<button>` with `style={iconButtonBase}` etc. |
+| `Input` | Text/number/date/search inputs | Raw `<input>` with `style={inputField}` |
+| `FormField` | Label + input + error layout | Manual `<label><span>...<input>` repetition |
+| `Chip` | Tags, entity badges, source pills | Raw `<span>` with `style={chipBase}` |
+| `Card` | Navigable/interactive card surfaces | Raw `<div>` + onMouseEnter style mutation |
+| `Alert` | Inline error or warning messages | Raw `<div>` with `style={inlineAlertError}` |
+| `EntityAvatar` | Entity initials/icon avatar | Raw `<div>` with `style={avatarStyle}` |
+| `Modal` | Dialog chrome with scrim and focus trap | Inline dialog + overlay from scratch |
+| `PageContainer` | Page max-width + padding wrapper | Raw `<div style={pageContainer}>` |
+| `PageHeader` | Page title + subtitle + actions row | Raw `<h1>` + `<p>` + row div |
+
+#### When adding new UI
+
+1. Check `apps/web/src/components/` first. If a component exists, use it.
+2. If you need a variant that doesn't exist, add it to the existing component via a prop.
+3. If genuinely new primitive territory, create a new component in `apps/web/src/components/`. Write a test first.
+4. Feature-level style files (e.g. `features/agent-chat/styles.ts`) are for layout and feature-specific presets only — not for redefining buttons, inputs, or chips.
+
+#### Deferred components (add when first needed)
+
+| Component | Add in |
+|-----------|--------|
+| `EmptyState` | M5.1 (entity pages) |
+| `SkeletonBlock` | M9.2 (performance polish) |
+| `Toast` / `useToast` | M10.4 (feedback collection) |
+
+#### Style presets in `styles.ts` are internal
+
+After M4.5, `buttonAccent`, `iconButtonBase`, `chipBase`, etc. are **implementation details** of their respective components. Feature files should not import them directly. The exception is layout presets (`panelSection`, `panelSectionTitle`, `editorSurface`, etc.) which have no component wrapper and are still valid to use.
+
+### 5.6 TipTap session editor (Milestone 4.1+)
 
 - **Packages:** `@tiptap/react`, `@tiptap/react/menus` (`BubbleMenu`, `FloatingMenu`), `@tiptap/starter-kit`, `@tiptap/extension-placeholder`, `@tiptap/core` (types). Keep versions aligned (same minor as other `@tiptap/*` packages).
 - **Storage:** Persist `sessions.content` as a JSON string of `editor.getJSON()` (not HTML). On load, pass `JSON.parse` into `useEditor({ content })` or parse failure → wrap plain text in a paragraph node.
@@ -394,6 +435,7 @@ Run through this before merging **every** feature branch. This is your self-revi
 - [ ] No layout shifts during data fetching (skeletons or placeholders)
 - [ ] Accessible: semantic HTML, keyboard navigable, sufficient contrast
 - [ ] Responsive: tested at desktop (1200px+) and tablet (768px) widths
+- [ ] Used shared components from `apps/web/src/components/` (Button, IconButton, Input, FormField, Chip, Card, Alert, Modal, EntityAvatar) — no raw HTML elements with spread style presets at feature callsites (see §5.5)
 
 ### Before Merge
 - [ ] `git diff main` — review every changed line yourself

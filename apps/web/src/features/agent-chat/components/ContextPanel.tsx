@@ -54,6 +54,7 @@ const entityRowStyle: CSSProperties = {
 	padding: "6px 0",
 };
 
+// 30×30 entity avatar — intentionally between iconButtonBase (24) and standard card avatar sizing
 const avatarStyle: CSSProperties = {
 	width: 30,
 	height: 30,

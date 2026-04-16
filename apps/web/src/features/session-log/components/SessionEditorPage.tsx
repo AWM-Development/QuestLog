@@ -45,7 +45,7 @@ const headerGroup: CSSProperties = {
 
 const backLinkStyle: CSSProperties = {
 	...buttonGhost,
-	padding: "4px 10px",
+	padding: "var(--space-1) 10px",
 	fontSize: "0.75rem",
 	textDecoration: "none",
 	display: "inline-flex",
