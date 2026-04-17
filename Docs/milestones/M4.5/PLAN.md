@@ -6,7 +6,7 @@
 
 | Field         | Value                                      |
 |---------------|--------------------------------------------|
-| **Status**    | `none`                                     |
+| **Status**    | `in-progress`                              |
 | **Milestone** | M4.5 — UI Component Library Refactor       |
 | **Branch**    | `refactor/ui-component-library`            |
 | **PRD ref**   | §5 Design System                           |
