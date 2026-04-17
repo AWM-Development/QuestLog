@@ -2,7 +2,7 @@ import { Button } from "@/components/Button.js";
 import { Input } from "@/components/Input.js";
 import { Textarea } from "@/components/Textarea.js";
 import { trpc } from "@/lib/trpc.js";
-import { useEffect, useRef, useState } from "react";
+import { type SubmitEvent, useEffect, useRef, useState } from "react";
 
 interface PasteTextInputProps {
 	campaignId: string;
@@ -52,7 +52,7 @@ export function PasteTextInput({
 		if (isExpanded) onClose?.();
 	}
 
-	function handleSubmit(e: React.FormEvent) {
+	function handleSubmit(e: SubmitEvent) {
 		e.preventDefault();
 		if (!title.trim() || !content.trim()) return;
 		mutation.mutate({

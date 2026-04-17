@@ -14,9 +14,9 @@ const tagPillStyle: CSSProperties = {
 	alignItems: "center",
 	borderRadius: "var(--r-sm)",
 	fontFamily: "var(--font-body)",
-	gap: "3px",
+	gap: "var(--space-1)",
 	fontSize: "10px",
-	padding: "2px 7px",
+	padding: "var(--space-1) var(--space-2)",
 };
 
 const removeButtonStyle: CSSProperties = {
@@ -48,12 +48,12 @@ const popoverStyle: CSSProperties = {
 
 const popoverInputStyle: CSSProperties = {
 	width: "100%",
-	padding: "6px 8px",
+	padding: "var(--space-2)",
 	boxSizing: "border-box",
 };
 
 const suggestionStyle: CSSProperties = {
-	padding: "5px 8px",
+	padding: "var(--space-2)",
 	fontSize: "11px",
 	color: "var(--text-secondary)",
 	cursor: "pointer",

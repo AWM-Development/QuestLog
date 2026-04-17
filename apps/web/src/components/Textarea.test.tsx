@@ -13,7 +13,7 @@ describe("Textarea", () => {
 		render(<Textarea aria-label="notes" />);
 		const el = screen.getByLabelText("notes");
 		fireEvent.focus(el);
-		expect(el).toHaveStyle({ borderColor: "var(--border-hover)" });
+		expect(el).toHaveStyle({ boxShadow: "0 0 0 3px var(--state-active-soft)" });
 	});
 
 	it("background override takes effect", () => {

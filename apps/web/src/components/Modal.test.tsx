@@ -34,15 +34,27 @@ describe("Modal", () => {
 		expect(titleEl?.textContent).toBe("My Dialog");
 	});
 
-	it("calls onClose when Escape key is pressed on the overlay", () => {
+	it("calls onClose when dialog cancel event fires", () => {
 		const onClose = vi.fn();
 		render(
 			<Modal title="Test" onClose={onClose}>
 				Content
 			</Modal>,
 		);
-		const overlay = document.querySelector(".modal-overlay") as HTMLElement;
-		fireEvent.keyDown(overlay, { key: "Escape" });
+		const dialog = screen.getByRole("dialog");
+		fireEvent(dialog, new Event("cancel", { bubbles: true, cancelable: true }));
+		expect(onClose).toHaveBeenCalledTimes(1);
+	});
+
+	it("Escape does not double-call onClose", () => {
+		const onClose = vi.fn();
+		render(
+			<Modal title="Test" onClose={onClose}>
+				<input aria-label="field" />
+			</Modal>,
+		);
+		const dialog = screen.getByRole("dialog");
+		fireEvent(dialog, new Event("cancel", { bubbles: true, cancelable: true }));
 		expect(onClose).toHaveBeenCalledTimes(1);
 	});
 

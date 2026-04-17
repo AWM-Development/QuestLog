@@ -1,28 +1,19 @@
 import { Button } from "@/components/Button.js";
-import { FormField } from "@/components/FormField.js";
-import { Input } from "@/components/Input.js";
-import { Modal } from "@/components/Modal.js";
+import { Modal } from "@/components/layout/Modal.js";
+import {
+	FormField,
+	Input,
+	Select,
+	Textarea,
+} from "@/components/primitives/index.js";
 import { trpc } from "@/lib/trpc.js";
 import { CAMPAIGN_THEMES } from "@questlog/shared";
-import { type CSSProperties, type FormEvent, useState } from "react";
+import { type SubmitEvent, useState } from "react";
 import { useNavigate } from "react-router";
 
 interface CampaignCreateModalProps {
 	onClose: () => void;
 }
-
-// Inputs in this modal sit inside an elevated surface, so they recede to --bg-void.
-// The padding/radius also differs from the standard inputField to match the design.
-const modalInputStyle: CSSProperties = {
-	width: "100%",
-	padding: "var(--space-2) var(--space-4)",
-	backgroundColor: "var(--bg-void)",
-	border: "1px solid var(--border)",
-	borderRadius: "var(--r-sm)",
-	color: "var(--text-primary)",
-	fontSize: "0.875rem",
-	fontFamily: "var(--font-body)",
-};
 
 export function CampaignCreateModal({ onClose }: CampaignCreateModalProps) {
 	const navigate = useNavigate();
@@ -40,7 +31,7 @@ export function CampaignCreateModal({ onClose }: CampaignCreateModalProps) {
 		},
 	});
 
-	const handleSubmit = (e: FormEvent) => {
+	const handleSubmit = (e: SubmitEvent) => {
 		e.preventDefault();
 		if (!name.trim()) return;
 
@@ -76,32 +67,43 @@ export function CampaignCreateModal({ onClose }: CampaignCreateModalProps) {
 
 				<div style={{ marginBottom: "var(--space-4)" }}>
 					<FormField label="Description" htmlFor="campaign-description">
-						<textarea
+						<Textarea
 							id="campaign-description"
 							maxLength={500}
 							rows={3}
 							value={description}
 							onChange={(e) => setDescription(e.target.value)}
 							placeholder="Brief summary of the campaign..."
-							style={{ ...modalInputStyle, resize: "vertical" }}
+							background="var(--bg-void)"
+							style={{
+								width: "100%",
+								borderRadius: "var(--r-sm)",
+								padding: "var(--space-2) var(--space-4)",
+								resize: "vertical",
+							}}
 						/>
 					</FormField>
 				</div>
 
 				<div style={{ marginBottom: "var(--space-4)" }}>
 					<FormField label="Theme" htmlFor="campaign-theme">
-						<select
+						<Select
 							id="campaign-theme"
 							value={theme}
 							onChange={(e) => setTheme(e.target.value)}
-							style={modalInputStyle}
+							background="var(--bg-void)"
+							style={{
+								width: "100%",
+								borderRadius: "var(--r-sm)",
+								padding: "var(--space-2) var(--space-4)",
+							}}
 						>
 							{CAMPAIGN_THEMES.map((t) => (
 								<option key={t} value={t}>
 									{t.charAt(0).toUpperCase() + t.slice(1)}
 								</option>
 							))}
-						</select>
+						</Select>
 					</FormField>
 				</div>
 

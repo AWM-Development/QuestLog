@@ -1,7 +1,4 @@
-import {
-	sourceChipBase,
-	sourceChipColors,
-} from "../../../components/styles.js";
+import { Chip } from "../../../components/primitives/Chip.js";
 import type { MessageSource } from "../types.js";
 
 interface SourceChipProps {
@@ -36,13 +33,14 @@ export function SourceChip({ source, onClick }: SourceChipProps) {
 	const icon = icons[type];
 
 	return (
-		<button
-			type="button"
+		<Chip
+			variant="source"
+			sourceType={type}
+			as="button"
 			tabIndex={0}
-			style={{ ...sourceChipBase, ...sourceChipColors[type] }}
 			onClick={onClick}
 		>
 			{icon} {source.sourceName}
-		</button>
+		</Chip>
 	);
 }

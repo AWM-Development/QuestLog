@@ -49,7 +49,7 @@ const titleStyle: CSSProperties = {
 const timestampStyle: CSSProperties = {
 	fontSize: "10px",
 	color: "var(--text-dim)",
-	marginTop: "2px",
+	marginTop: "var(--space-1)",
 };
 
 const tagsRowStyle: CSSProperties = {
@@ -65,7 +65,7 @@ const actionsStyle: CSSProperties = {
 	top: "50%",
 	transform: "translateY(-50%)",
 	display: "flex",
-	gap: "2px",
+	gap: "var(--space-1)",
 };
 
 const rowButtonStyle: CSSProperties = {
@@ -185,7 +185,7 @@ export function ConversationListItem({
 										variant="tag"
 										style={{
 											fontSize: "9px",
-											padding: "1px 5px",
+											padding: "var(--space-1) var(--space-2)",
 											backgroundColor: color.bg,
 											color: color.text,
 										}}

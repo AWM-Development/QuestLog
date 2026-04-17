@@ -46,4 +46,17 @@ describe("Chip", () => {
 		const chip = screen.getByText("Active");
 		expect(chip).toHaveStyle({ borderRadius: "var(--r-pill)" });
 	});
+
+	it("source variant renders a button for interactive chips", () => {
+		render(
+			<Chip variant="source" sourceType="document" as="button">
+				Doc
+			</Chip>,
+		);
+		const chip = screen.getByRole("button", { name: "Doc" });
+		expect(chip).toHaveStyle({
+			backgroundColor: "var(--ent-npc-bg)",
+			borderRadius: "var(--r-pill)",
+		});
+	});
 });
