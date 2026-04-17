@@ -1,4 +1,3 @@
-import type { CSSProperties } from "react";
 import {
 	sourceChipBase,
 	sourceChipColors,
@@ -34,16 +33,15 @@ const icons: Record<string, string> = {
 
 export function SourceChip({ source, onClick }: SourceChipProps) {
 	const type = getSourceType(source.sourceName);
-	const colorStyle = sourceChipColors[type];
 	const icon = icons[type];
 
-	const style: CSSProperties = {
-		...sourceChipBase,
-		...colorStyle,
-	};
-
 	return (
-		<button type="button" tabIndex={0} style={style} onClick={onClick}>
+		<button
+			type="button"
+			tabIndex={0}
+			style={{ ...sourceChipBase, ...sourceChipColors[type] }}
+			onClick={onClick}
+		>
 			{icon} {source.sourceName}
 		</button>
 	);

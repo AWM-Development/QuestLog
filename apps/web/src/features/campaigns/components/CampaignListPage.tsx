@@ -1,4 +1,5 @@
 import { Button } from "@/components/Button.js";
+import { Chip } from "@/components/Chip.js";
 import { PageContainer, PageHeader } from "@/components/PageScaffold.js";
 import { trpc } from "@/lib/trpc.js";
 import { useState } from "react";
@@ -205,16 +206,7 @@ function CampaignCard({ campaign }: CampaignCardProps) {
 					color: "var(--text-muted)",
 				}}
 			>
-				<span
-					style={{
-						backgroundColor: "var(--accent-muted)",
-						color: "var(--accent)",
-						padding: "2px 8px",
-						borderRadius: "var(--r-sm)",
-					}}
-				>
-					{campaign.theme}
-				</span>
+				<Chip variant="badge">{campaign.theme}</Chip>
 				{campaign.gameSystem && <span>{campaign.gameSystem}</span>}
 				<span
 					style={{

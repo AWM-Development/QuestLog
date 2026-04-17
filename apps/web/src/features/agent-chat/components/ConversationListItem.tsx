@@ -1,13 +1,7 @@
 import { type CSSProperties, useState } from "react";
+import { Chip } from "../../../components/Chip.js";
 import { IconButton } from "../../../components/IconButton.js";
-import { chipBase } from "../../../components/styles.js";
 import { getTagColor } from "../types.js";
-
-const tagChipStyle: CSSProperties = {
-	...chipBase,
-	fontSize: "9px",
-	padding: "1px 5px",
-};
 
 interface ConversationListItemProps {
 	conversation: {
@@ -186,16 +180,18 @@ export function ConversationListItem({
 							{conversation.tags.map((tag) => {
 								const color = getTagColor(tag);
 								return (
-									<span
+									<Chip
 										key={tag}
+										variant="tag"
 										style={{
-											...tagChipStyle,
-											background: color.bg,
+											fontSize: "9px",
+											padding: "1px 5px",
+											backgroundColor: color.bg,
 											color: color.text,
 										}}
 									>
 										{tag}
-									</span>
+									</Chip>
 								);
 							})}
 						</div>

@@ -1,4 +1,5 @@
 import { type CSSProperties, useEffect, useState } from "react";
+import { Chip } from "../../../components/Chip.js";
 import { IconButton } from "../../../components/IconButton.js";
 import { chatHeaderBar } from "../styles.js";
 import { ConversationTags } from "./ConversationTags.js";
@@ -17,17 +18,6 @@ interface ChatHeaderProps {
 	onEditTitle: (title: string) => void;
 	onUpdateTags: (tags: string[]) => void;
 }
-
-const campaignBadgeStyle: CSSProperties = {
-	padding: "2px 10px",
-	borderRadius: "var(--r-pill)",
-	background: "var(--accent-muted)",
-	border: "0.5px solid var(--ent-npc-border)",
-	fontSize: "11px",
-	fontWeight: 500,
-	color: "var(--accent)",
-	flexShrink: 0,
-};
 
 const titleStyle: CSSProperties = {
 	fontFamily: "var(--font-display)",
@@ -155,7 +145,20 @@ export function ChatHeader({
 				&#x2630;
 			</IconButton>
 
-			{campaignName && <span style={campaignBadgeStyle}>{campaignName}</span>}
+			{campaignName && (
+				<Chip
+					variant="badge"
+					style={{
+						borderRadius: "var(--r-pill)",
+						padding: "2px 10px",
+						border: "0.5px solid var(--ent-npc-border)",
+						fontWeight: 500,
+						flexShrink: 0,
+					}}
+				>
+					{campaignName}
+				</Chip>
+			)}
 
 			{editingTitle ? (
 				<input
