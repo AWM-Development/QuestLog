@@ -1,6 +1,6 @@
 import { type CSSProperties, useEffect, useMemo } from "react";
 import { Outlet, useLocation } from "react-router";
-import { ContextPanel } from "../features/agent-chat/components/ContextPanel.js";
+import { ContextPanel } from "../features/agent-chat/components/context/ContextPanel.js";
 import { useMediaQuery } from "../features/agent-chat/hooks/useMediaQuery.js";
 import {
 	DockedSessionPanel,
