@@ -1,6 +1,6 @@
 import { type CSSProperties, useEffect, useState } from "react";
-import { Chip } from "../../../components/Chip.js";
 import { IconButton } from "../../../components/IconButton.js";
+import { Chip } from "../../../components/primitives/Chip.js";
 import { chatHeaderBar } from "../styles.js";
 import { ConversationTags } from "./ConversationTags.js";
 

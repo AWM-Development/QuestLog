@@ -1,5 +1,5 @@
-import { Alert } from "@/components/Alert.js";
 import { Button } from "@/components/Button.js";
+import { Alert } from "@/components/feedback/Alert.js";
 import type { DuplicateResolutionAction, Source } from "../types.js";
 
 interface DuplicatePromptProps {

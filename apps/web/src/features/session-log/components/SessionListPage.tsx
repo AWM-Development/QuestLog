@@ -1,7 +1,10 @@
 import { useNavigate, useParams } from "react-router";
 import { Button } from "../../../components/Button.js";
 import { Card } from "../../../components/Card.js";
-import { PageContainer, PageHeader } from "../../../components/PageScaffold.js";
+import {
+	PageContainer,
+	PageHeader,
+} from "../../../components/layout/PageScaffold.js";
 import { trpc } from "../../../lib/trpc.js";
 
 export function SessionListPage() {

@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { Alert } from "./Alert.js";
+import { Alert } from "./feedback/Alert.js";
 
 describe("Alert", () => {
 	it("renders children", () => {

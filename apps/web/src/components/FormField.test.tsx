@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { FormField } from "./FormField.js";
-import { Input } from "./Input.js";
+import { FormField } from "./primitives/FormField.js";
+import { Input } from "./primitives/Input.js";
 
 describe("FormField", () => {
 	it("renders label text", () => {

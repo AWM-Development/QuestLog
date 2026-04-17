@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { Select } from "./Select.js";
+import { Select } from "./primitives/Select.js";
 
 describe("Select", () => {
 	it("renders select options", () => {

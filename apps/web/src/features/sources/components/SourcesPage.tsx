@@ -1,5 +1,5 @@
-import { Alert } from "@/components/Alert.js";
-import { PageContainer, PageHeader } from "@/components/PageScaffold.js";
+import { Alert } from "@/components/feedback/Alert.js";
+import { PageContainer, PageHeader } from "@/components/layout/PageScaffold.js";
 import { trpc } from "@/lib/trpc.js";
 import { useState } from "react";
 import { useParams } from "react-router";

@@ -1,8 +1,8 @@
 import { Button } from "@/components/Button.js";
 import { Card } from "@/components/Card.js";
-import { Chip } from "@/components/Chip.js";
 import { Alert } from "@/components/feedback/Alert.js";
 import { PageContainer, PageHeader } from "@/components/layout/PageScaffold.js";
+import { Chip } from "@/components/primitives/Chip.js";
 import { trpc } from "@/lib/trpc.js";
 import { useState } from "react";
 import { CampaignCreateModal } from "./CampaignCreateModal.js";

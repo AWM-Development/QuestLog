@@ -1,6 +1,6 @@
 import { type CSSProperties, useState } from "react";
 import { IconButton } from "../../../components/IconButton.js";
-import { Input } from "../../../components/Input.js";
+import { Input } from "../../../components/primitives/Input.js";
 import {
 	chatDrawerSurface,
 	chatOverlayScrim,

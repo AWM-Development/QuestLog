@@ -1,6 +1,5 @@
 import { Button } from "@/components/Button.js";
-import { Input } from "@/components/Input.js";
-import { Textarea } from "@/components/Textarea.js";
+import { Input, Textarea } from "@/components/primitives/index.js";
 import { trpc } from "@/lib/trpc.js";
 import { type SubmitEvent, useEffect, useRef, useState } from "react";
 

@@ -1,5 +1,5 @@
 import { type CSSProperties, useEffect, useRef, useState } from "react";
-import { Input } from "../../../components/Input.js";
+import { Input } from "../../../components/primitives/Input.js";
 import { chatPillButton } from "../styles.js";
 import { getTagColor } from "../types.js";
 

@@ -1,6 +1,6 @@
 import { type CSSProperties, useState } from "react";
-import { Chip } from "../../../components/Chip.js";
 import { IconButton } from "../../../components/IconButton.js";
+import { Chip } from "../../../components/primitives/Chip.js";
 import { getTagColor } from "../types.js";
 
 interface ConversationListItemProps {

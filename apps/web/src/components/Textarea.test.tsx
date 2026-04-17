@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { createRef } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { Textarea } from "./Textarea.js";
+import { Textarea } from "./primitives/Textarea.js";
 
 describe("Textarea", () => {
 	it("renders a textarea element", () => {
