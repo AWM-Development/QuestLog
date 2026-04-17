@@ -53,11 +53,10 @@ export function Card({
 	};
 
 	if (as === "link" && href) {
-		const {
-			onMouseEnter,
-			onMouseLeave,
-			...linkRest
-		} = rest as Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href">;
+		const { onMouseEnter, onMouseLeave, ...linkRest } = rest as Omit<
+			AnchorHTMLAttributes<HTMLAnchorElement>,
+			"href"
+		>;
 
 		return (
 			<Link
