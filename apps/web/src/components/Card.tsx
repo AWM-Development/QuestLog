@@ -52,20 +52,26 @@ export function Card({
 		...style,
 	};
 
-	const hoverHandlers = hoverable
-		? {
-				onMouseEnter: () => setHovered(true),
-				onMouseLeave: () => setHovered(false),
-			}
-		: {};
-
 	if (as === "link" && href) {
+		const {
+			onMouseEnter,
+			onMouseLeave,
+			...linkRest
+		} = rest as Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href">;
+
 		return (
 			<Link
 				to={href}
 				style={computedStyle}
-				{...hoverHandlers}
-				{...(rest as Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href">)}
+				onMouseEnter={(e) => {
+					if (hoverable) setHovered(true);
+					onMouseEnter?.(e);
+				}}
+				onMouseLeave={(e) => {
+					if (hoverable) setHovered(false);
+					onMouseLeave?.(e);
+				}}
+				{...linkRest}
 			>
 				{children}
 			</Link>
@@ -73,23 +79,43 @@ export function Card({
 	}
 
 	if (as === "button") {
+		const { onMouseEnter, onMouseLeave, ...buttonRest } =
+			rest as ButtonHTMLAttributes<HTMLButtonElement>;
+
 		return (
 			<button
 				type="button"
 				style={computedStyle}
-				{...hoverHandlers}
-				{...(rest as ButtonHTMLAttributes<HTMLButtonElement>)}
+				onMouseEnter={(e) => {
+					if (hoverable) setHovered(true);
+					onMouseEnter?.(e);
+				}}
+				onMouseLeave={(e) => {
+					if (hoverable) setHovered(false);
+					onMouseLeave?.(e);
+				}}
+				{...buttonRest}
 			>
 				{children}
 			</button>
 		);
 	}
 
+	const { onMouseEnter, onMouseLeave, ...divRest } =
+		rest as HTMLAttributes<HTMLDivElement>;
+
 	return (
 		<div
 			style={computedStyle}
-			{...hoverHandlers}
-			{...(rest as HTMLAttributes<HTMLDivElement>)}
+			onMouseEnter={(e) => {
+				if (hoverable) setHovered(true);
+				onMouseEnter?.(e);
+			}}
+			onMouseLeave={(e) => {
+				if (hoverable) setHovered(false);
+				onMouseLeave?.(e);
+			}}
+			{...divRest}
 		>
 			{children}
 		</div>

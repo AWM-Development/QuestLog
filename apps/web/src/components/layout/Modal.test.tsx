@@ -121,19 +121,38 @@ describe("Modal", () => {
 	});
 
 	it("generates a unique aria-labelledby id per instance", () => {
-		const { rerender } = render(
-			<Modal title="First" onClose={vi.fn()}>
-				a
-			</Modal>,
+		render(
+			<>
+				<Modal title="First" onClose={vi.fn()}>
+					a
+				</Modal>
+				<Modal title="Second" onClose={vi.fn()}>
+					b
+				</Modal>
+			</>,
 		);
-		const firstId = screen.getByRole("dialog").getAttribute("aria-labelledby");
-		rerender(
+		const [firstDialog, secondDialog] = screen.getAllByRole("dialog");
+		const firstId = firstDialog?.getAttribute("aria-labelledby");
+		const secondId = secondDialog?.getAttribute("aria-labelledby");
+		expect(firstId).toBeTruthy();
+		expect(secondId).toBeTruthy();
+		expect(secondId).not.toBe(firstId);
+	});
+
+	it("keeps aria-labelledby stable across rerenders of one instance", () => {
+		const { rerender } = render(
 			<Modal title="Second" onClose={vi.fn()}>
 				b
 			</Modal>,
 		);
+		const firstId = screen.getByRole("dialog").getAttribute("aria-labelledby");
+		rerender(
+			<Modal title="Second updated" onClose={vi.fn()}>
+				c
+			</Modal>,
+		);
 		const secondId = screen.getByRole("dialog").getAttribute("aria-labelledby");
 		expect(firstId).toBeTruthy();
-		expect(secondId).toBeTruthy();
+		expect(secondId).toBe(firstId);
 	});
 });

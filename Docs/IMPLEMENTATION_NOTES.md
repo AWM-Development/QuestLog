@@ -233,8 +233,8 @@ The `backLinkStyle` in `SessionEditorPage` is applied to a `<Link>` (react-route
 ### `IconButton` `hoverStyle`/`pressStyle` props
 `ChatInput`'s send and stop buttons need visually distinct hover/press states (accent glow vs border highlight). Rather than letting `ChatInput` manage the boolean hover state, `IconButton` accepts optional `hoverStyle`/`pressStyle` overrides. The callsite specifies WHAT to show; the component manages WHEN.
 
-### `Modal` `titleId` is hardcoded
-`Modal` uses `id="modal-title"` for the `aria-labelledby` binding. This works for single-modal-at-a-time UIs (the current pattern). If we ever need nested or stacked modals, switch to a generated id (e.g. `useId()`).
+### `Modal` uses generated `aria-labelledby` ids
+`Modal` uses React `useId()` for the title id and binds the dialog with `aria-labelledby={titleId}`. This keeps labels stable per instance and avoids id collisions for stacked dialogs.
 
 ### `Alert` wraps `Button`
 `Alert`'s retry button uses `<Button variant="accent">` internally. This means `Alert` imports `Button` — keep this in mind if extracting to a separate package.

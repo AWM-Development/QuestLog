@@ -51,6 +51,8 @@ export function Button({
 	type = "button",
 	children,
 	style,
+	onMouseEnter,
+	onMouseLeave,
 	...rest
 }: ButtonProps) {
 	const [hovered, setHovered] = useState(false);
@@ -79,8 +81,14 @@ export function Button({
 			type={type}
 			disabled={isDisabled}
 			style={computedStyle}
-			onMouseEnter={() => setHovered(true)}
-			onMouseLeave={() => setHovered(false)}
+			onMouseEnter={(e) => {
+				setHovered(true);
+				onMouseEnter?.(e);
+			}}
+			onMouseLeave={(e) => {
+				setHovered(false);
+				onMouseLeave?.(e);
+			}}
 			{...rest}
 		>
 			{children}
