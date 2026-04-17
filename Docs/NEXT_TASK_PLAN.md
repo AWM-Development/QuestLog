@@ -14,7 +14,7 @@ STATUS VALUES:
 
 | Field         | Value                                              |
 |---------------|----------------------------------------------------|
-| **Status**    | `ready`                                            |
+| **Status**    | `in-progress`                                      |
 | **Milestone** | M4.5 — UI Component Library Refactor               |
 | **Branch**    | `refactor/ui-component-library`                    |
 | **Plan**      | `Docs/milestones/M4.5/PLAN.md`                     |
