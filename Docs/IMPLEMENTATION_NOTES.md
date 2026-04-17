@@ -221,11 +221,11 @@ Model (`claude-sonnet-4-20250514`), `maxTokens` (4096), `maxHistoryMessages` (40
 ### `Input` uses `forwardRef`
 `Input.tsx` wraps `forwardRef` so callers needing a `ref` for focus management (e.g. `PasteTextInput`) can use `<Input ref={...}>` directly. This was added during M4.5 when the first ref-requiring callsite was encountered.
 
-### `ConversationTags` tag pills are NOT `<Chip>`
-Each tag pill contains a nested remove `<button>`. Since `Chip` renders a `<span>`, it cannot host interactive child elements safely. `ConversationTags` inlines the `chipBase` values directly rather than using `<Chip>`.
+### `ConversationTags` tag pills are still NOT `<Chip>`
+Each tag pill contains a nested remove `<button>`. Even after the component refactor, this remains intentionally inlined in `ConversationTags` because wrapping interactive children in a reusable chip primitive is still semantically awkward for this pattern.
 
-### `SourceChip` is NOT `<Chip>`
-`SourceChip` renders as a `<button>` (it's clickable). `Chip` renders as a `<span>`. Since these are semantically different, `SourceChip` uses `sourceChipBase`/`sourceChipColors` directly.
+### `SourceChip` now uses `<Chip>`
+`Chip` was expanded to support `as="button"` and `variant="source"` with `sourceType` mapping, so `SourceChip` now composes `Chip` instead of re-spreading `sourceChipBase` and `sourceChipColors` directly.
 
 ### `SessionEditorPage` back-link is NOT `<Button>`
 The `backLinkStyle` in `SessionEditorPage` is applied to a `<Link>` (react-router). `Button` renders a `<button>`. Rather than add a `Link` variant to `Button`, the `buttonGhost` values were inlined directly into the style object.
@@ -238,3 +238,11 @@ The `backLinkStyle` in `SessionEditorPage` is applied to a `<Link>` (react-route
 
 ### `Alert` wraps `Button`
 `Alert`'s retry button uses `<Button variant="accent">` internally. This means `Alert` imports `Button` — keep this in mind if extracting to a separate package.
+
+### Component directory organization after M4.5 polish
+Shared components are now grouped under semantic subdirectories:
+- `components/primitives` (e.g. `Input`, `Select`, `Textarea`, `FormField`, `Chip`)
+- `components/feedback` (`Alert`)
+- `components/layout` (`Modal`, `PageScaffold`)
+
+Other top-level shared components (`Button`, `IconButton`, `Card`, `EntityAvatar`) remain at `components/` because they are already established app-wide entry points and are widely imported.

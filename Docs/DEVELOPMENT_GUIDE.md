@@ -9,7 +9,7 @@
 - `Docs/PRD.md` — Product specification (reference for feature details)
 - `Docs/MILESTONES.md` — Task breakdown with branch names
 
-**Last Updated:** 2026-03-15
+**Last Updated:** 2026-04-17
 
 ---
 
@@ -20,14 +20,22 @@ questlog/
 ├── apps/
 │   ├── web/                    # React frontend (Vite + Tailwind)
 │   │   ├── src/
-│   │   │   ├── components/     # Shared UI components (styles.ts for style presets)
+│   │   │   ├── components/     # Shared UI components (grouped by role + styles.ts)
 │   │   │   ├── features/       # Feature modules (co-located)
 │   │   │   │   ├── agent-chat/
 │   │   │   │   │   ├── components/
+│   │   │   │   │   │   ├── chrome/
+│   │   │   │   │   │   ├── context/
+│   │   │   │   │   │   └── messages/
+│   │   │   │   │   ├── pages/
 │   │   │   │   │   ├── hooks/
 │   │   │   │   │   ├── api.ts       # tRPC hook wrappers
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── session-log/
+│   │   │   │   │   ├── components/
+│   │   │   │   │   │   ├── editor/
+│   │   │   │   │   │   └── layout/
+│   │   │   │   │   ├── pages/
 │   │   │   │   ├── entity-graph/
 │   │   │   │   └── ...
 │   │   │   ├── layouts/        # AppShell.tsx (shell), Rail.tsx (56px icon nav)
@@ -305,7 +313,7 @@ export function useSessionNotes(campaignId: string) {
 
 **The rule: always reach for a shared component before touching a raw HTML element.**
 
-After Milestone 4.5, `apps/web/src/components/` contains a set of primitive UI components. Use them everywhere. Do not spread style presets onto raw elements at a feature callsite — that is the old pattern.
+After Milestone 4.5, `apps/web/src/components/` contains shared UI components grouped by role (`primitives`, `feedback`, `layout`, plus a few app-wide top-level components). Use them everywhere. Do not spread style presets onto raw elements at a feature callsite — that is the old pattern.
 
 #### Available shared components
 
@@ -314,6 +322,8 @@ After Milestone 4.5, `apps/web/src/components/` contains a set of primitive UI c
 | `Button` | Any clickable button with text | Raw `<button>` with `style={buttonAccent}` etc. |
 | `IconButton` | Icon-only buttons (no visible text label) | Raw `<button>` with `style={iconButtonBase}` etc. |
 | `Input` | Text/number/date/search inputs | Raw `<input>` with `style={inputField}` |
+| `Select` | Dropdown/select controls | Raw `<select>` with duplicated input styles |
+| `Textarea` | Multi-line text input | Raw `<textarea>` with duplicated input styles |
 | `FormField` | Label + input + error layout | Manual `<label><span>...<input>` repetition |
 | `Chip` | Tags, entity badges, source pills | Raw `<span>` with `style={chipBase}` |
 | `Card` | Navigable/interactive card surfaces | Raw `<div>` + onMouseEnter style mutation |
@@ -327,7 +337,7 @@ After Milestone 4.5, `apps/web/src/components/` contains a set of primitive UI c
 
 1. Check `apps/web/src/components/` first. If a component exists, use it.
 2. If you need a variant that doesn't exist, add it to the existing component via a prop.
-3. If genuinely new primitive territory, create a new component in `apps/web/src/components/`. Write a test first.
+3. If genuinely new primitive territory, create a new component in `apps/web/src/components/primitives/` (or `feedback`/`layout` if it clearly belongs there). Write a test first.
 4. Feature-level style files (e.g. `features/agent-chat/styles.ts`) are for layout and feature-specific presets only — not for redefining buttons, inputs, or chips.
 
 #### Deferred components (add when first needed)
