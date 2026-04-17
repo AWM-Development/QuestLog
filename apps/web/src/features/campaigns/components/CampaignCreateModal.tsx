@@ -1,4 +1,4 @@
-import { buttonAccent, buttonSecondary } from "@/components/styles.js";
+import { Button } from "@/components/Button.js";
 import { trpc } from "@/lib/trpc.js";
 import { CAMPAIGN_THEMES } from "@questlog/shared";
 import { type FormEvent, useEffect, useRef, useState } from "react";
@@ -207,28 +207,21 @@ export function CampaignCreateModal({ onClose }: CampaignCreateModalProps) {
 							gap: "var(--space-4)",
 						}}
 					>
-						<button
-							type="button"
+						<Button
+							variant="secondary"
 							onClick={onClose}
 							disabled={createMutation.isPending}
-							style={buttonSecondary}
 						>
 							Cancel
-						</button>
-						<button
+						</Button>
+						<Button
 							type="submit"
-							disabled={createMutation.isPending || !name.trim()}
-							style={{
-								...buttonAccent,
-								cursor:
-									createMutation.isPending || !name.trim()
-										? "not-allowed"
-										: "pointer",
-								opacity: createMutation.isPending || !name.trim() ? 0.5 : 1,
-							}}
+							variant="accent"
+							loading={createMutation.isPending}
+							disabled={!name.trim()}
 						>
 							{createMutation.isPending ? "Creating..." : "Create Campaign"}
-						</button>
+						</Button>
 					</div>
 				</form>
 			</dialog>

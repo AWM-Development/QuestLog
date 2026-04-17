@@ -1,5 +1,5 @@
+import { Button } from "@/components/Button.js";
 import { PageContainer, PageHeader } from "@/components/PageScaffold.js";
-import { buttonAccent } from "@/components/styles.js";
 import { trpc } from "@/lib/trpc.js";
 import { useState } from "react";
 import { Link } from "react-router";
@@ -17,13 +17,9 @@ export function CampaignListPage() {
 			<PageHeader
 				title="Campaigns"
 				actions={
-					<button
-						type="button"
-						onClick={() => setShowCreate(true)}
-						style={buttonAccent}
-					>
+					<Button variant="accent" onClick={() => setShowCreate(true)}>
 						New Campaign
-					</button>
+					</Button>
 				}
 			/>
 
@@ -52,13 +48,9 @@ export function CampaignListPage() {
 					>
 						Could not connect to the server. Make sure the API is running.
 					</p>
-					<button
-						type="button"
-						onClick={() => campaignsQuery.refetch()}
-						style={buttonAccent}
-					>
+					<Button variant="accent" onClick={() => campaignsQuery.refetch()}>
 						Retry
-					</button>
+					</Button>
 				</div>
 			)}
 
@@ -90,13 +82,9 @@ export function CampaignListPage() {
 					>
 						Create your first campaign to get started.
 					</p>
-					<button
-						type="button"
-						onClick={() => setShowCreate(true)}
-						style={buttonAccent}
-					>
+					<Button variant="accent" onClick={() => setShowCreate(true)}>
 						Create Campaign
-					</button>
+					</Button>
 				</div>
 			)}
 

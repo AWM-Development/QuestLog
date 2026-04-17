@@ -1,7 +1,8 @@
 import type { CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router";
+import { Button } from "../../../components/Button.js";
 import { PageContainer, PageHeader } from "../../../components/PageScaffold.js";
-import { buttonAccent, elevatedCard } from "../../../components/styles.js";
+import { elevatedCard } from "../../../components/styles.js";
 import { trpc } from "../../../lib/trpc.js";
 
 const cardInner: CSSProperties = {
@@ -43,14 +44,13 @@ export function SessionListPage() {
 				title="Session logs"
 				subtitle="Capture what happens at the table. Open the notes panel from the header or ⌘⇧N."
 				actions={
-					<button
-						type="button"
-						style={buttonAccent}
+					<Button
+						variant="accent"
 						onClick={() => createMutation.mutate({ campaignId })}
 						disabled={createMutation.isPending}
 					>
 						+ New Session
-					</button>
+					</Button>
 				}
 			/>
 
@@ -71,14 +71,13 @@ export function SessionListPage() {
 						No sessions yet. Start your first session log to capture what
 						happens at the table.
 					</p>
-					<button
-						type="button"
-						style={buttonAccent}
+					<Button
+						variant="accent"
 						onClick={() => createMutation.mutate({ campaignId })}
 						disabled={createMutation.isPending}
 					>
 						+ New Session
-					</button>
+					</Button>
 				</div>
 			)}
 

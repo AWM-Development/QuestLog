@@ -1,11 +1,7 @@
 import { type CSSProperties, useCallback, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import {
-	buttonGhost,
-	buttonSmallAccent,
-	buttonSmallSecondary,
-	iconButtonBase,
-} from "../../../components/styles.js";
+import { Button } from "../../../components/Button.js";
+import { buttonGhost, iconButtonBase } from "../../../components/styles.js";
 import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../lib/trpc.js";
 import { useSessionAutoSave } from "../hooks/useSessionAutoSave.js";
@@ -175,21 +171,21 @@ export function SessionEditorPage() {
 				<div style={headerGroup}>
 					<SaveStatus saveState={saveState} />
 					{isFinal ? (
-						<button
-							type="button"
+						<Button
+							variant="secondary"
+							size="sm"
 							onClick={() => setFinalizeOpen(true)}
-							style={buttonSmallSecondary}
 						>
 							Update
-						</button>
+						</Button>
 					) : (
-						<button
-							type="button"
+						<Button
+							variant="accent"
+							size="sm"
 							onClick={() => setFinalizeOpen(true)}
-							style={buttonSmallAccent}
 						>
 							Save Session
-						</button>
+						</Button>
 					)}
 				</div>
 			</header>

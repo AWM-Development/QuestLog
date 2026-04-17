@@ -1,11 +1,7 @@
 import { type CSSProperties, useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import {
-	buttonGhost,
-	buttonSmallAccent,
-	buttonSmallSecondary,
-	iconButtonBase,
-} from "../../../components/styles.js";
+import { Button } from "../../../components/Button.js";
+import { buttonGhost, iconButtonBase } from "../../../components/styles.js";
 import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../lib/trpc.js";
 import { useSessionAutoSave } from "../hooks/useSessionAutoSave.js";
@@ -175,21 +171,21 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 						⇤
 					</button>
 					{isFinal ? (
-						<button
-							type="button"
-							style={buttonSmallSecondary}
+						<Button
+							variant="secondary"
+							size="sm"
 							onClick={() => setFinalizeOpen(true)}
 						>
 							Update
-						</button>
+						</Button>
 					) : (
-						<button
-							type="button"
-							style={buttonSmallAccent}
+						<Button
+							variant="accent"
+							size="sm"
 							onClick={() => setFinalizeOpen(true)}
 						>
 							Save Session
-						</button>
+						</Button>
 					)}
 					<button
 						type="button"

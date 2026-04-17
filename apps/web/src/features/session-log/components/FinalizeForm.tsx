@@ -1,9 +1,6 @@
 import { type CSSProperties, useState } from "react";
-import {
-	buttonGhost,
-	buttonSmallAccent,
-	inputField,
-} from "../../../components/styles.js";
+import { Button } from "../../../components/Button.js";
+import { inputField } from "../../../components/styles.js";
 
 interface FinalizeFormProps {
 	initialTitle: string | null;
@@ -162,22 +159,17 @@ export function FinalizeForm({
 					flexWrap: "wrap",
 				}}
 			>
-				<button
-					type="button"
-					style={buttonGhost}
-					onClick={onCancel}
-					disabled={isSubmitting}
-				>
+				<Button variant="ghost" onClick={onCancel} disabled={isSubmitting}>
 					Cancel
-				</button>
-				<button
-					type="button"
-					style={buttonSmallAccent}
+				</Button>
+				<Button
+					variant="accent"
+					size="sm"
 					onClick={handleSubmit}
 					disabled={isSubmitting}
 				>
 					Finalize & Save
-				</button>
+				</Button>
 			</div>
 		</div>
 	);
