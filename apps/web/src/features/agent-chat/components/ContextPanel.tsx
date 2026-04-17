@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { EntityAvatar } from "../../../components/EntityAvatar.js";
 import { IconButton } from "../../../components/IconButton.js";
 import {
 	entityAvatarColors,
@@ -45,19 +46,6 @@ const entityRowStyle: CSSProperties = {
 	alignItems: "center",
 	gap: "10px",
 	padding: "6px 0",
-};
-
-// 30×30 entity avatar — intentionally between iconButtonBase (24) and standard card avatar sizing
-const avatarStyle: CSSProperties = {
-	width: 30,
-	height: 30,
-	borderRadius: "var(--r-md)",
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-	fontSize: "12px",
-	fontWeight: 600,
-	flexShrink: 0,
 };
 
 const entityNameStyle: CSSProperties = {
@@ -125,9 +113,7 @@ export function ContextPanel({
 						const colors = entityAvatarColors[type];
 						return (
 							<div key={source.sourceId} style={entityRowStyle}>
-								<div style={{ ...avatarStyle, ...colors }}>
-									{source.sourceName.charAt(0).toUpperCase()}
-								</div>
+								<EntityAvatar name={source.sourceName} entityType={type} />
 								<div>
 									<div style={entityNameStyle}>{source.sourceName}</div>
 									<div
