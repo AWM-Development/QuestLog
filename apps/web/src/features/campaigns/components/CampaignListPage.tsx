@@ -1,9 +1,9 @@
 import { Button } from "@/components/Button.js";
+import { Card } from "@/components/Card.js";
 import { Chip } from "@/components/Chip.js";
 import { PageContainer, PageHeader } from "@/components/PageScaffold.js";
 import { trpc } from "@/lib/trpc.js";
 import { useState } from "react";
-import { Link } from "react-router";
 import { CampaignCreateModal } from "./CampaignCreateModal.js";
 
 export function CampaignListPage() {
@@ -149,27 +149,11 @@ interface CampaignCardProps {
 
 function CampaignCard({ campaign }: CampaignCardProps) {
 	return (
-		<Link
-			to={`/campaign/${campaign.id}`}
-			style={{
-				display: "block",
-				backgroundColor: "var(--bg-elevated)",
-				borderRadius: "var(--r-md)",
-				padding: "var(--space-6)",
-				textDecoration: "none",
-				color: "inherit",
-				border: "1px solid var(--border-subtle)",
-				cursor: "pointer",
-				transition: "background-color 0.15s, border-color 0.15s",
-			}}
-			onMouseEnter={(e) => {
-				e.currentTarget.style.backgroundColor = "var(--bg-focal)";
-				e.currentTarget.style.borderColor = "var(--border)";
-			}}
-			onMouseLeave={(e) => {
-				e.currentTarget.style.backgroundColor = "var(--bg-elevated)";
-				e.currentTarget.style.borderColor = "var(--border-subtle)";
-			}}
+		<Card
+			as="link"
+			href={`/campaign/${campaign.id}`}
+			hoverable
+			style={{ display: "block", padding: "var(--space-6)" }}
 		>
 			<h2
 				style={{
@@ -217,6 +201,6 @@ function CampaignCard({ campaign }: CampaignCardProps) {
 					{campaign.status}
 				</span>
 			</div>
-		</Link>
+		</Card>
 	);
 }

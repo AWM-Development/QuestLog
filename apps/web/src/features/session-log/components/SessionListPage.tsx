@@ -1,23 +1,8 @@
-import type { CSSProperties } from "react";
 import { useNavigate, useParams } from "react-router";
 import { Button } from "../../../components/Button.js";
+import { Card } from "../../../components/Card.js";
 import { PageContainer, PageHeader } from "../../../components/PageScaffold.js";
-import { elevatedCard } from "../../../components/styles.js";
 import { trpc } from "../../../lib/trpc.js";
-
-const cardInner: CSSProperties = {
-	padding: "var(--space-4)",
-	display: "flex",
-	flexDirection: "column",
-	gap: "var(--space-2)",
-	cursor: "pointer",
-	textAlign: "left",
-	width: "100%",
-	border: "none",
-	background: "transparent",
-	color: "inherit",
-	font: "inherit",
-};
 
 export function SessionListPage() {
 	const { id: campaignId } = useParams<{ id: string }>();
@@ -90,55 +75,61 @@ export function SessionListPage() {
 					}}
 				>
 					{listQuery.data.map((s) => (
-						<button
+						<Card
 							key={s.id}
-							type="button"
-							style={elevatedCard}
+							as="button"
+							hoverable
+							style={{
+								padding: "var(--space-4)",
+								display: "flex",
+								flexDirection: "column",
+								gap: "var(--space-2)",
+								textAlign: "left",
+								width: "100%",
+							}}
 							onClick={() => {
 								void navigate(`/campaign/${campaignId}/sessions/${s.id}`);
 							}}
 						>
-							<div style={cardInner}>
+							<span
+								style={{
+									fontFamily: "var(--font-mono)",
+									fontSize: "0.75rem",
+									color: "var(--text-muted)",
+								}}
+							>
+								Session {s.sessionNumber}
+							</span>
+							<span
+								style={{
+									fontFamily: "var(--font-display)",
+									fontSize: "1.05rem",
+									fontWeight: 600,
+								}}
+							>
+								{s.title?.trim() ? s.title : "Untitled session"}
+							</span>
+							<span
+								style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}
+							>
+								{s.date.toLocaleDateString()} · {s.status}
+							</span>
+							{s.summary ? (
 								<span
 									style={{
-										fontFamily: "var(--font-mono)",
-										fontSize: "0.75rem",
-										color: "var(--text-muted)",
+										fontSize: "0.8125rem",
+										color: "var(--text-secondary)",
+										overflow: "hidden",
+										textOverflow: "ellipsis",
+										display: "-webkit-box",
+										WebkitLineClamp: 2,
+										WebkitBoxOrient: "vertical",
 									}}
 								>
-									Session {s.sessionNumber}
+									{s.summary}
 								</span>
-								<span
-									style={{
-										fontFamily: "var(--font-display)",
-										fontSize: "1.05rem",
-										fontWeight: 600,
-									}}
-								>
-									{s.title?.trim() ? s.title : "Untitled session"}
-								</span>
-								<span
-									style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}
-								>
-									{s.date.toLocaleDateString()} · {s.status}
-								</span>
-								{s.summary ? (
-									<span
-										style={{
-											fontSize: "0.8125rem",
-											color: "var(--text-secondary)",
-											overflow: "hidden",
-											textOverflow: "ellipsis",
-											display: "-webkit-box",
-											WebkitLineClamp: 2,
-											WebkitBoxOrient: "vertical",
-										}}
-									>
-										{s.summary}
-									</span>
-								) : null}
-							</div>
-						</button>
+							) : null}
+						</Card>
 					))}
 				</div>
 			)}
