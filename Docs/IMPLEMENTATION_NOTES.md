@@ -210,3 +210,39 @@ Model (`claude-sonnet-4-20250514`), `maxTokens` (4096), `maxHistoryMessages` (40
 
 ### `ConversationMessage` and `MessageSource` are shared types
 `ConversationMessage` lives in `packages/shared/src/types/conversation.ts` — used by both server and frontend. `MessageSource` (`{ chunkId, sourceName, sourceId }`) is defined in `db/schema/tables.ts` and exported from the schema barrel. The `messages.sources` column is typed as `MessageSource[]`, not `Record<string, unknown>[]`.
+
+---
+
+## Session notes (Milestone 4.5) — UI Component Library Refactor
+
+### Style preset pattern vs component encapsulation
+`styles.ts` continues to export style-preset objects (`buttonAccent`, `chipBase`, etc.) as the **implementation details** of the new components. Feature code must not import them directly. Components in `apps/web/src/components/` are the only importers.
+
+### `Input` uses `forwardRef`
+`Input.tsx` wraps `forwardRef` so callers needing a `ref` for focus management (e.g. `PasteTextInput`) can use `<Input ref={...}>` directly. This was added during M4.5 when the first ref-requiring callsite was encountered.
+
+### `ConversationTags` tag pills are still NOT `<Chip>`
+Each tag pill contains a nested remove `<button>`. Even after the component refactor, this remains intentionally inlined in `ConversationTags` because wrapping interactive children in a reusable chip primitive is still semantically awkward for this pattern.
+
+### `SourceChip` now uses `<Chip>`
+`Chip` was expanded to support `as="button"` and `variant="source"` with `sourceType` mapping, so `SourceChip` now composes `Chip` instead of re-spreading `sourceChipBase` and `sourceChipColors` directly.
+
+### `SessionEditorPage` back-link is NOT `<Button>`
+The `backLinkStyle` in `SessionEditorPage` is applied to a `<Link>` (react-router). `Button` renders a `<button>`. Rather than add a `Link` variant to `Button`, the `buttonGhost` values were inlined directly into the style object.
+
+### `IconButton` `hoverStyle`/`pressStyle` props
+`ChatInput`'s send and stop buttons need visually distinct hover/press states (accent glow vs border highlight). Rather than letting `ChatInput` manage the boolean hover state, `IconButton` accepts optional `hoverStyle`/`pressStyle` overrides. The callsite specifies WHAT to show; the component manages WHEN.
+
+### `Modal` uses generated `aria-labelledby` ids
+`Modal` uses React `useId()` for the title id and binds the dialog with `aria-labelledby={titleId}`. This keeps labels stable per instance and avoids id collisions for stacked dialogs.
+
+### `Alert` wraps `Button`
+`Alert`'s retry button uses `<Button variant="accent">` internally. This means `Alert` imports `Button` — keep this in mind if extracting to a separate package.
+
+### Component directory organization after M4.5 polish
+Shared components are now grouped under semantic subdirectories:
+- `components/primitives` (e.g. `Input`, `Select`, `Textarea`, `FormField`, `Chip`)
+- `components/feedback` (`Alert`)
+- `components/layout` (`Modal`, `PageScaffold`)
+
+Other top-level shared components (`Button`, `IconButton`, `Card`, `EntityAvatar`) remain at `components/` because they are already established app-wide entry points and are widely imported.

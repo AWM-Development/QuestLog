@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { iconButtonBase, panelHeaderBase } from "../../components/styles.js";
+import { panelHeaderBase } from "../../components/styles.js";
 
 export const chatHeaderBar: CSSProperties = {
 	display: "flex",
@@ -51,24 +51,6 @@ export const chatLabelXs: CSSProperties = {
 	fontSize: "11px",
 	fontWeight: 500,
 	color: "var(--text-secondary)",
-};
-
-export const chatIconButton: CSSProperties = {
-	...iconButtonBase,
-	width: 28,
-	height: 28,
-	fontSize: "14px",
-};
-
-export const chatSearchInput: CSSProperties = {
-	background: "var(--bg-elevated)",
-	border: "1px solid var(--border)",
-	borderRadius: "var(--r-sm)",
-	padding: "6px 10px",
-	fontSize: "11px",
-	color: "var(--text-primary)",
-	outline: "none",
-	fontFamily: "var(--font-body)",
 };
 
 export const chatPillButton: CSSProperties = {

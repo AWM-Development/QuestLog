@@ -1,5 +1,6 @@
 import { type CSSProperties, type ReactNode, useEffect } from "react";
-import { buttonGhost, panelHeaderBase } from "../components/styles.js";
+import { Button } from "../components/Button.js";
+import { panelHeaderBase } from "../components/styles.js";
 import type { PanelTab } from "./CampaignChromeContext.js";
 
 const panelShell: CSSProperties = {
@@ -98,14 +99,14 @@ export function Panel({
 						Session notes
 					</button>
 				</div>
-				<button
-					type="button"
+				<Button
+					variant="ghost"
 					onClick={onClose}
-					style={{ ...buttonGhost, fontSize: "1.1rem", lineHeight: 1 }}
 					aria-label="Close panel"
+					style={{ fontSize: "1.1rem", lineHeight: 1 }}
 				>
 					×
-				</button>
+				</Button>
 			</div>
 			<div style={bodyStyle}>
 				{activeTab === "notes" ? notesContent : contextContent}

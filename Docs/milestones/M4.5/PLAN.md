@@ -6,7 +6,7 @@
 
 | Field         | Value                                      |
 |---------------|--------------------------------------------|
-| **Status**    | `none`                                     |
+| **Status**    | `done`                                     |
 | **Milestone** | M4.5 — UI Component Library Refactor       |
 | **Branch**    | `refactor/ui-component-library`            |
 | **PRD ref**   | §5 Design System                           |
@@ -199,28 +199,39 @@ _Filled in by the overnight agent. Do not edit manually._
 
 ### Progress
 
-- [ ] CP-1: Button component
-- [ ] CP-2: IconButton component
-- [ ] CP-3: Input + FormField components
-- [ ] CP-4: Chip + Badge component
-- [ ] CP-5: Card component
-- [ ] CP-6: Alert component
-- [ ] CP-7: EntityAvatar component
-- [ ] CP-8: Modal component
+- [x] CP-1: Button component
+- [x] CP-2: IconButton component
+- [x] CP-3: Input + FormField components
+- [x] CP-4: Chip + Badge component
+- [x] CP-5: Card component
+- [x] CP-6: Alert component
+- [x] CP-7: EntityAvatar component
+- [x] CP-8: Modal component
 
 ### Run Log
 
 | Checkpoint | Status | Commit | Notes |
 |------------|--------|--------|-------|
-| CP-1       |        |        |       |
-| CP-2       |        |        |       |
-| CP-3       |        |        |       |
-| CP-4       |        |        |       |
-| CP-5       |        |        |       |
-| CP-6       |        |        |       |
-| CP-7       |        |        |       |
-| CP-8       |        |        |       |
+| CP-1       | ✅ done | `490cd90` | 10 tests; all callsites migrated |
+| CP-2       | ✅ done | `b02f3fd` | 8 tests; hoverStyle/pressStyle props for ChatInput custom hover |
+| CP-3       | ✅ done | `ca42136` | 9 tests; compact prop for FinalizeForm; background prop for modal inputs; Input gained forwardRef later |
+| CP-4       | ✅ done | `35e7659` | 6 tests; SourceChip kept as button element (can't use Chip which renders span) |
+| CP-5       | ✅ done | `014596f` | 7 tests; CampaignCard DOM mutation → Card as=link hoverable; SessionListPage button → Card as=button |
+| CP-6       | ✅ done | `bed4cb1` | 7 tests; CampaignListPage + SourcesPage error blocks migrated |
+| CP-7       | ✅ done | `c8d5f66` | 5 tests; ContextPanel avatarStyle migrated |
+| CP-8       | ✅ done | `76d6191` | 6 tests; CampaignCreateModal overlay+dialog chrome → Modal |
+
+Additional commit `b8d985b` cleaned up remaining callsites found during code review (DockedSessionPanel, SessionEditor, SessionNotesPanel, ErrorBoundary, ConversationTags, ErrorState, DuplicatePrompt, PasteTextInput, Panel).
 
 ### Summary
 
-_Agent writes a brief summary of what was accomplished, any issues encountered, and what remains._
+All 8 checkpoints complete. 36 test files, 188 tests passing. Lint and typecheck clean.
+
+**Key decisions made during implementation:**
+- `Input` component gained `forwardRef` when `PasteTextInput` needed a ref for focus management
+- `ConversationTags` tag pills retain inlined `chipBase` values (not `<Chip>`) because they embed a remove `<button>` which `Chip` (a `<span>`) can't host
+- `SourceChip` kept as native `<button>` — same reason (needs click behavior, `<Chip>` renders `<span>`)
+- `SessionEditorPage`'s `backLinkStyle` inlined the `buttonGhost` values instead of using `<Button>` since it's applied to a `<Link>` element (react-router), not a `<button>`
+- `IconButton`'s `hoverStyle`/`pressStyle` props allow `ChatInput`'s custom send/stop button hover behavior without leaking state to the callsite
+
+**Status:** `done`

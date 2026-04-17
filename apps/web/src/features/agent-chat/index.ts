@@ -1,1 +1,1 @@
-export { ChatPage } from "./components/ChatPage.js";
+export { ChatPage } from "./pages/index.js";

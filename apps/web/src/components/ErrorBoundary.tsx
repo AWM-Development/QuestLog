@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from "react";
 import { useNavigate, useRouteError } from "react-router";
-import { buttonAccent, buttonSecondary, pageContainer } from "./styles.js";
+import { Button } from "./Button.js";
+import { pageContainer } from "./styles.js";
 
 /** Route-level error element for react-router's errorElement prop. */
 export function RouteErrorBoundary() {
@@ -51,20 +52,12 @@ export function RouteErrorBoundary() {
 					: "An unexpected error occurred. Try refreshing the page."}
 			</p>
 			<div style={{ display: "flex", gap: "var(--space-3)" }}>
-				<button
-					type="button"
-					style={buttonAccent}
-					onClick={() => navigate("/campaigns")}
-				>
+				<Button variant="accent" onClick={() => navigate("/campaigns")}>
 					Go to Campaigns
-				</button>
-				<button
-					type="button"
-					style={buttonSecondary}
-					onClick={() => window.location.reload()}
-				>
+				</Button>
+				<Button variant="secondary" onClick={() => window.location.reload()}>
 					Refresh page
-				</button>
+				</Button>
 			</div>
 		</div>
 	);
@@ -115,16 +108,15 @@ export class ErrorBoundary extends Component<Props, State> {
 						<p style={{ fontSize: "0.875rem", marginBottom: "var(--space-4)" }}>
 							Try refreshing the page.
 						</p>
-						<button
-							type="button"
-							style={buttonSecondary}
+						<Button
+							variant="secondary"
 							onClick={() => {
 								this.setState({ hasError: false });
 								window.location.reload();
 							}}
 						>
 							Refresh
-						</button>
+						</Button>
 					</div>
 				)
 			);

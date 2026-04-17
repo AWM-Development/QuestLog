@@ -1,5 +1,6 @@
-export { SessionListPage } from "./components/SessionListPage.js";
-export { SessionEditorPage } from "./components/SessionEditorPage.js";
-export { SessionNotesPanel } from "./components/SessionNotesPanel.js";
-export { SessionEditor } from "./components/SessionEditor.js";
-export { DockedSessionPanel } from "./components/DockedSessionPanel.js";
+export { SessionListPage, SessionEditorPage } from "./pages/index.js";
+export {
+	SessionNotesPanel,
+	DockedSessionPanel,
+} from "./components/layout/index.js";
+export { SessionEditor } from "./components/editor/index.js";

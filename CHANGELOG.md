@@ -22,6 +22,19 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 - **Docs:** local dev URLs (5173 / 3000 / `VITE_API_URL`), DEVELOPMENT_GUIDE first-time setup uses `db:migrate` and Postgres **5433**; README troubleshooting for API connection / **EADDRINUSE**
 - **Server:** clearer startup error when **PORT** is already in use; `.env.example` documents optional **PORT**
 
+### Added — M4.5 UI Component Library Refactor
+
+- **`Button`** component (`accent`, `secondary`, `ghost`, `action` variants; `sm`/`md` sizes; `loading` state; `forwardRef`-compatible `Input`)
+- **`IconButton`** component (sizes 24/28/32; `active` state; `hoverStyle`/`pressStyle` override props for ChatInput's custom hover behaviors)
+- **`Input`** component (focus ring via tokens; `background` override prop for modal contexts; `forwardRef` support)
+- **`FormField`** component (label, hint, error display; `compact` prop for dense forms; `htmlFor` for accessibility)
+- **`Chip`** component (entity/tag/badge/pill/source variants; entity colors via `entityAvatarColors`)
+- **`Card`** component (`as` prop: div/button/link; `hoverable` prop encapsulates hover state)
+- **`Alert`** component (`role=alert`; title + message + optional retry button)
+- **`EntityAvatar`** component (entity type → color mapping; configurable size; first-initial display)
+- **`Modal`** component (overlay scrim; `<dialog>`; Escape/backdrop close; auto-focus first input; `aria-labelledby`)
+- All 25+ callsites across feature components migrated; no raw style-preset spreads remain in feature code
+
 ### Added — M4.1 Session CRUD & Editor Foundation
 
 - **`/campaign/:id/sessions/:sessionId`** route renders `SessionEditorPage` (Notion-style main-area editor at 720px centered column)

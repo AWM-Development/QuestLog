@@ -291,7 +291,7 @@ export const inputField: CSSProperties = {
 };
 
 export const inputFieldFocus: CSSProperties = {
-	borderColor: "var(--border-hover)",
+	border: "1px solid var(--border-hover)",
 	boxShadow: "0 0 0 3px var(--state-active-soft)",
 };
 
