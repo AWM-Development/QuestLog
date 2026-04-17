@@ -1,3 +1,4 @@
+import { Alert } from "@/components/Alert.js";
 import { PageContainer, PageHeader } from "@/components/PageScaffold.js";
 import { trpc } from "@/lib/trpc.js";
 import { useState } from "react";
@@ -46,18 +47,7 @@ export function SourcesPage() {
 
 	if (isError) {
 		return (
-			<div
-				role="alert"
-				style={{
-					backgroundColor: "var(--bg-elevated)",
-					borderRadius: "var(--r-md)",
-					padding: "var(--space-8)",
-					textAlign: "center",
-					color: "var(--status-error)",
-				}}
-			>
-				Failed to load sources. Make sure the server is running.
-			</div>
+			<Alert>Failed to load sources. Make sure the server is running.</Alert>
 		);
 	}
 

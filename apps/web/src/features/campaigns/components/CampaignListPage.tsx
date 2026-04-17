@@ -1,3 +1,4 @@
+import { Alert } from "@/components/Alert.js";
 import { Button } from "@/components/Button.js";
 import { Card } from "@/components/Card.js";
 import { Chip } from "@/components/Chip.js";
@@ -27,32 +28,12 @@ export function CampaignListPage() {
 			{campaignsQuery.isLoading && <CampaignListSkeleton />}
 
 			{campaignsQuery.isError && (
-				<div
-					role="alert"
-					style={{
-						backgroundColor: "var(--bg-elevated)",
-						borderRadius: "var(--r-md)",
-						padding: "var(--space-8)",
-						textAlign: "center",
-						color: "var(--status-error)",
-					}}
+				<Alert
+					title="Failed to load campaigns"
+					onRetry={() => void campaignsQuery.refetch()}
 				>
-					<p style={{ fontWeight: 600, marginBottom: "var(--space-2)" }}>
-						Failed to load campaigns
-					</p>
-					<p
-						style={{
-							fontSize: "0.875rem",
-							color: "var(--text-muted)",
-							marginBottom: "var(--space-6)",
-						}}
-					>
-						Could not connect to the server. Make sure the API is running.
-					</p>
-					<Button variant="accent" onClick={() => campaignsQuery.refetch()}>
-						Retry
-					</Button>
-				</div>
+					Could not connect to the server. Make sure the API is running.
+				</Alert>
 			)}
 
 			{campaignsQuery.isSuccess && campaignsQuery.data.length === 0 && (
