@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { Chip } from "./primitives/Chip.js";
+import { Chip } from "./Chip.js";
 
 describe("Chip", () => {
 	it("renders children", () => {

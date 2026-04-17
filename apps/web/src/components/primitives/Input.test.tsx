@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { FormField } from "./primitives/FormField.js";
-import { Input } from "./primitives/Input.js";
+import { FormField } from "./FormField.js";
+import { Input } from "./Input.js";
 
 describe("Input", () => {
 	it("renders an input element", () => {

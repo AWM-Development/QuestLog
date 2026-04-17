@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { Alert } from "./feedback/Alert.js";
+import { Alert } from "./Alert.js";
 
 describe("Alert", () => {
 	it("renders children", () => {
@@ -72,7 +72,6 @@ describe("Alert", () => {
 				Inline
 			</Alert>,
 		);
-		// inlineAlertError uses var(--space-3) var(--space-4)
 		expect(screen.getByRole("alert")).toHaveStyle({
 			padding: "var(--space-3) var(--space-4)",
 		});
