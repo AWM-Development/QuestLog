@@ -1,5 +1,6 @@
 import { type CSSProperties, useEffect, useRef, useState } from "react";
-import { chatPillButton, chatSearchInput } from "../styles.js";
+import { Input } from "../../../components/Input.js";
+import { chatPillButton } from "../styles.js";
 import { getTagColor } from "../types.js";
 
 interface ConversationTagsProps {
@@ -46,7 +47,6 @@ const popoverStyle: CSSProperties = {
 };
 
 const popoverInputStyle: CSSProperties = {
-	...chatSearchInput,
 	width: "100%",
 	padding: "6px 8px",
 	boxSizing: "border-box",
@@ -170,7 +170,8 @@ export function ConversationTags({
 
 				{open && (
 					<div style={popoverStyle}>
-						<input
+						<Input
+							size="sm"
 							type="text"
 							value={search}
 							onChange={(e) => {
@@ -179,7 +180,6 @@ export function ConversationTags({
 							}}
 							placeholder="Add or create tag..."
 							style={popoverInputStyle}
-							// biome-ignore lint/a11y/noAutofocus: tag popover input should auto-focus
 							autoFocus
 							onKeyDown={(e) => {
 								if (!options.length) return;

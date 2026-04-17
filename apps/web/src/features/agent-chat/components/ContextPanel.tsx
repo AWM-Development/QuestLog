@@ -1,11 +1,11 @@
 import type { CSSProperties } from "react";
-import { EntityAvatar } from "../../../components/EntityAvatar.js";
-import { IconButton } from "../../../components/IconButton.js";
 import {
-	entityAvatarColors,
-	panelSection,
-	panelSectionTitle,
-} from "../../../components/styles.js";
+	EntityAvatar,
+	type EntityType,
+	getEntityPalette,
+} from "../../../components/EntityAvatar.js";
+import { IconButton } from "../../../components/IconButton.js";
+import { panelSection, panelSectionTitle } from "../../../components/styles.js";
 import {
 	chatContextPanelSurface,
 	chatOverlayScrim,
@@ -65,7 +65,7 @@ const overlayScrimStyle: CSSProperties = {
 	left: "var(--rail-width)",
 };
 
-function guessEntityType(sourceName: string): keyof typeof entityAvatarColors {
+function guessEntityType(sourceName: string): EntityType {
 	const lower = sourceName.toLowerCase();
 	if (lower.includes("session")) return "faction";
 	if (lower.includes(".pdf") || lower.includes(".md") || lower.includes(".txt"))
@@ -110,7 +110,7 @@ export function ContextPanel({
 				) : (
 					uniqueSources.map((source) => {
 						const type = guessEntityType(source.sourceName);
-						const colors = entityAvatarColors[type];
+						const colors = getEntityPalette(type);
 						return (
 							<div key={source.sourceId} style={entityRowStyle}>
 								<EntityAvatar name={source.sourceName} entityType={type} />

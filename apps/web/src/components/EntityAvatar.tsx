@@ -1,13 +1,21 @@
 import type { CSSProperties } from "react";
 import { entityAvatarColors } from "./styles.js";
 
-type EntityType = keyof typeof entityAvatarColors;
+export type EntityType = keyof typeof entityAvatarColors;
 
 interface EntityAvatarProps {
 	name: string;
 	entityType: EntityType;
 	size?: number;
 	style?: CSSProperties;
+}
+
+/**
+ * Returns the `{ backgroundColor, color }` pair associated with an entity type.
+ * Prefer this over importing `entityAvatarColors` directly in feature code.
+ */
+export function getEntityPalette(entityType: EntityType) {
+	return entityAvatarColors[entityType];
 }
 
 export function EntityAvatar({
@@ -17,6 +25,7 @@ export function EntityAvatar({
 	style,
 }: EntityAvatarProps) {
 	const colors = entityAvatarColors[entityType];
+	const initial = name.trim().charAt(0).toUpperCase() || "?";
 	return (
 		<div
 			style={{
@@ -33,7 +42,7 @@ export function EntityAvatar({
 				...style,
 			}}
 		>
-			{name.charAt(0).toUpperCase()}
+			{initial}
 		</div>
 	);
 }

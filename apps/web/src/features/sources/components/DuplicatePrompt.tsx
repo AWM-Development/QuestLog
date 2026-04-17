@@ -1,5 +1,5 @@
+import { Alert } from "@/components/Alert.js";
 import { Button } from "@/components/Button.js";
-import { inlineAlertWarning } from "@/components/styles.js";
 import type { DuplicateResolutionAction, Source } from "../types.js";
 
 interface DuplicatePromptProps {
@@ -18,11 +18,10 @@ export function DuplicatePrompt({
 	});
 
 	return (
-		<div
-			style={{
-				...inlineAlertWarning,
-				marginTop: "var(--space-3)",
-			}}
+		<Alert
+			variant="warning"
+			layout="inline"
+			style={{ marginTop: "var(--space-3)" }}
 		>
 			<p
 				style={{
@@ -57,6 +56,6 @@ export function DuplicatePrompt({
 					Skip
 				</Button>
 			</div>
-		</div>
+		</Alert>
 	);
 }

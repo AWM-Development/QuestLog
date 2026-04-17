@@ -8,8 +8,22 @@ describe("Alert", () => {
 		expect(screen.getByText("Something went wrong")).toBeInTheDocument();
 	});
 
-	it("has role=alert", () => {
+	it("defaults to role=alert for error variant", () => {
 		render(<Alert>Error</Alert>);
+		expect(screen.getByRole("alert")).toBeInTheDocument();
+	});
+
+	it("defaults to role=status for warning variant", () => {
+		render(<Alert variant="warning">Heads up</Alert>);
+		expect(screen.getByRole("status")).toBeInTheDocument();
+	});
+
+	it("honors explicit role override", () => {
+		render(
+			<Alert variant="warning" role="alert">
+				Upgraded urgency
+			</Alert>,
+		);
 		expect(screen.getByRole("alert")).toBeInTheDocument();
 	});
 
@@ -38,9 +52,40 @@ describe("Alert", () => {
 		expect(onRetry).toHaveBeenCalledTimes(1);
 	});
 
-	it("applies error color to text", () => {
+	it("error variant applies status-error color to container", () => {
 		render(<Alert>Error</Alert>);
-		const el = screen.getByRole("alert");
-		expect(el).toHaveStyle({ color: "var(--status-error)" });
+		expect(screen.getByRole("alert")).toHaveStyle({
+			color: "var(--status-error)",
+		});
+	});
+
+	it("warning variant applies status-warning color to container", () => {
+		render(<Alert variant="warning">Warn</Alert>);
+		expect(screen.getByRole("status")).toHaveStyle({
+			color: "var(--status-warning)",
+		});
+	});
+
+	it("inline layout uses inline alert padding", () => {
+		render(
+			<Alert variant="error" layout="inline">
+				Inline
+			</Alert>,
+		);
+		// inlineAlertError uses var(--space-3) var(--space-4)
+		expect(screen.getByRole("alert")).toHaveStyle({
+			padding: "var(--space-3) var(--space-4)",
+		});
+	});
+
+	it("inline layout renders children that include block elements (no <p> wrap)", () => {
+		render(
+			<Alert variant="warning" layout="inline">
+				<div>
+					<button type="button">Action</button>
+				</div>
+			</Alert>,
+		);
+		expect(screen.getByRole("button", { name: "Action" })).toBeInTheDocument();
 	});
 });

@@ -1,4 +1,5 @@
 import {
+	type AnchorHTMLAttributes,
 	type ButtonHTMLAttributes,
 	type CSSProperties,
 	type HTMLAttributes,
@@ -22,7 +23,11 @@ type CardDivProps = CardBaseProps &
 	HTMLAttributes<HTMLDivElement> & { as?: "div" };
 type CardButtonProps = CardBaseProps &
 	ButtonHTMLAttributes<HTMLButtonElement> & { as: "button" };
-type CardLinkProps = CardBaseProps & { as: "link"; href: string };
+type CardLinkProps = CardBaseProps &
+	Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> & {
+		as: "link";
+		href: string;
+	};
 
 type CardProps = CardDivProps | CardButtonProps | CardLinkProps;
 
@@ -56,7 +61,12 @@ export function Card({
 
 	if (as === "link" && href) {
 		return (
-			<Link to={href} style={computedStyle} {...hoverHandlers}>
+			<Link
+				to={href}
+				style={computedStyle}
+				{...hoverHandlers}
+				{...(rest as Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href">)}
+			>
 				{children}
 			</Link>
 		);

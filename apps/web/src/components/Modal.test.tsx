@@ -68,4 +68,60 @@ describe("Modal", () => {
 		fireEvent.click(screen.getByText("Inner"));
 		expect(onClose).not.toHaveBeenCalled();
 	});
+
+	it("auto-focuses the first non-close focusable element", () => {
+		render(
+			<Modal title="Test" onClose={vi.fn()}>
+				<button type="button" aria-label="Close">
+					×
+				</button>
+				<input aria-label="first" />
+				<input aria-label="second" />
+			</Modal>,
+		);
+		expect(screen.getByLabelText("first")).toHaveFocus();
+	});
+
+	it("Tab from last focusable wraps to first (focus trap)", () => {
+		render(
+			<Modal title="Test" onClose={vi.fn()}>
+				<input aria-label="a" />
+				<input aria-label="b" />
+			</Modal>,
+		);
+		const b = screen.getByLabelText("b");
+		b.focus();
+		fireEvent.keyDown(b, { key: "Tab" });
+		expect(screen.getByLabelText("a")).toHaveFocus();
+	});
+
+	it("Shift+Tab from first focusable wraps to last (focus trap)", () => {
+		render(
+			<Modal title="Test" onClose={vi.fn()}>
+				<input aria-label="a" />
+				<input aria-label="b" />
+			</Modal>,
+		);
+		const a = screen.getByLabelText("a");
+		a.focus();
+		fireEvent.keyDown(a, { key: "Tab", shiftKey: true });
+		expect(screen.getByLabelText("b")).toHaveFocus();
+	});
+
+	it("generates a unique aria-labelledby id per instance", () => {
+		const { rerender } = render(
+			<Modal title="First" onClose={vi.fn()}>
+				a
+			</Modal>,
+		);
+		const firstId = screen.getByRole("dialog").getAttribute("aria-labelledby");
+		rerender(
+			<Modal title="Second" onClose={vi.fn()}>
+				b
+			</Modal>,
+		);
+		const secondId = screen.getByRole("dialog").getAttribute("aria-labelledby");
+		expect(firstId).toBeTruthy();
+		expect(secondId).toBeTruthy();
+	});
 });

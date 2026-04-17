@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useRef } from "react";
+import { type ReactNode, useEffect, useId, useRef } from "react";
 
 interface ModalProps {
 	title: string;
@@ -7,6 +7,9 @@ interface ModalProps {
 	children: ReactNode;
 }
 
+const FOCUSABLE_SELECTOR =
+	'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 export function Modal({
 	title,
 	onClose,
@@ -14,7 +17,7 @@ export function Modal({
 	children,
 }: ModalProps) {
 	const dialogRef = useRef<HTMLDialogElement>(null);
-	const titleId = "modal-title";
+	const titleId = useId();
 
 	useEffect(() => {
 		const dialog = dialogRef.current;
@@ -26,13 +29,44 @@ export function Modal({
 		};
 		dialog.addEventListener("cancel", handleCancel);
 
-		const firstInput = dialog.querySelector<HTMLElement>(
-			"input, textarea, select, button",
+		const focusables = dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+		// Prefer the first non-close input; fall back to whatever is focusable.
+		const firstField = Array.from(focusables).find(
+			(el) => el.getAttribute("aria-label") !== "Close",
 		);
-		firstInput?.focus();
+		(firstField ?? focusables[0])?.focus();
 
 		return () => dialog.removeEventListener("cancel", handleCancel);
 	}, [onClose]);
+
+	const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+		if (e.key === "Escape") {
+			e.stopPropagation();
+			onClose();
+			return;
+		}
+		if (e.key !== "Tab") return;
+
+		const dialog = dialogRef.current;
+		if (!dialog) return;
+
+		const focusables = Array.from(
+			dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+		);
+		if (focusables.length === 0) return;
+
+		const first = focusables[0];
+		const last = focusables[focusables.length - 1];
+		const active = document.activeElement as HTMLElement | null;
+
+		if (e.shiftKey && (active === first || !dialog.contains(active))) {
+			e.preventDefault();
+			last.focus();
+		} else if (!e.shiftKey && active === last) {
+			e.preventDefault();
+			first.focus();
+		}
+	};
 
 	return (
 		<div
@@ -49,12 +83,7 @@ export function Modal({
 			onClick={(e) => {
 				if (e.target === e.currentTarget) onClose();
 			}}
-			onKeyDown={(e) => {
-				if (e.key === "Escape") {
-					e.stopPropagation();
-					onClose();
-				}
-			}}
+			onKeyDown={handleKeyDown}
 		>
 			<dialog
 				ref={dialogRef}

@@ -1,6 +1,6 @@
 import { Button } from "@/components/Button.js";
 import { Input } from "@/components/Input.js";
-import { inputField } from "@/components/styles.js";
+import { Textarea } from "@/components/Textarea.js";
 import { trpc } from "@/lib/trpc.js";
 import { useEffect, useRef, useState } from "react";
 
@@ -95,18 +95,12 @@ export function PasteTextInput({
 						style={{ width: "100%", boxSizing: "border-box" }}
 						aria-label="Source title"
 					/>
-					<textarea
+					<Textarea
 						value={content}
 						onChange={(e) => setContent(e.target.value)}
 						placeholder="Paste your campaign notes, worldbuilding, or session logs here..."
 						rows={8}
-						style={{
-							...inputField,
-							width: "100%",
-							boxSizing: "border-box",
-							resize: "vertical",
-							fontFamily: "var(--font-body)",
-						}}
+						style={{ width: "100%", boxSizing: "border-box" }}
 						aria-label="Paste content"
 					/>
 					<div style={{ display: "flex", gap: "var(--space-3)" }}>

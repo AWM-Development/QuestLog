@@ -1,5 +1,5 @@
+import { Alert } from "@/components/Alert.js";
 import { Button } from "@/components/Button.js";
-import { inlineAlertError } from "@/components/styles.js";
 import type { Source } from "../types.js";
 
 interface ErrorStateProps {
@@ -25,19 +25,12 @@ export function ErrorState({
 				: "Text extraction failed.");
 
 	return (
-		<div
-			style={{
-				...inlineAlertError,
-				marginTop: "var(--space-3)",
-			}}
+		<Alert
+			variant="error"
+			layout="inline"
+			style={{ marginTop: "var(--space-3)" }}
 		>
-			<p
-				style={{
-					fontSize: "0.8125rem",
-					color: "var(--status-error)",
-					marginBottom: "var(--space-3)",
-				}}
-			>
+			<p style={{ fontSize: "0.8125rem", marginBottom: "var(--space-3)" }}>
 				{message}
 			</p>
 			<div style={{ display: "flex", gap: "var(--space-2)" }}>
@@ -56,6 +49,6 @@ export function ErrorState({
 					Dismiss
 				</Button>
 			</div>
-		</div>
+		</Alert>
 	);
 }

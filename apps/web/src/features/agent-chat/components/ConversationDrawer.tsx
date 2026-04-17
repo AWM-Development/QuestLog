@@ -1,10 +1,10 @@
 import { type CSSProperties, useState } from "react";
 import { IconButton } from "../../../components/IconButton.js";
+import { Input } from "../../../components/Input.js";
 import {
 	chatDrawerSurface,
 	chatOverlayScrim,
 	chatPillButton,
-	chatSearchInput,
 } from "../styles.js";
 import { ConversationListItem } from "./ConversationListItem.js";
 
@@ -59,7 +59,6 @@ const labelStyle: CSSProperties = {
 };
 
 const searchInputStyle: CSSProperties = {
-	...chatSearchInput,
 	margin: "0 var(--space-3) var(--space-2)",
 };
 
@@ -123,11 +122,13 @@ export function ConversationDrawer({
 				</IconButton>
 			</div>
 
-			<input
+			<Input
+				size="sm"
 				type="text"
 				value={search}
 				onChange={(e) => setSearch(e.target.value)}
 				placeholder="Search conversations..."
+				aria-label="Search conversations"
 				style={searchInputStyle}
 			/>
 

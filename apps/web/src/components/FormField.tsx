@@ -1,8 +1,16 @@
-import type { CSSProperties, ReactNode } from "react";
+import {
+	type CSSProperties,
+	Children,
+	type ReactElement,
+	type ReactNode,
+	cloneElement,
+	isValidElement,
+	useId,
+} from "react";
 
 interface FormFieldProps {
 	label: string;
-	/** Associates label with input via htmlFor/id pairing */
+	/** Explicit id to bind the label to. When omitted, an id is auto-generated and injected into a single ReactElement child without its own id. */
 	htmlFor?: string;
 	hint?: string;
 	error?: string;
@@ -48,13 +56,29 @@ export function FormField({
 	compact = false,
 	children,
 }: FormFieldProps) {
+	const generatedId = useId();
+	const fieldId = htmlFor ?? generatedId;
+
+	// When htmlFor is not explicitly set and the child is a single ReactElement
+	// without its own `id`, inject the generated id so the label binds correctly.
+	let renderedChildren: ReactNode = children;
+	if (!htmlFor) {
+		const arr = Children.toArray(children);
+		if (arr.length === 1 && isValidElement(arr[0])) {
+			const child = arr[0] as ReactElement<{ id?: string }>;
+			if (child.props.id == null) {
+				renderedChildren = cloneElement(child, { id: fieldId });
+			}
+		}
+	}
+
 	return (
 		<div>
-			<label htmlFor={htmlFor} style={compact ? labelCompactStyle : labelStyle}>
+			<label htmlFor={fieldId} style={compact ? labelCompactStyle : labelStyle}>
 				{label}
 				{required && <span style={{ color: "var(--status-error)" }}> *</span>}
 			</label>
-			{children}
+			{renderedChildren}
 			{error && (
 				<p role="alert" style={errorStyle}>
 					{error}

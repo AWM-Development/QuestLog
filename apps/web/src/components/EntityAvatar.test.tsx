@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { EntityAvatar } from "./EntityAvatar.js";
+import { EntityAvatar, getEntityPalette } from "./EntityAvatar.js";
 
 describe("EntityAvatar", () => {
 	it("renders the first character of name uppercased", () => {
@@ -38,5 +38,17 @@ describe("EntityAvatar", () => {
 		);
 		const el = container.firstChild as HTMLElement;
 		expect(el).toHaveStyle({ width: "24px", height: "24px" });
+	});
+
+	it("renders a fallback glyph when name is empty", () => {
+		render(<EntityAvatar name="" entityType="npc" />);
+		expect(screen.getByText("?")).toBeInTheDocument();
+	});
+
+	it("getEntityPalette returns tokenized colors for a type", () => {
+		expect(getEntityPalette("npc")).toEqual({
+			backgroundColor: "var(--ent-npc-bg)",
+			color: "var(--ent-npc)",
+		});
 	});
 });

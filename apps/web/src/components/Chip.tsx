@@ -1,19 +1,12 @@
 import type { CSSProperties, ReactNode } from "react";
-import {
-	chipBase,
-	entityAvatarColors,
-	sourceChipBase,
-	sourceChipColors,
-} from "./styles.js";
+import { chipBase, entityAvatarColors } from "./styles.js";
 
-type ChipVariant = "entity" | "tag" | "badge" | "pill" | "source";
+type ChipVariant = "entity" | "tag" | "badge" | "pill";
 type EntityType = keyof typeof entityAvatarColors;
-type SourceType = keyof typeof sourceChipColors;
 
 interface ChipProps {
 	variant: ChipVariant;
 	entityType?: EntityType;
-	sourceType?: SourceType;
 	children: ReactNode;
 	style?: CSSProperties;
 }
@@ -29,13 +22,7 @@ const pillStyle: CSSProperties = {
 	borderRadius: "var(--r-pill)",
 };
 
-export function Chip({
-	variant,
-	entityType,
-	sourceType,
-	children,
-	style,
-}: ChipProps) {
+export function Chip({ variant, entityType, children, style }: ChipProps) {
 	let computedStyle: CSSProperties;
 
 	if (variant === "entity" && entityType) {
@@ -48,8 +35,6 @@ export function Chip({
 		computedStyle = badgeStyle;
 	} else if (variant === "pill") {
 		computedStyle = pillStyle;
-	} else if (variant === "source" && sourceType) {
-		computedStyle = { ...sourceChipBase, ...sourceChipColors[sourceType] };
 	} else {
 		computedStyle = chipBase;
 	}
