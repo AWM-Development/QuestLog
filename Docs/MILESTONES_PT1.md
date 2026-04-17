@@ -260,22 +260,22 @@
 
 ### Tasks
 
-- [ ] **4.5.1 — Button + IconButton**
+- [x] **4.5.1 — Button + IconButton**
   - Branch: `refactor/ui-component-library`
   - Work: Create `Button.tsx` (variants: accent/secondary/ghost/action, sizes: md/sm, loading state) and `IconButton.tsx` (sizes: 24/28/32, active state, required aria-label). Migrate all callsites. Remove per-callsite `useState` hover/active hooks, inconsistent disabled styles.
   - Tests: Component tests for each variant, disabled, loading states; verify all migrated callsites still pass their existing tests.
 
-- [ ] **4.5.2 — Input + FormField**
+- [x] **4.5.2 — Input + FormField**
   - Branch: `refactor/ui-component-library` (same branch)
   - Work: Create `Input.tsx` (consistent focus ring, background token) and `FormField.tsx` (label, hint, error layout wrapper). Refactor `FinalizeForm` (5 repeated label+input blocks) and `CampaignCreateModal` (4 local inputStyle usages) to use `<FormField>`.
   - Tests: FormField renders label, error, required indicator. Input focus ring applies correct tokens.
 
-- [ ] **4.5.3 — Chip + Card + Alert**
+- [x] **4.5.3 — Chip + Card + Alert**
   - Branch: `refactor/ui-component-library` (same branch)
   - Work: Create `Chip.tsx` (entity/tag/badge/source variants), `Card.tsx` (div/button/link rendering, encapsulated hover), `Alert.tsx` (error/warning). Migrate campaign badges, tag chips, campaign cards, session cards, error blocks.
   - Tests: Chip maps entityType to correct color tokens. Card renders correct element type. Alert has role="alert".
 
-- [ ] **4.5.4 — EntityAvatar + Modal**
+- [x] **4.5.4 — EntityAvatar + Modal**
   - Branch: `refactor/ui-component-library` (same branch)
   - Work: Create `EntityAvatar.tsx` (entityType → color, initials, size). Create `Modal.tsx` (scrim, focus trap, Escape key, title). Refactor `ContextPanel` avatar and `CampaignCreateModal` chrome.
   - Tests: EntityAvatar maps entity types to correct colors. Modal traps focus, calls onClose on Escape and scrim click.
