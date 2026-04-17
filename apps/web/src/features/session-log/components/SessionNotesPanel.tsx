@@ -5,12 +5,8 @@ import {
 	useRef,
 	useState,
 } from "react";
-import {
-	buttonAccent,
-	buttonSmallAccent,
-	buttonSmallSecondary,
-	iconButtonBase,
-} from "../../../components/styles.js";
+import { Button } from "../../../components/Button.js";
+import { IconButton } from "../../../components/IconButton.js";
 import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../lib/trpc.js";
 import { useSessionAutoSave } from "../hooks/useSessionAutoSave.js";
@@ -148,14 +144,13 @@ export function SessionNotesPanel({
 					No sessions yet. Start a session log to capture what happens at the
 					table.
 				</p>
-				<button
-					type="button"
-					style={buttonAccent}
+				<Button
+					variant="accent"
 					onClick={() => createMutation.mutate({ campaignId })}
 					disabled={createMutation.isPending}
 				>
 					+ New Session
-				</button>
+				</Button>
 			</div>
 		);
 	}
@@ -191,13 +186,13 @@ export function SessionNotesPanel({
 					}}
 				>
 					{layout === "full" ? (
-						<button
-							type="button"
-							style={buttonSmallSecondary}
+						<Button
+							variant="secondary"
+							size="sm"
 							onClick={collapseNotesFromFull}
 						>
 							Back to panel
-						</button>
+						</Button>
 					) : null}
 					<SaveStatus saveState={saveState} />
 				</div>
@@ -210,32 +205,30 @@ export function SessionNotesPanel({
 					}}
 				>
 					{layout === "panel" ? (
-						<button
-							type="button"
-							title="Expand session notes to full width"
-							aria-label="Expand session notes to full width"
-							style={iconButtonBase}
+						<IconButton
+							label="Expand session notes to full width"
+							size={24}
 							onClick={expandNotesToFull}
 						>
 							⤢
-						</button>
+						</IconButton>
 					) : null}
 					{isFinal ? (
-						<button
-							type="button"
-							style={buttonSmallSecondary}
+						<Button
+							variant="secondary"
+							size="sm"
 							onClick={() => setFinalizeOpen(true)}
 						>
 							Update
-						</button>
+						</Button>
 					) : (
-						<button
-							type="button"
-							style={buttonSmallAccent}
+						<Button
+							variant="accent"
+							size="sm"
 							onClick={() => setFinalizeOpen(true)}
 						>
 							Save Session
-						</button>
+						</Button>
 					)}
 				</div>
 			</div>

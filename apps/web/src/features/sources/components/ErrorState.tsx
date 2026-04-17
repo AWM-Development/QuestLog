@@ -1,4 +1,5 @@
-import { buttonGhost, inlineAlertError } from "@/components/styles.js";
+import { Button } from "@/components/Button.js";
+import { inlineAlertError } from "@/components/styles.js";
 import type { Source } from "../types.js";
 
 interface ErrorStateProps {
@@ -40,24 +41,20 @@ export function ErrorState({
 				{message}
 			</p>
 			<div style={{ display: "flex", gap: "var(--space-2)" }}>
-				<button
-					type="button"
+				<Button
+					variant="ghost"
 					onClick={() => onPasteText(source.name)}
-					style={{
-						...buttonGhost,
-						color: "var(--accent)",
-						fontSize: "0.8125rem",
-					}}
+					style={{ color: "var(--accent)", fontSize: "0.8125rem" }}
 				>
 					Paste text instead
-				</button>
-				<button
-					type="button"
+				</Button>
+				<Button
+					variant="ghost"
 					onClick={onDismiss}
-					style={{ ...buttonGhost, fontSize: "0.8125rem" }}
+					style={{ fontSize: "0.8125rem" }}
 				>
 					Dismiss
-				</button>
+				</Button>
 			</div>
 		</div>
 	);

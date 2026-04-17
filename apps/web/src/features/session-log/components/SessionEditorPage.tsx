@@ -2,7 +2,6 @@ import { type CSSProperties, useCallback, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { Button } from "../../../components/Button.js";
 import { IconButton } from "../../../components/IconButton.js";
-import { buttonGhost } from "../../../components/styles.js";
 import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../lib/trpc.js";
 import { useSessionAutoSave } from "../hooks/useSessionAutoSave.js";
@@ -41,7 +40,13 @@ const headerGroup: CSSProperties = {
 };
 
 const backLinkStyle: CSSProperties = {
-	...buttonGhost,
+	borderRadius: "var(--r-sm)",
+	border: "none",
+	backgroundColor: "transparent",
+	color: "var(--text-muted)",
+	fontFamily: "var(--font-body)",
+	cursor: "pointer",
+	transition: "all 0.15s",
 	padding: "var(--space-1) 10px",
 	fontSize: "0.75rem",
 	textDecoration: "none",

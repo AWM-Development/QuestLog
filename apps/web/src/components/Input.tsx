@@ -1,4 +1,9 @@
-import { type CSSProperties, type InputHTMLAttributes, useState } from "react";
+import {
+	type CSSProperties,
+	type InputHTMLAttributes,
+	forwardRef,
+	useState,
+} from "react";
 import { inputField, inputFieldFocus } from "./styles.js";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -6,7 +11,10 @@ interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 	background?: string;
 }
 
-export function Input({ background, style, ...rest }: InputProps) {
+export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
+	{ background, style, ...rest },
+	ref,
+) {
 	const [focused, setFocused] = useState(false);
 
 	const computedStyle: CSSProperties = {
@@ -18,6 +26,7 @@ export function Input({ background, style, ...rest }: InputProps) {
 
 	return (
 		<input
+			ref={ref}
 			style={computedStyle}
 			onFocus={(e) => {
 				setFocused(true);
@@ -30,4 +39,4 @@ export function Input({ background, style, ...rest }: InputProps) {
 			{...rest}
 		/>
 	);
-}
+});

@@ -1,5 +1,4 @@
 import { type CSSProperties, useEffect, useRef, useState } from "react";
-import { chipBase } from "../../../components/styles.js";
 import { chatPillButton, chatSearchInput } from "../styles.js";
 import { getTagColor } from "../types.js";
 
@@ -10,7 +9,10 @@ interface ConversationTagsProps {
 }
 
 const tagPillStyle: CSSProperties = {
-	...chipBase,
+	display: "inline-flex",
+	alignItems: "center",
+	borderRadius: "var(--r-sm)",
+	fontFamily: "var(--font-body)",
 	gap: "3px",
 	fontSize: "10px",
 	padding: "2px 7px",

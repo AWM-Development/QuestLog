@@ -1,4 +1,6 @@
-import { buttonAccent, buttonGhost, inputField } from "@/components/styles.js";
+import { Button } from "@/components/Button.js";
+import { Input } from "@/components/Input.js";
+import { inputField } from "@/components/styles.js";
 import { trpc } from "@/lib/trpc.js";
 import { useEffect, useRef, useState } from "react";
 
@@ -62,17 +64,13 @@ export function PasteTextInput({
 
 	return (
 		<div style={{ marginTop: "var(--space-3)" }}>
-			<button
-				type="button"
+			<Button
+				variant="ghost"
 				onClick={handleToggle}
-				style={{
-					...buttonGhost,
-					color: "var(--accent)",
-					padding: "var(--space-1) 0",
-				}}
+				style={{ color: "var(--accent)", padding: "var(--space-1) 0" }}
 			>
 				{isExpanded ? "— collapse" : "+ or paste text directly"}
-			</button>
+			</Button>
 
 			{isExpanded && (
 				<form
@@ -88,13 +86,13 @@ export function PasteTextInput({
 						border: "1px solid var(--border-subtle)",
 					}}
 				>
-					<input
+					<Input
 						ref={titleRef}
 						type="text"
 						value={title}
 						onChange={(e) => setTitle(e.target.value)}
 						placeholder="Source title (e.g., 'NPC backstories')"
-						style={{ ...inputField, width: "100%", boxSizing: "border-box" }}
+						style={{ width: "100%", boxSizing: "border-box" }}
 						aria-label="Source title"
 					/>
 					<textarea
@@ -112,16 +110,14 @@ export function PasteTextInput({
 						aria-label="Paste content"
 					/>
 					<div style={{ display: "flex", gap: "var(--space-3)" }}>
-						<button
+						<Button
 							type="submit"
+							variant="accent"
 							disabled={!title.trim() || mutation.isPending}
-							style={{
-								...buttonAccent,
-								opacity: !title.trim() || mutation.isPending ? 0.5 : 1,
-							}}
+							loading={mutation.isPending}
 						>
 							{mutation.isPending ? "Importing…" : "Import text"}
-						</button>
+						</Button>
 						{mutation.isError && (
 							<span
 								style={{

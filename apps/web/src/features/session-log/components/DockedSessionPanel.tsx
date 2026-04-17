@@ -2,7 +2,6 @@ import { type CSSProperties, useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "../../../components/Button.js";
 import { IconButton } from "../../../components/IconButton.js";
-import { buttonGhost } from "../../../components/styles.js";
 import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../lib/trpc.js";
 import { useSessionAutoSave } from "../hooks/useSessionAutoSave.js";
@@ -119,14 +118,14 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 					<span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
 						No session selected
 					</span>
-					<button
-						type="button"
+					<Button
+						variant="ghost"
 						aria-label="Close dock"
-						style={{ ...buttonGhost, fontSize: "1.1rem", lineHeight: 1 }}
+						style={{ fontSize: "1.1rem", lineHeight: 1 }}
 						onClick={undock}
 					>
 						×
-					</button>
+					</Button>
 				</div>
 			</aside>
 		);
@@ -139,14 +138,14 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 					<span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
 						Loading session…
 					</span>
-					<button
-						type="button"
+					<Button
+						variant="ghost"
 						aria-label="Close dock"
-						style={{ ...buttonGhost, fontSize: "1.1rem", lineHeight: 1 }}
+						style={{ fontSize: "1.1rem", lineHeight: 1 }}
 						onClick={undock}
 					>
 						×
-					</button>
+					</Button>
 				</div>
 			</aside>
 		);
@@ -187,14 +186,14 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 							Save Session
 						</Button>
 					)}
-					<button
-						type="button"
+					<Button
+						variant="ghost"
 						aria-label="Close dock"
-						style={{ ...buttonGhost, fontSize: "1.1rem", lineHeight: 1 }}
+						style={{ fontSize: "1.1rem", lineHeight: 1 }}
 						onClick={undock}
 					>
 						×
-					</button>
+					</Button>
 				</div>
 			</div>
 

@@ -4,12 +4,12 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import { BubbleMenu, FloatingMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import { useEffect, useRef, useState } from "react";
+import { IconButton } from "../../../components/IconButton.js";
 import {
 	editorSurface,
 	floatingMenu,
 	floatingMenuDropdown,
 	floatingMenuOption,
-	iconButtonBase,
 } from "../../../components/styles.js";
 
 function parseInitialContent(raw: string): JSONContent | string {
@@ -233,57 +233,51 @@ export function SessionEditor({
 		>
 			<BubbleMenu editor={editor}>
 				<div style={floatingMenu}>
-					<button
-						type="button"
-						style={iconButtonBase}
+					<IconButton
+						label="Bold"
+						size={24}
 						onClick={() => editor.chain().focus().toggleBold().run()}
-						aria-label="Bold"
 					>
 						B
-					</button>
-					<button
-						type="button"
-						style={iconButtonBase}
+					</IconButton>
+					<IconButton
+						label="Italic"
+						size={24}
 						onClick={() => editor.chain().focus().toggleItalic().run()}
-						aria-label="Italic"
 					>
 						I
-					</button>
-					<button
-						type="button"
-						style={iconButtonBase}
+					</IconButton>
+					<IconButton
+						label="Strikethrough"
+						size={24}
 						onClick={() => editor.chain().focus().toggleStrike().run()}
-						aria-label="Strikethrough"
 					>
 						S
-					</button>
-					<button
-						type="button"
-						style={iconButtonBase}
+					</IconButton>
+					<IconButton
+						label="Code"
+						size={24}
 						onClick={() => editor.chain().focus().toggleCode().run()}
-						aria-label="Code"
 					>
 						{"</>"}
-					</button>
-					<button
-						type="button"
-						style={iconButtonBase}
+					</IconButton>
+					<IconButton
+						label="Link"
+						size={24}
 						onClick={() => {
 							const href = window.prompt("Link URL");
 							if (href) editor.chain().focus().setLink({ href }).run();
 						}}
-						aria-label="Link"
 					>
 						🔗
-					</button>
-					<button
-						type="button"
-						style={iconButtonBase}
+					</IconButton>
+					<IconButton
+						label="Heading"
+						size={24}
 						onClick={() => cycleHeading(editor)}
-						aria-label="Heading"
 					>
 						H
-					</button>
+					</IconButton>
 				</div>
 			</BubbleMenu>
 

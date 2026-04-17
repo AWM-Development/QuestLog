@@ -1,4 +1,5 @@
-import { buttonGhost, inlineAlertWarning } from "@/components/styles.js";
+import { Button } from "@/components/Button.js";
+import { inlineAlertWarning } from "@/components/styles.js";
 import type { DuplicateResolutionAction, Source } from "../types.js";
 
 interface DuplicatePromptProps {
@@ -34,31 +35,27 @@ export function DuplicatePrompt({
 				should we do?
 			</p>
 			<div style={{ display: "flex", gap: "var(--space-2)" }}>
-				<button
-					type="button"
+				<Button
+					variant="ghost"
 					onClick={() => onResolve("replace")}
-					style={{
-						...buttonGhost,
-						color: "var(--status-warning)",
-						fontSize: "0.8125rem",
-					}}
+					style={{ color: "var(--status-warning)", fontSize: "0.8125rem" }}
 				>
 					Replace
-				</button>
-				<button
-					type="button"
+				</Button>
+				<Button
+					variant="ghost"
 					onClick={() => onResolve("keep_both")}
-					style={{ ...buttonGhost, fontSize: "0.8125rem" }}
+					style={{ fontSize: "0.8125rem" }}
 				>
 					Keep both
-				</button>
-				<button
-					type="button"
+				</Button>
+				<Button
+					variant="ghost"
 					onClick={() => onResolve("skip")}
-					style={{ ...buttonGhost, fontSize: "0.8125rem" }}
+					style={{ fontSize: "0.8125rem" }}
 				>
 					Skip
-				</button>
+				</Button>
 			</div>
 		</div>
 	);
