@@ -1,4 +1,5 @@
 import { type CSSProperties, useState } from "react";
+import { IconButton } from "../../../components/IconButton.js";
 import { chipBase } from "../../../components/styles.js";
 import { getTagColor } from "../types.js";
 
@@ -71,20 +72,6 @@ const actionsStyle: CSSProperties = {
 	transform: "translateY(-50%)",
 	display: "flex",
 	gap: "2px",
-};
-
-const actionBtnStyle: CSSProperties = {
-	width: 24,
-	height: 24,
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-	borderRadius: "var(--r-sm)",
-	border: "none",
-	background: "transparent",
-	cursor: "pointer",
-	fontSize: "11px",
-	transition: "all 100ms ease",
 };
 
 const rowButtonStyle: CSSProperties = {
@@ -218,11 +205,10 @@ export function ConversationListItem({
 
 			{hovered && !editing && (
 				<div style={actionsStyle}>
-					<button
-						type="button"
-						style={actionBtnStyle}
+					<IconButton
+						label="Edit title"
+						size={24}
 						title="Edit title"
-						aria-label="Edit title"
 						onClick={(e) => {
 							e.stopPropagation();
 							setEditValue(conversation.title ?? "");
@@ -230,23 +216,19 @@ export function ConversationListItem({
 						}}
 					>
 						&#x270F;&#xFE0F;
-					</button>
-					<button
-						type="button"
-						style={{
-							...actionBtnStyle,
-							color: "var(--status-error)",
-							opacity: 0.5,
-						}}
+					</IconButton>
+					<IconButton
+						label="Archive conversation"
+						size={24}
 						title="Archive"
-						aria-label="Archive conversation"
+						style={{ color: "var(--status-error)", opacity: 0.5 }}
 						onClick={(e) => {
 							e.stopPropagation();
 							onArchive(conversation.id);
 						}}
 					>
 						&#x1F5D1;&#xFE0F;
-					</button>
+					</IconButton>
 				</div>
 			)}
 		</div>

@@ -1,5 +1,6 @@
 import { type CSSProperties, useEffect, useState } from "react";
-import { chatHeaderBar, chatIconButton } from "../styles.js";
+import { IconButton } from "../../../components/IconButton.js";
+import { chatHeaderBar } from "../styles.js";
 import { ConversationTags } from "./ConversationTags.js";
 
 interface ChatHeaderProps {
@@ -145,14 +146,14 @@ export function ChatHeader({
 
 	return (
 		<div style={chatHeaderBar}>
-			<button
-				type="button"
-				style={{ ...chatIconButton, flexShrink: 0 }}
+			<IconButton
+				label={drawerOpen ? "Close drawer" : "Open drawer"}
+				size={28}
 				onClick={onToggleDrawer}
-				aria-label={drawerOpen ? "Close drawer" : "Open drawer"}
+				style={{ flexShrink: 0 }}
 			>
 				&#x2630;
-			</button>
+			</IconButton>
 
 			{campaignName && <span style={campaignBadgeStyle}>{campaignName}</span>}
 

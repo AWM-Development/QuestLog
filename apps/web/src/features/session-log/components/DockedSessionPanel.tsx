@@ -1,7 +1,8 @@
 import { type CSSProperties, useCallback, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { Button } from "../../../components/Button.js";
-import { buttonGhost, iconButtonBase } from "../../../components/styles.js";
+import { IconButton } from "../../../components/IconButton.js";
+import { buttonGhost } from "../../../components/styles.js";
 import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../lib/trpc.js";
 import { useSessionAutoSave } from "../hooks/useSessionAutoSave.js";
@@ -161,15 +162,14 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 					<SaveStatus saveState={saveState} />
 				</div>
 				<div style={dockHeaderGroup}>
-					<button
-						type="button"
+					<IconButton
+						label="Undock session"
+						size={24}
 						title="Undock — open in full editor"
-						aria-label="Undock session"
-						style={iconButtonBase}
 						onClick={handleUndock}
 					>
 						⇤
-					</button>
+					</IconButton>
 					{isFinal ? (
 						<Button
 							variant="secondary"

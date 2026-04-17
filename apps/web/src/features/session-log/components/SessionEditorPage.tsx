@@ -1,7 +1,8 @@
 import { type CSSProperties, useCallback, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { Button } from "../../../components/Button.js";
-import { buttonGhost, iconButtonBase } from "../../../components/styles.js";
+import { IconButton } from "../../../components/IconButton.js";
+import { buttonGhost } from "../../../components/styles.js";
 import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../lib/trpc.js";
 import { useSessionAutoSave } from "../hooks/useSessionAutoSave.js";
@@ -153,11 +154,10 @@ export function SessionEditorPage() {
 					<Link to={`/campaign/${campaignId}/sessions`} style={backLinkStyle}>
 						← Sessions
 					</Link>
-					<button
-						type="button"
-						aria-label="Dock"
+					<IconButton
+						label="Dock"
+						size={24}
 						title="Dock — keep editing while you navigate"
-						style={iconButtonBase}
 						onClick={() => {
 							if (!sessionId || !campaignId) return;
 							flushSave();
@@ -166,7 +166,7 @@ export function SessionEditorPage() {
 						}}
 					>
 						⇥
-					</button>
+					</IconButton>
 				</div>
 				<div style={headerGroup}>
 					<SaveStatus saveState={saveState} />

@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { IconButton } from "../../../components/IconButton.js";
 import {
 	entityAvatarColors,
 	panelSection,
@@ -6,7 +7,6 @@ import {
 } from "../../../components/styles.js";
 import {
 	chatContextPanelSurface,
-	chatIconButton,
 	chatOverlayScrim,
 	chatPanelHeader,
 } from "../styles.js";
@@ -38,13 +38,6 @@ const panelHeaderLabel: CSSProperties = {
 	fontSize: "12px",
 	fontWeight: 500,
 	color: "var(--text-secondary)",
-};
-
-const closeBtnStyle: CSSProperties = {
-	...chatIconButton,
-	width: 24,
-	height: 24,
-	fontSize: "14px",
 };
 
 const entityRowStyle: CSSProperties = {
@@ -108,14 +101,9 @@ export function ContextPanel({
 		<div style={isOverlay ? overlayPanelStyle : panelStyle}>
 			<div style={panelHeaderStyle}>
 				<span style={panelHeaderLabel}>Context</span>
-				<button
-					type="button"
-					style={closeBtnStyle}
-					onClick={onClose}
-					aria-label="Close context panel"
-				>
+				<IconButton label="Close context panel" size={24} onClick={onClose}>
 					&#x2715;
-				</button>
+				</IconButton>
 			</div>
 
 			<div style={panelSection}>

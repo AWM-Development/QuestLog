@@ -1,7 +1,7 @@
 import { type CSSProperties, useState } from "react";
+import { IconButton } from "../../../components/IconButton.js";
 import {
 	chatDrawerSurface,
-	chatIconButton,
 	chatOverlayScrim,
 	chatPillButton,
 	chatSearchInput,
@@ -56,15 +56,6 @@ const labelStyle: CSSProperties = {
 	letterSpacing: "0.06em",
 	color: "var(--text-dim)",
 	fontWeight: 500,
-};
-
-const newBtnStyle: CSSProperties = {
-	...chatIconButton,
-	width: 24,
-	height: 24,
-	background: "var(--accent-muted)",
-	color: "var(--accent)",
-	fontSize: "14px",
 };
 
 const searchInputStyle: CSSProperties = {
@@ -122,14 +113,14 @@ export function ConversationDrawer({
 		<div style={isTablet ? overlayDrawerStyle : drawerStyle}>
 			<div style={headerStyle}>
 				<span style={labelStyle}>Conversations</span>
-				<button
-					type="button"
-					style={newBtnStyle}
+				<IconButton
+					label="New conversation"
+					size={24}
+					active
 					onClick={onCreate}
-					aria-label="New conversation"
 				>
 					+
-				</button>
+				</IconButton>
 			</div>
 
 			<input
