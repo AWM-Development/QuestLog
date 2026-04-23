@@ -203,7 +203,7 @@ export function ConversationTags({
 						/>
 						<div
 							style={{
-								marginTop: "4px",
+								marginTop: "var(--space-1)",
 								maxHeight: "120px",
 								overflowY: "auto",
 							}}

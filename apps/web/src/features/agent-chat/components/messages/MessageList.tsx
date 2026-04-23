@@ -21,14 +21,14 @@ const messageListStyle: CSSProperties = {
 	padding: "var(--space-6) var(--space-5)",
 	display: "flex",
 	flexDirection: "column",
-	gap: "24px",
+	gap: "var(--space-6)",
 };
 
 const skeletonContainerStyle: CSSProperties = {
 	flex: 1,
 	display: "flex",
 	flexDirection: "column",
-	gap: "24px",
+	gap: "var(--space-6)",
 	padding: "var(--space-6) var(--space-5)",
 };
 

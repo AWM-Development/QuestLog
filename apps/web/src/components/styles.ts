@@ -153,7 +153,7 @@ export const entityAvatarColors = {
 export const sourceChipBase: CSSProperties = {
 	display: "inline-flex",
 	alignItems: "center",
-	gap: "4px",
+	gap: "var(--space-1)",
 	padding: "3px 10px",
 	borderRadius: "var(--r-pill)",
 	fontSize: "0.6875rem",
