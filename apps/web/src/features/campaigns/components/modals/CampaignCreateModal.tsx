@@ -1,11 +1,11 @@
-import { Button } from "@/components/Button.js";
-import { Modal } from "@/components/layout/Modal.js";
+import { Button } from "@/components/buttons/Button.js";
 import {
 	FormField,
 	Input,
 	Select,
 	Textarea,
-} from "@/components/primitives/index.js";
+} from "@/components/inputs/index.js";
+import { Modal } from "@/components/overlays/Modal.js";
 import { trpc } from "@/lib/trpc.js";
 import { CAMPAIGN_THEMES } from "@questlog/shared";
 import { type SubmitEvent, useState } from "react";

@@ -1,14 +1,14 @@
 import type { CSSProperties } from "react";
-import {
-	EntityAvatar,
-	type EntityType,
-	getEntityPalette,
-} from "../../../../components/EntityAvatar.js";
-import { IconButton } from "../../../../components/IconButton.js";
+import { IconButton } from "../../../../components/buttons/IconButton.js";
 import {
 	panelSection,
 	panelSectionTitle,
 } from "../../../../components/styles.js";
+import {
+	EntityAvatar,
+	type EntityType,
+	getEntityPalette,
+} from "../../../../components/surfaces/EntityAvatar.js";
 import {
 	chatContextPanelSurface,
 	chatOverlayScrim,

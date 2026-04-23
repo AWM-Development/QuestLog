@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { renderWithRouter } from "../test-utils.js";
+import { renderWithRouter } from "../../test-utils.js";
 import { Card } from "./Card.js";
 
 describe("Card", () => {

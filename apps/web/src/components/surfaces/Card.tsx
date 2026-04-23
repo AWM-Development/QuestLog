@@ -7,7 +7,7 @@ import {
 	useState,
 } from "react";
 import { Link } from "react-router";
-import { cardSurface } from "./styles.js";
+import { cardSurface } from "../styles.js";
 
 type CardAs = "div" | "button" | "link";
 

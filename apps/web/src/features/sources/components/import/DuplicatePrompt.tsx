@@ -1,4 +1,4 @@
-import { Button } from "@/components/Button.js";
+import { Button } from "@/components/buttons/Button.js";
 import { Alert } from "@/components/feedback/Alert.js";
 import type { DuplicateResolutionAction, Source } from "../../types.js";
 

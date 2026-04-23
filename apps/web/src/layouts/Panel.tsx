@@ -1,5 +1,5 @@
 import { type CSSProperties, type ReactNode, useEffect } from "react";
-import { Button } from "../components/Button.js";
+import { Button } from "../components/buttons/Button.js";
 import { panelHeaderBase } from "../components/styles.js";
 import type { PanelTab } from "./CampaignChromeContext.js";
 

@@ -1,6 +1,6 @@
 import { Navigate, Outlet, createBrowserRouter } from "react-router";
-import { RouteErrorBoundary } from "./components/ErrorBoundary.js";
-import { PlaceholderPage } from "./components/PlaceholderPage.js";
+import { RouteErrorBoundary } from "./components/utilities/ErrorBoundary.js";
+import { PlaceholderPage } from "./components/utilities/PlaceholderPage.js";
 import { ChatPage } from "./features/agent-chat/index.js";
 import { CampaignListPage } from "./features/campaigns/index.js";
 import {

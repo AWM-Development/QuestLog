@@ -1,5 +1,5 @@
 import { type ButtonHTMLAttributes, type CSSProperties, useState } from "react";
-import { iconButtonBase } from "./styles.js";
+import { iconButtonBase } from "../styles.js";
 
 interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 	label: string;

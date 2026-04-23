@@ -6,7 +6,7 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { IconButton } from "../../../components/IconButton.js";
+import { IconButton } from "../../../components/buttons/IconButton.js";
 
 interface ChatInputProps {
 	onSend: (message: string) => void;

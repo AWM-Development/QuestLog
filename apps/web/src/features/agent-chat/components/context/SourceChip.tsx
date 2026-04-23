@@ -1,4 +1,4 @@
-import { Chip } from "../../../../components/primitives/Chip.js";
+import { Chip } from "../../../../components/buttons/Chip.js";
 import type { MessageSource } from "../../types.js";
 
 interface SourceChipProps {

@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { Button } from "../Button.js";
+import { Button } from "../buttons/Button.js";
 import { inlineAlertError, inlineAlertWarning } from "../styles.js";
 
 type AlertVariant = "error" | "warning";
