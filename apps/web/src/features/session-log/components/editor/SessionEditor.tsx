@@ -4,7 +4,7 @@ import { EditorContent, useEditor } from "@tiptap/react";
 import { BubbleMenu, FloatingMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
 import { useEffect, useRef, useState } from "react";
-import { IconButton } from "../../../../components/IconButton.js";
+import { IconButton } from "../../../../components/buttons/IconButton.js";
 import {
 	editorSurface,
 	floatingMenu,

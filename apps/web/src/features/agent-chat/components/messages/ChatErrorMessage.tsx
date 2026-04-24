@@ -33,7 +33,7 @@ const rateLimitCardStyle: CSSProperties = {
 };
 
 const retryButtonBase: CSSProperties = {
-	marginTop: "10px",
+	marginTop: "var(--space-2-5)",
 	padding: "5px 12px",
 	borderRadius: "var(--r-sm)",
 	background: "transparent",

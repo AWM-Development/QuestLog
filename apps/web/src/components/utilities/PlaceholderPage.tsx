@@ -1,4 +1,4 @@
-import { PageContainer, PageHeader } from "./layout/PageScaffold.js";
+import { PageContainer, PageHeader } from "../layout/PageScaffold.js";
 
 interface PlaceholderPageProps {
 	title: string;

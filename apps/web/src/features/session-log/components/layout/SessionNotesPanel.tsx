@@ -5,8 +5,8 @@ import {
 	useRef,
 	useState,
 } from "react";
-import { Button } from "../../../../components/Button.js";
-import { IconButton } from "../../../../components/IconButton.js";
+import { Button } from "../../../../components/buttons/Button.js";
+import { IconButton } from "../../../../components/buttons/IconButton.js";
 import { useCampaignChrome } from "../../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../../lib/trpc.js";
 import { useSessionAutoSave } from "../../hooks/useSessionAutoSave.js";

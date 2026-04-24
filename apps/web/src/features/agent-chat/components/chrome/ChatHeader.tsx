@@ -1,6 +1,6 @@
 import { type CSSProperties, useEffect, useState } from "react";
-import { IconButton } from "../../../../components/IconButton.js";
-import { Chip } from "../../../../components/primitives/Chip.js";
+import { Chip } from "../../../../components/buttons/Chip.js";
+import { IconButton } from "../../../../components/buttons/IconButton.js";
 import { chatHeaderBar } from "../../styles.js";
 import { ConversationTags } from "./ConversationTags.js";
 
@@ -69,7 +69,7 @@ const searchStyle: CSSProperties = {
 	flexShrink: 0,
 	display: "flex",
 	alignItems: "center",
-	gap: "6px",
+	gap: "var(--space-1-5)",
 	whiteSpace: "nowrap",
 };
 
@@ -150,7 +150,7 @@ export function ChatHeader({
 					variant="badge"
 					style={{
 						borderRadius: "var(--r-pill)",
-						padding: "2px 10px",
+						padding: "var(--space-0-5) var(--space-2-5)",
 						border: "0.5px solid var(--ent-npc-border)",
 						fontWeight: 500,
 						flexShrink: 0,
@@ -177,7 +177,7 @@ export function ChatHeader({
 						background: "var(--bg-elevated)",
 						border: "1px solid var(--border-hover)",
 						borderRadius: "var(--r-sm)",
-						padding: "2px 8px",
+						padding: "var(--space-0-5) var(--space-2)",
 						outline: "none",
 						flex: "0 1 auto",
 						minWidth: "120px",

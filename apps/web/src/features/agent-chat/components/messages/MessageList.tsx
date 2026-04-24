@@ -21,21 +21,21 @@ const messageListStyle: CSSProperties = {
 	padding: "var(--space-6) var(--space-5)",
 	display: "flex",
 	flexDirection: "column",
-	gap: "24px",
+	gap: "var(--space-6)",
 };
 
 const skeletonContainerStyle: CSSProperties = {
 	flex: 1,
 	display: "flex",
 	flexDirection: "column",
-	gap: "24px",
+	gap: "var(--space-6)",
 	padding: "var(--space-6) var(--space-5)",
 };
 
 const skeletonHeaderStyle: CSSProperties = {
 	display: "flex",
 	alignItems: "center",
-	gap: "6px",
+	gap: "var(--space-1-5)",
 	marginBottom: "var(--space-2)",
 };
 
@@ -73,7 +73,7 @@ function LoadingSkeleton() {
 					style={{
 						display: "flex",
 						flexDirection: "column",
-						gap: "10px",
+						gap: "var(--space-2-5)",
 					}}
 				>
 					<div style={skeletonBarStyle("85%")} />

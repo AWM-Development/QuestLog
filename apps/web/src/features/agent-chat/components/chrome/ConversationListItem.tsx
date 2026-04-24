@@ -1,6 +1,6 @@
 import { type CSSProperties, useState } from "react";
-import { IconButton } from "../../../../components/IconButton.js";
-import { Chip } from "../../../../components/primitives/Chip.js";
+import { Chip } from "../../../../components/buttons/Chip.js";
+import { IconButton } from "../../../../components/buttons/IconButton.js";
 import { getTagColor } from "../../types.js";
 
 interface ConversationListItemProps {
@@ -140,7 +140,7 @@ export function ConversationListItem({
 						background: "var(--bg-elevated)",
 						border: "1px solid var(--border-hover)",
 						borderRadius: "var(--r-sm)",
-						padding: "2px 6px",
+						padding: "var(--space-0-5) var(--space-1-5)",
 						outline: "none",
 						width: "100%",
 					}}

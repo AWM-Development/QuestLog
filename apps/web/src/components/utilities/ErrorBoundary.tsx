@@ -1,7 +1,7 @@
 import { Component, type ReactNode } from "react";
 import { useNavigate, useRouteError } from "react-router";
-import { Button } from "./Button.js";
-import { pageContainer } from "./styles.js";
+import { Button } from "../buttons/Button.js";
+import { pageContainer } from "../styles.js";
 
 /** Route-level error element for react-router's errorElement prop. */
 export function RouteErrorBoundary() {

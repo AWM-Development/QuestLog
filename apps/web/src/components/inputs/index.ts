@@ -1,4 +1,3 @@
-export { Chip } from "./Chip.js";
 export { FormField } from "./FormField.js";
 export { Input } from "./Input.js";
 export { Select } from "./Select.js";

@@ -15,7 +15,7 @@ interface InputProps
 }
 
 const smallStyle: CSSProperties = {
-	padding: "6px 10px",
+	padding: "var(--space-1-5) var(--space-2-5)",
 	fontSize: "11px",
 	borderRadius: "var(--r-sm)",
 };

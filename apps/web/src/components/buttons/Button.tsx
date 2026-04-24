@@ -6,7 +6,7 @@ import {
 	buttonSecondary,
 	buttonSmallAccent,
 	buttonSmallSecondary,
-} from "./styles.js";
+} from "../styles.js";
 
 type ButtonVariant = "accent" | "secondary" | "ghost" | "action";
 type ButtonSize = "md" | "sm";

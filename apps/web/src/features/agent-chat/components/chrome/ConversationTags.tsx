@@ -1,5 +1,5 @@
 import { type CSSProperties, useEffect, useRef, useState } from "react";
-import { Input } from "../../../../components/primitives/Input.js";
+import { Input } from "../../../../components/inputs/Input.js";
 import { chatPillButton } from "../../styles.js";
 import { getTagColor } from "../../types.js";
 
@@ -203,7 +203,7 @@ export function ConversationTags({
 						/>
 						<div
 							style={{
-								marginTop: "4px",
+								marginTop: "var(--space-1)",
 								maxHeight: "120px",
 								overflowY: "auto",
 							}}

@@ -1,14 +1,14 @@
 import type { CSSProperties } from "react";
-import {
-	EntityAvatar,
-	type EntityType,
-	getEntityPalette,
-} from "../../../../components/EntityAvatar.js";
-import { IconButton } from "../../../../components/IconButton.js";
+import { IconButton } from "../../../../components/buttons/IconButton.js";
 import {
 	panelSection,
 	panelSectionTitle,
 } from "../../../../components/styles.js";
+import {
+	EntityAvatar,
+	type EntityType,
+	getEntityPalette,
+} from "../../../../components/surfaces/EntityAvatar.js";
 import {
 	chatContextPanelSurface,
 	chatOverlayScrim,
@@ -47,8 +47,8 @@ const panelHeaderLabel: CSSProperties = {
 const entityRowStyle: CSSProperties = {
 	display: "flex",
 	alignItems: "center",
-	gap: "10px",
-	padding: "6px 0",
+	gap: "var(--space-2-5)",
+	padding: "var(--space-1-5) 0",
 };
 
 const entityNameStyle: CSSProperties = {

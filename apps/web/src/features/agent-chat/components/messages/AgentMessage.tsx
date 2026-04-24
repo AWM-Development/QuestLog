@@ -25,7 +25,7 @@ const agentMessageStyle: CSSProperties = {
 const sourcesRowStyle: CSSProperties = {
 	display: "flex",
 	flexWrap: "wrap",
-	gap: "6px",
+	gap: "var(--space-1-5)",
 	marginTop: "var(--space-3)",
 };
 

@@ -45,7 +45,7 @@ const railStyle: CSSProperties = {
 	flexDirection: "column",
 	alignItems: "center",
 	padding: "var(--space-3) 0",
-	gap: "2px",
+	gap: "var(--space-0-5)",
 	overflow: "hidden",
 };
 
@@ -176,7 +176,7 @@ export function Rail({ campaignId }: RailProps) {
 					display: "flex",
 					flexDirection: "column",
 					alignItems: "center",
-					gap: "2px",
+					gap: "var(--space-0-5)",
 				}}
 			>
 				{campaignId

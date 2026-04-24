@@ -22,6 +22,20 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 - **Docs:** local dev URLs (5173 / 3000 / `VITE_API_URL`), DEVELOPMENT_GUIDE first-time setup uses `db:migrate` and Postgres **5433**; README troubleshooting for API connection / **EADDRINUSE**
 - **Server:** clearer startup error when **PORT** is already in use; `.env.example` documents optional **PORT**
 
+### Added — M4.5 Polish: Style Audit & Component Reorganization
+
+- **4 half-step spacing tokens** added to `index.css`: `--space-0-5` (2px), `--space-1-5` (6px), `--space-2-5` (10px), `--space-3-5` (14px) — fills gaps in the 4px grid used by button/chip/input padding
+- Applied new tokens across all callsites: `buttonAccent`, `buttonSecondary`, `buttonGhost`, `buttonAction`, `chipBase`, `inputField`, `sourceChipBase`, `panelSection`, `panelSectionTitle`, `floatingMenu` presets, and all inline styles in feature files that previously used bare pixel values
+- **Component directory restructured** from half-done `primitives/feedback/layout` split to a complete by-kind layout:
+  - `components/buttons/` — Button, IconButton, Chip
+  - `components/inputs/` — FormField, Input, Select, Textarea
+  - `components/surfaces/` — Card, EntityAvatar
+  - `components/feedback/` — Alert
+  - `components/overlays/` — Modal
+  - `components/layout/` — PageScaffold
+  - `components/utilities/` — ErrorBoundary, PlaceholderPage
+- All 24+ callsite import paths updated; typecheck, lint, and all 219 tests remain green
+
 ### Added — M4.5 UI Component Library Refactor
 
 - **`Button`** component (`accent`, `secondary`, `ghost`, `action` variants; `sm`/`md` sizes; `loading` state; `forwardRef`-compatible `Input`)

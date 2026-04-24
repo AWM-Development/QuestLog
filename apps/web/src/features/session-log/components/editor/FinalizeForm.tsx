@@ -1,6 +1,6 @@
 import { type CSSProperties, useState } from "react";
-import { Button } from "../../../../components/Button.js";
-import { FormField, Input } from "../../../../components/primitives/index.js";
+import { Button } from "../../../../components/buttons/Button.js";
+import { FormField, Input } from "../../../../components/inputs/index.js";
 
 interface FinalizeFormProps {
 	initialTitle: string | null;

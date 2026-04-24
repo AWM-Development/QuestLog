@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { entityAvatarColors } from "./styles.js";
+import { entityAvatarColors } from "../styles.js";
 
 export type EntityType = keyof typeof entityAvatarColors;
 
