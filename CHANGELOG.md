@@ -34,7 +34,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
   - `components/overlays/` — Modal
   - `components/layout/` — PageScaffold
   - `components/utilities/` — ErrorBoundary, PlaceholderPage
-- Root barrel `components/index.ts` added for convenience imports
 - All 24+ callsite import paths updated; typecheck, lint, and all 219 tests remain green
 
 ### Added — M4.5 UI Component Library Refactor

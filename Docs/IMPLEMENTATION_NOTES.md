@@ -100,7 +100,7 @@ layout/     — page shells (PageScaffold)
 utilities/  — non-UI helpers (ErrorBoundary, PlaceholderPage)
 ```
 
-A root `components/index.ts` barrel re-exports everything for convenience. Individual feature imports still use the subdirectory path directly (e.g. `../../components/buttons/Button.js`) — the barrel is for discoverability, not the import convention.
+Feature imports use the subdirectory path directly (e.g. `../../components/buttons/Button.js`). No root barrel — one was added briefly and removed because every callsite preferred the explicit subdir path, and an unused `export *` barrel silently widens the public surface (internal helpers become reachable; later name collisions resolve silently).
 
 ### Half-step spacing tokens
 The 4px-grid tokens (`--space-1` through `--space-8`) left gaps at 2px, 6px, 10px, and 14px. These values appeared throughout button padding, chip padding, input padding, and panel section headings. Rather than rounding to the nearest grid step (which would have shifted visuals), four half-step tokens were added:

@@ -9,7 +9,7 @@
 - `Docs/PRD.md` — Product specification (reference for feature details)
 - `Docs/MILESTONES.md` — Task breakdown with branch names
 
-**Last Updated:** 2026-04-17
+**Last Updated:** 2026-04-24
 
 ---
 
@@ -28,8 +28,7 @@ questlog/
 │   │   │   │   ├── overlays/   # Modal
 │   │   │   │   ├── layout/     # PageScaffold
 │   │   │   │   ├── utilities/  # ErrorBoundary, PlaceholderPage
-│   │   │   │   ├── styles.ts   # Shared style presets (internal to components)
-│   │   │   │   └── index.ts    # Root barrel (re-exports all subdirs)
+│   │   │   │   └── styles.ts   # Shared style presets (internal to components)
 │   │   │   ├── features/       # Feature modules (co-located)
 │   │   │   │   ├── agent-chat/
 │   │   │   │   │   ├── components/
@@ -336,7 +335,7 @@ After Milestone 4.5, `apps/web/src/components/` contains shared UI components or
 | `layout/` | PageScaffold | Route-level page shell |
 | `utilities/` | ErrorBoundary, PlaceholderPage | Non-visual behaviour wrapper |
 
-Import from the subdirectory path directly: `../../components/buttons/Button.js`. The root barrel `../../components/index.js` exists for convenience but subdirectory imports are preferred for clarity.
+Import from the subdirectory path directly: `../../components/buttons/Button.js`. There is no root barrel — imports always name the subdirectory so the component's kind is visible at the callsite.
 
 #### Available shared components
 
