@@ -287,20 +287,9 @@ Row contents (left to right):
 - **Right-aligned label** (ambiguous only): `font-size: 9px; color: var(--status-warning)` — text: `{n} matches`
 - **Right-aligned label** (unlinked only): `font-size: 9px; color: var(--text-muted)` — text: `new?`
 
-### Footer
+### No footer
 
-Hidden when unresolved count = 0. Always at bottom of panel.
-```css
-padding: 8px 12px;
-border-top: 1px solid var(--border);
-font-size: 11px;
-color: var(--text-muted);
-text-align: center;
-cursor: pointer;
-```
-Text: `{n} unresolved · resolve all`
-
-**"Resolve all" behaviour (simplified for M4.2):** Scroll to the first unresolved span in document order and activate its action bar. DM resolves it, then clicks "resolve all" again for the next. No sequential queue automation in M4.2.
+The panel has no resolve-all affordance. It is purely informational — a live status view. Resolution happens through the hover action bar (§4) during editing. Unresolved spans at save time are surfaced via the FinalizeForm validation warning (§5).
 
 ### Empty state
 
@@ -381,6 +370,64 @@ left: 0;
 **Create:** Closes action bar, opens quick-create popover (§2) anchored to the same span.
 
 **Dismiss:** Removes the entity mark from the span (returns to plain prose). Removes from sidebar. Adds the span's normalized text to the session's `dismissedEntityTexts` set. Detection will not re-flag this exact text in this session. No confirmation dialog.
+
+---
+
+## §5 Save-Time Validation Warning
+
+When the DM clicks "Save Session" and `FinalizeForm` opens, if any entity spans are still ambiguous or unlinked, render a soft warning block inside the form above the action buttons.
+
+### Warning block anatomy
+
+```
+┌─────────────────────────────────────────────────────┐
+│  ⚠ 3 entity suggestions unresolved                  │
+│  Some detected names haven't been linked or created. │
+│  [Review in editor]                                  │
+└─────────────────────────────────────────────────────┘
+```
+
+Container:
+```css
+background: rgba(232, 176, 64, 0.06);   /* --status-warning at low opacity */
+border: 1px solid rgba(232, 176, 64, 0.2);
+border-radius: 6px;
+padding: 10px 12px;
+margin-bottom: 16px;
+```
+
+Icon + count line:
+```css
+font-size: 12px;
+color: var(--status-warning);   /* #e8b040 */
+font-weight: 500;
+margin-bottom: 4px;
+```
+
+Body text:
+```css
+font-size: 11px;
+color: var(--text-secondary);
+margin-bottom: 8px;
+```
+
+"Review in editor" button:
+```css
+font-size: 11px;
+color: var(--status-warning);
+background: rgba(232, 176, 64, 0.08);
+border: 1px solid rgba(232, 176, 64, 0.2);
+border-radius: 4px;
+padding: 3px 10px;
+cursor: pointer;
+```
+
+### Behaviour
+
+- Hidden when `unresolvedCount === 0`.
+- "Review in editor" closes `FinalizeForm` and scrolls the editor to the first unresolved span, activating its hover action bar. This is the only path from the warning block — no inline resolution inside FinalizeForm.
+- "Save anyway" proceeds normally — the warning is soft, never a block. The DM can always commit with unresolved spans.
+- `unresolvedCount` = count of `ambiguous` + `unlinked` spans in `detectedSpans` from `useEntityDetection`.
 
 ---
 

@@ -14,7 +14,7 @@
 
 ## Goal
 
-Scan session note paragraphs for known campaign entity names using pg_trgm fuzzy matching; surface matches as TipTap Mark decorations; provide a hover action bar (Link / Create / Dismiss), a quick-create popover, and a detected-entities sidebar panel.
+Scan session note paragraphs for known campaign entity names using pg_trgm fuzzy matching; surface matches as TipTap Mark decorations; provide a hover action bar (Link / Create / Dismiss), a quick-create popover, a detected-entities sidebar panel, and a save-time validation warning for unresolved spans in FinalizeForm.
 
 ---
 
@@ -194,10 +194,28 @@ entity.create: procedure
   - `apps/web/src/features/session-log/components/editor/DetectedEntitiesPanel.tsx` (new)
   - `apps/web/src/features/session-log/components/editor/DetectedEntitiesPanel.test.tsx` (new)
   - `apps/web/src/features/session-log/components/editor/SessionEditor.tsx` — render panel below editor
-- **Test:** Component test with mock `detectedSpans` verifying: (a) empty state renders when no spans; (b) groups render in entity type order; (c) confirmed row renders with solid dot; (d) unresolved count in footer matches ambiguous+unlinked count; (e) footer hidden when count = 0; (f) clicking a confirmed row calls `onScrollToSpan`.
-- **Done when:** Panel renders correctly for all states, test passes.
+- **Test:** Component test with mock `detectedSpans` verifying: (a) empty state renders when no spans; (b) groups render per entity type, types with 0 spans omitted; (c) confirmed row has solid status dot; (d) ambiguous row has warning-colored dot and `{n} matches` label; (e) no footer rendered (panel is informational only); (f) clicking a confirmed row calls `onScrollToSpan`; (g) clicking an unresolved row calls `onActivateActionBar`.
+- **Done when:** Panel renders correctly for all states, no footer, test passes.
 
-**Refer to DESIGN_SPEC §3 for exact styling. "Resolve all" simplified:** scrolls to first unresolved span and activates its action bar. No sequential queue.
+**Refer to DESIGN_SPEC §3 for exact styling. The panel has no resolve-all footer** — it is purely informational. Resolution happens through the hover action bar or at save time (CP-9).
+
+---
+
+### CP-9: Save-time validation warning (FinalizeForm)
+
+- **Files:**
+  - `apps/web/src/features/session-log/hooks/useEntityDetection.ts` — expose `unresolvedCount: number` from the hook return value
+  - `apps/web/src/features/session-log/pages/SessionEditorPage.tsx` — thread `unresolvedCount` prop to `FinalizeForm`
+  - `apps/web/src/features/session-log/components/layout/DockedSessionPanel.tsx` — thread `unresolvedCount` prop to `FinalizeForm`
+  - `apps/web/src/features/session-log/components/editor/FinalizeForm.tsx` — add `unresolvedCount` prop and warning block
+  - `apps/web/src/features/session-log/components/editor/FinalizeForm.test.tsx` (new or extend)
+- **Test:** Component test for `FinalizeForm` verifying: (a) warning block hidden when `unresolvedCount === 0`; (b) warning block renders with correct count when `unresolvedCount > 0`; (c) "Review in editor" button calls `onReviewInEditor` callback; (d) save button still callable when unresolved count > 0 (warning is soft).
+- **Done when:** Warning block renders/hides correctly, callbacks work, test passes. Existing `FinalizeForm` tests must still pass.
+
+**Refer to DESIGN_SPEC §5 for styling. Key constraints:**
+- `unresolvedCount` flows: `useEntityDetection` → `SessionEditor` → `SessionEditorPage`/`DockedSessionPanel` → `FinalizeForm`. Read the existing prop threading pattern in `SessionEditorPage.tsx` and `DockedSessionPanel.tsx` before choosing how to pass it.
+- `onReviewInEditor` closes FinalizeForm and triggers scroll to first unresolved span. The FinalizeForm itself has no knowledge of spans — it just calls the callback; the parent handles the scroll via the same `onScrollToSpan` mechanism used by the sidebar panel.
+- Do NOT add any inline resolution UI inside FinalizeForm — the warning is informational + navigation only.
 
 ---
 
@@ -213,7 +231,7 @@ entity.create: procedure
 
 **Unlinked state in M4.2:** No NER. Unlinked marks are placed client-side when the DM selects text and clicks the bubble menu "Entity" button. Detection API returns only `confirmed`/`ambiguous`.
 
-**"Resolve all" behaviour:** Simplified — scroll to first unresolved span, activate its action bar. Full sequential automation deferred.
+**No "resolve all" affordance.** The detected entities sidebar is purely informational. Resolution happens through the hover action bar during editing, or via save-time validation at finalize. This matches the DM's actual workflow: write now, tidy at the end of the session. NER-based auto-population of unlinked suggestions is deferred to M5.4.
 
 **`entity-highlight.css` placement:** Co-located in `features/session-log/styles/`, imported by `SessionEditor.tsx`. Intentional — not consolidated into `index.css`.
 
@@ -282,6 +300,7 @@ All gates resolved. Agent implements CP-1 through CP-8 in order.
 - [ ] CP-6: Hover action bar
 - [ ] CP-7: Quick-create popover
 - [ ] CP-8: Detected entities panel
+- [ ] CP-9: Save-time validation warning
 
 ### Run Log
 
@@ -295,6 +314,7 @@ All gates resolved. Agent implements CP-1 through CP-8 in order.
 | CP-6       |        |        |       |
 | CP-7       |        |        |       |
 | CP-8       |        |        |       |
+| CP-9       |        |        |       |
 
 ### Summary
 
