@@ -68,7 +68,7 @@ const listStyle: CSSProperties = {
 	padding: "0 var(--space-2)",
 	display: "flex",
 	flexDirection: "column",
-	gap: "2px",
+	gap: "var(--space-0-5)",
 };
 
 const toastStyle: CSSProperties = {
@@ -171,7 +171,7 @@ export function ConversationDrawer({
 						type="button"
 						style={{
 							...chatPillButton,
-							padding: "2px 6px",
+							padding: "var(--space-0-5) var(--space-1-5)",
 							color: "var(--accent)",
 							fontSize: "11px",
 						}}

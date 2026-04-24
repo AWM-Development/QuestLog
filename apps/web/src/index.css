@@ -76,9 +76,13 @@
 	--status-info: #60b8ff;
 
 	/* ── Spacing ── */
+	--space-0-5: 2px; /* micro-gap: list items, inline input padding */
 	--space-1: 0.25rem;
+	--space-1-5: 6px; /* button vertical padding, tight gaps */
 	--space-2: 0.5rem;
+	--space-2-5: 10px; /* input/panel vertical padding, section spacing */
 	--space-3: 0.75rem;
+	--space-3-5: 14px; /* button/input horizontal padding */
 	--space-4: 1rem;
 	--space-5: 1.25rem;
 	--space-6: 1.5rem;

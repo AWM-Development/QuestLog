@@ -47,8 +47,8 @@ const panelHeaderLabel: CSSProperties = {
 const entityRowStyle: CSSProperties = {
 	display: "flex",
 	alignItems: "center",
-	gap: "10px",
-	padding: "6px 0",
+	gap: "var(--space-2-5)",
+	padding: "var(--space-1-5) 0",
 };
 
 const entityNameStyle: CSSProperties = {

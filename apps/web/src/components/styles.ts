@@ -15,7 +15,7 @@ export const buttonAccent: CSSProperties = {
 	color: "var(--bg-void)",
 	border: "none",
 	borderRadius: "var(--r-md)",
-	padding: "6px 14px",
+	padding: "var(--space-1-5) var(--space-3-5)",
 	fontFamily: "var(--font-body)",
 	fontWeight: 500,
 	fontSize: "0.875rem",
@@ -24,7 +24,7 @@ export const buttonAccent: CSSProperties = {
 };
 
 export const buttonSecondary: CSSProperties = {
-	padding: "6px 12px",
+	padding: "var(--space-1-5) var(--space-3)",
 	borderRadius: "var(--r-sm)",
 	border: "0.5px solid var(--border)",
 	backgroundColor: "transparent",
@@ -36,7 +36,7 @@ export const buttonSecondary: CSSProperties = {
 };
 
 export const buttonGhost: CSSProperties = {
-	padding: "3px 10px",
+	padding: "3px var(--space-2-5)",
 	borderRadius: "var(--r-sm)",
 	border: "none",
 	backgroundColor: "transparent",
@@ -48,7 +48,7 @@ export const buttonGhost: CSSProperties = {
 };
 
 export const buttonAction: CSSProperties = {
-	padding: "6px 14px",
+	padding: "var(--space-1-5) var(--space-3-5)",
 	borderRadius: "var(--r-md)",
 	border: "0.5px solid var(--border)",
 	backgroundColor: "rgba(14, 24, 32, 0.6)",
@@ -77,7 +77,7 @@ export const chipBase: CSSProperties = {
 	display: "inline-flex",
 	alignItems: "center",
 	gap: "var(--space-1)",
-	padding: "2px 8px",
+	padding: "var(--space-0-5) var(--space-2)",
 	borderRadius: "var(--r-sm)",
 	fontFamily: "var(--font-body)",
 	fontSize: "11px",
@@ -154,7 +154,7 @@ export const sourceChipBase: CSSProperties = {
 	display: "inline-flex",
 	alignItems: "center",
 	gap: "var(--space-1)",
-	padding: "3px 10px",
+	padding: "3px var(--space-2-5)",
 	borderRadius: "var(--r-pill)",
 	fontSize: "0.6875rem",
 	cursor: "pointer",
@@ -182,7 +182,7 @@ export const sourceChipColors = {
 // ── Layout ──
 
 export const panelSection: CSSProperties = {
-	padding: "12px 14px",
+	padding: "var(--space-3) var(--space-3-5)",
 	borderBottom: "1px solid var(--border-subtle)",
 };
 
@@ -191,7 +191,7 @@ export const panelSectionTitle: CSSProperties = {
 	letterSpacing: "0.06em",
 	textTransform: "uppercase" as const,
 	color: "var(--text-muted)",
-	marginBottom: "10px",
+	marginBottom: "var(--space-2-5)",
 	fontWeight: 500,
 };
 
@@ -282,7 +282,7 @@ export const inputField: CSSProperties = {
 	backgroundColor: "var(--bg-elevated)",
 	border: "1px solid var(--border)",
 	borderRadius: "var(--r-md)",
-	padding: "10px 14px",
+	padding: "var(--space-2-5) var(--space-3-5)",
 	fontSize: "0.875rem",
 	fontFamily: "var(--font-body)",
 	color: "var(--text-primary)",
@@ -346,7 +346,7 @@ export const floatingMenu: CSSProperties = {
 	boxShadow: "var(--shadow-focal)",
 	padding: "var(--space-1)",
 	display: "flex",
-	gap: "2px",
+	gap: "var(--space-0-5)",
 	flexWrap: "wrap",
 };
 

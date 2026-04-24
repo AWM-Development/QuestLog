@@ -35,7 +35,7 @@ const skeletonContainerStyle: CSSProperties = {
 const skeletonHeaderStyle: CSSProperties = {
 	display: "flex",
 	alignItems: "center",
-	gap: "6px",
+	gap: "var(--space-1-5)",
 	marginBottom: "var(--space-2)",
 };
 
@@ -73,7 +73,7 @@ function LoadingSkeleton() {
 					style={{
 						display: "flex",
 						flexDirection: "column",
-						gap: "10px",
+						gap: "var(--space-2-5)",
 					}}
 				>
 					<div style={skeletonBarStyle("85%")} />

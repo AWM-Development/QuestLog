@@ -140,7 +140,7 @@ export function ConversationListItem({
 						background: "var(--bg-elevated)",
 						border: "1px solid var(--border-hover)",
 						borderRadius: "var(--r-sm)",
-						padding: "2px 6px",
+						padding: "var(--space-0-5) var(--space-1-5)",
 						outline: "none",
 						width: "100%",
 					}}
