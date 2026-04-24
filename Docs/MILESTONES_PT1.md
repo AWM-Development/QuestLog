@@ -324,6 +324,17 @@
     - Zoom, pan, auto-layout
   - Tests: component tests for graph rendering, filter behavior
 
+- [ ] **5.4 — NER-based entity suggestion**
+  - Branch: `feat/entity-graph/ner-suggestion`
+  - PRD ref: §4.3 Inline entity detection (unlinked suggestion state)
+  - Background: M4.2 entity detection only surfaces names that already exist in the campaign entity list (pg_trgm dictionary match). This task adds a second detection pass that flags proper nouns in session text that are *not* in the dictionary — surfacing them as `unlinked` span suggestions so the DM can create new entities inline without manually selecting text. The `state: 'unlinked'` mark and quick-create popover (built in M4.2) are already designed for this path.
+  - Work:
+    - NER service: detect proper nouns in paragraph text not matched by the entity dictionary. Approach TBD (Claude API NER call vs. rule-based heuristic — 🧠 **Strategy discussion required** before implementing).
+    - Wire NER results into `entity.detectSpans` response as additional `EntitySpan` entries with `matchType: 'unlinked'`
+    - Re-scan on save (not on every keystroke — NER is more expensive than pg_trgm)
+    - Threshold/filter: skip common words, game system terms (e.g. "Dungeon Master"), and previously dismissed texts
+  - Tests: NER service tests with sample session text, integration test verifying unlinked spans are returned alongside confirmed spans, dismissed-text exclusion
+
 ---
 
 ## Milestone 6: Session Prep & Recaps
