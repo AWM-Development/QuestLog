@@ -211,15 +211,23 @@ https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family
 
 ### Spacing Scale
 
+The system uses a 4px base grid with half-step tokens for component padding values that fall between grid steps.
+
 | Token | Value | Usage |
 |-------|-------|-------|
+| `--space-0-5` | 2px | Micro-gap: list item separation, inline edit input vertical padding |
 | `--space-1` | 4px | Tight gaps (between tags, inline elements) |
+| `--space-1-5` | 6px | Button vertical padding, tight flex gaps |
 | `--space-2` | 8px | Small gaps (between related items, icon gutters) |
+| `--space-2-5` | 10px | Input/panel vertical padding, section title margin |
 | `--space-3` | 12px | Component internal padding |
+| `--space-3-5` | 14px | Button/input horizontal padding |
 | `--space-4` | 16px | Standard gap (between sections, card padding) |
 | `--space-5` | 20px | Message area horizontal padding |
 | `--space-6` | 24px | Message vertical spacing, section breaks |
 | `--space-8` | 32px | Large section breaks |
+
+Half-step tokens (`--space-0-5`, `--space-1-5`, `--space-2-5`, `--space-3-5`) exist specifically for component padding where exact visual fidelity matters more than strict grid alignment. Do not use them for layout gaps between sections — those should always land on a full grid step.
 
 ### Border Radius
 

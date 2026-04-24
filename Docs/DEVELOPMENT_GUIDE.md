@@ -20,7 +20,16 @@ questlog/
 ├── apps/
 │   ├── web/                    # React frontend (Vite + Tailwind)
 │   │   ├── src/
-│   │   │   ├── components/     # Shared UI components (grouped by role + styles.ts)
+│   │   │   ├── components/     # Shared UI components (by-kind subdirs + styles.ts)
+│   │   │   │   ├── buttons/    # Button, IconButton, Chip
+│   │   │   │   ├── inputs/     # FormField, Input, Select, Textarea
+│   │   │   │   ├── surfaces/   # Card, EntityAvatar
+│   │   │   │   ├── feedback/   # Alert
+│   │   │   │   ├── overlays/   # Modal
+│   │   │   │   ├── layout/     # PageScaffold
+│   │   │   │   ├── utilities/  # ErrorBoundary, PlaceholderPage
+│   │   │   │   ├── styles.ts   # Shared style presets (internal to components)
+│   │   │   │   └── index.ts    # Root barrel (re-exports all subdirs)
 │   │   │   ├── features/       # Feature modules (co-located)
 │   │   │   │   ├── agent-chat/
 │   │   │   │   │   ├── components/
@@ -313,7 +322,21 @@ export function useSessionNotes(campaignId: string) {
 
 **The rule: always reach for a shared component before touching a raw HTML element.**
 
-After Milestone 4.5, `apps/web/src/components/` contains shared UI components grouped by role (`primitives`, `feedback`, `layout`, plus a few app-wide top-level components). Use them everywhere. Do not spread style presets onto raw elements at a feature callsite — that is the old pattern.
+After Milestone 4.5, `apps/web/src/components/` contains shared UI components organized by kind. Use them everywhere. Do not spread style presets onto raw elements at a feature callsite — that is the old pattern.
+
+**Directory layout:**
+
+| Subdirectory | Contains | Add new components here when… |
+|---|---|---|
+| `buttons/` | Button, IconButton, Chip | Click target, toggle, tag-like affordance |
+| `inputs/` | FormField, Input, Select, Textarea | Form primitive, labelled input |
+| `surfaces/` | Card, EntityAvatar | Displayable container, entity representation |
+| `feedback/` | Alert | Status message, notification (future: Toast, Banner) |
+| `overlays/` | Modal | Portal, dialog, drawer over content |
+| `layout/` | PageScaffold | Route-level page shell |
+| `utilities/` | ErrorBoundary, PlaceholderPage | Non-visual behaviour wrapper |
+
+Import from the subdirectory path directly: `../../components/buttons/Button.js`. The root barrel `../../components/index.js` exists for convenience but subdirectory imports are preferred for clarity.
 
 #### Available shared components
 
@@ -337,7 +360,7 @@ After Milestone 4.5, `apps/web/src/components/` contains shared UI components gr
 
 1. Check `apps/web/src/components/` first. If a component exists, use it.
 2. If you need a variant that doesn't exist, add it to the existing component via a prop.
-3. If genuinely new primitive territory, create a new component in `apps/web/src/components/primitives/` (or `feedback`/`layout` if it clearly belongs there). Write a test first.
+3. If genuinely new primitive territory, create a new component in the appropriate subdirectory (`buttons/`, `inputs/`, `surfaces/`, etc.). Write a test first.
 4. Feature-level style files (e.g. `features/agent-chat/styles.ts`) are for layout and feature-specific presets only — not for redefining buttons, inputs, or chips.
 
 #### Deferred components (add when first needed)

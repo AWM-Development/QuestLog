@@ -83,6 +83,37 @@ The server dev script loads **repo-root** `.env` via `tsx --env-file=../../.env`
 
 **`undock()` intentionally preserves `activeSessionId`:** The caller (e.g. `DockedSessionPanel`'s undock button) uses the id to navigate to the full editor immediately after calling `undock()`. Clearing it in `undock()` would create a race.
 
+## Component directory organization (M4.5 polish, 2026-04-24)
+
+### Why by-kind over the original primitives/feedback/layout split
+The M4.5 overnight agent created `components/primitives/`, `components/feedback/`, and `components/layout/` but left Button, Card, IconButton, and EntityAvatar at the root. This created a logic gap: Chip (in `primitives/`) and Button (at root) are the same category of component. The rule "new primitive goes in primitives/" had no consistent answer for root-level siblings.
+
+The follow-up refactor (branch `refactor/component-reorg`) commits fully to **by-kind**:
+
+```
+buttons/    — interactive click targets (Button, IconButton, Chip)
+inputs/     — form primitives (FormField, Input, Select, Textarea)
+surfaces/   — displayable containers (Card, EntityAvatar)
+feedback/   — status messages (Alert; future Toast, Banner)
+overlays/   — portal/dialog patterns (Modal)
+layout/     — page shells (PageScaffold)
+utilities/  — non-UI helpers (ErrorBoundary, PlaceholderPage)
+```
+
+A root `components/index.ts` barrel re-exports everything for convenience. Individual feature imports still use the subdirectory path directly (e.g. `../../components/buttons/Button.js`) — the barrel is for discoverability, not the import convention.
+
+### Half-step spacing tokens
+The 4px-grid tokens (`--space-1` through `--space-8`) left gaps at 2px, 6px, 10px, and 14px. These values appeared throughout button padding, chip padding, input padding, and panel section headings. Rather than rounding to the nearest grid step (which would have shifted visuals), four half-step tokens were added:
+
+```css
+--space-0-5: 2px   /* micro-gap: list items, inline edit inputs */
+--space-1-5: 6px   /* button vertical padding, tight flex gaps */
+--space-2-5: 10px  /* input/panel vertical padding, section spacing */
+--space-3-5: 14px  /* button/input horizontal padding */
+```
+
+`3px` and `5px` values were intentionally left as literals — they appear in only 2–3 places each (ghost button and source chip vertical padding; ChatHeader compact button) and don't align cleanly to a half-step. Adding tokens for single-location values creates noise.
+
 ## Database Migrations
 
 ### Always use `db:migrate` (the journal), never `drizzle-kit push` for shared envs
