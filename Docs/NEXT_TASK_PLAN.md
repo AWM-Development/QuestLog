@@ -14,7 +14,7 @@ STATUS VALUES:
 
 | Field         | Value                                              |
 |---------------|----------------------------------------------------|
-| **Status**    | `done`                                             |
-| **Milestone** | M4.5 — UI Component Library Refactor               |
-| **Branch**    | `refactor/ui-component-library`                    |
-| **Plan**      | `Docs/milestones/M4.5/PLAN.md`                     |
+| **Status**    | `ready`                                            |
+| **Milestone** | M4.2 — Entity detection & linking                  |
+| **Branch**    | `feat/session-log/entity-linking`                  |
+| **Plan**      | `Docs/milestones/M4.2/PLAN.md`                     |
