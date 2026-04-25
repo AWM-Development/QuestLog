@@ -11,6 +11,8 @@ import {
 	floatingMenuDropdown,
 	floatingMenuOption,
 } from "../../../../components/styles.js";
+import { EntityHighlight } from "../../extensions/EntityHighlight.js";
+import "./../../styles/entity-highlight.css";
 
 function parseInitialContent(raw: string): JSONContent | string {
 	if (!raw.trim()) {
@@ -115,16 +117,20 @@ const SLASH_MENU_ITEMS: { label: string; run: (ed: Editor) => void }[] = [
 
 interface SessionEditorProps {
 	sessionId: string;
+	campaignId: string;
 	content: string;
 	placeholder: string;
 	onContentChange: (json: string) => void;
+	onEditorReady?: (editor: Editor) => void;
 }
 
 export function SessionEditor({
 	sessionId,
+	campaignId,
 	content,
 	placeholder,
 	onContentChange,
+	onEditorReady,
 }: SessionEditorProps) {
 	const [slashHighlightIndex, setSlashHighlightIndex] = useState(0);
 	const slashHighlightRef = useRef(0);
@@ -132,6 +138,9 @@ export function SessionEditor({
 	const prevSlashVisible = useRef(false);
 	const onContentChangeRef = useRef(onContentChange);
 	onContentChangeRef.current = onContentChange;
+	const onEditorReadyRef = useRef(onEditorReady);
+	onEditorReadyRef.current = onEditorReady;
+	const dismissedRef = useRef<string[]>([]);
 
 	const editor = useEditor(
 		{
@@ -142,6 +151,11 @@ export function SessionEditor({
 				}),
 				Placeholder.configure({
 					placeholder,
+				}),
+				EntityHighlight.configure({
+					campaignId,
+					dismissedRef,
+					onDismiss: () => {},
 				}),
 			],
 			content: parseInitialContent(content),
@@ -156,6 +170,9 @@ export function SessionEditor({
 						"outline: none",
 					].join("; "),
 				},
+			},
+			onCreate: ({ editor: ed }) => {
+				onEditorReadyRef.current?.(ed);
 			},
 			onUpdate: ({ editor: ed }) => {
 				onContentChangeRef.current(JSON.stringify(ed.getJSON()));
@@ -277,6 +294,20 @@ export function SessionEditor({
 						onClick={() => cycleHeading(editor)}
 					>
 						H
+					</IconButton>
+					<IconButton
+						label="Entity"
+						size={24}
+						onClick={() => {
+							editor.commands.setEntityMark({
+								entityId: null,
+								entityType: null,
+								state: "unlinked",
+								candidates: "[]",
+							});
+						}}
+					>
+						⬡
 					</IconButton>
 				</div>
 			</BubbleMenu>

@@ -246,6 +246,7 @@ export function SessionEditorPage() {
 						<SessionEditor
 							key={session.id}
 							sessionId={session.id}
+							campaignId={campaignId}
 							content={session.content}
 							placeholder="Start writing your session notes here. Jot quick lines as things happen — entity links will be detected automatically.
 

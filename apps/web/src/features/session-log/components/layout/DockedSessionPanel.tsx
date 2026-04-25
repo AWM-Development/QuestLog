@@ -264,6 +264,7 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 						<SessionEditor
 							key={session.id}
 							sessionId={session.id}
+							campaignId={campaignId}
 							content={session.content}
 							placeholder="Start writing your session notes here. Type / for formatting options."
 							onContentChange={(json) => {
