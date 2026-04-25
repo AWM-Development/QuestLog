@@ -15,6 +15,7 @@ export const SessionUpdateInput = z.object({
 	tags: z.array(z.string().max(100)).max(50).optional(),
 	sessionNumber: z.number().int().positive().optional(),
 	date: z.coerce.date().optional(),
+	dismissedEntityTexts: z.array(z.string()).optional(),
 });
 export type SessionUpdateInput = z.infer<typeof SessionUpdateInput>;
 

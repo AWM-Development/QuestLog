@@ -43,6 +43,13 @@
       "when": 1775508315917,
       "tag": "0005_nosy_proudstar",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1777075200000,
+      "tag": "0006_entity_linking_schema",
+      "breakpoints": true
     }
   ]
 }
