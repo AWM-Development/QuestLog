@@ -23,6 +23,9 @@ vi.mock("@/lib/trpc.js", () => {
 			finalize: { useMutation: vi.fn() },
 			create: { useMutation: vi.fn() },
 		},
+		entity: {
+			detectSpans: { useQuery: vi.fn(() => ({ data: [], isLoading: false })) },
+		},
 		useUtils: vi.fn(() => ({
 			session: {
 				getById: { invalidate: vi.fn() },

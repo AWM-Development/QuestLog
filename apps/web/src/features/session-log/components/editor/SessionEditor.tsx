@@ -12,7 +12,10 @@ import {
 	floatingMenuOption,
 } from "../../../../components/styles.js";
 import { EntityHighlight } from "../../extensions/EntityHighlight.js";
+import { useEntityDetection } from "../../hooks/useEntityDetection.js";
+import type { EntitySpan } from "../../types.js";
 import "./../../styles/entity-highlight.css";
+import { DetectedEntitiesPanel } from "./DetectedEntitiesPanel.js";
 
 function parseInitialContent(raw: string): JSONContent | string {
 	if (!raw.trim()) {
@@ -142,6 +145,17 @@ export function SessionEditor({
 	onEditorReadyRef.current = onEditorReady;
 	const dismissedRef = useRef<string[]>([]);
 
+	const { detectedSpans, onEditorUpdate } = useEntityDetection({
+		campaignId,
+		dismissedEntityTexts: dismissedRef.current,
+	});
+
+	const handleScrollToSpan = (span: EntitySpan) => {
+		if (!editor) return;
+		editor.commands.focus();
+		editor.commands.setTextSelection(span.startIndex);
+	};
+
 	const editor = useEditor(
 		{
 			extensions: [
@@ -176,6 +190,8 @@ export function SessionEditor({
 			},
 			onUpdate: ({ editor: ed }) => {
 				onContentChangeRef.current(JSON.stringify(ed.getJSON()));
+				const text = ed.getText();
+				onEditorUpdate(text, 0, text.length);
 			},
 		},
 		[sessionId],
@@ -339,6 +355,11 @@ export function SessionEditor({
 			</FloatingMenu>
 
 			<EditorContent editor={editor} style={{ flex: 1, minHeight: 0 }} />
+			<DetectedEntitiesPanel
+				detectedSpans={detectedSpans}
+				onScrollToSpan={handleScrollToSpan}
+				onActivateActionBar={() => {}}
+			/>
 		</div>
 	);
 }
