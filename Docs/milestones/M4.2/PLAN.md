@@ -4,7 +4,7 @@
 
 | Field       | Value                                      |
 |-------------|--------------------------------------------|
-| **Status**  | `ready`                                    |
+| **Status**  | `done`                                     |
 | **Milestone** | M4.2 — Entity detection & linking       |
 | **Branch**  | `feat/session-log/entity-linking`          |
 | **PRD ref** | §4.3 Inline entity detection, Entity creation inline |
@@ -292,30 +292,30 @@ All gates resolved. Agent implements CP-1 through CP-8 in order.
 
 ### Progress
 
-- [ ] CP-1: Schema migration
-- [ ] CP-2: Entity matching service
-- [ ] CP-3: Entity router
-- [ ] CP-4: TipTap Mark extension scaffold
-- [ ] CP-5: RGB tokens + entity-highlight.css
-- [ ] CP-6: Hover action bar
-- [ ] CP-7: Quick-create popover
-- [ ] CP-8: Detected entities panel
-- [ ] CP-9: Save-time validation warning
+- [x] CP-1: Schema migration
+- [x] CP-2: Entity matching service
+- [x] CP-3: Entity router
+- [x] CP-4: TipTap Mark extension scaffold
+- [x] CP-5: RGB tokens + entity-highlight.css
+- [x] CP-6: Hover action bar
+- [x] CP-7: Quick-create popover
+- [x] CP-8: Detected entities panel
+- [x] CP-9: Save-time validation warning
 
 ### Run Log
 
-| Checkpoint | Status | Commit | Notes |
-|------------|--------|--------|-------|
-| CP-1       |        |        |       |
-| CP-2       |        |        |       |
-| CP-3       |        |        |       |
-| CP-4       |        |        |       |
-| CP-5       |        |        |       |
-| CP-6       |        |        |       |
-| CP-7       |        |        |       |
-| CP-8       |        |        |       |
-| CP-9       |        |        |       |
+| Checkpoint | Status | Commit  | Notes |
+|------------|--------|---------|-------|
+| CP-1       | ✅ done | 8c6bd0b | PostgreSQL setup required: pg_ctlcluster 16 main start; socat 5433→5432; pgvector installed |
+| CP-2       | ✅ done | 8282f4e | Two-phase fuzzy matching: word_similarity pre-filter + per-token similarity(); biome fixes: noAssignInExpressions, noNonNullAssertion |
+| CP-3       | ✅ done | ef44e7a | superjson transformer requires `{ json: { ... } }` wrapper in integration tests |
+| CP-4       | ✅ done | 398931e | TipTap Mark extension with setEntitySpans + setEntityMark commands; useEntityDetection 500ms debounce |
+| CP-5       | ✅ done | 86f5b76 | RGB triplet tokens in index.css; entity-highlight.css co-located in features/session-log/styles/ |
+| CP-6       | ✅ done | a196932 | EntityActionBar + useActionBar; 80ms show delay, above/below flip at 60px |
+| CP-7       | ✅ done | f9db84f | EntityQuickCreatePopover; noAutofocus biome rule removed autoFocus; fixed /location/i regex ambiguity in tests |
+| CP-8       | ✅ done | 133615a | DetectedEntitiesPanel with collapsible TypeGroup sections; wired useEntityDetection into SessionEditor.onUpdate; fixed trpc mocks in DockedSessionPanel.test + SessionEditorPage.test |
+| CP-9       | ✅ done | 0ce8759 | FinalizeForm unresolvedCount + onReviewInEditor; threading via onUnresolvedCountChange callback on SessionEditor |
 
 ### Summary
 
-_Agent fills this in after the run._
+All 9 checkpoints implemented. 440 total tests passing (241 web, 199 server). No skipped checkpoints. Key infrastructure setup required for this session: local PostgreSQL with socat port forwarding (5433→5432) since Docker was not available. Notable technical decisions: used `word_similarity()` for pre-filter and `similarity()` for per-token fuzzy matching to avoid parameterized SQL issues; used `dismissedRef` pattern for passing React state into TipTap extension options.
