@@ -62,6 +62,13 @@
 	--ent-arc-border: rgba(192, 160, 255, 0.18);
 	--ent-arc-glow: rgba(192, 160, 255, 0.12);
 
+	/* ── Entity RGB triplets — for rgba() in entity-highlight.css ── */
+	--ent-npc-rgb: 96, 184, 255;
+	--ent-faction-rgb: 64, 216, 160;
+	--ent-location-rgb: 160, 184, 255;
+	--ent-item-rgb: 128, 216, 216;
+	--ent-arc-rgb: 192, 160, 255;
+
 	/* ── Accent (aliases --ent-npc — entities ARE the accent system) ── */
 	--accent: #60b8ff;
 	--accent-hover: #78c8ff;
