@@ -277,3 +277,21 @@ Shared components are now grouped under semantic subdirectories:
 - `components/layout` (`Modal`, `PageScaffold`)
 
 Other top-level shared components (`Button`, `IconButton`, `Card`, `EntityAvatar`) remain at `components/` because they are already established app-wide entry points and are widely imported.
+
+### M4.2 — Entity detection: PostgreSQL port forwarding for local dev
+Project expects Docker on port 5433, but local PostgreSQL runs on 5432. Use `socat TCP-LISTEN:5433,fork,reuseaddr TCP:127.0.0.1:5432 &` to forward. Also requires: `pg_ctlcluster 16 main start` and `apt-get install -y postgresql-16-pgvector`.
+
+### M4.2 — pg_trgm: `word_similarity` vs `similarity` for entity pre-filter
+`word_similarity(query, text)` checks if any word in `text` is similar to `query`. Used for the low-threshold candidate pre-filter. `similarity(entity_name, token)` does character-level trigram comparison between two strings. Used for per-word comparison in the second phase to confirm a candidate entity matches a word in the scanned text. Both are required; using only one causes either too many or too few candidates.
+
+### M4.2 — tRPC superjson transformer in integration tests
+tRPC v11 with superjson transformer wraps GET query inputs as `{ json: { ...input } }`. When calling the HTTP endpoint directly in integration tests (not via the tRPC client), the query string must be `?input={"json":{...}}`. Using raw `?input={...}` causes input validation to fail silently.
+
+### M4.2 — TipTap extension option refs
+TipTap extension options are captured at extension creation time. To pass changing React state into the extension, create a `useRef` in the component, update it each render, and pass the ref object (not `.current`) into the extension options. The extension reads `ref.current` synchronously at event time. This avoids stale closures.
+
+### M4.2 — `entity-highlight.css` co-location
+`entity-highlight.css` lives in `features/session-log/styles/` and is imported by `SessionEditor.tsx`. This is intentional — it uses `:hover` pseudo-classes that require a stylesheet, and co-location keeps it adjacent to the extension it styles. Do not consolidate into `index.css`.
+
+### M4.2 — Biome `noAssignInExpressions` with `regex.exec`
+Biome flags `while ((match = regex.exec(text)) !== null)`. Rewrite as: `let result = regex.exec(text); while (result !== null) { ...; result = regex.exec(text); }`. This also avoids the need for `String.matchAll` which behaves differently with capture groups.

@@ -14,7 +14,7 @@ STATUS VALUES:
 
 | Field         | Value                                              |
 |---------------|----------------------------------------------------|
-| **Status**    | `in-progress`                                      |
+| **Status**    | `done`                                             |
 | **Milestone** | M4.2 — Entity detection & linking                  |
 | **Branch**    | `feat/session-log/entity-linking`                  |
 | **Plan**      | `Docs/milestones/M4.2/PLAN.md`                     |

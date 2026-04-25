@@ -22,6 +22,21 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 - **Docs:** local dev URLs (5173 / 3000 / `VITE_API_URL`), DEVELOPMENT_GUIDE first-time setup uses `db:migrate` and Postgres **5433**; README troubleshooting for API connection / **EADDRINUSE**
 - **Server:** clearer startup error when **PORT** is already in use; `.env.example` documents optional **PORT**
 
+### Added — M4.2 Entity Detection & Linking
+
+- **Entity matching service** (`apps/server/src/services/entity.service.ts`): two-phase pg_trgm fuzzy matching (`word_similarity` pre-filter + per-token `similarity`) against campaign entities; greedy longest-span selection; dismissed text exclusion
+- **Entity tRPC router** with two procedures: `entity.detectSpans` (query) and `entity.create` (mutation)
+- **`dismissedEntityTexts` column** on `sessions` table (JSONB `string[]`, default `[]`) with Drizzle migration `0006_entity_linking_schema.sql`
+- **GIN trigram index** `entities_name_trgm_idx` on `entities.name` for sub-millisecond candidate pre-filtering
+- **`EntityHighlight` TipTap Mark extension** with attributes (entityId, entityType, state, candidates); `setEntitySpans` and `setEntityMark` commands; CSS class rendering for all states (confirmed/ambiguous/unlinked)
+- **`useEntityDetection` hook**: 500ms debounced detection, paragraph-range span merging, `detectedSpans` + `unresolvedCount` state
+- **Entity highlight CSS** (`features/session-log/styles/entity-highlight.css`): per-state × per-type CSS classes with underline styling and hover states
+- **RGB triplet tokens** (`--ent-{type}-rgb`) added to `index.css` `:root` for `rgba()` usage in entity highlight CSS
+- **`EntityActionBar` component** with Link/Create/Dismiss buttons, 80ms hover delay, above/below placement flip at 60px from editor top, Escape key to close
+- **`EntityQuickCreatePopover` component**: type selector row (NPC/Faction/Location/Item/Arc), tinted header, name + description inputs, "Create {type}" button calling `entity.create`
+- **`DetectedEntitiesPanel` component**: collapsible type-group sections, status dots (confirmed/ambiguous/unlinked), click-to-scroll and click-to-action-bar routing, empty state
+- **Save-time validation warning** in `FinalizeForm`: soft `unresolvedCount` warning block with "Review in editor" button; warning never blocks save; `unresolvedCount` threaded from `useEntityDetection` → `SessionEditor` → parent pages → `FinalizeForm`
+
 ### Added — M4.5 Polish: Style Audit & Component Reorganization
 
 - **4 half-step spacing tokens** added to `index.css`: `--space-0-5` (2px), `--space-1-5` (6px), `--space-2-5` (10px), `--space-3-5` (14px) — fills gaps in the 4px grid used by button/chip/input padding
