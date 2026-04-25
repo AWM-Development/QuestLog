@@ -115,7 +115,7 @@ export const entityService = {
 
 		const dismissed = new Set(dismissedEntityTexts.map((t) => t.toLowerCase()));
 
-		const candidateRows = await db.execute<EntityCandidate>(sql`
+		const candidateRows = await db.execute<Record<string, unknown>>(sql`
       SELECT id, name, type
       FROM ${entities}
       WHERE campaign_id = ${campaignId}
@@ -126,7 +126,12 @@ export const entityService = {
 
 		const positionMap = new Map<string, EntityCandidate[]>();
 
-		for (const entity of candidateRows) {
+		for (const row of candidateRows) {
+			const entity: EntityCandidate = {
+				id: row.id as string,
+				name: row.name as string,
+				type: row.type as string,
+			};
 			let positions = findExactPositions(entity.name, text);
 			if (positions.length === 0) {
 				positions = await findFuzzyPositions(db, entity.name, text);
