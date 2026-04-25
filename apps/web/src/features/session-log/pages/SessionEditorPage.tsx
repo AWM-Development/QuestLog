@@ -82,6 +82,7 @@ export function SessionEditorPage() {
 	const navigate = useNavigate();
 	const { dockSession } = useCampaignChrome();
 	const [finalizeOpen, setFinalizeOpen] = useState(false);
+	const [unresolvedCount, setUnresolvedCount] = useState(0);
 
 	const sessionQuery = trpc.session.getById.useQuery(
 		{ id: sessionId ?? "" },
@@ -209,6 +210,8 @@ export function SessionEditorPage() {
 							initialSummary={session.summary}
 							initialTags={session.tags ?? []}
 							isSubmitting={finalizeMutation.isPending}
+							unresolvedCount={unresolvedCount}
+							onReviewInEditor={() => setFinalizeOpen(false)}
 							onCancel={() => setFinalizeOpen(false)}
 							onConfirm={(data) => {
 								finalizeMutation.mutate({
@@ -254,6 +257,7 @@ Type / for formatting options."
 							onContentChange={(json) => {
 								scheduleSave(json);
 							}}
+							onUnresolvedCountChange={setUnresolvedCount}
 						/>
 					</div>
 				</div>

@@ -125,6 +125,7 @@ interface SessionEditorProps {
 	placeholder: string;
 	onContentChange: (json: string) => void;
 	onEditorReady?: (editor: Editor) => void;
+	onUnresolvedCountChange?: (count: number) => void;
 }
 
 export function SessionEditor({
@@ -134,6 +135,7 @@ export function SessionEditor({
 	placeholder,
 	onContentChange,
 	onEditorReady,
+	onUnresolvedCountChange,
 }: SessionEditorProps) {
 	const [slashHighlightIndex, setSlashHighlightIndex] = useState(0);
 	const slashHighlightRef = useRef(0);
@@ -145,10 +147,17 @@ export function SessionEditor({
 	onEditorReadyRef.current = onEditorReady;
 	const dismissedRef = useRef<string[]>([]);
 
-	const { detectedSpans, onEditorUpdate } = useEntityDetection({
+	const { detectedSpans, unresolvedCount, onEditorUpdate } = useEntityDetection({
 		campaignId,
 		dismissedEntityTexts: dismissedRef.current,
 	});
+
+	const onUnresolvedCountChangeRef = useRef(onUnresolvedCountChange);
+	onUnresolvedCountChangeRef.current = onUnresolvedCountChange;
+
+	useEffect(() => {
+		onUnresolvedCountChangeRef.current?.(unresolvedCount);
+	}, [unresolvedCount]);
 
 	const handleScrollToSpan = (span: EntitySpan) => {
 		if (!editor) return;

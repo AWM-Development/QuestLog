@@ -17,6 +17,8 @@ interface FinalizeFormProps {
 	}) => void;
 	onCancel: () => void;
 	isSubmitting: boolean;
+	unresolvedCount?: number;
+	onReviewInEditor?: () => void;
 }
 
 const wrap: CSSProperties = {
@@ -37,6 +39,8 @@ export function FinalizeForm({
 	onConfirm,
 	onCancel,
 	isSubmitting,
+	unresolvedCount = 0,
+	onReviewInEditor,
 }: FinalizeFormProps) {
 	const [title, setTitle] = useState(initialTitle ?? "");
 	const [sessionNumber, setSessionNumber] = useState(initialSessionNumber);
@@ -119,6 +123,52 @@ export function FinalizeForm({
 					onChange={(e) => setTagsRaw(e.target.value)}
 				/>
 			</FormField>
+			{unresolvedCount > 0 && (
+				<div
+					style={{
+						background: "rgba(232, 176, 64, 0.06)",
+						border: "1px solid rgba(232, 176, 64, 0.2)",
+						borderRadius: 6,
+						padding: "10px 12px",
+						marginBottom: 16,
+					}}
+				>
+					<div
+						style={{
+							fontSize: 12,
+							color: "var(--status-warning)",
+							fontWeight: 500,
+							marginBottom: 4,
+						}}
+					>
+						{`⚠ ${unresolvedCount} entity suggestions unresolved`}
+					</div>
+					<div
+						style={{
+							fontSize: 11,
+							color: "var(--text-secondary)",
+							marginBottom: 8,
+						}}
+					>
+						{"Some detected names haven't been linked or created."}
+					</div>
+					<button
+						type="button"
+						style={{
+							fontSize: 11,
+							color: "var(--status-warning)",
+							background: "rgba(232, 176, 64, 0.08)",
+							border: "1px solid rgba(232, 176, 64, 0.2)",
+							borderRadius: 4,
+							padding: "3px 10px",
+							cursor: "pointer",
+						}}
+						onClick={onReviewInEditor}
+					>
+						Review in editor
+					</button>
+				</div>
+			)}
 			<div
 				style={{
 					display: "flex",

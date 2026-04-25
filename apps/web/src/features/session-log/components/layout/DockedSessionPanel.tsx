@@ -47,6 +47,7 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 	const { activeSessionId, undock } = useCampaignChrome();
 	const navigate = useNavigate();
 	const [finalizeOpen, setFinalizeOpen] = useState(false);
+	const [unresolvedCount, setUnresolvedCount] = useState(0);
 
 	const sessionQuery = trpc.session.getById.useQuery(
 		{ id: activeSessionId ?? "" },
@@ -211,6 +212,8 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 							initialSummary={session.summary}
 							initialTags={session.tags ?? []}
 							isSubmitting={finalizeMutation.isPending}
+							unresolvedCount={unresolvedCount}
+							onReviewInEditor={() => setFinalizeOpen(false)}
 							onCancel={() => setFinalizeOpen(false)}
 							onConfirm={(data) => {
 								finalizeMutation.mutate({
@@ -270,6 +273,7 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 							onContentChange={(json) => {
 								scheduleSave(json);
 							}}
+							onUnresolvedCountChange={setUnresolvedCount}
 						/>
 					</div>
 				</div>
