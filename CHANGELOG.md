@@ -22,6 +22,25 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 - **Docs:** local dev URLs (5173 / 3000 / `VITE_API_URL`), DEVELOPMENT_GUIDE first-time setup uses `db:migrate` and Postgres **5433**; README troubleshooting for API connection / **EADDRINUSE**
 - **Server:** clearer startup error when **PORT** is already in use; `.env.example` documents optional **PORT**
 
+### Added — M4.2 Entity Detection & Linking
+
+- **Entity matching service** (`entity.service.ts`): paragraph-scoped `detectSpans` using `pg_trgm` fuzzy matching against campaign entities; returns confirmed, ambiguous, and unlinked spans with candidate lists
+- **`entity` tRPC router**: `detectSpans` query and `create` mutation; Zod validators in `packages/shared/src/validators/entity.ts` enforce enum type against `ENTITY_TYPES`
+- **`EntityHighlight` TipTap extension**: ProseMirror Mark that renders `confirmed`, `ambiguous`, and `unlinked` spans with per-state CSS classes; `setEntitySpans` command handles paragraph-scoped re-scan while preserving user-placed unlinked marks; `tr.setMeta("addToHistory", false)` keeps scan noise out of undo history
+- **`useEntityDetection` hook**: imperative paragraph-scoped detection using `trpc.useUtils().entity.detectSpans.fetch`; per-paragraph debounced timers (400ms); full-document scan on mount
+- **`DetectedEntitiesPanel`**: sidebar listing grouped by entity type (NPC / Faction / Location / Item / Arc), collapsible groups, click-to-scroll for confirmed spans, click-to-activate-action-bar for unlinked/ambiguous
+- **`EntityActionBar`**: hover-triggered action bar above/below entity spans; `showForSpan` tracks ProseMirror positions; combined hover zone with 120ms hide delay prevents flicker; Link (deferred), Create, and Dismiss actions
+- **`EntityQuickCreatePopover`**: inline popover for creating new entities from an unlinked span; type selector, name pre-filled from span text, optional description; calls `entity.create` mutation
+- **Dismissed entity texts**: `sessions.dismissed_entity_texts` column; passed to `detectSpans` so dismissed spans are never re-surfaced; persisted via `session.update` on change
+- **Migration `0006_entity_linking_schema.sql`**: `CREATE EXTENSION IF NOT EXISTS pg_trgm`; GIN trgm index on `entities.name`; `dismissed_entity_texts` text[] column on `sessions`
+- **Entity highlight CSS** (`entity-highlight.css`): confirmed/ambiguous/unlinked base states; hover uses `color-mix(in srgb, var(--ent-{type}) 70%, white)` — theme-adaptive without a parallel hex table
+- **Design tokens**: `--status-warning-rgb` and `--text-secondary-rgb` added to `:root` and all 4 campaign theme overrides for rgba() usage in CSS
+
+### Changed — M4.2 naming cleanup
+
+- `"story_arc"` renamed to `"arc"` in `ENTITY_TYPES` constant (`packages/shared/src/constants/index.ts`); `entityBorderColors` and `entityAvatarColors` keys in `components/styles.ts` updated; `guessEntityType` fallback in `ContextPanel.tsx` updated
+- `EntityCreateInput.type` now validated against `z.enum(ENTITY_TYPES)` (was `z.string()`)
+
 ### Added — M4.5 Polish: Style Audit & Component Reorganization
 
 - **4 half-step spacing tokens** added to `index.css`: `--space-0-5` (2px), `--space-1-5` (6px), `--space-2-5` (10px), `--space-3-5` (14px) — fills gaps in the 4px grid used by button/chip/input padding

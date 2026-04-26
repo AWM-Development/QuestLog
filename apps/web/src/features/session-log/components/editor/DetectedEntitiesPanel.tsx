@@ -99,26 +99,26 @@ export function DetectedEntitiesPanel({
 
 			{detectedSpans.length === 0 ? (
 				<div style={emptyStateStyle}>
-					{`No entities detected yet.\nStart writing to surface them.`}
+					{"No entities detected yet.\nStart writing to surface them."}
 				</div>
 			) : (
-				ENTITY_TYPES.filter((type) => (groupedSpans.get(type)?.length ?? 0) > 0).map(
-					(type) => {
-						const spans = groupedSpans.get(type) ?? [];
-						const isCollapsed = collapsed.has(type);
-						return (
-							<TypeGroup
-								key={type}
-								type={type}
-								spans={spans}
-								isCollapsed={isCollapsed}
-								onToggle={() => toggleGroup(type)}
-								onScrollToSpan={onScrollToSpan}
-								onActivateActionBar={onActivateActionBar}
-							/>
-						);
-					},
-				)
+				ENTITY_TYPES.filter(
+					(type) => (groupedSpans.get(type)?.length ?? 0) > 0,
+				).map((type) => {
+					const spans = groupedSpans.get(type) ?? [];
+					const isCollapsed = collapsed.has(type);
+					return (
+						<TypeGroup
+							key={type}
+							type={type}
+							spans={spans}
+							isCollapsed={isCollapsed}
+							onToggle={() => toggleGroup(type)}
+							onScrollToSpan={onScrollToSpan}
+							onActivateActionBar={onActivateActionBar}
+						/>
+					);
+				})
 			)}
 		</div>
 	);
@@ -163,9 +163,7 @@ function TypeGroup({
 				}}
 				onClick={onToggle}
 			>
-				<span
-					style={{ fontSize: 10, color: `var(--ent-${type})` }}
-				>
+				<span style={{ fontSize: 10, color: `var(--ent-${type})` }}>
 					{isCollapsed ? "▸" : "▾"}
 				</span>
 				<span
@@ -221,12 +219,11 @@ function EntityRow({
 }: EntityRowProps) {
 	const isConfirmed = span.matchType === "confirmed";
 
-	const dotColor =
-		isConfirmed
-			? `var(--ent-${entityType})`
-			: span.matchType === "ambiguous"
-				? "var(--status-warning)"
-				: "var(--text-muted)";
+	const dotColor = isConfirmed
+		? `var(--ent-${entityType})`
+		: span.matchType === "ambiguous"
+			? "var(--status-warning)"
+			: "var(--text-muted)";
 
 	const handleClick = () => {
 		if (isConfirmed) {

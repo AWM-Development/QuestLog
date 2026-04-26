@@ -126,28 +126,28 @@ export function FinalizeForm({
 			{unresolvedCount > 0 && (
 				<div
 					style={{
-						background: "rgba(232, 176, 64, 0.06)",
-						border: "1px solid rgba(232, 176, 64, 0.2)",
-						borderRadius: 6,
-						padding: "10px 12px",
-						marginBottom: 16,
+						background: "rgba(var(--status-warning-rgb), 0.06)",
+						border: "1px solid rgba(var(--status-warning-rgb), 0.2)",
+						borderRadius: "var(--r-sm)",
+						padding: "var(--space-2-5) var(--space-3)",
+						marginBottom: "var(--space-4)",
 					}}
 				>
 					<div
 						style={{
-							fontSize: 12,
+							fontSize: "0.75rem",
 							color: "var(--status-warning)",
 							fontWeight: 500,
-							marginBottom: 4,
+							marginBottom: "var(--space-1)",
 						}}
 					>
 						{`⚠ ${unresolvedCount} entity suggestions unresolved`}
 					</div>
 					<div
 						style={{
-							fontSize: 11,
+							fontSize: "0.6875rem",
 							color: "var(--text-secondary)",
-							marginBottom: 8,
+							marginBottom: "var(--space-2)",
 						}}
 					>
 						{"Some detected names haven't been linked or created."}
@@ -155,12 +155,12 @@ export function FinalizeForm({
 					<button
 						type="button"
 						style={{
-							fontSize: 11,
+							fontSize: "0.6875rem",
 							color: "var(--status-warning)",
-							background: "rgba(232, 176, 64, 0.08)",
-							border: "1px solid rgba(232, 176, 64, 0.2)",
-							borderRadius: 4,
-							padding: "3px 10px",
+							background: "rgba(var(--status-warning-rgb), 0.08)",
+							border: "1px solid rgba(var(--status-warning-rgb), 0.2)",
+							borderRadius: "var(--r-sm)",
+							padding: "3px var(--space-2-5)",
 							cursor: "pointer",
 						}}
 						onClick={onReviewInEditor}

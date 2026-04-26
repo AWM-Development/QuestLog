@@ -258,6 +258,13 @@ Type / for formatting options."
 								scheduleSave(json);
 							}}
 							onUnresolvedCountChange={setUnresolvedCount}
+							initialDismissedEntityTexts={session.dismissedEntityTexts ?? []}
+							onDismissedEntityTextsChange={(texts) => {
+								updateMutation.mutate({
+									id: session.id,
+									dismissedEntityTexts: texts,
+								});
+							}}
 						/>
 					</div>
 				</div>

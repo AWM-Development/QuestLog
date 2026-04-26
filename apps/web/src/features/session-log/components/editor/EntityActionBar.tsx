@@ -17,17 +17,17 @@ const barStyle: CSSProperties = {
 	position: "absolute",
 	background: "var(--bg-focal)",
 	border: "1px solid var(--border-hover)",
-	borderRadius: 5,
+	borderRadius: "var(--r-sm)",
 	display: "flex",
 	whiteSpace: "nowrap",
 	overflow: "hidden",
-	boxShadow: "0 8px 24px rgba(4, 12, 24, 0.6)",
+	boxShadow: "var(--shadow-md)",
 	zIndex: 100,
 };
 
 const btnBase: CSSProperties = {
 	padding: "4px 10px",
-	fontSize: 10,
+	fontSize: "0.625rem",
 	cursor: "pointer",
 	background: "transparent",
 	border: "none",
@@ -77,6 +77,7 @@ export function EntityActionBar({
 		<div
 			ref={barRef}
 			role="toolbar"
+			data-action-bar
 			style={{
 				...barStyle,
 				top: position.top,
@@ -127,9 +128,14 @@ interface ActionBarState {
 	spanText: string;
 	entityId: string | null;
 	entityType: EntityType | null;
+	from: number;
+	to: number;
 	position: { top: number; left: number };
 	placement: "above" | "below";
 }
+
+const HIDE_DELAY_MS = 120;
+const SHOW_DELAY_MS = 80;
 
 export function useActionBar({
 	editorRef,
@@ -140,10 +146,13 @@ export function useActionBar({
 		spanText: "",
 		entityId: null,
 		entityType: null,
+		from: 0,
+		to: 0,
 		position: { top: 0, left: 0 },
 		placement: "above",
 	});
 	const showTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	const hideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const isHoveredRef = useRef(false);
 
 	const showForSpan = (
@@ -151,8 +160,14 @@ export function useActionBar({
 		spanText: string,
 		entityId: string | null,
 		entityType: EntityType | null,
+		from: number,
+		to: number,
 	) => {
 		isHoveredRef.current = true;
+		if (hideTimerRef.current) {
+			clearTimeout(hideTimerRef.current);
+			hideTimerRef.current = null;
+		}
 		if (showTimerRef.current) clearTimeout(showTimerRef.current);
 
 		showTimerRef.current = setTimeout(() => {
@@ -173,22 +188,40 @@ export function useActionBar({
 				spanText,
 				entityId,
 				entityType,
+				from,
+				to,
 				position: { top, left: spanRect.left - editorRect.left },
 				placement,
 			});
-		}, 80);
+		}, SHOW_DELAY_MS);
 	};
 
 	const hide = () => {
 		isHoveredRef.current = false;
 		if (showTimerRef.current) clearTimeout(showTimerRef.current);
+		if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+		hideTimerRef.current = null;
 		setState((prev) => ({ ...prev, visible: false }));
+	};
+
+	const scheduleHide = () => {
+		isHoveredRef.current = false;
+		if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+		hideTimerRef.current = setTimeout(() => {
+			if (!isHoveredRef.current) {
+				setState((prev) => ({ ...prev, visible: false }));
+			}
+		}, HIDE_DELAY_MS);
 	};
 
 	const setBarHovered = (hovered: boolean) => {
 		isHoveredRef.current = hovered;
-		if (!hovered) hide();
+		if (hovered && hideTimerRef.current) {
+			clearTimeout(hideTimerRef.current);
+			hideTimerRef.current = null;
+		}
+		if (!hovered) scheduleHide();
 	};
 
-	return { state, showForSpan, hide, setBarHovered };
+	return { state, showForSpan, hide, scheduleHide, setBarHovered };
 }

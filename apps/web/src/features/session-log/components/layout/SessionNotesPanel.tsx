@@ -44,6 +44,7 @@ export function SessionNotesPanel({
 		collapseNotesFromFull,
 	} = useCampaignChrome();
 	const [finalizeOpen, setFinalizeOpen] = useState(false);
+	const [unresolvedCount, setUnresolvedCount] = useState(0);
 
 	const listQuery = trpc.session.list.useQuery({ campaignId });
 	const utils = trpc.useUtils();
@@ -247,6 +248,8 @@ export function SessionNotesPanel({
 							initialSummary={session.summary}
 							initialTags={session.tags ?? []}
 							isSubmitting={finalizeMutation.isPending}
+							unresolvedCount={unresolvedCount}
+							onReviewInEditor={() => setFinalizeOpen(false)}
 							onCancel={() => setFinalizeOpen(false)}
 							onConfirm={(data) => {
 								finalizeMutation.mutate({
@@ -311,10 +314,19 @@ export function SessionNotesPanel({
 						<SessionEditor
 							key={session.id}
 							sessionId={session.id}
+							campaignId={campaignId}
 							content={session.content}
 							placeholder="Start writing your session notes here. Type / for formatting options."
 							onContentChange={(json) => {
 								scheduleSave(json);
+							}}
+							onUnresolvedCountChange={setUnresolvedCount}
+							initialDismissedEntityTexts={session.dismissedEntityTexts ?? []}
+							onDismissedEntityTextsChange={(texts) => {
+								updateMutation.mutate({
+									id: session.id,
+									dismissedEntityTexts: texts,
+								});
 							}}
 						/>
 					</div>

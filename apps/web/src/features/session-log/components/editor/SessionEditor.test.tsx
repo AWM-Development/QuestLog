@@ -8,7 +8,18 @@ vi.mock("@/lib/trpc.js", () => {
 			detectSpans: {
 				useQuery: vi.fn(() => ({ data: [], isLoading: false })),
 			},
+			create: {
+				useMutation: vi.fn(() => ({
+					mutateAsync: vi.fn().mockResolvedValue({}),
+					isPending: false,
+				})),
+			},
 		},
+		useUtils: vi.fn(() => ({
+			entity: {
+				detectSpans: { fetch: vi.fn().mockResolvedValue([]) },
+			},
+		})),
 	};
 	return { trpc: mockTrpc, createTRPCClient: vi.fn(() => ({})) };
 });
@@ -47,8 +58,9 @@ describe("SessionEditor", () => {
 				placeholder="Write here."
 				onContentChange={onContentChange}
 				onEditorReady={(ed) => {
-					capturedExtensions =
-						ed.extensionManager.extensions as Array<{ name: string }>;
+					capturedExtensions = ed.extensionManager.extensions as Array<{
+						name: string;
+					}>;
 				}}
 			/>,
 		);
@@ -57,7 +69,8 @@ describe("SessionEditor", () => {
 			expect(capturedExtensions).not.toBeNull();
 		});
 
-		const names = (capturedExtensions ?? []).map((e) => e.name);
+		const exts: Array<{ name: string }> = capturedExtensions ?? [];
+		const names = exts.map((e) => e.name);
 		expect(names).toContain("entityHighlight");
 	});
 });

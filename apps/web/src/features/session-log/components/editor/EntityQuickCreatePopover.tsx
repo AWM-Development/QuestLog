@@ -73,7 +73,7 @@ export function EntityQuickCreatePopover({
 		border: "1px solid var(--border-hover)",
 		borderRadius: 8,
 		overflow: "hidden",
-		boxShadow: "0 12px 40px rgba(4, 12, 24, 0.8)",
+		boxShadow: "var(--shadow-focal)",
 		zIndex: 200,
 	};
 

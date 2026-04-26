@@ -33,7 +33,9 @@ const defaultProps = {
 
 describe("EntityQuickCreatePopover", () => {
 	it("renders type selector buttons for all 5 entity types", () => {
-		const { getByRole } = render(<EntityQuickCreatePopover {...defaultProps} />);
+		const { getByRole } = render(
+			<EntityQuickCreatePopover {...defaultProps} />,
+		);
 		expect(getByRole("button", { name: /^npc$/i })).toBeTruthy();
 		expect(getByRole("button", { name: /^faction$/i })).toBeTruthy();
 		expect(getByRole("button", { name: /^location$/i })).toBeTruthy();
@@ -42,7 +44,9 @@ describe("EntityQuickCreatePopover", () => {
 	});
 
 	it("selecting a type updates the create button label", () => {
-		const { getByRole } = render(<EntityQuickCreatePopover {...defaultProps} />);
+		const { getByRole } = render(
+			<EntityQuickCreatePopover {...defaultProps} />,
+		);
 		const npcBtn = getByRole("button", { name: /^npc$/i });
 		fireEvent.click(npcBtn);
 		expect(getByRole("button", { name: /create npc/i })).toBeTruthy();

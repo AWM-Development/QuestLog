@@ -106,18 +106,22 @@ export const EntityHighlight = Mark.create<EntityHighlightOptions>({
 				({ tr, state, dispatch }) => {
 					if (!dispatch) return true;
 
-					// Remove existing entity marks from the paragraph range
 					const { doc } = tr;
 					const markType = state.schema.marks.entityHighlight;
 					if (!markType) return true;
 
+					// Remove existing confirmed/ambiguous marks from the range; keep
+					// user-placed unlinked marks so a re-scan doesn't wipe them.
 					doc.nodesBetween(paragraphFrom, paragraphTo, (node, pos) => {
-						if (node.isText && node.marks.some((m) => m.type === markType)) {
-							tr.removeMark(pos, pos + node.nodeSize, markType);
-						}
+						if (!node.isText) return;
+						const existing = node.marks.find((m) => m.type === markType);
+						if (!existing) return;
+						if (existing.attrs.state === "unlinked") return;
+						const from = Math.max(pos, paragraphFrom);
+						const to = Math.min(pos + node.nodeSize, paragraphTo);
+						tr.removeMark(from, to, markType);
 					});
 
-					// Apply new marks
 					for (const span of spans) {
 						const from = paragraphFrom + span.startIndex;
 						const to = paragraphFrom + span.endIndex;
@@ -131,6 +135,7 @@ export const EntityHighlight = Mark.create<EntityHighlightOptions>({
 						tr.addMark(from, to, mark);
 					}
 
+					tr.setMeta("addToHistory", false);
 					dispatch(tr);
 					return true;
 				},

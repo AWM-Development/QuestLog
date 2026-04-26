@@ -80,7 +80,9 @@
 	--status-error-muted: rgba(220, 96, 96, 0.08);
 	--status-warning: #e8b040;
 	--status-warning-muted: rgba(232, 176, 64, 0.08);
+	--status-warning-rgb: 232, 176, 64;
 	--status-info: #60b8ff;
+	--text-secondary-rgb: 138, 164, 180;
 
 	/* ── Spacing ── */
 	--space-0-5: 2px; /* micro-gap: list items, inline input padding */
@@ -131,6 +133,7 @@
 	--accent-muted: rgba(0, 229, 255, 0.1);
 	--text-primary: #d0ecf4;
 	--text-secondary: #7ab0c0;
+	--text-secondary-rgb: 122, 176, 192;
 	--text-muted: #3a7888;
 	--border: #142838;
 	--border-hover: #1a3848;
@@ -148,6 +151,7 @@
 	--accent-muted: rgba(200, 80, 192, 0.1);
 	--text-primary: #e0d0e8;
 	--text-secondary: #9a82a8;
+	--text-secondary-rgb: 154, 130, 168;
 	--text-muted: #604870;
 	--border: #2a1838;
 	--border-hover: #381e48;
@@ -165,6 +169,7 @@
 	--accent-muted: rgba(224, 144, 64, 0.1);
 	--text-primary: #e8dcd0;
 	--text-secondary: #b0a090;
+	--text-secondary-rgb: 176, 160, 144;
 	--text-muted: #6a5848;
 	--border: #302820;
 	--border-hover: #3a3028;
@@ -181,6 +186,7 @@
 	--accent-muted: rgba(74, 144, 217, 0.1);
 	--text-primary: #e8e8ec;
 	--text-secondary: #8888a0;
+	--text-secondary-rgb: 136, 136, 160;
 	--text-muted: #505060;
 	--border: #282830;
 	--border-hover: #303038;

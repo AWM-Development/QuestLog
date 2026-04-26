@@ -118,7 +118,7 @@ export const entityColors = {
 		color: "var(--ent-item)",
 		borderBottomColor: "rgba(128, 216, 216, 0.3)",
 	},
-	story_arc: {
+	arc: {
 		color: "var(--ent-arc)",
 		borderBottomColor: "rgba(192, 160, 255, 0.3)",
 	},
@@ -142,7 +142,7 @@ export const entityAvatarColors = {
 		backgroundColor: "var(--ent-item-bg)",
 		color: "var(--ent-item)",
 	},
-	story_arc: {
+	arc: {
 		backgroundColor: "var(--ent-arc-bg)",
 		color: "var(--ent-arc)",
 	},

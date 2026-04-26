@@ -224,7 +224,7 @@
     - Auto-save draft (debounced server persistence via tRPC) ✅
   - Tests: session service CRUD tests ✅, editor rendering tests ✅, SessionEditorPage routing + navigation tests, DockedSessionPanel test
 
-- [ ] **4.2 — Entity detection & linking**
+- [x] **4.2 — Entity detection & linking**
   - Branch: `feat/session-log/entity-linking`
   - 🎨 **Visual spec required** — Pause before implementing. See template instructions.
   - PRD ref: §4.3 Inline entity detection, Entity creation inline
