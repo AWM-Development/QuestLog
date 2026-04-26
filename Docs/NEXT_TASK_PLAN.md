@@ -14,7 +14,7 @@ STATUS VALUES:
 
 | Field         | Value                                              |
 |---------------|----------------------------------------------------|
-| **Status**    | `done`                                             |
-| **Milestone** | M4.2 — Entity detection & linking                  |
-| **Branch**    | `feat/session-log/entity-linking`                  |
+| **Status**    | `ready`                                            |
+| **Milestone** | M4.2 — Session editor visual polish                |
+| **Branch**    | `feat/session-log/editor-polish`                   |
 | **Plan**      | `Docs/milestones/M4.2/PLAN.md`                     |
