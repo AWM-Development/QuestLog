@@ -1,4 +1,10 @@
-import { type CSSProperties, useCallback, useRef, useState } from "react";
+import {
+	type CSSProperties,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { useNavigate } from "react-router";
 import { Button } from "../../../../components/buttons/Button.js";
 import { IconButton } from "../../../../components/buttons/IconButton.js";
@@ -48,6 +54,11 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 	const navigate = useNavigate();
 	const [finalizeOpen, setFinalizeOpen] = useState(false);
 	const [unresolvedCount, setUnresolvedCount] = useState(0);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: activeSessionId is the trigger; setUnresolvedCount is a stable setter
+	useEffect(() => {
+		setUnresolvedCount(0);
+	}, [activeSessionId]);
 
 	const sessionQuery = trpc.session.getById.useQuery(
 		{ id: activeSessionId ?? "" },

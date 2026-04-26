@@ -26,13 +26,13 @@ interface DetectedEntitiesPanelProps {
 const panelStyle: CSSProperties = {
 	background: "var(--bg-surface)",
 	border: "1px solid var(--border)",
-	borderRadius: 8,
+	borderRadius: "var(--r-md)",
 	overflow: "hidden",
-	marginTop: 8,
+	marginTop: "var(--space-2)",
 };
 
 const headerStyle: CSSProperties = {
-	padding: "10px 12px",
+	padding: "var(--space-2-5) var(--space-3)",
 	borderBottom: "1px solid var(--border)",
 	display: "flex",
 	alignItems: "center",
@@ -40,9 +40,9 @@ const headerStyle: CSSProperties = {
 };
 
 const emptyStateStyle: CSSProperties = {
-	padding: "24px 12px",
+	padding: "var(--space-6) var(--space-3)",
 	textAlign: "center",
-	fontSize: 11,
+	fontSize: "0.6875rem",
 	color: "var(--text-dim)",
 	lineHeight: 1.6,
 };
@@ -85,14 +85,14 @@ export function DetectedEntitiesPanel({
 			<div style={headerStyle}>
 				<span
 					style={{
-						fontSize: 11,
+						fontSize: "0.6875rem",
 						color: "var(--text-secondary)",
 						fontWeight: 500,
 					}}
 				>
 					Detected Entities
 				</span>
-				<span style={{ fontSize: 10, color: "var(--text-muted)" }}>
+				<span style={{ fontSize: "0.625rem", color: "var(--text-muted)" }}>
 					{totalCount > 0 ? `${totalCount} found` : ""}
 				</span>
 			</div>
@@ -142,10 +142,10 @@ function TypeGroup({
 	onActivateActionBar,
 }: TypeGroupProps) {
 	const groupHeaderStyle: CSSProperties = {
-		padding: "7px 12px",
+		padding: "var(--space-1-5) var(--space-3)",
 		display: "flex",
 		alignItems: "center",
-		gap: 6,
+		gap: "var(--space-1-5)",
 		cursor: "pointer",
 		background: "var(--bg-elevated)",
 		borderBottom: "1px solid var(--border-subtle)",
@@ -163,12 +163,12 @@ function TypeGroup({
 				}}
 				onClick={onToggle}
 			>
-				<span style={{ fontSize: 10, color: `var(--ent-${type})` }}>
+				<span style={{ fontSize: "0.625rem", color: `var(--ent-${type})` }}>
 					{isCollapsed ? "▸" : "▾"}
 				</span>
 				<span
 					style={{
-						fontSize: 10,
+						fontSize: "0.625rem",
 						color: `var(--ent-${type})`,
 						fontWeight: 500,
 						letterSpacing: "0.06em",
@@ -179,7 +179,7 @@ function TypeGroup({
 				</span>
 				<span
 					style={{
-						fontSize: 10,
+						fontSize: "0.625rem",
 						color: "var(--text-muted)",
 						marginLeft: "auto",
 					}}
@@ -188,10 +188,10 @@ function TypeGroup({
 				</span>
 			</button>
 			{!isCollapsed && (
-				<div style={{ padding: "2px 12px 6px 24px" }}>
+				<div style={{ padding: "2px var(--space-3) var(--space-1-5) 24px" }}>
 					{spans.map((span) => (
 						<EntityRow
-							key={`${span.entityId}-${span.startIndex}`}
+							key={`${span.matchType}-${span.startIndex}`}
 							span={span}
 							entityType={type}
 							onScrollToSpan={onScrollToSpan}
@@ -239,10 +239,10 @@ function EntityRow({
 			style={{
 				display: "flex",
 				alignItems: "center",
-				gap: 6,
-				padding: "4px 6px",
-				borderRadius: 4,
-				marginBottom: 2,
+				gap: "var(--space-1-5)",
+				padding: "var(--space-1) var(--space-1-5)",
+				borderRadius: "var(--r-sm)",
+				marginBottom: "var(--space-0-5)",
 				cursor: "pointer",
 				width: "100%",
 				border: "none",
@@ -264,7 +264,7 @@ function EntityRow({
 			/>
 			<span
 				style={{
-					fontSize: 12,
+					fontSize: "0.75rem",
 					color: isConfirmed ? "var(--text-primary)" : "var(--text-secondary)",
 					flex: 1,
 				}}
@@ -272,12 +272,14 @@ function EntityRow({
 				{span.entityName}
 			</span>
 			{span.matchType === "ambiguous" && (
-				<span style={{ fontSize: 9, color: "var(--status-warning)" }}>
+				<span style={{ fontSize: "0.5625rem", color: "var(--status-warning)" }}>
 					{span.candidates.length} matches
 				</span>
 			)}
 			{span.matchType === "unlinked" && (
-				<span style={{ fontSize: 9, color: "var(--text-muted)" }}>new?</span>
+				<span style={{ fontSize: "0.5625rem", color: "var(--text-muted)" }}>
+					new?
+				</span>
 			)}
 		</button>
 	);

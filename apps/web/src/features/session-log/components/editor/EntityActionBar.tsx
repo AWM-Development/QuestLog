@@ -11,6 +11,8 @@ interface EntityActionBarProps {
 	onCreate: () => void;
 	onLink: (entityId: string, entityType: EntityType) => void;
 	onClose: () => void;
+	onBarMouseEnter?: () => void;
+	onBarMouseLeave?: () => void;
 }
 
 const barStyle: CSSProperties = {
@@ -26,17 +28,12 @@ const barStyle: CSSProperties = {
 };
 
 const btnBase: CSSProperties = {
-	padding: "4px 10px",
+	padding: "var(--space-1) var(--space-2-5)",
 	fontSize: "0.625rem",
 	cursor: "pointer",
 	background: "transparent",
 	border: "none",
 	borderRight: "1px solid var(--border)",
-};
-
-const linkBtnStyle: CSSProperties = {
-	...btnBase,
-	color: "var(--text-secondary)",
 };
 
 const createBtnStyle: CSSProperties = {
@@ -60,9 +57,9 @@ export function EntityActionBar({
 	onCreate,
 	onLink: _onLink,
 	onClose,
+	onBarMouseEnter,
+	onBarMouseLeave,
 }: EntityActionBarProps) {
-	const barRef = useRef<HTMLDivElement>(null);
-
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === "Escape") {
@@ -75,7 +72,6 @@ export function EntityActionBar({
 
 	return (
 		<div
-			ref={barRef}
 			role="toolbar"
 			data-action-bar
 			style={{
@@ -83,6 +79,8 @@ export function EntityActionBar({
 				top: position.top,
 				left: position.left,
 			}}
+			onMouseEnter={onBarMouseEnter}
+			onMouseLeave={onBarMouseLeave}
 			onKeyDown={(e) => {
 				if (e.key === "Escape") {
 					e.preventDefault();
@@ -90,14 +88,6 @@ export function EntityActionBar({
 				}
 			}}
 		>
-			<button
-				type="button"
-				aria-label="Link entity"
-				style={linkBtnStyle}
-				onClick={() => {}}
-			>
-				Link
-			</button>
 			<button
 				type="button"
 				aria-label="Create entity"

@@ -66,11 +66,33 @@ function findExactPositions(
 	return results;
 }
 
-async function findFuzzyPositions(
-	db: Database,
+// Pure-JS trigram similarity — same algorithm as pg_trgm similarity().
+// Eliminates per-token DB round-trips that would otherwise be O(candidates × tokens).
+function trigramSet(s: string): Set<string> {
+	const padded = `  ${s.toLowerCase()} `;
+	const grams = new Set<string>();
+	for (let i = 0; i < padded.length - 2; i++) {
+		grams.add(padded.slice(i, i + 3));
+	}
+	return grams;
+}
+
+function trigramSimilarity(a: string, b: string): number {
+	const setA = trigramSet(a);
+	const setB = trigramSet(b);
+	if (setA.size === 0 && setB.size === 0) return 1;
+	if (setA.size === 0 || setB.size === 0) return 0;
+	let intersection = 0;
+	for (const g of setA) {
+		if (setB.has(g)) intersection++;
+	}
+	return (2 * intersection) / (setA.size + setB.size);
+}
+
+function findFuzzyPositions(
 	entityName: string,
 	text: string,
-): Promise<Array<{ start: number; end: number }>> {
+): Array<{ start: number; end: number }> {
 	const entityWordCount = entityName.trim().split(/\s+/).length;
 	const tokens = tokenizeWords(text);
 	if (tokens.length === 0) return [];
@@ -80,10 +102,7 @@ async function findFuzzyPositions(
 
 	if (entityWordCount === 1) {
 		for (const token of tokens) {
-			const rows = await db.execute<{ sim: number }>(
-				sql`SELECT similarity(${entityName}, ${token.word}) AS sim`,
-			);
-			if (Number(rows[0]?.sim ?? 0) >= FUZZY_THRESHOLD) {
+			if (trigramSimilarity(entityName, token.word) >= FUZZY_THRESHOLD) {
 				results.push({ start: token.start, end: token.end });
 			}
 		}
@@ -94,10 +113,7 @@ async function findFuzzyPositions(
 			const last = window[window.length - 1];
 			if (!first || !last) continue;
 			const windowText = text.slice(first.start, last.end);
-			const rows = await db.execute<{ sim: number }>(
-				sql`SELECT similarity(${entityName}, ${windowText}) AS sim`,
-			);
-			if (Number(rows[0]?.sim ?? 0) >= FUZZY_THRESHOLD) {
+			if (trigramSimilarity(entityName, windowText) >= FUZZY_THRESHOLD) {
 				results.push({ start: first.start, end: last.end });
 			}
 		}
@@ -134,7 +150,7 @@ export const entityService = {
 			};
 			let positions = findExactPositions(entity.name, text);
 			if (positions.length === 0) {
-				positions = await findFuzzyPositions(db, entity.name, text);
+				positions = findFuzzyPositions(entity.name, text);
 			}
 			for (const pos of positions) {
 				const key = `${pos.start}:${pos.end}`;

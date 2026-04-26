@@ -24,9 +24,11 @@ const defaultProps = {
 };
 
 describe("EntityActionBar", () => {
-	it("renders Link, Create, and Dismiss buttons", () => {
-		const { getByRole } = render(<EntityActionBar {...defaultProps} />);
-		expect(getByRole("button", { name: /link/i })).toBeTruthy();
+	it("renders Create and Dismiss buttons", () => {
+		const { getByRole, queryByRole } = render(
+			<EntityActionBar {...defaultProps} />,
+		);
+		expect(queryByRole("button", { name: /link/i })).toBeNull();
 		expect(getByRole("button", { name: /create/i })).toBeTruthy();
 		expect(getByRole("button", { name: /dismiss/i })).toBeTruthy();
 	});

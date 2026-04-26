@@ -20,9 +20,9 @@ import { DetectedEntitiesPanel } from "./DetectedEntitiesPanel.js";
 import { EntityActionBar, useActionBar } from "./EntityActionBar.js";
 import { EntityQuickCreatePopover } from "./EntityQuickCreatePopover.js";
 
-function parseInitialContent(raw: string): JSONContent | string {
+function parseInitialContent(raw: string): JSONContent | undefined {
 	if (!raw.trim()) {
-		return "";
+		return undefined;
 	}
 	try {
 		return JSON.parse(raw) as JSONContent;
@@ -309,11 +309,7 @@ export function SessionEditor({
 				Placeholder.configure({
 					placeholder,
 				}),
-				EntityHighlight.configure({
-					campaignId,
-					dismissedRef,
-					onDismiss: () => {},
-				}),
+				EntityHighlight,
 			],
 			content: parseInitialContent(content),
 			editorProps: {
@@ -589,6 +585,8 @@ export function SessionEditor({
 					onCreate={handleActionBarCreate}
 					onLink={() => actionBar.hide()}
 					onClose={() => actionBar.hide()}
+					onBarMouseEnter={() => actionBar.setBarHovered(true)}
+					onBarMouseLeave={() => actionBar.setBarHovered(false)}
 				/>
 			) : null}
 

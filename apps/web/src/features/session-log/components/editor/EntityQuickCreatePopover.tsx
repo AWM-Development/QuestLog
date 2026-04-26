@@ -1,4 +1,4 @@
-import { type CSSProperties, useRef, useState } from "react";
+import { type CSSProperties, useState } from "react";
 import { trpc } from "../../../../lib/trpc.js";
 import type { EntityType } from "../../types.js";
 
@@ -46,7 +46,6 @@ export function EntityQuickCreatePopover({
 	const [selectedType, setSelectedType] = useState<EntityType>(initialType);
 	const [name, setName] = useState(spanText);
 	const [description, setDescription] = useState("");
-	const nameRef = useRef<HTMLInputElement>(null);
 
 	const createMutation = trpc.entity.create.useMutation();
 
@@ -71,7 +70,7 @@ export function EntityQuickCreatePopover({
 		width: 220,
 		background: "var(--bg-focal)",
 		border: "1px solid var(--border-hover)",
-		borderRadius: 8,
+		borderRadius: "var(--r-md)",
 		overflow: "hidden",
 		boxShadow: "var(--shadow-focal)",
 		zIndex: 200,
@@ -80,27 +79,27 @@ export function EntityQuickCreatePopover({
 	const headerStyle: CSSProperties = {
 		background: `rgba(${rgbVar}, 0.08)`,
 		borderBottom: `1px solid rgba(${rgbVar}, 0.15)`,
-		padding: "10px 14px",
+		padding: "var(--space-2-5) var(--space-3-5)",
 		display: "flex",
 		alignItems: "center",
-		gap: 8,
+		gap: "var(--space-2)",
 	};
 
 	const bodyStyle: CSSProperties = {
-		padding: "12px 14px",
+		padding: "var(--space-3) var(--space-3-5)",
 		background: "var(--bg-focal)",
 	};
 
 	const nameInputStyle: CSSProperties = {
 		background: "var(--bg-surface)",
 		border: `1px solid rgba(${rgbVar}, 0.2)`,
-		borderRadius: 5,
-		padding: "6px 10px",
-		fontSize: 13,
+		borderRadius: "var(--r-sm)",
+		padding: "var(--space-1-5) var(--space-2-5)",
+		fontSize: "0.8125rem",
 		fontFamily: "var(--font-display)",
 		color: "var(--text-primary)",
 		width: "100%",
-		marginBottom: 8,
+		marginBottom: "var(--space-2)",
 		boxSizing: "border-box",
 		outline: "none",
 	};
@@ -108,28 +107,28 @@ export function EntityQuickCreatePopover({
 	const descInputStyle: CSSProperties = {
 		background: "var(--bg-surface)",
 		border: "1px solid var(--border)",
-		borderRadius: 5,
-		padding: "6px 10px",
-		fontSize: 12,
+		borderRadius: "var(--r-sm)",
+		padding: "var(--space-1-5) var(--space-2-5)",
+		fontSize: "0.75rem",
 		color: "var(--text-muted)",
 		width: "100%",
-		marginBottom: 10,
+		marginBottom: "var(--space-2-5)",
 		boxSizing: "border-box",
 		outline: "none",
 	};
 
 	const footerStyle: CSSProperties = {
 		display: "flex",
-		gap: 6,
+		gap: "var(--space-1-5)",
 	};
 
 	const createBtnStyle: CSSProperties = {
 		flex: 1,
 		background: `rgba(${rgbVar}, 0.15)`,
 		border: `1px solid rgba(${rgbVar}, 0.3)`,
-		borderRadius: 4,
-		padding: "5px 0",
-		fontSize: 11,
+		borderRadius: "var(--r-sm)",
+		padding: "var(--space-1-5) 0",
+		fontSize: "0.6875rem",
 		color: colorVar,
 		fontWeight: 500,
 		cursor: "pointer",
@@ -138,17 +137,17 @@ export function EntityQuickCreatePopover({
 	const closeBtnStyle: CSSProperties = {
 		background: "var(--bg-surface)",
 		border: "1px solid var(--border)",
-		borderRadius: 4,
-		padding: "5px 8px",
-		fontSize: 11,
+		borderRadius: "var(--r-sm)",
+		padding: "var(--space-1-5) var(--space-2)",
+		fontSize: "0.6875rem",
 		color: "var(--text-muted)",
 		cursor: "pointer",
 	};
 
 	const typeLabelStyle: CSSProperties = {
-		fontSize: 10,
+		fontSize: "0.625rem",
 		color: colorVar,
-		marginLeft: 4,
+		marginLeft: "var(--space-1)",
 		fontWeight: 500,
 		letterSpacing: "0.06em",
 		textTransform: "uppercase",
@@ -167,13 +166,13 @@ export function EntityQuickCreatePopover({
 							style={{
 								width: 20,
 								height: 20,
-								borderRadius: 4,
+								borderRadius: "var(--r-sm)",
 								background: `rgba(var(${TYPE_RGB_VARS[type]}), 0.15)`,
 								border: isSelected
 									? `2px solid rgba(var(${TYPE_RGB_VARS[type]}), 0.5)`
 									: `1px solid rgba(var(${TYPE_RGB_VARS[type]}), 0.2)`,
 								cursor: "pointer",
-								fontSize: 9,
+								fontSize: "0.5625rem",
 								color: `var(${TYPE_VARS[type]})`,
 								display: "flex",
 								alignItems: "center",
@@ -192,7 +191,6 @@ export function EntityQuickCreatePopover({
 			</div>
 			<div style={bodyStyle}>
 				<input
-					ref={nameRef}
 					type="text"
 					value={name}
 					onChange={(e) => setName(e.target.value)}

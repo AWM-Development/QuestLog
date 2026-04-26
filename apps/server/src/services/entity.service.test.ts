@@ -101,9 +101,13 @@ describe("entityService.detectSpans", () => {
 		expect(names).toContain("Strahd");
 		expect(names).toContain("Castle Ravenloft");
 		// No overlaps
-		const strahdSpan = spans.find((s) => s.entityId === strahd.id)!;
-		const ravenloftSpan = spans.find((s) => s.entityId === ravenloft.id)!;
-		expect(strahdSpan.endIndex).toBeLessThanOrEqual(ravenloftSpan.startIndex);
+		const strahdSpan = spans.find((s) => s.entityId === strahd.id);
+		const ravenloftSpan = spans.find((s) => s.entityId === ravenloft.id);
+		expect(strahdSpan).toBeDefined();
+		expect(ravenloftSpan).toBeDefined();
+		expect(strahdSpan?.endIndex).toBeLessThanOrEqual(
+			ravenloftSpan?.startIndex ?? 0,
+		);
 	});
 
 	it("prefers longer match when both entity names match at same position", async () => {

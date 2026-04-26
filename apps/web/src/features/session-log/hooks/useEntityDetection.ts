@@ -1,3 +1,4 @@
+import { ENTITY_TYPES } from "@questlog/shared";
 import type { Editor } from "@tiptap/core";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { trpc } from "../../../lib/trpc.js";
@@ -43,10 +44,16 @@ function collectMarkSpans(editor: Editor): EntitySpan[] {
 		} catch {
 			candidates = [];
 		}
+		const rawType = attrs.entityType ?? "npc";
+		const entityType: EntityType = (ENTITY_TYPES as readonly string[]).includes(
+			rawType,
+		)
+			? (rawType as EntityType)
+			: "npc";
 		spans.push({
 			entityId: attrs.entityId ?? "",
 			entityName: node.text ?? "",
-			entityType: (attrs.entityType ?? "npc") as EntityType,
+			entityType,
 			startIndex: pos,
 			endIndex: pos + node.nodeSize,
 			matchType: attrs.state,
@@ -87,6 +94,7 @@ export function useEntityDetection({
 	const timersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(
 		new Map(),
 	);
+	const scanInFlightRef = useRef(false);
 	const editorRef = useRef(editor);
 	editorRef.current = editor;
 
@@ -134,7 +142,8 @@ export function useEntityDetection({
 					text,
 					dismissedEntityTexts: dismissedRef.current,
 				});
-			} catch {
+			} catch (err) {
+				console.error("[useEntityDetection] detectSpans failed:", err);
 				return;
 			}
 
@@ -173,6 +182,7 @@ export function useEntityDetection({
 	);
 
 	const scanFullDocument = useCallback(() => {
+		if (scanInFlightRef.current) return;
 		const ed = editorRef.current;
 		if (!ed) return;
 		const positions: number[] = [];
@@ -180,7 +190,9 @@ export function useEntityDetection({
 			positions.push(from);
 		});
 		// Run all scans without debounce on initial pass.
+		scanInFlightRef.current = true;
 		void Promise.all(positions.map((pos) => runScan(pos))).then(() => {
+			scanInFlightRef.current = false;
 			refreshDetectedSpans();
 		});
 	}, [refreshDetectedSpans, runScan]);

@@ -1,13 +1,6 @@
 import { Mark } from "@tiptap/core";
-import type React from "react";
 
 export type EntityState = "confirmed" | "ambiguous" | "unlinked";
-
-export interface EntityHighlightOptions {
-	campaignId: string;
-	dismissedRef: React.MutableRefObject<string[]>;
-	onDismiss: (text: string) => void;
-}
 
 declare module "@tiptap/core" {
 	interface Commands<ReturnType> {
@@ -35,16 +28,8 @@ declare module "@tiptap/core" {
 	}
 }
 
-export const EntityHighlight = Mark.create<EntityHighlightOptions>({
+export const EntityHighlight = Mark.create({
 	name: "entityHighlight",
-
-	addOptions() {
-		return {
-			campaignId: "",
-			dismissedRef: { current: [] },
-			onDismiss: () => {},
-		};
-	},
 
 	addAttributes() {
 		return {

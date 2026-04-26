@@ -46,6 +46,11 @@ export function SessionNotesPanel({
 	const [finalizeOpen, setFinalizeOpen] = useState(false);
 	const [unresolvedCount, setUnresolvedCount] = useState(0);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: activeSessionId is the trigger; setUnresolvedCount is a stable setter
+	useEffect(() => {
+		setUnresolvedCount(0);
+	}, [activeSessionId]);
+
 	const listQuery = trpc.session.list.useQuery({ campaignId });
 	const utils = trpc.useUtils();
 
