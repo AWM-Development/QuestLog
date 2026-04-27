@@ -117,7 +117,7 @@ _Filled in by the overnight agent. Do not edit manually._
 - [x] CP-2
 - [x] CP-3
 - [x] CP-4
-- [ ] CP-5
+- [x] CP-5
 - [ ] CP-6
 - [ ] CP-7
 
@@ -129,7 +129,7 @@ _Filled in by the overnight agent. Do not edit manually._
 | CP-2       | ✅ done | 74e7f12 | forwardRef+useImperativeHandle; panel in right rail (page) and dock body |
 | CP-3       | ✅ done | a80018c | Breadcrumb + SESSION N overline in header; campaign query added |
 | CP-4       | ✅ done | 125e05d | SessionEmptyState with 4 actions; integrated into SessionEditor on isEmpty |
-| CP-5       |        |        |       |
+| CP-5       | ✅ done | 7629281 | EntityHoverCard + useHoveredEntity; dock mode-switches on ambiguous hover |
 | CP-6       |        |        |       |
 | CP-7       |        |        |       |
 
