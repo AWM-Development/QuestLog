@@ -14,7 +14,7 @@ STATUS VALUES:
 
 | Field         | Value                                              |
 |---------------|----------------------------------------------------|
-| **Status**    | `ready`                                            |
+| **Status**    | `in-progress`                                      |
 | **Milestone** | M4.2 — Session editor visual polish                |
 | **Branch**    | `feat/session-log/editor-polish`                   |
 | **Plan**      | `Docs/milestones/M4.2/PLAN.md`                     |
