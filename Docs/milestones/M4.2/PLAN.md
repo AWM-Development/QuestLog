@@ -115,7 +115,7 @@ _Filled in by the overnight agent. Do not edit manually._
 
 - [x] CP-1
 - [x] CP-2
-- [ ] CP-3
+- [x] CP-3
 - [ ] CP-4
 - [ ] CP-5
 - [ ] CP-6
@@ -127,7 +127,7 @@ _Filled in by the overnight agent. Do not edit manually._
 |------------|--------|--------|-------|
 | CP-1       | ✅ done | c3c3a3a | Stripped editorSurface card chrome; canvas sits on --bg-void |
 | CP-2       | ✅ done | 74e7f12 | forwardRef+useImperativeHandle; panel in right rail (page) and dock body |
-| CP-3       |        |        |       |
+| CP-3       | ✅ done | a80018c | Breadcrumb + SESSION N overline in header; campaign query added |
 | CP-4       |        |        |       |
 | CP-5       |        |        |       |
 | CP-6       |        |        |       |
