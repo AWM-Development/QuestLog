@@ -114,7 +114,7 @@ _Filled in by the overnight agent. Do not edit manually._
 ### Progress
 
 - [x] CP-1
-- [ ] CP-2
+- [x] CP-2
 - [ ] CP-3
 - [ ] CP-4
 - [ ] CP-5
@@ -126,7 +126,7 @@ _Filled in by the overnight agent. Do not edit manually._
 | Checkpoint | Status | Commit | Notes |
 |------------|--------|--------|-------|
 | CP-1       | ✅ done | c3c3a3a | Stripped editorSurface card chrome; canvas sits on --bg-void |
-| CP-2       |        |        |       |
+| CP-2       | ✅ done | 74e7f12 | forwardRef+useImperativeHandle; panel in right rail (page) and dock body |
 | CP-3       |        |        |       |
 | CP-4       |        |        |       |
 | CP-5       |        |        |       |
