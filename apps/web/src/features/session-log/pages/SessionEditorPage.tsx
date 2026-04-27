@@ -6,6 +6,7 @@ import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../lib/trpc.js";
 import { DetectedEntitiesPanel } from "../components/editor/DetectedEntitiesPanel.js";
 import type { SessionEditorHandle } from "../components/editor/SessionEditor.js";
+import { useHoveredEntity } from "../hooks/useHoveredEntity.js";
 import {
 	FinalizeForm,
 	SaveStatus,
@@ -118,6 +119,7 @@ export function SessionEditorPage() {
 	const [unresolvedCount, setUnresolvedCount] = useState(0);
 	const [detectedSpans, setDetectedSpans] = useState<EntitySpan[]>([]);
 	const editorRef = useRef<SessionEditorHandle>(null);
+	const { hoveredSpan, setHoveredSpan } = useHoveredEntity();
 
 	const sessionQuery = trpc.session.getById.useQuery(
 		{ id: sessionId ?? "" },
@@ -319,6 +321,7 @@ Type / for formatting options."
 								}}
 								onUnresolvedCountChange={setUnresolvedCount}
 								onDetectedSpansChange={setDetectedSpans}
+								onHoveredSpanChange={setHoveredSpan}
 								initialDismissedEntityTexts={session.dismissedEntityTexts ?? []}
 								onDismissedEntityTextsChange={(texts) => {
 									updateMutation.mutate({
@@ -337,6 +340,24 @@ Type / for formatting options."
 						onActivateActionBar={(span) =>
 							editorRef.current?.activateActionBar(span)
 						}
+						hoveredSpan={hoveredSpan}
+						onSelectCandidate={(candidate) => {
+							if (hoveredSpan) {
+								editorRef.current?.linkSpan(
+									hoveredSpan,
+									candidate.id,
+									candidate.name,
+								);
+							}
+							setHoveredSpan(null);
+						}}
+						onCreateNew={() => {
+							if (hoveredSpan) {
+								editorRef.current?.activateActionBar(hoveredSpan);
+							}
+							setHoveredSpan(null);
+						}}
+						onSkipHover={() => setHoveredSpan(null)}
 					/>
 				</aside>
 			</div>

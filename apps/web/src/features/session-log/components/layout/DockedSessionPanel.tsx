@@ -14,6 +14,7 @@ import { useSessionAutoSave } from "../../hooks/useSessionAutoSave.js";
 import type { EntitySpan } from "../../types.js";
 import { DetectedEntitiesPanel } from "../editor/DetectedEntitiesPanel.js";
 import type { SessionEditorHandle } from "../editor/SessionEditor.js";
+import { useHoveredEntity } from "../../hooks/useHoveredEntity.js";
 import {
 	FinalizeForm,
 	SaveStatus,
@@ -59,6 +60,7 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 	const [unresolvedCount, setUnresolvedCount] = useState(0);
 	const [detectedSpans, setDetectedSpans] = useState<EntitySpan[]>([]);
 	const editorRef = useRef<SessionEditorHandle>(null);
+	const { hoveredSpan, setHoveredSpan } = useHoveredEntity();
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: activeSessionId is the trigger; setUnresolvedCount is a stable setter
 	useEffect(() => {
@@ -292,6 +294,7 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 							}}
 							onUnresolvedCountChange={setUnresolvedCount}
 							onDetectedSpansChange={setDetectedSpans}
+							onHoveredSpanChange={setHoveredSpan}
 							initialDismissedEntityTexts={session.dismissedEntityTexts ?? []}
 							onDismissedEntityTextsChange={(texts) => {
 								updateMutation.mutate({
@@ -307,6 +310,24 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 						onActivateActionBar={(span) =>
 							editorRef.current?.activateActionBar(span)
 						}
+						hoveredSpan={hoveredSpan}
+						onSelectCandidate={(candidate) => {
+							if (hoveredSpan) {
+								editorRef.current?.linkSpan(
+									hoveredSpan,
+									candidate.id,
+									candidate.name,
+								);
+							}
+							setHoveredSpan(null);
+						}}
+						onCreateNew={() => {
+							if (hoveredSpan) {
+								editorRef.current?.activateActionBar(hoveredSpan);
+							}
+							setHoveredSpan(null);
+						}}
+						onSkipHover={() => setHoveredSpan(null)}
 					/>
 				</div>
 			</div>

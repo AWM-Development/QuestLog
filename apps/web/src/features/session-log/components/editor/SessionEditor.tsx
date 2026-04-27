@@ -30,6 +30,7 @@ import { SessionEmptyState } from "./SessionEmptyState.js";
 export interface SessionEditorHandle {
 	scrollToSpan: (span: EntitySpan) => void;
 	activateActionBar: (span: EntitySpan) => void;
+	linkSpan: (span: EntitySpan, entityId: string, entityName: string) => void;
 }
 
 function parseInitialContent(raw: string): JSONContent | undefined {
@@ -149,6 +150,7 @@ interface SessionEditorProps {
 	onEditorReady?: (editor: Editor) => void;
 	onUnresolvedCountChange?: (count: number) => void;
 	onDetectedSpansChange?: (spans: EntitySpan[]) => void;
+	onHoveredSpanChange?: (span: EntitySpan | null) => void;
 	initialDismissedEntityTexts?: string[];
 	onDismissedEntityTextsChange?: (texts: string[]) => void;
 }
@@ -163,6 +165,7 @@ export const SessionEditor = forwardRef<SessionEditorHandle, SessionEditorProps>
 		onEditorReady,
 		onUnresolvedCountChange,
 		onDetectedSpansChange,
+		onHoveredSpanChange,
 		initialDismissedEntityTexts,
 		onDismissedEntityTextsChange,
 	},
@@ -209,6 +212,34 @@ export const SessionEditor = forwardRef<SessionEditorHandle, SessionEditorProps>
 	useEffect(() => {
 		onDetectedSpansChangeRef.current?.(detectedSpans);
 	}, [detectedSpans]);
+
+	const onHoveredSpanChangeRef = useRef(onHoveredSpanChange);
+	onHoveredSpanChangeRef.current = onHoveredSpanChange;
+
+	const linkSpan = useCallback(
+		(span: EntitySpan, entityId: string, entityName: string) => {
+			const ed = editorInstance;
+			if (!ed) return;
+			const markType = ed.schema.marks.entityHighlight;
+			if (!markType) return;
+			const tr = ed.state.tr;
+			tr.removeMark(span.startIndex, span.endIndex, markType);
+			tr.addMark(
+				span.startIndex,
+				span.endIndex,
+				markType.create({
+					entityId,
+					entityType: span.entityType,
+					entityName,
+					state: "confirmed",
+					candidates: "[]",
+				}),
+			);
+			ed.view.dispatch(tr);
+			scanFullDocument();
+		},
+		[editorInstance, scanFullDocument],
+	);
 
 	const actionBar = useActionBar({
 		editorRef: editorContainerRef,
@@ -474,6 +505,27 @@ export const SessionEditor = forwardRef<SessionEditorHandle, SessionEditorProps>
 			const entityType =
 				(target.dataset.entityType as EntityType | undefined) ?? null;
 			actionBar.showForSpan(target, text, entityId, entityType, from, to);
+			if (target.dataset.entityState === "ambiguous") {
+				let candidates: { id: string; name: string }[] = [];
+				try {
+					candidates = JSON.parse(
+						target.dataset.entityCandidates ?? "[]",
+					) as { id: string; name: string }[];
+				} catch {
+					// ignore parse error
+				}
+				onHoveredSpanChangeRef.current?.({
+					entityId: entityId ?? "",
+					entityName: text,
+					entityType: (entityType ?? "npc") as EntityType,
+					startIndex: from,
+					endIndex: to,
+					matchType: "ambiguous",
+					candidates,
+				});
+			} else {
+				onHoveredSpanChangeRef.current?.(null);
+			}
 		};
 		const onMouseOut = (e: MouseEvent) => {
 			const related = e.relatedTarget as HTMLElement | null;
@@ -483,6 +535,7 @@ export const SessionEditor = forwardRef<SessionEditorHandle, SessionEditorProps>
 			);
 			if (!leaving) return;
 			actionBar.scheduleHide();
+			onHoveredSpanChangeRef.current?.(null);
 		};
 		dom.addEventListener("mouseover", onMouseOver);
 		dom.addEventListener("mouseout", onMouseOut);
@@ -497,8 +550,9 @@ export const SessionEditor = forwardRef<SessionEditorHandle, SessionEditorProps>
 		() => ({
 			scrollToSpan: handleScrollToSpan,
 			activateActionBar: handleActivateActionBar,
+			linkSpan,
 		}),
-		[handleScrollToSpan, handleActivateActionBar],
+		[handleScrollToSpan, handleActivateActionBar, linkSpan],
 	);
 
 	if (!editor) {

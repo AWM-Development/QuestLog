@@ -42,6 +42,19 @@ const defaultProps = {
 	onActivateActionBar: vi.fn(),
 };
 
+const ambiguousSpanForDock: EntitySpan = {
+	entityId: "",
+	entityName: "Strahd",
+	entityType: "npc",
+	startIndex: 0,
+	endIndex: 6,
+	matchType: "ambiguous",
+	candidates: [
+		{ id: "e1", name: "Strahd von Zarovich" },
+		{ id: "e2", name: "Count Strahd" },
+	],
+};
+
 describe("DetectedEntitiesPanel", () => {
 	it("renders empty state when no spans", () => {
 		const { getByText } = render(<DetectedEntitiesPanel {...defaultProps} />);
@@ -98,6 +111,19 @@ describe("DetectedEntitiesPanel", () => {
 		);
 		fireEvent.click(getByText("Strahd"));
 		expect(onScrollToSpan).toHaveBeenCalledWith(npcSpan);
+	});
+
+	it("switches to hovering mode when hoveredSpan is set", () => {
+		const { container } = render(
+			<DetectedEntitiesPanel
+				{...defaultProps}
+				hoveredSpan={ambiguousSpanForDock}
+				onSelectCandidate={vi.fn()}
+				onCreateNew={vi.fn()}
+				onSkipHover={vi.fn()}
+			/>,
+		);
+		expect(container.querySelector('[data-testid="hover-card-kicker"]')).toBeTruthy();
 	});
 
 	it("clicking unresolved row calls onActivateActionBar", () => {

@@ -1,5 +1,6 @@
 import { type CSSProperties, useState } from "react";
 import type { EntitySpan, EntityType } from "../../types.js";
+import { EntityHoverCard } from "./EntityHoverCard.js";
 
 const ENTITY_TYPES: EntityType[] = [
 	"npc",
@@ -21,6 +22,10 @@ interface DetectedEntitiesPanelProps {
 	detectedSpans: EntitySpan[];
 	onScrollToSpan: (span: EntitySpan) => void;
 	onActivateActionBar: (span: EntitySpan) => void;
+	hoveredSpan?: EntitySpan | null;
+	onSelectCandidate?: (candidate: { id: string; name: string }) => void;
+	onCreateNew?: () => void;
+	onSkipHover?: () => void;
 }
 
 const panelStyle: CSSProperties = {
@@ -62,11 +67,16 @@ export function DetectedEntitiesPanel({
 	detectedSpans,
 	onScrollToSpan,
 	onActivateActionBar,
+	hoveredSpan,
+	onSelectCandidate,
+	onCreateNew,
+	onSkipHover,
 }: DetectedEntitiesPanelProps) {
 	const [collapsed, setCollapsed] = useState<Set<EntityType>>(new Set());
 	const groupedSpans = groupByType(detectedSpans);
 
 	const totalCount = detectedSpans.length;
+	const isHoveringMode = hoveredSpan != null && hoveredSpan.matchType === "ambiguous";
 
 	const toggleGroup = (type: EntityType) => {
 		setCollapsed((prev) => {
@@ -90,14 +100,25 @@ export function DetectedEntitiesPanel({
 						fontWeight: 500,
 					}}
 				>
-					Detected Entities
+					{isHoveringMode
+						? `Hovering · ${hoveredSpan.entityType.toUpperCase()}`
+						: "Detected Entities"}
 				</span>
 				<span style={{ fontSize: "0.625rem", color: "var(--text-muted)" }}>
-					{totalCount > 0 ? `${totalCount} found` : ""}
+					{!isHoveringMode && totalCount > 0 ? `${totalCount} found` : ""}
 				</span>
 			</div>
 
-			{detectedSpans.length === 0 ? (
+			{isHoveringMode ? (
+				<div style={{ padding: "var(--space-2)" }}>
+					<EntityHoverCard
+						span={hoveredSpan}
+						onSelectCandidate={(candidate) => onSelectCandidate?.(candidate)}
+						onCreateNew={() => onCreateNew?.()}
+						onSkip={() => onSkipHover?.()}
+					/>
+				</div>
+			) : detectedSpans.length === 0 ? (
 				<div style={emptyStateStyle}>
 					{"No entities detected yet.\nStart writing to surface them."}
 				</div>
