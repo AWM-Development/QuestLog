@@ -81,7 +81,7 @@ export function DetectedEntitiesPanel({
 	};
 
 	return (
-		<div style={panelStyle}>
+		<div data-testid="detected-entities-panel" style={panelStyle}>
 			<div style={headerStyle}>
 				<span
 					style={{

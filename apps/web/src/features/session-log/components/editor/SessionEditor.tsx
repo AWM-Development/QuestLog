@@ -4,7 +4,14 @@ import Placeholder from "@tiptap/extension-placeholder";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { BubbleMenu, FloatingMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	forwardRef,
+	useCallback,
+	useEffect,
+	useImperativeHandle,
+	useRef,
+	useState,
+} from "react";
 import { IconButton } from "../../../../components/buttons/IconButton.js";
 import {
 	editorSurface,
@@ -16,9 +23,13 @@ import { EntityHighlight } from "../../extensions/EntityHighlight.js";
 import { useEntityDetection } from "../../hooks/useEntityDetection.js";
 import type { EntitySpan, EntityType } from "../../types.js";
 import "./../../styles/entity-highlight.css";
-import { DetectedEntitiesPanel } from "./DetectedEntitiesPanel.js";
 import { EntityActionBar, useActionBar } from "./EntityActionBar.js";
 import { EntityQuickCreatePopover } from "./EntityQuickCreatePopover.js";
+
+export interface SessionEditorHandle {
+	scrollToSpan: (span: EntitySpan) => void;
+	activateActionBar: (span: EntitySpan) => void;
+}
 
 function parseInitialContent(raw: string): JSONContent | undefined {
 	if (!raw.trim()) {
@@ -136,21 +147,26 @@ interface SessionEditorProps {
 	onContentChange: (json: string) => void;
 	onEditorReady?: (editor: Editor) => void;
 	onUnresolvedCountChange?: (count: number) => void;
+	onDetectedSpansChange?: (spans: EntitySpan[]) => void;
 	initialDismissedEntityTexts?: string[];
 	onDismissedEntityTextsChange?: (texts: string[]) => void;
 }
 
-export function SessionEditor({
-	sessionId,
-	campaignId,
-	content,
-	placeholder,
-	onContentChange,
-	onEditorReady,
-	onUnresolvedCountChange,
-	initialDismissedEntityTexts,
-	onDismissedEntityTextsChange,
-}: SessionEditorProps) {
+export const SessionEditor = forwardRef<SessionEditorHandle, SessionEditorProps>(
+	function SessionEditor({
+		sessionId,
+		campaignId,
+		content,
+		placeholder,
+		onContentChange,
+		onEditorReady,
+		onUnresolvedCountChange,
+		onDetectedSpansChange,
+		initialDismissedEntityTexts,
+		onDismissedEntityTextsChange,
+	},
+	ref,
+) {
 	const [slashHighlightIndex, setSlashHighlightIndex] = useState(0);
 	const slashHighlightRef = useRef(0);
 	slashHighlightRef.current = slashHighlightIndex;
@@ -184,6 +200,12 @@ export function SessionEditor({
 	useEffect(() => {
 		onUnresolvedCountChangeRef.current?.(unresolvedCount);
 	}, [unresolvedCount]);
+
+	const onDetectedSpansChangeRef = useRef(onDetectedSpansChange);
+	onDetectedSpansChangeRef.current = onDetectedSpansChange;
+	useEffect(() => {
+		onDetectedSpansChangeRef.current?.(detectedSpans);
+	}, [detectedSpans]);
 
 	const actionBar = useActionBar({
 		editorRef: editorContainerRef,
@@ -465,6 +487,15 @@ export function SessionEditor({
 		};
 	}, [editor, actionBar]);
 
+	useImperativeHandle(
+		ref,
+		() => ({
+			scrollToSpan: handleScrollToSpan,
+			activateActionBar: handleActivateActionBar,
+		}),
+		[handleScrollToSpan, handleActivateActionBar],
+	);
+
 	if (!editor) {
 		return null;
 	}
@@ -600,12 +631,6 @@ export function SessionEditor({
 					onClose={() => setPopover(null)}
 				/>
 			) : null}
-
-			<DetectedEntitiesPanel
-				detectedSpans={detectedSpans}
-				onScrollToSpan={handleScrollToSpan}
-				onActivateActionBar={handleActivateActionBar}
-			/>
 		</div>
 	);
-}
+});

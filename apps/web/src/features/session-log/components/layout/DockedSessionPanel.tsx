@@ -11,6 +11,9 @@ import { IconButton } from "../../../../components/buttons/IconButton.js";
 import { useCampaignChrome } from "../../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../../lib/trpc.js";
 import { useSessionAutoSave } from "../../hooks/useSessionAutoSave.js";
+import type { EntitySpan } from "../../types.js";
+import { DetectedEntitiesPanel } from "../editor/DetectedEntitiesPanel.js";
+import type { SessionEditorHandle } from "../editor/SessionEditor.js";
 import {
 	FinalizeForm,
 	SaveStatus,
@@ -54,6 +57,8 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 	const navigate = useNavigate();
 	const [finalizeOpen, setFinalizeOpen] = useState(false);
 	const [unresolvedCount, setUnresolvedCount] = useState(0);
+	const [detectedSpans, setDetectedSpans] = useState<EntitySpan[]>([]);
+	const editorRef = useRef<SessionEditorHandle>(null);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: activeSessionId is the trigger; setUnresolvedCount is a stable setter
 	useEffect(() => {
@@ -276,6 +281,7 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 						}}
 					>
 						<SessionEditor
+							ref={editorRef}
 							key={session.id}
 							sessionId={session.id}
 							campaignId={campaignId}
@@ -285,6 +291,7 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 								scheduleSave(json);
 							}}
 							onUnresolvedCountChange={setUnresolvedCount}
+							onDetectedSpansChange={setDetectedSpans}
 							initialDismissedEntityTexts={session.dismissedEntityTexts ?? []}
 							onDismissedEntityTextsChange={(texts) => {
 								updateMutation.mutate({
@@ -294,6 +301,13 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 							}}
 						/>
 					</div>
+					<DetectedEntitiesPanel
+						detectedSpans={detectedSpans}
+						onScrollToSpan={(span) => editorRef.current?.scrollToSpan(span)}
+						onActivateActionBar={(span) =>
+							editorRef.current?.activateActionBar(span)
+						}
+					/>
 				</div>
 			</div>
 		</aside>

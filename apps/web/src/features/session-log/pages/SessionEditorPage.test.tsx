@@ -120,6 +120,19 @@ function renderPage(sessionId = SESSION_ID) {
 }
 
 describe("SessionEditorPage", () => {
+	it("entities panel renders outside the editor canvas (in the right rail)", () => {
+		setupMocks({});
+		renderPage();
+		const canvas = document.querySelector(
+			'[data-testid="session-editor-canvas"]',
+		);
+		const panel = document.querySelector(
+			'[data-testid="detected-entities-panel"]',
+		);
+		expect(panel).toBeTruthy();
+		expect(canvas?.contains(panel)).toBe(false);
+	});
+
 	it("renders the sticky header with back link and Save Session button for a draft", () => {
 		setupMocks({});
 		renderPage();
