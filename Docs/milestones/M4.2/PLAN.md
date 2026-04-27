@@ -4,7 +4,7 @@
 
 | Field       | Value |
 |-------------|-------|
-| **Status**  | `none` |
+| **Status**  | `in-progress` |
 | **Milestone** | M4.2 — Session editor visual polish |
 | **Branch**  | `feat/session-log/editor-polish` |
 | **PRD ref** | §4.3 Session notes UX polish follow-up |
