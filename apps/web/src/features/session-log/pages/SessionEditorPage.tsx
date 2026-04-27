@@ -60,6 +60,20 @@ const backLinkStyle: CSSProperties = {
 	gap: "0.35em",
 };
 
+const breadcrumbSep: CSSProperties = {
+	color: "var(--text-dim)",
+	fontSize: "0.75rem",
+	userSelect: "none",
+};
+
+const sessionContextStyle: CSSProperties = {
+	fontFamily: "var(--font-mono)",
+	fontSize: "0.625rem",
+	letterSpacing: "0.08em",
+	textTransform: "uppercase",
+	color: "var(--text-muted)",
+};
+
 const bodyRow: CSSProperties = {
 	flex: 1,
 	minHeight: 0,
@@ -108,6 +122,11 @@ export function SessionEditorPage() {
 	const sessionQuery = trpc.session.getById.useQuery(
 		{ id: sessionId ?? "" },
 		{ enabled: !!sessionId },
+	);
+
+	const campaignQuery = trpc.campaign.getById.useQuery(
+		{ id: campaignId ?? "" },
+		{ enabled: !!campaignId },
 	);
 	const utils = trpc.useUtils();
 
@@ -183,6 +202,27 @@ export function SessionEditorPage() {
 					<Link to={`/campaign/${campaignId}/sessions`} style={backLinkStyle}>
 						← Sessions
 					</Link>
+					{campaignQuery.data?.name && (
+						<>
+							<span style={breadcrumbSep}>›</span>
+							<span
+								data-testid="header-campaign-crumb"
+								style={backLinkStyle}
+							>
+								{campaignQuery.data.name}
+							</span>
+						</>
+					)}
+					<span style={breadcrumbSep}>›</span>
+					<span
+						data-testid="header-session-context"
+						style={sessionContextStyle}
+					>
+						SESSION {session.sessionNumber}
+					</span>
+				</div>
+				<div style={headerGroup}>
+					<SaveStatus saveState={saveState} />
 					<IconButton
 						label="Dock"
 						size={24}
@@ -196,9 +236,6 @@ export function SessionEditorPage() {
 					>
 						⇥
 					</IconButton>
-				</div>
-				<div style={headerGroup}>
-					<SaveStatus saveState={saveState} />
 					{isFinal ? (
 						<Button
 							variant="secondary"
