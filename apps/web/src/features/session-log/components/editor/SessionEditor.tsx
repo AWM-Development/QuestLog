@@ -485,9 +485,9 @@ export function SessionEditor({
 	return (
 		<div
 			ref={editorContainerRef}
+			data-testid="session-editor-canvas"
 			style={{
 				...editorSurface,
-				padding: 0,
 				display: "flex",
 				flexDirection: "column",
 				position: "relative",

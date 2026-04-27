@@ -25,6 +25,26 @@ vi.mock("@/lib/trpc.js", () => {
 });
 
 describe("SessionEditor", () => {
+	it("editor canvas root has no card chrome (no background-color, no border in inline style)", async () => {
+		render(
+			<SessionEditor
+				sessionId="cp1-test"
+				campaignId="11111111-1111-1111-1111-111111111111"
+				content=""
+				placeholder="Write here."
+				onContentChange={vi.fn()}
+			/>,
+		);
+		await waitFor(() => {
+			expect(document.querySelector(".session-editor-root")).toBeTruthy();
+		});
+		const canvas = document.querySelector('[data-testid="session-editor-canvas"]');
+		expect(canvas).toBeTruthy();
+		const style = (canvas as HTMLElement).getAttribute("style") ?? "";
+		expect(style).not.toContain("background");
+		expect(style).not.toContain("border");
+	});
+
 	it("mounts a TipTap editor with placeholder", async () => {
 		const onContentChange = vi.fn();
 		render(

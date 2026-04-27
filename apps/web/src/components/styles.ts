@@ -325,10 +325,10 @@ export const buttonSmallSecondary: CSSProperties = {
 	fontSize: "0.75rem",
 };
 
-// ── Session notes editor (Milestone 4.1) ──
+// ── Session notes editor ──
 
+/** Flush writing canvas — sits on --bg-void with no card chrome. */
 export const editorSurface: CSSProperties = {
-	backgroundColor: "var(--bg-surface)",
 	color: "var(--text-primary)",
 	fontFamily: "var(--font-body)",
 	fontSize: "0.875rem",
@@ -336,7 +336,6 @@ export const editorSurface: CSSProperties = {
 	outline: "none",
 	flex: 1,
 	overflow: "auto",
-	padding: "var(--space-4)",
 };
 
 export const floatingMenu: CSSProperties = {
