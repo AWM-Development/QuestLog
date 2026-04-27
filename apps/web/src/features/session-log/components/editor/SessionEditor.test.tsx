@@ -25,6 +25,46 @@ vi.mock("@/lib/trpc.js", () => {
 });
 
 describe("SessionEditor", () => {
+	it("shows empty state card when content is empty", async () => {
+		render(
+			<SessionEditor
+				sessionId="cp4-empty"
+				campaignId="11111111-1111-1111-1111-111111111111"
+				content=""
+				placeholder="Write here."
+				onContentChange={vi.fn()}
+			/>,
+		);
+		await waitFor(() => {
+			expect(
+				document.querySelector('[data-testid="session-empty-state"]'),
+			).toBeTruthy();
+		});
+	});
+
+	it("hides empty state card after Begin blank is clicked", async () => {
+		const { getByRole } = render(
+			<SessionEditor
+				sessionId="cp4-dismiss"
+				campaignId="11111111-1111-1111-1111-111111111111"
+				content=""
+				placeholder="Write here."
+				onContentChange={vi.fn()}
+			/>,
+		);
+		await waitFor(() => {
+			expect(
+				document.querySelector('[data-testid="session-empty-state"]'),
+			).toBeTruthy();
+		});
+		getByRole("button", { name: /begin blank/i }).click();
+		await waitFor(() => {
+			expect(
+				document.querySelector('[data-testid="session-empty-state"]'),
+			).toBeNull();
+		});
+	});
+
 	it("editor canvas root has no card chrome (no background-color, no border in inline style)", async () => {
 		render(
 			<SessionEditor

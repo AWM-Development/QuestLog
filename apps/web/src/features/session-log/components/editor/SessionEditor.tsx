@@ -25,6 +25,7 @@ import type { EntitySpan, EntityType } from "../../types.js";
 import "./../../styles/entity-highlight.css";
 import { EntityActionBar, useActionBar } from "./EntityActionBar.js";
 import { EntityQuickCreatePopover } from "./EntityQuickCreatePopover.js";
+import { SessionEmptyState } from "./SessionEmptyState.js";
 
 export interface SessionEditorHandle {
 	scrollToSpan: (span: EntitySpan) => void;
@@ -167,6 +168,8 @@ export const SessionEditor = forwardRef<SessionEditorHandle, SessionEditorProps>
 	},
 	ref,
 ) {
+	const [emptyStateDismissed, setEmptyStateDismissed] = useState(false);
+	const [isEditorEmpty, setIsEditorEmpty] = useState(true);
 	const [slashHighlightIndex, setSlashHighlightIndex] = useState(0);
 	const slashHighlightRef = useRef(0);
 	slashHighlightRef.current = slashHighlightIndex;
@@ -349,8 +352,10 @@ export const SessionEditor = forwardRef<SessionEditorHandle, SessionEditorProps>
 			onCreate: ({ editor: ed }) => {
 				setEditorInstance(ed);
 				onEditorReadyRef.current?.(ed);
+				setIsEditorEmpty(ed.isEmpty);
 			},
 			onUpdate: ({ editor: ed, transaction }) => {
+				setIsEditorEmpty(ed.isEmpty);
 				onContentChangeRef.current(JSON.stringify(ed.getJSON()));
 				// Skip our own setEntitySpans transactions (they have no docChanged
 				// content beyond mark changes, but we don't want to feedback-loop).
@@ -604,6 +609,20 @@ export const SessionEditor = forwardRef<SessionEditorHandle, SessionEditorProps>
 			</FloatingMenu>
 
 			<EditorContent editor={editor} style={{ flex: 1, minHeight: 0 }} />
+
+			{isEditorEmpty && !emptyStateDismissed ? (
+				<SessionEmptyState
+					onDismiss={() => {
+						setEmptyStateDismissed(true);
+						editor.commands.focus();
+					}}
+					onPasteFromClipboard={() => {
+						void navigator.clipboard.readText().then((text) => {
+							if (text) editor.commands.insertContent(text);
+						});
+					}}
+				/>
+			) : null}
 
 			{actionBar.state.visible && editorInstance ? (
 				<EntityActionBar
