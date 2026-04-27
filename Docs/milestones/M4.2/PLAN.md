@@ -4,7 +4,7 @@
 
 | Field       | Value |
 |-------------|-------|
-| **Status**  | `in-progress` |
+| **Status**  | `done` |
 | **Milestone** | M4.2 — Session editor visual polish |
 | **Branch**  | `feat/session-log/editor-polish` |
 | **PRD ref** | §4.3 Session notes UX polish follow-up |
@@ -119,7 +119,7 @@ _Filled in by the overnight agent. Do not edit manually._
 - [x] CP-4
 - [x] CP-5
 - [x] CP-6
-- [ ] CP-7
+- [x] CP-7
 
 ### Run Log
 
@@ -131,8 +131,8 @@ _Filled in by the overnight agent. Do not edit manually._
 | CP-4       | ✅ done | 125e05d | SessionEmptyState with 4 actions; integrated into SessionEditor on isEmpty |
 | CP-5       | ✅ done | 7629281 | EntityHoverCard + useHoveredEntity; dock mode-switches on ambiguous hover |
 | CP-6       | ✅ done | 80e3c67 | countByCampaign endpoint; token-coloured empty state copy; count badge pill |
-| CP-7       |        |        |       |
+| CP-7       | ✅ done | (verification) | Visual parity confirmed: all 3 states match spec; 262 tests green |
 
 ### Summary
 
-_Agent writes what shipped, what remains, and any blockers._
+All 7 checkpoints complete. Shipped: flush editor canvas on --bg-void (CP-1), DetectedEntitiesPanel moved to right dock rail with forwardRef handle (CP-2), breadcrumb + SESSION N header chrome (CP-3), SessionEmptyState quick-prompt card (CP-4), EntityHoverCard + useHoveredEntity dock hover mode (CP-5), token-coloured empty state + campaign entity count (CP-6). Server gained countByCampaign tRPC endpoint. No blockers; no unresolved gates.
