@@ -155,8 +155,11 @@ interface SessionEditorProps {
 	onDismissedEntityTextsChange?: (texts: string[]) => void;
 }
 
-export const SessionEditor = forwardRef<SessionEditorHandle, SessionEditorProps>(
-	function SessionEditor({
+export const SessionEditor = forwardRef<
+	SessionEditorHandle,
+	SessionEditorProps
+>(function SessionEditor(
+	{
 		sessionId,
 		campaignId,
 		content,
@@ -508,9 +511,10 @@ export const SessionEditor = forwardRef<SessionEditorHandle, SessionEditorProps>
 			if (target.dataset.entityState === "ambiguous") {
 				let candidates: { id: string; name: string }[] = [];
 				try {
-					candidates = JSON.parse(
-						target.dataset.entityCandidates ?? "[]",
-					) as { id: string; name: string }[];
+					candidates = JSON.parse(target.dataset.entityCandidates ?? "[]") as {
+						id: string;
+						name: string;
+					}[];
 				} catch {
 					// ignore parse error
 				}

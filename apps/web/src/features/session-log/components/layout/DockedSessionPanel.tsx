@@ -10,11 +10,11 @@ import { Button } from "../../../../components/buttons/Button.js";
 import { IconButton } from "../../../../components/buttons/IconButton.js";
 import { useCampaignChrome } from "../../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../../lib/trpc.js";
+import { useHoveredEntity } from "../../hooks/useHoveredEntity.js";
 import { useSessionAutoSave } from "../../hooks/useSessionAutoSave.js";
 import type { EntitySpan } from "../../types.js";
 import { DetectedEntitiesPanel } from "../editor/DetectedEntitiesPanel.js";
 import type { SessionEditorHandle } from "../editor/SessionEditor.js";
-import { useHoveredEntity } from "../../hooks/useHoveredEntity.js";
 import {
 	FinalizeForm,
 	SaveStatus,
@@ -69,6 +69,11 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 
 	const sessionQuery = trpc.session.getById.useQuery(
 		{ id: activeSessionId ?? "" },
+		{ enabled: !!activeSessionId },
+	);
+
+	const entityCountQuery = trpc.entity.countByCampaign.useQuery(
+		{ campaignId },
 		{ enabled: !!activeSessionId },
 	);
 	const utils = trpc.useUtils();
@@ -311,6 +316,7 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 							editorRef.current?.activateActionBar(span)
 						}
 						hoveredSpan={hoveredSpan}
+						campaignEntityCount={entityCountQuery.data ?? undefined}
 						onSelectCandidate={(candidate) => {
 							if (hoveredSpan) {
 								editorRef.current?.linkSpan(

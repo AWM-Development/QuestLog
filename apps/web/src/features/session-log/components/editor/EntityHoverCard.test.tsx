@@ -53,10 +53,16 @@ describe("EntityHoverCard", () => {
 	it("clicking a candidate calls onSelectCandidate", () => {
 		const onSelectCandidate = vi.fn();
 		const { getByText } = render(
-			<EntityHoverCard {...defaultProps} onSelectCandidate={onSelectCandidate} />,
+			<EntityHoverCard
+				{...defaultProps}
+				onSelectCandidate={onSelectCandidate}
+			/>,
 		);
 		fireEvent.click(getByText("City Guard"));
-		expect(onSelectCandidate).toHaveBeenCalledWith({ id: "e2", name: "City Guard" });
+		expect(onSelectCandidate).toHaveBeenCalledWith({
+			id: "e2",
+			name: "City Guard",
+		});
 	});
 
 	it("Create new button calls onCreateNew", () => {

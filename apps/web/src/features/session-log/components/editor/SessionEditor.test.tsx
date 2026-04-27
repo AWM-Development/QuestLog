@@ -78,7 +78,9 @@ describe("SessionEditor", () => {
 		await waitFor(() => {
 			expect(document.querySelector(".session-editor-root")).toBeTruthy();
 		});
-		const canvas = document.querySelector('[data-testid="session-editor-canvas"]');
+		const canvas = document.querySelector(
+			'[data-testid="session-editor-canvas"]',
+		);
 		expect(canvas).toBeTruthy();
 		const style = (canvas as HTMLElement).getAttribute("style") ?? "";
 		expect(style).not.toContain("background");

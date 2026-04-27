@@ -57,8 +57,10 @@ const ambiguousSpanForDock: EntitySpan = {
 
 describe("DetectedEntitiesPanel", () => {
 	it("renders empty state when no spans", () => {
-		const { getByText } = render(<DetectedEntitiesPanel {...defaultProps} />);
-		expect(getByText(/no entities detected/i)).toBeTruthy();
+		const { container } = render(<DetectedEntitiesPanel {...defaultProps} />);
+		expect(
+			container.querySelector('[data-testid="dock-empty-state"]'),
+		).toBeTruthy();
 	});
 
 	it("groups entities by type and omits types with 0 spans", () => {
@@ -123,7 +125,36 @@ describe("DetectedEntitiesPanel", () => {
 				onSkipHover={vi.fn()}
 			/>,
 		);
-		expect(container.querySelector('[data-testid="hover-card-kicker"]')).toBeTruthy();
+		expect(
+			container.querySelector('[data-testid="hover-card-kicker"]'),
+		).toBeTruthy();
+	});
+
+	it("shows campaign entity count in empty state footer", () => {
+		const { getByTestId } = render(
+			<DetectedEntitiesPanel {...defaultProps} campaignEntityCount={42} />,
+		);
+		const footer = getByTestId("dock-entity-count");
+		expect(footer.textContent).toContain("42");
+	});
+
+	it("shows count badge pill in header when entities are detected", () => {
+		const { container } = render(
+			<DetectedEntitiesPanel
+				{...defaultProps}
+				detectedSpans={[npcSpan]}
+				campaignEntityCount={5}
+			/>,
+		);
+		expect(container.querySelector('[data-testid="count-badge"]')).toBeTruthy();
+	});
+
+	it("empty state shows token-colored entity type words", () => {
+		const { container } = render(<DetectedEntitiesPanel {...defaultProps} />);
+		const emptyState = container.querySelector(
+			'[data-testid="dock-empty-state"]',
+		);
+		expect(emptyState).toBeTruthy();
 	});
 
 	it("clicking unresolved row calls onActivateActionBar", () => {

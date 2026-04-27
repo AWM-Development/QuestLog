@@ -254,4 +254,11 @@ export const entityService = {
 			.from(entities)
 			.where(eq(entities.campaignId, campaignId));
 	},
+
+	async countByCampaign(db: Database, campaignId: string): Promise<number> {
+		const result = await db.execute<{ count: string }>(
+			sql`SELECT count(*)::int AS count FROM entities WHERE campaign_id = ${campaignId}`,
+		);
+		return Number((result[0] as { count: string } | undefined)?.count ?? 0);
+	},
 };

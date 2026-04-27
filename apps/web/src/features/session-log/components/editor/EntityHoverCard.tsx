@@ -131,10 +131,7 @@ export function EntityHoverCard({
 				<span style={ambiguousBadgeStyle}>AMBIGUOUS</span>
 			</div>
 			<div style={bodyStyle}>
-				<p
-					data-testid="hover-card-heading"
-					style={headingStyle}
-				>
+				<p data-testid="hover-card-heading" style={headingStyle}>
 					"{span.entityName}"
 				</p>
 				<p style={clarifyStyle}>
@@ -150,7 +147,8 @@ export function EntityHoverCard({
 							aria-selected={idx === selectedIdx}
 							style={{
 								...candidateRowStyle,
-								backgroundColor: idx === selectedIdx ? preselectedBg : "transparent",
+								backgroundColor:
+									idx === selectedIdx ? preselectedBg : "transparent",
 								color: idx === selectedIdx ? entColor : "var(--text-primary)",
 							}}
 							onClick={() => {

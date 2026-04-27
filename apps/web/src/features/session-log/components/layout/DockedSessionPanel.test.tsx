@@ -19,6 +19,9 @@ vi.mock("@/lib/trpc.js", () => {
 		},
 		entity: {
 			detectSpans: { useQuery: vi.fn(() => ({ data: [], isLoading: false })) },
+			countByCampaign: {
+				useQuery: vi.fn(() => ({ data: 7, isLoading: false })),
+			},
 			create: {
 				useMutation: vi.fn(() => ({
 					mutateAsync: vi.fn().mockResolvedValue({}),

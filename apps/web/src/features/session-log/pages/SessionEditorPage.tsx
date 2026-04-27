@@ -6,13 +6,13 @@ import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../lib/trpc.js";
 import { DetectedEntitiesPanel } from "../components/editor/DetectedEntitiesPanel.js";
 import type { SessionEditorHandle } from "../components/editor/SessionEditor.js";
-import { useHoveredEntity } from "../hooks/useHoveredEntity.js";
 import {
 	FinalizeForm,
 	SaveStatus,
 	SessionEditor,
 	SessionMetadata,
 } from "../components/editor/index.js";
+import { useHoveredEntity } from "../hooks/useHoveredEntity.js";
 import { useSessionAutoSave } from "../hooks/useSessionAutoSave.js";
 import type { EntitySpan } from "../types.js";
 
@@ -130,6 +130,11 @@ export function SessionEditorPage() {
 		{ id: campaignId ?? "" },
 		{ enabled: !!campaignId },
 	);
+
+	const entityCountQuery = trpc.entity.countByCampaign.useQuery(
+		{ campaignId: campaignId ?? "" },
+		{ enabled: !!campaignId },
+	);
 	const utils = trpc.useUtils();
 
 	const updateMutation = trpc.session.update.useMutation({
@@ -207,10 +212,7 @@ export function SessionEditorPage() {
 					{campaignQuery.data?.name && (
 						<>
 							<span style={breadcrumbSep}>›</span>
-							<span
-								data-testid="header-campaign-crumb"
-								style={backLinkStyle}
-							>
+							<span data-testid="header-campaign-crumb" style={backLinkStyle}>
 								{campaignQuery.data.name}
 							</span>
 						</>
@@ -341,6 +343,7 @@ Type / for formatting options."
 							editorRef.current?.activateActionBar(span)
 						}
 						hoveredSpan={hoveredSpan}
+						campaignEntityCount={entityCountQuery.data ?? undefined}
 						onSelectCandidate={(candidate) => {
 							if (hoveredSpan) {
 								editorRef.current?.linkSpan(

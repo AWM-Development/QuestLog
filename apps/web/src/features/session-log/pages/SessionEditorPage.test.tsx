@@ -28,6 +28,9 @@ vi.mock("@/lib/trpc.js", () => {
 		},
 		entity: {
 			detectSpans: { useQuery: vi.fn(() => ({ data: [], isLoading: false })) },
+			countByCampaign: {
+				useQuery: vi.fn(() => ({ data: 12, isLoading: false })),
+			},
 			create: {
 				useMutation: vi.fn(() => ({
 					mutateAsync: vi.fn().mockResolvedValue({}),
@@ -146,7 +149,9 @@ describe("SessionEditorPage", () => {
 	it("header has session context overline with session number", () => {
 		setupMocks({});
 		renderPage();
-		const ctx = document.querySelector('[data-testid="header-session-context"]');
+		const ctx = document.querySelector(
+			'[data-testid="header-session-context"]',
+		);
 		expect(ctx).toBeTruthy();
 		expect(ctx?.textContent).toContain("SESSION");
 		expect(ctx?.textContent).toContain("9");
