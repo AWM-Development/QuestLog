@@ -118,7 +118,7 @@ _Filled in by the overnight agent. Do not edit manually._
 - [x] CP-3
 - [x] CP-4
 - [x] CP-5
-- [ ] CP-6
+- [x] CP-6
 - [ ] CP-7
 
 ### Run Log
@@ -130,7 +130,7 @@ _Filled in by the overnight agent. Do not edit manually._
 | CP-3       | ✅ done | a80018c | Breadcrumb + SESSION N overline in header; campaign query added |
 | CP-4       | ✅ done | 125e05d | SessionEmptyState with 4 actions; integrated into SessionEditor on isEmpty |
 | CP-5       | ✅ done | 7629281 | EntityHoverCard + useHoveredEntity; dock mode-switches on ambiguous hover |
-| CP-6       |        |        |       |
+| CP-6       | ✅ done | 80e3c67 | countByCampaign endpoint; token-coloured empty state copy; count badge pill |
 | CP-7       |        |        |       |
 
 ### Summary
