@@ -11,7 +11,7 @@
 		"typecheck": "tsc -b",
 		"lint": "biome check .",
 		"db:generate": "drizzle-kit generate",
-		"db:migrate": "tsx --env-file=../../.env src/db/migrate.ts",
+		"db:migrate": "tsx src/db/migrate.ts",
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio"
 	},
