@@ -19,19 +19,19 @@ All five tasks (scaffolding, DB schema & migrations, tRPC + campaign CRUD, front
 
 | Task | Status | Notes |
 |---|---|---|
-| 2.1 File upload & extraction | ✅ done | One gap folded into T-000, below |
+| 2.1 File upload & extraction | ✅ done | Upload-trigger gap closed by T-000, below |
 | 2.2 Chunking & embedding | ✅ done | voyage-4-lite, 1024-dim (docs previously said voyage-3) |
-| 2.3 Vector similarity search | ⚠️ **partial → Ticket Zero (T-000)** | Service + tRPC endpoint exist; tests use mocked embeddings; dev DB has 0 chunks — **end-to-end retrieval has never been demonstrated** |
+| 2.3 Vector similarity search | ✅ **done — closed by Ticket Zero (T-000)** | Real end-to-end retrieval proven against a permanent fixture with the real Voyage API — see below |
 | 2.4 Scanned document support (OCR) | ⏸ open, 🧠 **strategy gate** | **Not eligible for nightly execution** until Alex decides the OCR approach in a planning session. Detail: `MILESTONES_PT1.md §2.4` |
 
-**2.3 verification = Ticket Zero (`T-000-verify-vector-search`), incl. the SourcesPage un-break:**
-the upload endpoint never triggers import processing (`processPendingSources` runs only on server startup or via the manual worker), so uploads sit at `pending` forever while the UI polls. T-000 scope: trigger processing on upload, seed a deterministic fixture doc, and prove upload → extract → chunk → embed → search returns relevant, campaign-filtered chunks with a machine-checkable exit condition. That fixture becomes the smoke-test backbone for every subsequent ticket.
+**2.3 verification = Ticket Zero (`T-000-verify-vector-search`), incl. the SourcesPage un-break — ✅ shipped (`feat/m-mcp/verify-vector-search`):**
+the upload endpoint previously never triggered import processing (`processPendingSources` ran only on server startup or via the manual worker), so uploads sat at `pending` forever while the UI polled. Fixed with an opt-in `autoProcessUploads` flag on `buildApp` (default `false`, so existing mocked tests are unaffected; `main.ts` enables it for the real server). `apps/server/src/test-fixtures/ashfall-primer.md` is the new permanent fixture; `search.e2e.test.ts` proves upload → extract → chunk → embed (real Voyage API) → search returns the semantically relevant, campaign-filtered chunk for distinct queries — a real, asserted discrimination between topics, not just "some result came back." Full detail: `Docs/tickets/reports/T-000-verify-vector-search.md`.
 
 ## Milestone 3: Agent Conversation (server substrate) — ✅ DONE (scope narrowed by pivot)
 
 | Task | Status | Notes |
 |---|---|---|
-| 3.1 Context assembly | ✅ done | Hybrid search (vector + pg_trgm), token budgets, recency blend, confidence score. Same real-embeddings caveat as 2.3 — T-000 exercises it for real |
+| 3.1 Context assembly | ✅ done | Hybrid search (vector + pg_trgm), token budgets, recency blend, confidence score. Underlying search path now proven for real by T-000 |
 | 3.2 LLM integration & streaming | ✅ done | Pinned model (`claude-sonnet-4-20250514`) is dated; bump when M-MCP touches this service |
 | 3.3 Chat UI | ✅ shipped, now v2 surface | No further v1 work. Code stays in place (audit §3.1) |
 | 3.3.5 / 3.3.6 Doc infra + CI | ✅ done | |
@@ -48,7 +48,7 @@ Also on main from the pre-pivot era: session editor + entity linking frontends (
 
 ### Tasks
 
-- [ ] **M-MCP.0 — Ticket Zero: verify vector search end-to-end** (= task 2.3 closure, see above). *Executed interactively with Alex — validates the pipeline (ticket format, rules, reviewer, CI), not just the code. Also the headless-readiness probe: confirm Docker Postgres + env vars work non-interactively; document the exact invocation a scheduled run uses. Known gotchas: test DB needs `db:migrate` (global-setup only truncates); Docker must be up.*
+- [x] **M-MCP.0 — Ticket Zero: verify vector search end-to-end** (= task 2.3 closure, see above). *Executed interactively with Alex 2026-07 — validated the pipeline (ticket format, rules, reviewer, CI), not just the code. Headless-readiness probe confirmed: `docker compose up -d && db:migrate && pnpm test` runs clean end-to-end (see `IMPLEMENTATION_NOTES.md`). One new gotcha found: the dev Voyage account is on the free tier (3 RPM without a payment method) — see `IMPLEMENTATION_NOTES.md §Embedding`.*
 
 - [ ] **M-MCP.1 — `apps/mcp` scaffold + `query_lore` (read)**
   - Scaffold `apps/mcp` (TypeScript, MCP SDK, stdio transport), wired into pnpm workspace + turbo.
