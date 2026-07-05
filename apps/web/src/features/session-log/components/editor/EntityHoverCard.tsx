@@ -137,11 +137,13 @@ export function EntityHoverCard({
 				<p style={clarifyStyle}>
 					Multiple matches found. Select the correct entity or create a new one.
 				</p>
-				<div role="listbox" aria-label="Candidates">
+				{/* biome-ignore lint/a11y/useSemanticElements: custom-styled listbox, native <select> can't host rich clickable rows */}
+				<div role="listbox" aria-label="Candidates" tabIndex={0}>
 					{span.candidates.map((candidate, idx) => (
 						<button
 							key={candidate.id}
 							type="button"
+							// biome-ignore lint/a11y/useSemanticElements: custom-styled option row, native <option> can't have onClick/style
 							role="option"
 							data-testid="candidate-row"
 							aria-selected={idx === selectedIdx}
