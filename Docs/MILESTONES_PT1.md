@@ -1,5 +1,7 @@
 # QuestLog — Milestone & Task Breakdown (Part 1 of 2)
 
+> **⚠️ SUPERSEDED for v1 sequencing by `Docs/MILESTONES_V1_MCP.md`** (June 2026 MCP-first pivot). Retained for v2 planning and task detail reference — tickets may cite specific sections here, but no agent selects tasks from this file.
+
 **Location:** `Docs/MILESTONES_PT1.md`
 
 **Scope:** Milestones 1–9 (Foundation through Polish & Deploy). Milestones 10–19 and the copy-paste task template live in `Docs/MILESTONES_PT2.md`.

@@ -141,8 +141,8 @@ CI runs `pnpm --filter @questlog/server db:migrate`, which only applies migratio
 
 **Rule:** every schema change must produce a journaled migration. If you ever run `drizzle-kit push` against a dev DB, immediately run `drizzle-kit generate` and commit both the SQL file and the journal entry.
 
-### `chunks.embedding` is `vector(1024)` to match Voyage AI voyage-3
-The original migration created `vector(1536)` (OpenAI default). Voyage's `voyage-3` model returns 1024 dims. Migration `0003_resize_chunks_embedding_to_1024.sql` drops and recreates the column — pgvector cannot resize a vector column in place. There is no production data; if you have a local dev DB created before this fix, drop your `pgdata` volume (`docker compose down -v && docker compose up -d && pnpm --filter @questlog/server db:migrate`) and re-import any test sources.
+### `chunks.embedding` is `vector(1024)` to match the Voyage embedding model (currently voyage-4-lite)
+The original migration created `vector(1536)` (OpenAI default). Voyage's models (voyage-3 originally; `voyage-4-lite` since the model upgrade — see §Embedding) return 1024 dims. Migration `0003_resize_chunks_embedding_to_1024.sql` drops and recreates the column — pgvector cannot resize a vector column in place. There is no production data; if you have a local dev DB created before this fix, drop your `pgdata` volume (`docker compose down -v && docker compose up -d && pnpm --filter @questlog/server db:migrate`) and re-import any test sources.
 
 ---
 
@@ -315,3 +315,16 @@ TipTap extension options are captured at extension creation time. To pass changi
 
 ### M4.2 — Biome `noAssignInExpressions` with `regex.exec`
 Biome flags `while ((match = regex.exec(text)) !== null)`. Rewrite as: `let result = regex.exec(text); while (result !== null) { ...; result = regex.exec(text); }`. This also avoids the need for `String.matchAll` which behaves differently with capture groups.
+
+## Phase 0 audit findings (2026-07, agentic-pipeline handoff)
+
+Full audit: `Docs/AUDIT_2026-07.md`. Non-obvious takeaways:
+
+### Vitest global-setup does NOT migrate the test DB
+`src/db/global-setup.ts` only truncates tables. A `questlog_test` DB that predates the newest migration fails with missing-column errors (20 tests at the time of audit). Any environment prep — local or scheduled/headless — must run `db:migrate` against the test DB before the suite. CI does this; a laptop that pulled new migrations does not automatically.
+
+### Upload does not trigger import processing (until T-000 lands)
+`processPendingSources` runs only in the server `onReady` hook and the manual `process-imports` script. A file uploaded to a running server stays `pending` until restart — this is why SourcesPage polling appears broken. Fixed by Ticket Zero (`Docs/MILESTONES_V1_MCP.md §M-MCP.0`); delete this note once that ships.
+
+### Task 2.3's checkbox overstated reality
+Search service/router tests all mock the embedding layer (basis vectors / mocked service), and the dev DB contained 0 chunks — end-to-end retrieval was never demonstrated before Ticket Zero. Lesson encoded in the new pipeline: exit conditions must be behavioral and machine-checkable, not "code + mocked tests exist".
