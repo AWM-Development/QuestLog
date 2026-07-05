@@ -159,6 +159,35 @@ jobs:
             echo "✅ Migration guard passed — no schema changes detected."
           fi
 
+  # ── Mockup Guard ──────────────────────────────────────────────────────────
+  # Docs/mockups/ is generated manually in Claude Design during planning
+  # sessions and is read-only to agents (see Docs/mockups/README.md). A
+  # ticket branch touching it means an executor edited a mockup instead of
+  # just reading it — hard fail, not a warning.
+  mockup-guard:
+    name: Mockup Guard
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check diff does not touch Docs/mockups/
+        run: |
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+
+          if echo "$CHANGED" | grep -qE "^Docs/mockups/"; then
+            echo ""
+            echo "❌ This PR modifies Docs/mockups/. Mockups are read-only to agents —"
+            echo "   generated manually by Alex in Claude Design during planning sessions."
+            echo "   Revert changes under Docs/mockups/ from this branch."
+            exit 1
+          fi
+
+          echo "✅ Mockup guard passed — Docs/mockups/ untouched."
+
   # ── IMPLEMENTATION_NOTES Health ───────────────────────────────────────────
   impl-notes-health:
     name: Implementation Notes Health

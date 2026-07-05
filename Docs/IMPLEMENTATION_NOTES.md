@@ -328,3 +328,16 @@ Full audit: `Docs/AUDIT_2026-07.md`. Non-obvious takeaways:
 
 ### Task 2.3's checkbox overstated reality
 Search service/router tests all mock the embedding layer (basis vectors / mocked service), and the dev DB contained 0 chunks — end-to-end retrieval was never demonstrated before Ticket Zero. Lesson encoded in the new pipeline: exit conditions must be behavioral and machine-checkable, not "code + mocked tests exist".
+
+## Agentic pipeline — CI hardening & branch protection (Phase 2, 2026-07)
+
+`.github/workflows/ci.yml` gained a **Mockup Guard** job (hard fail if a PR diff touches `Docs/mockups/` — mockups are read-only to agents, generated manually by Alex in Claude Design). This mirrors the existing Migration Guard's pattern (checkout with `fetch-depth: 0`, diff against `origin/${{ github.base_ref }}`, hard `exit 1`).
+
+**Branch protection on `main` — not code, must be configured in GitHub repo settings (Settings → Branches → Add rule) by Alex:**
+- Require status checks to pass before merging: `pr`, `mockup-guard`, `migration-guard`, `actionlint` (the hard-fail jobs; `doc-sync` and `impl-notes-health` are warning-only by design and need not be required).
+- Require branches to be up to date before merging.
+- No force pushes.
+- No branch deletions (optional, but recommended for `main`).
+- PRs only — disallow direct pushes to `main` (the nightly executor never pushes to `main` per `CLAUDE.md`; this makes it structurally impossible, not just a convention).
+
+This was not yet applied as of Phase 2 — it's a manual one-time setup step, tracked here so it isn't lost between sessions.
