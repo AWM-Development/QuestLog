@@ -14,7 +14,10 @@ import {
 	conversationStreamParamsSchema,
 } from "./routers/conversation.schemas.js";
 import { conversationService } from "./services/conversation.service.js";
-import { importService } from "./services/import.service.js";
+import {
+	type ProcessOptions,
+	importService,
+} from "./services/import.service.js";
 import { sourceService } from "./services/source.service.js";
 import {
 	type StorageProvider,
@@ -48,6 +51,16 @@ function mimeToSourceType(mime: string): string {
 export interface BuildAppOptions {
 	db: Database;
 	storage?: StorageProvider;
+	/**
+	 * Trigger `importService.processSource` after a successful upload (fire-
+	 * and-forget — the upload response returns immediately either way).
+	 * Default `false` so existing tests (which build the app with no
+	 * override) stay mock-only and don't hit the real Voyage API. The real
+	 * entrypoint (`main.ts`) sets this `true`.
+	 */
+	autoProcessUploads?: boolean;
+	/** Forwarded to `processSource` when `autoProcessUploads` is set (e.g. to inject a mock `fetchFn` in tests). */
+	autoProcessOptions?: ProcessOptions;
 }
 
 /** Postgres SQLSTATE from driver-wrapped errors (42P01 = undefined_table). */
@@ -59,7 +72,12 @@ function pgErrorCode(err: unknown): string | undefined {
 	return typeof code === "string" ? code : undefined;
 }
 
-export function buildApp({ db, storage: storageOption }: BuildAppOptions) {
+export function buildApp({
+	db,
+	storage: storageOption,
+	autoProcessUploads = false,
+	autoProcessOptions,
+}: BuildAppOptions) {
 	const storage =
 		storageOption ??
 		createLocalFilesystemStorage({
@@ -178,6 +196,17 @@ export function buildApp({ db, storage: storageOption }: BuildAppOptions) {
 			const storageKey = `${campaignId}/${source.id}${ext}`;
 			await storage.saveFile({ storageKey, content });
 			await sourceService.setStorageKey(db, source.id, storageKey);
+
+			if (autoProcessUploads) {
+				importService
+					.processSource(db, storage, source.id, autoProcessOptions)
+					.catch((err: unknown) => {
+						console.error(
+							`[import] Error auto-processing source ${source.id}:`,
+							err,
+						);
+					});
+			}
 
 			return reply.send({ source: { ...source, storageKey } });
 		},
