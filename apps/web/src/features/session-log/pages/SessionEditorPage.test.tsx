@@ -23,8 +23,14 @@ vi.mock("@/lib/trpc.js", () => {
 			finalize: { useMutation: vi.fn() },
 			create: { useMutation: vi.fn() },
 		},
+		campaign: {
+			getById: { useQuery: vi.fn() },
+		},
 		entity: {
 			detectSpans: { useQuery: vi.fn(() => ({ data: [], isLoading: false })) },
+			countByCampaign: {
+				useQuery: vi.fn(() => ({ data: 12, isLoading: false })),
+			},
 			create: {
 				useMutation: vi.fn(() => ({
 					mutateAsync: vi.fn().mockResolvedValue({}),
@@ -55,6 +61,9 @@ const mockGetById = trpc.session.getById.useQuery as ReturnType<typeof vi.fn>;
 const mockList = trpc.session.list.useQuery as ReturnType<typeof vi.fn>;
 const mockUpdate = trpc.session.update.useMutation as ReturnType<typeof vi.fn>;
 const mockFinalize = trpc.session.finalize.useMutation as ReturnType<
+	typeof vi.fn
+>;
+const mockCampaignGetById = trpc.campaign.getById.useQuery as ReturnType<
 	typeof vi.fn
 >;
 
@@ -101,6 +110,10 @@ function setupMocks(overrides: { session?: SessionData }) {
 		mutate: vi.fn(),
 		isPending: false,
 	});
+	mockCampaignGetById.mockReturnValue({
+		data: { id: CAMPAIGN_ID, name: "Curse of Strahd" },
+		isLoading: false,
+	});
 }
 
 function renderPage(sessionId = SESSION_ID) {
@@ -120,6 +133,38 @@ function renderPage(sessionId = SESSION_ID) {
 }
 
 describe("SessionEditorPage", () => {
+	it("entities panel renders outside the editor canvas (in the right rail)", () => {
+		setupMocks({});
+		renderPage();
+		const canvas = document.querySelector(
+			'[data-testid="session-editor-canvas"]',
+		);
+		const panel = document.querySelector(
+			'[data-testid="detected-entities-panel"]',
+		);
+		expect(panel).toBeTruthy();
+		expect(canvas?.contains(panel)).toBe(false);
+	});
+
+	it("header has session context overline with session number", () => {
+		setupMocks({});
+		renderPage();
+		const ctx = document.querySelector(
+			'[data-testid="header-session-context"]',
+		);
+		expect(ctx).toBeTruthy();
+		expect(ctx?.textContent).toContain("SESSION");
+		expect(ctx?.textContent).toContain("9");
+	});
+
+	it("header has campaign breadcrumb element", () => {
+		setupMocks({});
+		renderPage();
+		expect(
+			document.querySelector('[data-testid="header-campaign-crumb"]'),
+		).toBeTruthy();
+	});
+
 	it("renders the sticky header with back link and Save Session button for a draft", () => {
 		setupMocks({});
 		renderPage();

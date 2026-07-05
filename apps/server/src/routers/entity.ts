@@ -1,4 +1,5 @@
 import { EntityCreateInput, EntityDetectSpansInput } from "@questlog/shared";
+import { z } from "zod";
 import { entityService } from "../services/entity.service.js";
 import { procedure, router, withErrorHandling } from "../trpc.js";
 
@@ -23,4 +24,12 @@ export const entityRouter = router({
 			}),
 		),
 	),
+
+	countByCampaign: procedure
+		.input(z.object({ campaignId: z.string().uuid() }))
+		.query(({ ctx, input }) =>
+			withErrorHandling(() =>
+				entityService.countByCampaign(ctx.db, input.campaignId),
+			),
+		),
 });

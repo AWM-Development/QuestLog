@@ -19,6 +19,9 @@ vi.mock("@/lib/trpc.js", () => {
 		},
 		entity: {
 			detectSpans: { useQuery: vi.fn(() => ({ data: [], isLoading: false })) },
+			countByCampaign: {
+				useQuery: vi.fn(() => ({ data: 7, isLoading: false })),
+			},
 			create: {
 				useMutation: vi.fn(() => ({
 					mutateAsync: vi.fn().mockResolvedValue({}),
@@ -109,6 +112,20 @@ function renderPanel(campaignId = CAMPAIGN_ID) {
 }
 
 describe("DockedSessionPanel", () => {
+	it("entities panel is present in the dock when session is loaded", () => {
+		mockActiveSessionId = SESSION_ID;
+		setupMutationMocks();
+		mockGetById.mockReturnValue({
+			data: draftSession(),
+			isLoading: false,
+			isSuccess: true,
+		});
+		renderPanel();
+		expect(
+			document.querySelector('[data-testid="detected-entities-panel"]'),
+		).toBeTruthy();
+	});
+
 	it("renders 'No session selected' and a close button when activeSessionId is null", () => {
 		mockActiveSessionId = null;
 		setupMutationMocks();

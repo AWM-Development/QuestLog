@@ -1,5 +1,6 @@
 import { type CSSProperties, useState } from "react";
 import type { EntitySpan, EntityType } from "../../types.js";
+import { EntityHoverCard } from "./EntityHoverCard.js";
 
 const ENTITY_TYPES: EntityType[] = [
 	"npc",
@@ -21,6 +22,11 @@ interface DetectedEntitiesPanelProps {
 	detectedSpans: EntitySpan[];
 	onScrollToSpan: (span: EntitySpan) => void;
 	onActivateActionBar: (span: EntitySpan) => void;
+	hoveredSpan?: EntitySpan | null;
+	onSelectCandidate?: (candidate: { id: string; name: string }) => void;
+	onCreateNew?: () => void;
+	onSkipHover?: () => void;
+	campaignEntityCount?: number;
 }
 
 const panelStyle: CSSProperties = {
@@ -40,11 +46,32 @@ const headerStyle: CSSProperties = {
 };
 
 const emptyStateStyle: CSSProperties = {
-	padding: "var(--space-6) var(--space-3)",
-	textAlign: "center",
+	padding: "var(--space-4) var(--space-3)",
 	fontSize: "0.6875rem",
 	color: "var(--text-dim)",
-	lineHeight: 1.6,
+	lineHeight: 1.7,
+};
+
+const countBadgeStyle: CSSProperties = {
+	display: "inline-flex",
+	alignItems: "center",
+	padding: "1px 6px",
+	borderRadius: "var(--r-pill)",
+	border: "0.5px solid var(--border)",
+	backgroundColor: "var(--bg-elevated)",
+	fontSize: "0.5625rem",
+	color: "var(--text-muted)",
+	marginLeft: "var(--space-1-5)",
+	fontFamily: "var(--font-mono)",
+};
+
+const entityCountFooterStyle: CSSProperties = {
+	padding: "var(--space-2) var(--space-3)",
+	borderTop: "1px solid var(--border-subtle)",
+	fontFamily: "var(--font-mono)",
+	fontSize: "0.5625rem",
+	color: "var(--text-dim)",
+	letterSpacing: "0.04em",
 };
 
 function groupByType(spans: EntitySpan[]): Map<EntityType, EntitySpan[]> {
@@ -62,11 +89,18 @@ export function DetectedEntitiesPanel({
 	detectedSpans,
 	onScrollToSpan,
 	onActivateActionBar,
+	hoveredSpan,
+	onSelectCandidate,
+	onCreateNew,
+	onSkipHover,
+	campaignEntityCount,
 }: DetectedEntitiesPanelProps) {
 	const [collapsed, setCollapsed] = useState<Set<EntityType>>(new Set());
 	const groupedSpans = groupByType(detectedSpans);
 
 	const totalCount = detectedSpans.length;
+	const isHoveringMode =
+		hoveredSpan != null && hoveredSpan.matchType === "ambiguous";
 
 	const toggleGroup = (type: EntityType) => {
 		setCollapsed((prev) => {
@@ -81,25 +115,61 @@ export function DetectedEntitiesPanel({
 	};
 
 	return (
-		<div style={panelStyle}>
+		<div data-testid="detected-entities-panel" style={panelStyle}>
 			<div style={headerStyle}>
 				<span
 					style={{
 						fontSize: "0.6875rem",
 						color: "var(--text-secondary)",
 						fontWeight: 500,
+						display: "flex",
+						alignItems: "center",
 					}}
 				>
-					Detected Entities
+					{isHoveringMode
+						? `Hovering · ${hoveredSpan.entityType.toUpperCase()}`
+						: "Detected Entities"}
+					{!isHoveringMode && totalCount > 0 && (
+						<span data-testid="count-badge" style={countBadgeStyle}>
+							{totalCount}
+						</span>
+					)}
 				</span>
 				<span style={{ fontSize: "0.625rem", color: "var(--text-muted)" }}>
-					{totalCount > 0 ? `${totalCount} found` : ""}
+					{isHoveringMode ? (
+						<span
+							style={{ color: "var(--status-warning)", fontSize: "0.5rem" }}
+						>
+							AMBIGUOUS
+						</span>
+					) : null}
 				</span>
 			</div>
 
-			{detectedSpans.length === 0 ? (
-				<div style={emptyStateStyle}>
-					{"No entities detected yet.\nStart writing to surface them."}
+			{isHoveringMode ? (
+				<div style={{ padding: "var(--space-2)" }}>
+					<EntityHoverCard
+						span={hoveredSpan}
+						onSelectCandidate={(candidate) => onSelectCandidate?.(candidate)}
+						onCreateNew={() => onCreateNew?.()}
+						onSkip={() => onSkipHover?.()}
+					/>
+				</div>
+			) : detectedSpans.length === 0 ? (
+				<div data-testid="dock-empty-state" style={emptyStateStyle}>
+					<p style={{ marginBottom: "var(--space-2)" }}>
+						Start writing and QuestLog will surface{" "}
+						<span style={{ color: "var(--ent-npc)" }}>NPCs</span>,{" "}
+						<span style={{ color: "var(--ent-location)" }}>locations</span>,{" "}
+						<span style={{ color: "var(--ent-faction)" }}>factions</span>, and{" "}
+						<span style={{ color: "var(--ent-item)" }}>items</span> from your
+						campaign.
+					</p>
+					{campaignEntityCount !== undefined && (
+						<p data-testid="dock-entity-count" style={entityCountFooterStyle}>
+							{campaignEntityCount} entities indexed in this campaign
+						</p>
+					)}
 				</div>
 			) : (
 				ENTITY_TYPES.filter(

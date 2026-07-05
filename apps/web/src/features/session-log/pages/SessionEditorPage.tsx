@@ -4,13 +4,17 @@ import { Button } from "../../../components/buttons/Button.js";
 import { IconButton } from "../../../components/buttons/IconButton.js";
 import { useCampaignChrome } from "../../../layouts/CampaignChromeContext.js";
 import { trpc } from "../../../lib/trpc.js";
+import { DetectedEntitiesPanel } from "../components/editor/DetectedEntitiesPanel.js";
+import type { SessionEditorHandle } from "../components/editor/SessionEditor.js";
 import {
 	FinalizeForm,
 	SaveStatus,
 	SessionEditor,
 	SessionMetadata,
 } from "../components/editor/index.js";
+import { useHoveredEntity } from "../hooks/useHoveredEntity.js";
 import { useSessionAutoSave } from "../hooks/useSessionAutoSave.js";
+import type { EntitySpan } from "../types.js";
 
 const pageRoot: CSSProperties = {
 	display: "flex",
@@ -57,10 +61,40 @@ const backLinkStyle: CSSProperties = {
 	gap: "0.35em",
 };
 
+const breadcrumbSep: CSSProperties = {
+	color: "var(--text-dim)",
+	fontSize: "0.75rem",
+	userSelect: "none",
+};
+
+const sessionContextStyle: CSSProperties = {
+	fontFamily: "var(--font-mono)",
+	fontSize: "0.625rem",
+	letterSpacing: "0.08em",
+	textTransform: "uppercase",
+	color: "var(--text-muted)",
+};
+
+const bodyRow: CSSProperties = {
+	flex: 1,
+	minHeight: 0,
+	display: "flex",
+	flexDirection: "row",
+};
+
 const scrollArea: CSSProperties = {
 	flex: 1,
 	minHeight: 0,
 	overflow: "auto",
+};
+
+const entitiesDock: CSSProperties = {
+	width: "320px",
+	flexShrink: 0,
+	borderLeft: "1px solid var(--border-subtle)",
+	backgroundColor: "var(--bg-surface)",
+	overflow: "auto",
+	padding: "var(--space-3)",
 };
 
 const contentColumn: CSSProperties = {
@@ -83,10 +117,23 @@ export function SessionEditorPage() {
 	const { dockSession } = useCampaignChrome();
 	const [finalizeOpen, setFinalizeOpen] = useState(false);
 	const [unresolvedCount, setUnresolvedCount] = useState(0);
+	const [detectedSpans, setDetectedSpans] = useState<EntitySpan[]>([]);
+	const editorRef = useRef<SessionEditorHandle>(null);
+	const { hoveredSpan, setHoveredSpan } = useHoveredEntity();
 
 	const sessionQuery = trpc.session.getById.useQuery(
 		{ id: sessionId ?? "" },
 		{ enabled: !!sessionId },
+	);
+
+	const campaignQuery = trpc.campaign.getById.useQuery(
+		{ id: campaignId ?? "" },
+		{ enabled: !!campaignId },
+	);
+
+	const entityCountQuery = trpc.entity.countByCampaign.useQuery(
+		{ campaignId: campaignId ?? "" },
+		{ enabled: !!campaignId },
 	);
 	const utils = trpc.useUtils();
 
@@ -162,6 +209,24 @@ export function SessionEditorPage() {
 					<Link to={`/campaign/${campaignId}/sessions`} style={backLinkStyle}>
 						← Sessions
 					</Link>
+					{campaignQuery.data?.name && (
+						<>
+							<span style={breadcrumbSep}>›</span>
+							<span data-testid="header-campaign-crumb" style={backLinkStyle}>
+								{campaignQuery.data.name}
+							</span>
+						</>
+					)}
+					<span style={breadcrumbSep}>›</span>
+					<span
+						data-testid="header-session-context"
+						style={sessionContextStyle}
+					>
+						SESSION {session.sessionNumber}
+					</span>
+				</div>
+				<div style={headerGroup}>
+					<SaveStatus saveState={saveState} />
 					<IconButton
 						label="Dock"
 						size={24}
@@ -175,9 +240,6 @@ export function SessionEditorPage() {
 					>
 						⇥
 					</IconButton>
-				</div>
-				<div style={headerGroup}>
-					<SaveStatus saveState={saveState} />
 					{isFinal ? (
 						<Button
 							variant="secondary"
@@ -228,46 +290,79 @@ export function SessionEditorPage() {
 				</div>
 			</div>
 
-			<div style={scrollArea}>
-				<div style={contentColumn}>
-					<SessionMetadata
-						sessionNumber={session.sessionNumber}
-						title={session.title}
-						date={session.date}
-						status={isFinal ? "finalized" : "draft"}
-						onTitleCommit={handleTitleCommit}
-						onDateCommit={handleDateCommit}
-					/>
-					<div
-						style={{
-							flex: 1,
-							minHeight: 0,
-							display: "flex",
-							flexDirection: "column",
-						}}
-					>
-						<SessionEditor
-							key={session.id}
-							sessionId={session.id}
-							campaignId={campaignId}
-							content={session.content}
-							placeholder="Start writing your session notes here. Jot quick lines as things happen — entity links will be detected automatically.
+			<div style={bodyRow}>
+				<div style={scrollArea}>
+					<div style={contentColumn}>
+						<SessionMetadata
+							sessionNumber={session.sessionNumber}
+							title={session.title}
+							date={session.date}
+							status={isFinal ? "finalized" : "draft"}
+							onTitleCommit={handleTitleCommit}
+							onDateCommit={handleDateCommit}
+						/>
+						<div
+							style={{
+								flex: 1,
+								minHeight: 0,
+								display: "flex",
+								flexDirection: "column",
+							}}
+						>
+							<SessionEditor
+								ref={editorRef}
+								key={session.id}
+								sessionId={session.id}
+								campaignId={campaignId}
+								content={session.content}
+								placeholder="Start writing your session notes here. Jot quick lines as things happen — entity links will be detected automatically.
 
 Type / for formatting options."
-							onContentChange={(json) => {
-								scheduleSave(json);
-							}}
-							onUnresolvedCountChange={setUnresolvedCount}
-							initialDismissedEntityTexts={session.dismissedEntityTexts ?? []}
-							onDismissedEntityTextsChange={(texts) => {
-								updateMutation.mutate({
-									id: session.id,
-									dismissedEntityTexts: texts,
-								});
-							}}
-						/>
+								onContentChange={(json) => {
+									scheduleSave(json);
+								}}
+								onUnresolvedCountChange={setUnresolvedCount}
+								onDetectedSpansChange={setDetectedSpans}
+								onHoveredSpanChange={setHoveredSpan}
+								initialDismissedEntityTexts={session.dismissedEntityTexts ?? []}
+								onDismissedEntityTextsChange={(texts) => {
+									updateMutation.mutate({
+										id: session.id,
+										dismissedEntityTexts: texts,
+									});
+								}}
+							/>
+						</div>
 					</div>
 				</div>
+				<aside style={entitiesDock}>
+					<DetectedEntitiesPanel
+						detectedSpans={detectedSpans}
+						onScrollToSpan={(span) => editorRef.current?.scrollToSpan(span)}
+						onActivateActionBar={(span) =>
+							editorRef.current?.activateActionBar(span)
+						}
+						hoveredSpan={hoveredSpan}
+						campaignEntityCount={entityCountQuery.data ?? undefined}
+						onSelectCandidate={(candidate) => {
+							if (hoveredSpan) {
+								editorRef.current?.linkSpan(
+									hoveredSpan,
+									candidate.id,
+									candidate.name,
+								);
+							}
+							setHoveredSpan(null);
+						}}
+						onCreateNew={() => {
+							if (hoveredSpan) {
+								editorRef.current?.activateActionBar(hoveredSpan);
+							}
+							setHoveredSpan(null);
+						}}
+						onSkipHover={() => setHoveredSpan(null)}
+					/>
+				</aside>
 			</div>
 		</div>
 	);
