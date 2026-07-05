@@ -1,1 +1,1 @@
-export { SourcesPage } from "./components/SourcesPage.js";
+export { SourcesPage } from "./pages/index.js";

@@ -1,15 +1,19 @@
 import { router } from "../trpc.js";
 import { campaignRouter } from "./campaign.js";
 import { conversationRouter } from "./conversation.js";
+import { entityRouter } from "./entity.js";
 import { importRouter } from "./import.js";
 import { searchRouter } from "./search.js";
+import { sessionRouter } from "./session.js";
 import { sourceRouter } from "./source.js";
 
 export const appRouter = router({
 	campaign: campaignRouter,
 	conversation: conversationRouter,
+	entity: entityRouter,
 	import: importRouter,
 	search: searchRouter,
+	session: sessionRouter,
 	source: sourceRouter,
 });
 

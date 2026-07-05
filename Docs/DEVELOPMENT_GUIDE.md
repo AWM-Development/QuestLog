@@ -9,7 +9,7 @@
 - `Docs/PRD.md` — Product specification (reference for feature details)
 - `Docs/MILESTONES.md` — Task breakdown with branch names
 
-**Last Updated:** 2026-03-15
+**Last Updated:** 2026-04-24
 
 ---
 
@@ -20,14 +20,30 @@ questlog/
 ├── apps/
 │   ├── web/                    # React frontend (Vite + Tailwind)
 │   │   ├── src/
-│   │   │   ├── components/     # Shared UI components (styles.ts for style presets)
+│   │   │   ├── components/     # Shared UI components (by-kind subdirs + styles.ts)
+│   │   │   │   ├── buttons/    # Button, IconButton, Chip
+│   │   │   │   ├── inputs/     # FormField, Input, Select, Textarea
+│   │   │   │   ├── surfaces/   # Card, EntityAvatar
+│   │   │   │   ├── feedback/   # Alert
+│   │   │   │   ├── overlays/   # Modal
+│   │   │   │   ├── layout/     # PageScaffold
+│   │   │   │   ├── utilities/  # ErrorBoundary, PlaceholderPage
+│   │   │   │   └── styles.ts   # Shared style presets (internal to components)
 │   │   │   ├── features/       # Feature modules (co-located)
 │   │   │   │   ├── agent-chat/
 │   │   │   │   │   ├── components/
+│   │   │   │   │   │   ├── chrome/
+│   │   │   │   │   │   ├── context/
+│   │   │   │   │   │   └── messages/
+│   │   │   │   │   ├── pages/
 │   │   │   │   │   ├── hooks/
 │   │   │   │   │   ├── api.ts       # tRPC hook wrappers
 │   │   │   │   │   └── index.ts
 │   │   │   │   ├── session-log/
+│   │   │   │   │   ├── components/
+│   │   │   │   │   │   ├── editor/
+│   │   │   │   │   │   └── layout/
+│   │   │   │   │   ├── pages/
 │   │   │   │   ├── entity-graph/
 │   │   │   │   └── ...
 │   │   │   ├── layouts/        # AppShell.tsx (shell), Rail.tsx (56px icon nav)
@@ -301,7 +317,71 @@ export function useSessionNotes(campaignId: string) {
 }
 ```
 
-### 5.5 Error Handling Pattern
+### 5.5 Component-First UI Pattern (Milestone 4.5+)
+
+**The rule: always reach for a shared component before touching a raw HTML element.**
+
+After Milestone 4.5, `apps/web/src/components/` contains shared UI components organized by kind. Use them everywhere. Do not spread style presets onto raw elements at a feature callsite — that is the old pattern.
+
+**Directory layout:**
+
+| Subdirectory | Contains | Add new components here when… |
+|---|---|---|
+| `buttons/` | Button, IconButton, Chip | Click target, toggle, tag-like affordance |
+| `inputs/` | FormField, Input, Select, Textarea | Form primitive, labelled input |
+| `surfaces/` | Card, EntityAvatar | Displayable container, entity representation |
+| `feedback/` | Alert | Status message, notification (future: Toast, Banner) |
+| `overlays/` | Modal | Portal, dialog, drawer over content |
+| `layout/` | PageScaffold | Route-level page shell |
+| `utilities/` | ErrorBoundary, PlaceholderPage | Non-visual behaviour wrapper |
+
+Import from the subdirectory path directly: `../../components/buttons/Button.js`. There is no root barrel — imports always name the subdirectory so the component's kind is visible at the callsite.
+
+#### Available shared components
+
+| Component | Use for | Do NOT use |
+|-----------|---------|------------|
+| `Button` | Any clickable button with text | Raw `<button>` with `style={buttonAccent}` etc. |
+| `IconButton` | Icon-only buttons (no visible text label) | Raw `<button>` with `style={iconButtonBase}` etc. |
+| `Input` | Text/number/date/search inputs | Raw `<input>` with `style={inputField}` |
+| `Select` | Dropdown/select controls | Raw `<select>` with duplicated input styles |
+| `Textarea` | Multi-line text input | Raw `<textarea>` with duplicated input styles |
+| `FormField` | Label + input + error layout | Manual `<label><span>...<input>` repetition |
+| `Chip` | Tags, entity badges, source pills | Raw `<span>` with `style={chipBase}` |
+| `Card` | Navigable/interactive card surfaces | Raw `<div>` + onMouseEnter style mutation |
+| `Alert` | Inline error or warning messages | Raw `<div>` with `style={inlineAlertError}` |
+| `EntityAvatar` | Entity initials/icon avatar | Raw `<div>` with `style={avatarStyle}` |
+| `Modal` | Dialog chrome with scrim and focus trap | Inline dialog + overlay from scratch |
+| `PageContainer` | Page max-width + padding wrapper | Raw `<div style={pageContainer}>` |
+| `PageHeader` | Page title + subtitle + actions row | Raw `<h1>` + `<p>` + row div |
+
+#### When adding new UI
+
+1. Check `apps/web/src/components/` first. If a component exists, use it.
+2. If you need a variant that doesn't exist, add it to the existing component via a prop.
+3. If genuinely new primitive territory, create a new component in the appropriate subdirectory (`buttons/`, `inputs/`, `surfaces/`, etc.). Write a test first.
+4. Feature-level style files (e.g. `features/agent-chat/styles.ts`) are for layout and feature-specific presets only — not for redefining buttons, inputs, or chips.
+
+#### Deferred components (add when first needed)
+
+| Component | Add in |
+|-----------|--------|
+| `EmptyState` | M5.1 (entity pages) |
+| `SkeletonBlock` | M9.2 (performance polish) |
+| `Toast` / `useToast` | M10.4 (feedback collection) |
+
+#### Style presets in `styles.ts` are internal
+
+After M4.5, `buttonAccent`, `iconButtonBase`, `chipBase`, etc. are **implementation details** of their respective components. Feature files should not import them directly. The exception is layout presets (`panelSection`, `panelSectionTitle`, `editorSurface`, etc.) which have no component wrapper and are still valid to use.
+
+### 5.6 TipTap session editor (Milestone 4.1+)
+
+- **Packages:** `@tiptap/react`, `@tiptap/react/menus` (`BubbleMenu`, `FloatingMenu`), `@tiptap/starter-kit`, `@tiptap/extension-placeholder`, `@tiptap/core` (types). Keep versions aligned (same minor as other `@tiptap/*` packages).
+- **Storage:** Persist `sessions.content` as a JSON string of `editor.getJSON()` (not HTML). On load, pass `JSON.parse` into `useEditor({ content })` or parse failure → wrap plain text in a paragraph node.
+- **Styles:** Shared presets live in `apps/web/src/components/styles.ts` (`editorSurface`, `floatingMenu`, `floatingMenuDropdown`); ProseMirror defaults in `apps/web/src/index.css` under `.session-editor-root`.
+- **Slash menu:** Implemented with `FloatingMenu` + `shouldShow` when the current line is exactly `/`; choosing an item deletes the slash and runs the appropriate `editor.chain()` command.
+
+### 5.6 Error Handling Pattern
 
 Use typed errors, not string messages. Services throw; routers catch and translate to tRPC errors.
 
@@ -387,6 +467,7 @@ Run through this before merging **every** feature branch. This is your self-revi
 - [ ] No layout shifts during data fetching (skeletons or placeholders)
 - [ ] Accessible: semantic HTML, keyboard navigable, sufficient contrast
 - [ ] Responsive: tested at desktop (1200px+) and tablet (768px) widths
+- [ ] Used shared components from `apps/web/src/components/` (Button, IconButton, Input, FormField, Chip, Card, Alert, Modal, EntityAvatar) — no raw HTML elements with spread style presets at feature callsites (see §5.5)
 
 ### Before Merge
 - [ ] `git diff main` — review every changed line yourself
@@ -410,11 +491,22 @@ Run through this before merging **every** feature branch. This is your self-revi
 ### First-Time Setup
 ```bash
 pnpm install
-docker compose up -d              # Start Postgres + pgvector
-cp .env.example .env              # Configure local env vars
-pnpm drizzle-kit push             # Apply schema to local DB
-pnpm turbo dev                    # Start both frontend and backend
+docker compose up -d                        # Postgres + pgvector on port 5433
+cp .env.example .env                        # Fill keys; see .env.example
+pnpm --filter @questlog/server db:migrate   # Journaled migrations (preferred)
+pnpm dev                                    # Same as `pnpm turbo dev`
 ```
+
+### Local URLs
+- **Web UI:** http://localhost:5173
+- **API:** http://localhost:3000 — tRPC: `http://localhost:3000/trpc` (`VITE_API_URL` in `.env` must match)
+
+### Turborepo
+- Root **Turborepo** (`turbo`) orchestrates `dev`, `build`, `test`, etc. `turbo.json` should keep `"$schema": "https://v{major}-{minor}-{patch}.turborepo.dev/schema.json"` in sync with the resolved version in `pnpm-lock.yaml`. After upgrading `turbo`, update the schema URL or run `npx @turbo/codemod migrate`.
+
+### Troubleshooting: API won’t start / UI can’t connect
+- **`EADDRINUSE` … `port: 3000`:** Another process is using port 3000 (often a previous `pnpm dev`). Free it: `lsof -i :3000` (macOS/Linux), then stop that PID. Or set `PORT=3001` (or similar) in `.env` and set `VITE_API_URL=http://localhost:3001/trpc`, then restart web + server.
+- **“Failed to load campaigns”** in the browser usually means Vite is running but the Fastify server never bound to the port — fix the server terminal error first.
 
 ### Common Commands
 ```bash
@@ -423,16 +515,17 @@ pnpm turbo build                  # Build all apps
 pnpm turbo test                   # Run all tests
 pnpm turbo lint                   # Lint all apps
 pnpm turbo typecheck              # Type-check all apps
-pnpm drizzle-kit generate         # Generate migration from schema changes
-pnpm drizzle-kit push             # Push schema directly (dev only)
+pnpm drizzle-kit generate         # Generate migration from schema changes (from server package / configured cwd)
 ```
 
 ### Environment Variables
 ```bash
-# .env.example
-DATABASE_URL=postgresql://questlog:questlog@localhost:5432/questlog
-ANTHROPIC_API_KEY=sk-ant-...       # For Claude API (agent conversation)
-VOYAGE_API_KEY=pa-...              # For embeddings (Voyage AI voyage-4-lite)
+# Full list: repo .env.example. Highlights:
+DATABASE_URL=postgresql://questlog:questlog@localhost:5433/questlog
+VITE_API_URL=http://localhost:3000/trpc
+# PORT=3000                       # Optional; default 3000. If changed, update VITE_API_URL.
+ANTHROPIC_API_KEY=sk-ant-...
+VOYAGE_API_KEY=pa-...
 ```
 
 ---

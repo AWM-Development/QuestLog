@@ -6,6 +6,7 @@ import {
 	useRef,
 	useState,
 } from "react";
+import { IconButton } from "../../../components/buttons/IconButton.js";
 
 interface ChatInputProps {
 	onSend: (message: string) => void;
@@ -53,6 +54,7 @@ const textareaStyle: CSSProperties = {
 	margin: 0,
 };
 
+// 32×32 is intentionally larger than iconButtonBase (24) — send/stop are primary actions
 const actionButtonBase: CSSProperties = {
 	width: 32,
 	height: 32,
@@ -97,10 +99,6 @@ export function ChatInput({
 }: ChatInputProps) {
 	const [value, setValue] = useState("");
 	const [focused, setFocused] = useState(false);
-	const [sendHovered, setSendHovered] = useState(false);
-	const [sendActive, setSendActive] = useState(false);
-	const [stopHovered, setStopHovered] = useState(false);
-	const [stopActive, setStopActive] = useState(false);
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 	// Handle starter prompt fill
@@ -172,58 +170,38 @@ export function ChatInput({
 					aria-label="Chat message input"
 				/>
 				{showStop && (
-					<button
-						type="button"
-						style={{
-							...stopButtonStyle,
-							...(stopHovered
-								? {
-										borderColor: "var(--border-hover)",
-										color: "var(--text-primary)",
-									}
-								: {}),
-							...(stopActive ? { transform: "scale(0.96)" } : {}),
+					<IconButton
+						label="Stop generation"
+						size={32}
+						style={stopButtonStyle}
+						hoverStyle={{
+							borderColor: "var(--border-hover)",
+							color: "var(--text-primary)",
 						}}
+						pressStyle={{ transform: "scale(0.96)" }}
 						onClick={() => onCancel?.()}
-						onMouseEnter={() => setStopHovered(true)}
-						onMouseLeave={() => {
-							setStopHovered(false);
-							setStopActive(false);
-						}}
-						onMouseDown={() => setStopActive(true)}
-						onMouseUp={() => setStopActive(false)}
-						aria-label="Stop generation"
 					>
 						&#x25A0;
-					</button>
+					</IconButton>
 				)}
-				<button
-					type="button"
+				<IconButton
+					label="Send message"
+					size={32}
+					disabled={isDisabled}
 					style={{
 						...sendButtonStyle,
 						opacity: isDisabled ? 0.4 : 1,
 						cursor: isDisabled ? "not-allowed" : "pointer",
-						...(!isDisabled && sendHovered
-							? {
-									background: "var(--accent-hover)",
-									transform: "scale(1.04)",
-								}
-							: {}),
-						...(!isDisabled && sendActive ? { transform: "scale(0.96)" } : {}),
 					}}
-					disabled={isDisabled}
+					hoverStyle={{
+						background: "var(--accent-hover)",
+						transform: "scale(1.04)",
+					}}
+					pressStyle={{ transform: "scale(0.96)" }}
 					onClick={handleSend}
-					onMouseEnter={() => setSendHovered(true)}
-					onMouseLeave={() => {
-						setSendHovered(false);
-						setSendActive(false);
-					}}
-					onMouseDown={() => setSendActive(true)}
-					onMouseUp={() => setSendActive(false)}
-					aria-label="Send message"
 				>
 					&#x2191;
-				</button>
+				</IconButton>
 			</div>
 			<div style={toolChipsStyle}>
 				<span>/ commands</span>

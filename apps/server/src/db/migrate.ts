@@ -1,12 +1,15 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import { sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { migrate } from "drizzle-orm/postgres-js/migrator";
 import postgres from "postgres";
 
+/** Loads repo-root `.env` for local dev; no-op if absent (e.g. CI, which sets DATABASE_URL directly). */
+dotenv.config({ path: "../../.env" });
+
 const connectionString =
 	process.env.DATABASE_URL ??
-	"postgresql://questlog:questlog@localhost:5433/questlog_test";
+	"postgresql://questlog:questlog@localhost:5433/questlog";
 
 const client = postgres(connectionString, { max: 1 });
 const db = drizzle(client);

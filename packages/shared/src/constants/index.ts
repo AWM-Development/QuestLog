@@ -15,7 +15,7 @@ export const ENTITY_TYPES = [
 	"location",
 	"faction",
 	"item",
-	"story_arc",
+	"arc",
 ] as const;
 export type EntityType = (typeof ENTITY_TYPES)[number];
 
@@ -40,6 +40,9 @@ export type SourceStatus = (typeof SOURCE_STATUSES)[number];
 
 export const CONVERSATION_STATUSES = ["active", "archived"] as const;
 export type ConversationStatus = (typeof CONVERSATION_STATUSES)[number];
+
+export const SESSION_STATUSES = ["draft", "finalized"] as const;
+export type SessionStatus = (typeof SESSION_STATUSES)[number];
 
 export const MESSAGE_ROLES = ["user", "assistant"] as const;
 export type MessageRole = (typeof MESSAGE_ROLES)[number];

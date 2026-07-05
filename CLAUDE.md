@@ -26,13 +26,13 @@ Read these documents in this order:
 When planning a new task for overnight implementation:
 
 1. Create `Docs/milestones/M{X}/` directory
-2. Copy `Docs/PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md` — fill in checkpoints, decisions, gotchas, and references (keep it brief — the agent reads the codebase itself)
+2. Copy `Docs/workflow/PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md` — fill in checkpoints, decisions, gotchas, and references (keep it brief — the agent reads the codebase itself)
 3. If 🎨 gates were resolved, write visual specs to `Docs/milestones/M{X}/DESIGN_SPEC.md`
 4. Create the feature branch off `develop` and commit the milestone directory there
 5. Update `Docs/NEXT_TASK_PLAN.md` on develop with status `ready`, milestone, branch, and pointer to the plan
 6. Commit and push develop
 
-See `Docs/OVERNIGHT_AGENT.md §Daytime Planning Session` for the full procedure.
+See `Docs/workflow/OVERNIGHT_AGENT.md §Daytime Planning Session` for the full procedure.
 
 ### Scheduled Session (Overnight — No Human)
 
@@ -46,11 +46,11 @@ Focus: implementing checkpoints from the plan file, TDD, committing progress.
 4. **`Docs/milestones/M{X}/DESIGN_SPEC.md`** — read if it exists (visual specs for this milestone).
 5. **`CLAUDE.md`** and **`Docs/DEVELOPMENT_GUIDE.md`** — project conventions and TDD rules.
 6. Read reference files listed in the plan, then implementation files as needed per checkpoint.
-7. Implement checkpoints in order per `Docs/OVERNIGHT_AGENT.md`.
+7. Implement checkpoints in order per `Docs/workflow/OVERNIGHT_AGENT.md`.
 
 **The agent has full codebase access.** Read any file needed to understand patterns, conventions, or implementation context. The plan provides scope and decisions; the codebase provides everything else.
 
-See `Docs/OVERNIGHT_AGENT.md` for the full overnight workflow.
+See `Docs/workflow/OVERNIGHT_AGENT.md` for the full overnight workflow.
 
 ---
 
@@ -139,15 +139,15 @@ After the code review, complete these doc updates **before closing the session**
 
 ## Repeatable Commands
 
-Full procedure definitions live in `Docs/COMMANDS.md`. Read that file when executing a command.
+Full procedure definitions live in `Docs/workflow/COMMANDS.md`. Read that file when executing a command.
 
 ### `/morning-review` — Review Overnight Agent Work
 
-When the user runs `/morning-review`, read and execute the full procedure in `Docs/COMMANDS.md §morning-review`.
+When the user runs `/morning-review`, read and execute the full procedure in `Docs/workflow/COMMANDS.md §morning-review`.
 
 ### `/style-audit` — Design Token Compliance Sweep
 
-When the user asks for a "style audit", "styling consistency check", or similar, read and execute the full procedure in `Docs/COMMANDS.md §style-audit`.
+When the user asks for a "style audit", "styling consistency check", or similar, read and execute the full procedure in `Docs/workflow/COMMANDS.md §style-audit`.
 
 ---
 
@@ -163,4 +163,4 @@ This project follows **Spec-Anchored AI Development (SAAD)** — see `Docs/DEVEL
 - **`develop`** — completed work and documentation, not yet deployed
 - **Feature branches** — created off `develop` during daytime planning
 
-The overnight agent works on feature branches and never pushes to `main`. See `Docs/OVERNIGHT_AGENT.md` for the full plan-implement-review workflow.
+The overnight agent works on feature branches and never pushes to `main`. See `Docs/workflow/OVERNIGHT_AGENT.md` for the full plan-implement-review workflow.

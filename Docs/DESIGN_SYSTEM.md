@@ -8,7 +8,7 @@
 **Related Docs:**
 - `Docs/PRD.md` — Product specification (this doc replaces §5)
 - `Docs/DEVELOPMENT_GUIDE.md` — Coding conventions
-- `Docs/CURSOR_STYLE_LAYER_AUDIT.md` — Repeatable audit/refactor playbook for tokens vs shared vs feature styles
+- `Docs/workflow/COMMANDS.md §style-audit` — Repeatable audit/refactor playbook for tokens vs shared vs feature styles
 - `apps/web/src/index.css` — Token implementation (to be updated)
 - `apps/web/src/components/styles.ts` — Shared style presets (to be updated)
 
@@ -211,15 +211,23 @@ https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family
 
 ### Spacing Scale
 
+The system uses a 4px base grid with half-step tokens for component padding values that fall between grid steps.
+
 | Token | Value | Usage |
 |-------|-------|-------|
+| `--space-0-5` | 2px | Micro-gap: list item separation, inline edit input vertical padding |
 | `--space-1` | 4px | Tight gaps (between tags, inline elements) |
+| `--space-1-5` | 6px | Button vertical padding, tight flex gaps |
 | `--space-2` | 8px | Small gaps (between related items, icon gutters) |
+| `--space-2-5` | 10px | Input/panel vertical padding, section title margin |
 | `--space-3` | 12px | Component internal padding |
+| `--space-3-5` | 14px | Button/input horizontal padding |
 | `--space-4` | 16px | Standard gap (between sections, card padding) |
 | `--space-5` | 20px | Message area horizontal padding |
 | `--space-6` | 24px | Message vertical spacing, section breaks |
 | `--space-8` | 32px | Large section breaks |
+
+Half-step tokens (`--space-0-5`, `--space-1-5`, `--space-2-5`, `--space-3-5`) exist specifically for component padding where exact visual fidelity matters more than strict grid alignment. Do not use them for layout gaps between sections — those should always land on a full grid step.
 
 ### Border Radius
 
@@ -271,8 +279,10 @@ Single column. Bottom tab bar replaces rail. Panel is full-screen sheet.
 
 ```css
 :root {
-  --rail-width:    56px;
-  --panel-width:   300px;
+  --rail-width:           56px;
+  --panel-width:          300px;  /* agent-chat context panel */
+  --dock-width:           360px;  /* session editor docked panel */
+  --sessionlog-max-width: 720px;  /* centered writing column */
 }
 ```
 
@@ -285,10 +295,33 @@ Single column. Bottom tab bar replaces rail. Panel is full-screen sheet.
   height: 100vh;
 }
 
+/* agent chat → right panel (Context / cited sources) */
 .app.panel-open {
   grid-template-columns: var(--rail-width) 1fr var(--panel-width);
 }
+
+/* session editor → right rail dock (mid-session quick capture) */
+.app.dock-open {
+  grid-template-columns: var(--rail-width) 1fr var(--dock-width);
+}
 ```
+
+### Session Editor — Main Area vs. Dock
+
+The session editor has two surfaces that share state via save-and-remount (content persists to the server on every debounced autosave, so remounting picks up the latest state without loss):
+
+- **Main area (full editor, default).** Route: `/campaign/:id/sessions/:sessionId`. Content column is centered at `var(--sessionlog-max-width)` (720px). Sticky top header contains: `← Sessions` back link · overline (session number + date) · save-status · `Dock` · `Save Session`.
+- **Dock (right rail).** Width `var(--dock-width)` (360px). Dock header contains a session-switcher dropdown (last 10 sessions + "+ New") · save-status · `Undock` · close. Body is the same metadata block + TipTap editor, but without the 720px max-width constraint (fills the 360px column).
+
+**Metadata block pattern (shared between both surfaces):**
+```
+SESSION 9 · MAR 15, 2026 · DRAFT        ← overline, font-mono 10px, uppercase, text-muted
+The Feast of St. Andral                 ← borderless input, font-display 17px weight 600
+─────────────────────────────────────   ← 1px border-subtle
+```
+- Session number is **not** inline-editable (edited via the Save Session / finalize form).
+- Date is **click-to-edit** (reveals a native date picker styled to match).
+- Finalized state replaces `DRAFT` with a `✓` prefix in `--status-success`.
 
 ---
 

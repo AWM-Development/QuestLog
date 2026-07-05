@@ -78,8 +78,18 @@ pnpm dev
 
 # Or run individually
 pnpm --filter @questlog/web dev      # Vite on :5173
-pnpm --filter @questlog/server dev   # Fastify on :3000
+pnpm --filter @questlog/server dev   # Fastify on :3000 (override with PORT in .env)
 ```
+
+**Local URLs**
+
+| What | URL |
+|------|-----|
+| **Web app (open in the browser)** | [http://localhost:5173](http://localhost:5173) |
+| **API** | [http://localhost:3000](http://localhost:3000) |
+| **tRPC HTTP** | `http://localhost:3000/trpc` — must match `VITE_API_URL` in `.env` |
+
+**If the UI shows “Failed to load campaigns” / cannot connect:** the web app is up but the API is not. Check the terminal for `EADDRINUSE` (port **3000** already taken by another process — stop it, e.g. `lsof -i :3000` and kill the PID, or set `PORT` and matching `VITE_API_URL` in `.env`).
 
 ### Common commands
 

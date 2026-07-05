@@ -15,7 +15,7 @@ export const buttonAccent: CSSProperties = {
 	color: "var(--bg-void)",
 	border: "none",
 	borderRadius: "var(--r-md)",
-	padding: "6px 14px",
+	padding: "var(--space-1-5) var(--space-3-5)",
 	fontFamily: "var(--font-body)",
 	fontWeight: 500,
 	fontSize: "0.875rem",
@@ -24,7 +24,7 @@ export const buttonAccent: CSSProperties = {
 };
 
 export const buttonSecondary: CSSProperties = {
-	padding: "6px 12px",
+	padding: "var(--space-1-5) var(--space-3)",
 	borderRadius: "var(--r-sm)",
 	border: "0.5px solid var(--border)",
 	backgroundColor: "transparent",
@@ -36,7 +36,7 @@ export const buttonSecondary: CSSProperties = {
 };
 
 export const buttonGhost: CSSProperties = {
-	padding: "3px 10px",
+	padding: "3px var(--space-2-5)",
 	borderRadius: "var(--r-sm)",
 	border: "none",
 	backgroundColor: "transparent",
@@ -48,7 +48,7 @@ export const buttonGhost: CSSProperties = {
 };
 
 export const buttonAction: CSSProperties = {
-	padding: "6px 14px",
+	padding: "var(--space-1-5) var(--space-3-5)",
 	borderRadius: "var(--r-md)",
 	border: "0.5px solid var(--border)",
 	backgroundColor: "rgba(14, 24, 32, 0.6)",
@@ -77,7 +77,7 @@ export const chipBase: CSSProperties = {
 	display: "inline-flex",
 	alignItems: "center",
 	gap: "var(--space-1)",
-	padding: "2px 8px",
+	padding: "var(--space-0-5) var(--space-2)",
 	borderRadius: "var(--r-sm)",
 	fontFamily: "var(--font-body)",
 	fontSize: "11px",
@@ -118,7 +118,7 @@ export const entityColors = {
 		color: "var(--ent-item)",
 		borderBottomColor: "rgba(128, 216, 216, 0.3)",
 	},
-	story_arc: {
+	arc: {
 		color: "var(--ent-arc)",
 		borderBottomColor: "rgba(192, 160, 255, 0.3)",
 	},
@@ -142,7 +142,7 @@ export const entityAvatarColors = {
 		backgroundColor: "var(--ent-item-bg)",
 		color: "var(--ent-item)",
 	},
-	story_arc: {
+	arc: {
 		backgroundColor: "var(--ent-arc-bg)",
 		color: "var(--ent-arc)",
 	},
@@ -153,8 +153,8 @@ export const entityAvatarColors = {
 export const sourceChipBase: CSSProperties = {
 	display: "inline-flex",
 	alignItems: "center",
-	gap: "4px",
-	padding: "3px 10px",
+	gap: "var(--space-1)",
+	padding: "3px var(--space-2-5)",
 	borderRadius: "var(--r-pill)",
 	fontSize: "0.6875rem",
 	cursor: "pointer",
@@ -182,7 +182,7 @@ export const sourceChipColors = {
 // ── Layout ──
 
 export const panelSection: CSSProperties = {
-	padding: "12px 14px",
+	padding: "var(--space-3) var(--space-3-5)",
 	borderBottom: "1px solid var(--border-subtle)",
 };
 
@@ -191,7 +191,7 @@ export const panelSectionTitle: CSSProperties = {
 	letterSpacing: "0.06em",
 	textTransform: "uppercase" as const,
 	color: "var(--text-muted)",
-	marginBottom: "10px",
+	marginBottom: "var(--space-2-5)",
 	fontWeight: 500,
 };
 
@@ -282,7 +282,7 @@ export const inputField: CSSProperties = {
 	backgroundColor: "var(--bg-elevated)",
 	border: "1px solid var(--border)",
 	borderRadius: "var(--r-md)",
-	padding: "10px 14px",
+	padding: "var(--space-2-5) var(--space-3-5)",
 	fontSize: "0.875rem",
 	fontFamily: "var(--font-body)",
 	color: "var(--text-primary)",
@@ -291,7 +291,7 @@ export const inputField: CSSProperties = {
 };
 
 export const inputFieldFocus: CSSProperties = {
-	borderColor: "var(--border-hover)",
+	border: "1px solid var(--border-hover)",
 	boxShadow: "0 0 0 3px var(--state-active-soft)",
 };
 
@@ -311,4 +311,95 @@ export const inlineAlertWarning: CSSProperties = {
 	border: "1px solid var(--status-warning)",
 	borderRadius: "var(--r-sm)",
 	backgroundColor: "var(--status-warning-muted)",
+};
+
+export const buttonSmallAccent: CSSProperties = {
+	...buttonAccent,
+	padding: "var(--space-1) var(--space-3)",
+	fontSize: "0.75rem",
+};
+
+export const buttonSmallSecondary: CSSProperties = {
+	...buttonSecondary,
+	padding: "var(--space-1) var(--space-3)",
+	fontSize: "0.75rem",
+};
+
+// ── Session notes editor ──
+
+/** Flush writing canvas — sits on --bg-void with no card chrome. */
+export const editorSurface: CSSProperties = {
+	color: "var(--text-primary)",
+	fontFamily: "var(--font-body)",
+	fontSize: "0.875rem",
+	lineHeight: 1.75,
+	outline: "none",
+	flex: 1,
+	overflow: "auto",
+};
+
+export const floatingMenu: CSSProperties = {
+	backgroundColor: "var(--bg-focal)",
+	border: "1px solid var(--border-hover)",
+	borderRadius: "var(--r-md)",
+	boxShadow: "var(--shadow-focal)",
+	padding: "var(--space-1)",
+	display: "flex",
+	gap: "var(--space-0-5)",
+	flexWrap: "wrap",
+};
+
+export const floatingMenuDropdown: CSSProperties = {
+	backgroundColor: "var(--bg-focal)",
+	border: "1px solid var(--border-hover)",
+	borderRadius: "var(--r-md)",
+	boxShadow: "var(--shadow-focal)",
+	padding: "var(--space-1) 0",
+	maxHeight: "240px",
+	overflowY: "auto" as const,
+	minWidth: "180px",
+};
+
+export const floatingMenuOption: CSSProperties = {
+	padding: "var(--space-2) var(--space-3)",
+	fontSize: "0.8125rem",
+	color: "var(--text-secondary)",
+	cursor: "pointer",
+	display: "flex",
+	alignItems: "center",
+	gap: "var(--space-2)",
+};
+
+export const saveStatusText: CSSProperties = {
+	fontFamily: "var(--font-mono)",
+	fontSize: "0.6875rem",
+	color: "var(--text-muted)",
+};
+
+/** Notion-style overline above the session title — `SESSION N · MAR 15, 2026 · DRAFT`. */
+export const sessionOverline: CSSProperties = {
+	fontFamily: "var(--font-mono)",
+	fontSize: "0.625rem",
+	letterSpacing: "0.06em",
+	textTransform: "uppercase",
+	color: "var(--text-muted)",
+	display: "inline-flex",
+	alignItems: "center",
+	gap: "0.5em",
+	flexWrap: "wrap",
+};
+
+/** Borderless title input styled as a display heading. */
+export const sessionTitleInput: CSSProperties = {
+	fontFamily: "var(--font-display)",
+	fontSize: "24px",
+	fontWeight: 600,
+	color: "var(--text-primary)",
+	background: "transparent",
+	border: "none",
+	outline: "none",
+	width: "100%",
+	padding: 0,
+	marginTop: "var(--space-2)",
+	marginBottom: "var(--space-3)",
 };

@@ -75,7 +75,10 @@ describe("campaignService", () => {
 				name: "Campaign A",
 				theme: "fantasy",
 			});
-			await campaignService.create(db, { name: "Campaign B", theme: "sci-fi" });
+			const b = await campaignService.create(db, {
+				name: "Campaign B",
+				theme: "sci-fi",
+			});
 
 			await campaignService.update(db, {
 				id: a.id,
@@ -83,9 +86,13 @@ describe("campaignService", () => {
 			});
 
 			const results = await campaignService.list(db);
-			expect(results.length).toBeGreaterThanOrEqual(2);
-			expect(results[0]?.name).toBe("Campaign A Updated");
-			expect(results[1]?.name).toBe("Campaign B");
+			const idxA = results.findIndex((c) => c.id === a.id);
+			const idxB = results.findIndex((c) => c.id === b.id);
+			expect(idxA).toBeGreaterThanOrEqual(0);
+			expect(idxB).toBeGreaterThanOrEqual(0);
+			expect(results[idxA]?.name).toBe("Campaign A Updated");
+			expect(results[idxB]?.name).toBe("Campaign B");
+			expect(idxA).toBeLessThan(idxB);
 		});
 
 		it("does not return archived campaigns", async () => {

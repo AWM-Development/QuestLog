@@ -1,0 +1,1 @@
+ALTER TABLE "sessions" ADD COLUMN "status" text DEFAULT 'draft' NOT NULL;

@@ -1,2 +1,2 @@
-export { CampaignListPage } from "./components/CampaignListPage.js";
-export { CampaignCreateModal } from "./components/CampaignCreateModal.js";
+export { CampaignListPage } from "./pages/index.js";
+export { CampaignCreateModal } from "./components/modals/index.js";

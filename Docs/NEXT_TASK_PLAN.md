@@ -12,15 +12,9 @@ STATUS VALUES:
   reviewed    — Human approved. Safe to overwrite with next plan.
 -->
 
-| Field         | Value |
-|---------------|-------|
-| **Status**    | `none` |
-| **Milestone** | |
-| **Branch**    | |
-| **Plan**      | |
-
-> No task is currently planned. During a daytime planning session:
-> 1. Create `Docs/milestones/M{X}/` on the feature branch
-> 2. Copy `PLAN_TEMPLATE.md` → `Docs/milestones/M{X}/PLAN.md` and fill in
-> 3. Update this file with status `ready`, milestone, branch, and plan path
-> 4. Commit and push develop
+| Field         | Value                                              |
+|---------------|----------------------------------------------------|
+| **Status**    | `done`                                             |
+| **Milestone** | M4.2 — Session editor visual polish                |
+| **Branch**    | `feat/session-log/editor-polish`                   |
+| **Plan**      | `Docs/milestones/M4.2/PLAN.md`                     |
