@@ -1,4 +1,10 @@
-import { type CSSProperties, useCallback, useRef, useState } from "react";
+import {
+	type CSSProperties,
+	useCallback,
+	useEffect,
+	useRef,
+	useState,
+} from "react";
 import { useNavigate } from "react-router";
 import { Button } from "../../../../components/buttons/Button.js";
 import { IconButton } from "../../../../components/buttons/IconButton.js";
@@ -47,6 +53,12 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 	const { activeSessionId, undock } = useCampaignChrome();
 	const navigate = useNavigate();
 	const [finalizeOpen, setFinalizeOpen] = useState(false);
+	const [unresolvedCount, setUnresolvedCount] = useState(0);
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: activeSessionId is the trigger; setUnresolvedCount is a stable setter
+	useEffect(() => {
+		setUnresolvedCount(0);
+	}, [activeSessionId]);
 
 	const sessionQuery = trpc.session.getById.useQuery(
 		{ id: activeSessionId ?? "" },
@@ -211,6 +223,8 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 							initialSummary={session.summary}
 							initialTags={session.tags ?? []}
 							isSubmitting={finalizeMutation.isPending}
+							unresolvedCount={unresolvedCount}
+							onReviewInEditor={() => setFinalizeOpen(false)}
 							onCancel={() => setFinalizeOpen(false)}
 							onConfirm={(data) => {
 								finalizeMutation.mutate({
@@ -264,10 +278,19 @@ export function DockedSessionPanel({ campaignId }: DockedSessionPanelProps) {
 						<SessionEditor
 							key={session.id}
 							sessionId={session.id}
+							campaignId={campaignId}
 							content={session.content}
 							placeholder="Start writing your session notes here. Type / for formatting options."
 							onContentChange={(json) => {
 								scheduleSave(json);
+							}}
+							onUnresolvedCountChange={setUnresolvedCount}
+							initialDismissedEntityTexts={session.dismissedEntityTexts ?? []}
+							onDismissedEntityTextsChange={(texts) => {
+								updateMutation.mutate({
+									id: session.id,
+									dismissedEntityTexts: texts,
+								});
 							}}
 						/>
 					</div>

@@ -67,6 +67,8 @@ export const sessionService = {
 		if ("sessionNumber" in fields)
 			updateData.sessionNumber = fields.sessionNumber;
 		if ("date" in fields) updateData.date = fields.date;
+		if ("dismissedEntityTexts" in fields)
+			updateData.dismissedEntityTexts = fields.dismissedEntityTexts;
 
 		if (Object.keys(updateData).length === 0) {
 			return this.getById(db, id);

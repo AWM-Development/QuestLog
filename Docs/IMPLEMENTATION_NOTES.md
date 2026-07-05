@@ -114,6 +114,26 @@ The 4px-grid tokens (`--space-1` through `--space-8`) left gaps at 2px, 6px, 10p
 
 `3px` and `5px` values were intentionally left as literals — they appear in only 2–3 places each (ghost button and source chip vertical padding; ChatHeader compact button) and don't align cleanly to a half-step. Adding tokens for single-location values creates noise.
 
+## Session notes (Milestone 4.2) — Entity Detection & Linking (2026-04-25)
+
+### Orphaned entity marks removed on re-scan (spec deviation)
+
+The PRD spec says entity marks that lose their backing entity on a re-scan should be downgraded to the `unlinked` state (so the text stays highlighted as an unresolved reference). The current implementation removes them from the document entirely. The design constraint is that `setEntitySpans` rebuilds marks from the fresh server response; a removed entity simply doesn't appear in that response, so there's no signal to downgrade rather than remove.
+
+This is acceptable for now because the entity knowledge base is append-only at this stage — entities are never deleted. If entity deletion is added later, this deviation must be revisited: the correct fix is to pass a "previously confirmed entity ids" set into `setEntitySpans` and downgrade any mark whose `entityId` is no longer found in the session's entity list.
+
+### Link button deferred (EntityActionBar)
+
+The `Link` button in `EntityActionBar` is a deliberate no-op (`onClick={() => {}}`). Wiring it requires a campaign entity search popover (search-as-you-type, results list, select to link). This is planned for M5.4 (NER-based entity suggestion), at which point the popover also serves as the link picker. The `onLink` prop is retained in the component interface so the call site remains stable.
+
+### `story_arc` → `arc` rename
+
+`ENTITY_TYPES` in `packages/shared/src/constants/index.ts` originally used `"story_arc"`. All M4.2 code (CSS classes `entity-span--arc`, design tokens `--ent-arc`, `EntityType` in `session-log/types.ts`) used `"arc"`. The two callers of the old name were in `components/styles.ts` (`entityBorderColors` and `entityAvatarColors` object keys) and `agent-chat/components/context/ContextPanel.tsx` (`guessEntityType` fallback return). Both updated to `"arc"` in the M4.2 review session. `packages/shared/src/validators/entity.ts` now uses `z.enum(ENTITY_TYPES)` directly instead of a local alias.
+
+### `pg_trgm` extension must be in the migration, not just `migrate.ts`
+
+Migration `0006_entity_linking_schema.sql` adds `CREATE EXTENSION IF NOT EXISTS pg_trgm;` as its first statement. The earlier pattern (enabling the extension only inside `migrate.ts` at runtime) meant a CI-applied migration would fail on a fresh Postgres instance that didn't have the extension yet. SQL-first is safer: the extension is present before any subsequent statement in that transaction.
+
 ## Database Migrations
 
 ### Always use `db:migrate` (the journal), never `drizzle-kit push` for shared envs

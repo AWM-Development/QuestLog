@@ -1,0 +1,104 @@
+/* Entity span base */
+.entity-span {
+	cursor: pointer;
+	transition: all 120ms ease;
+}
+
+/* ── Confirmed states ── */
+.entity-span--confirmed.entity-span--npc {
+	color: var(--ent-npc);
+	border-bottom: 1.5px solid var(--ent-npc);
+}
+.entity-span--confirmed.entity-span--faction {
+	color: var(--ent-faction);
+	border-bottom: 1.5px solid var(--ent-faction);
+}
+.entity-span--confirmed.entity-span--location {
+	color: var(--ent-location);
+	border-bottom: 1.5px solid var(--ent-location);
+}
+.entity-span--confirmed.entity-span--item {
+	color: var(--ent-item);
+	border-bottom: 1.5px solid var(--ent-item);
+}
+.entity-span--confirmed.entity-span--arc {
+	color: var(--ent-arc);
+	border-bottom: 1.5px solid var(--ent-arc);
+}
+
+/* ── Ambiguous states ── */
+.entity-span--ambiguous.entity-span--npc {
+	color: var(--ent-npc);
+	border-bottom: 1.5px dashed rgba(var(--ent-npc-rgb), 0.5);
+}
+.entity-span--ambiguous.entity-span--faction {
+	color: var(--ent-faction);
+	border-bottom: 1.5px dashed rgba(var(--ent-faction-rgb), 0.5);
+}
+.entity-span--ambiguous.entity-span--location {
+	color: var(--ent-location);
+	border-bottom: 1.5px dashed rgba(var(--ent-location-rgb), 0.5);
+}
+.entity-span--ambiguous.entity-span--item {
+	color: var(--ent-item);
+	border-bottom: 1.5px dashed rgba(var(--ent-item-rgb), 0.5);
+}
+.entity-span--ambiguous.entity-span--arc {
+	color: var(--ent-arc);
+	border-bottom: 1.5px dashed rgba(var(--ent-arc-rgb), 0.5);
+}
+
+/* ── Unlinked state ── */
+.entity-span--unlinked {
+	color: var(--text-secondary);
+	border-bottom: 1.5px dotted rgba(var(--text-secondary-rgb), 0.4);
+}
+
+/* ── Hover — shared shape ── */
+.entity-span--confirmed:hover,
+.entity-span--ambiguous:hover,
+.entity-span--unlinked:hover {
+	border-radius: 2px;
+	padding: 0 2px 1px;
+}
+
+/* ── Hover — confirmed/ambiguous (per-type) ──
+   Hover color is the type accent lightened toward white via color-mix so
+   theme tweaks propagate without a parallel hex table. */
+.entity-span--confirmed.entity-span--npc:hover,
+.entity-span--ambiguous.entity-span--npc:hover {
+	color: color-mix(in srgb, var(--ent-npc) 70%, white);
+	border-bottom: 2px solid var(--ent-npc);
+	background: var(--ent-npc-bg);
+}
+.entity-span--confirmed.entity-span--faction:hover,
+.entity-span--ambiguous.entity-span--faction:hover {
+	color: color-mix(in srgb, var(--ent-faction) 70%, white);
+	border-bottom: 2px solid var(--ent-faction);
+	background: var(--ent-faction-bg);
+}
+.entity-span--confirmed.entity-span--location:hover,
+.entity-span--ambiguous.entity-span--location:hover {
+	color: color-mix(in srgb, var(--ent-location) 70%, white);
+	border-bottom: 2px solid var(--ent-location);
+	background: var(--ent-location-bg);
+}
+.entity-span--confirmed.entity-span--item:hover,
+.entity-span--ambiguous.entity-span--item:hover {
+	color: color-mix(in srgb, var(--ent-item) 70%, white);
+	border-bottom: 2px solid var(--ent-item);
+	background: var(--ent-item-bg);
+}
+.entity-span--confirmed.entity-span--arc:hover,
+.entity-span--ambiguous.entity-span--arc:hover {
+	color: color-mix(in srgb, var(--ent-arc) 70%, white);
+	border-bottom: 2px solid var(--ent-arc);
+	background: var(--ent-arc-bg);
+}
+
+/* ── Hover — unlinked ── */
+.entity-span--unlinked:hover {
+	color: var(--text-primary);
+	border-bottom: 2px solid rgba(var(--text-secondary-rgb), 0.5);
+	background: rgba(var(--text-secondary-rgb), 0.06);
+}

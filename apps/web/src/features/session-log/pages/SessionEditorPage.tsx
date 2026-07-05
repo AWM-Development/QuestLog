@@ -82,6 +82,7 @@ export function SessionEditorPage() {
 	const navigate = useNavigate();
 	const { dockSession } = useCampaignChrome();
 	const [finalizeOpen, setFinalizeOpen] = useState(false);
+	const [unresolvedCount, setUnresolvedCount] = useState(0);
 
 	const sessionQuery = trpc.session.getById.useQuery(
 		{ id: sessionId ?? "" },
@@ -209,6 +210,8 @@ export function SessionEditorPage() {
 							initialSummary={session.summary}
 							initialTags={session.tags ?? []}
 							isSubmitting={finalizeMutation.isPending}
+							unresolvedCount={unresolvedCount}
+							onReviewInEditor={() => setFinalizeOpen(false)}
 							onCancel={() => setFinalizeOpen(false)}
 							onConfirm={(data) => {
 								finalizeMutation.mutate({
@@ -246,12 +249,21 @@ export function SessionEditorPage() {
 						<SessionEditor
 							key={session.id}
 							sessionId={session.id}
+							campaignId={campaignId}
 							content={session.content}
 							placeholder="Start writing your session notes here. Jot quick lines as things happen — entity links will be detected automatically.
 
 Type / for formatting options."
 							onContentChange={(json) => {
 								scheduleSave(json);
+							}}
+							onUnresolvedCountChange={setUnresolvedCount}
+							initialDismissedEntityTexts={session.dismissedEntityTexts ?? []}
+							onDismissedEntityTextsChange={(texts) => {
+								updateMutation.mutate({
+									id: session.id,
+									dismissedEntityTexts: texts,
+								});
 							}}
 						/>
 					</div>

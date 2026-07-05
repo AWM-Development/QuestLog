@@ -75,7 +75,7 @@ function guessEntityType(sourceName: string): EntityType {
 		return "npc";
 	if (lower.includes("location") || lower.includes("place")) return "location";
 	if (lower.includes("item") || lower.includes("artifact")) return "item";
-	return "story_arc";
+	return "arc";
 }
 
 export function ContextPanel({

@@ -1,9 +1,10 @@
 import type { Editor, JSONContent } from "@tiptap/core";
+import { getMarkRange } from "@tiptap/core";
 import Placeholder from "@tiptap/extension-placeholder";
 import { EditorContent, useEditor } from "@tiptap/react";
 import { BubbleMenu, FloatingMenu } from "@tiptap/react/menus";
 import StarterKit from "@tiptap/starter-kit";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { IconButton } from "../../../../components/buttons/IconButton.js";
 import {
 	editorSurface,
@@ -11,10 +12,17 @@ import {
 	floatingMenuDropdown,
 	floatingMenuOption,
 } from "../../../../components/styles.js";
+import { EntityHighlight } from "../../extensions/EntityHighlight.js";
+import { useEntityDetection } from "../../hooks/useEntityDetection.js";
+import type { EntitySpan, EntityType } from "../../types.js";
+import "./../../styles/entity-highlight.css";
+import { DetectedEntitiesPanel } from "./DetectedEntitiesPanel.js";
+import { EntityActionBar, useActionBar } from "./EntityActionBar.js";
+import { EntityQuickCreatePopover } from "./EntityQuickCreatePopover.js";
 
-function parseInitialContent(raw: string): JSONContent | string {
+function parseInitialContent(raw: string): JSONContent | undefined {
 	if (!raw.trim()) {
-		return "";
+		return undefined;
 	}
 	try {
 		return JSON.parse(raw) as JSONContent;
@@ -113,18 +121,35 @@ const SLASH_MENU_ITEMS: { label: string; run: (ed: Editor) => void }[] = [
 	},
 ];
 
+interface PopoverState {
+	spanText: string;
+	initialType: EntityType;
+	position: { top: number; left: number };
+	markRange: { from: number; to: number };
+}
+
 interface SessionEditorProps {
 	sessionId: string;
+	campaignId: string;
 	content: string;
 	placeholder: string;
 	onContentChange: (json: string) => void;
+	onEditorReady?: (editor: Editor) => void;
+	onUnresolvedCountChange?: (count: number) => void;
+	initialDismissedEntityTexts?: string[];
+	onDismissedEntityTextsChange?: (texts: string[]) => void;
 }
 
 export function SessionEditor({
 	sessionId,
+	campaignId,
 	content,
 	placeholder,
 	onContentChange,
+	onEditorReady,
+	onUnresolvedCountChange,
+	initialDismissedEntityTexts,
+	onDismissedEntityTextsChange,
 }: SessionEditorProps) {
 	const [slashHighlightIndex, setSlashHighlightIndex] = useState(0);
 	const slashHighlightRef = useRef(0);
@@ -132,6 +157,147 @@ export function SessionEditor({
 	const prevSlashVisible = useRef(false);
 	const onContentChangeRef = useRef(onContentChange);
 	onContentChangeRef.current = onContentChange;
+	const onEditorReadyRef = useRef(onEditorReady);
+	onEditorReadyRef.current = onEditorReady;
+	const onDismissedEntityTextsChangeRef = useRef(onDismissedEntityTextsChange);
+	onDismissedEntityTextsChangeRef.current = onDismissedEntityTextsChange;
+
+	const dismissedRef = useRef<string[]>(initialDismissedEntityTexts ?? []);
+	useEffect(() => {
+		// Sync inbound changes (e.g. after server roundtrip) without recreating editor.
+		dismissedRef.current = initialDismissedEntityTexts ?? [];
+	}, [initialDismissedEntityTexts]);
+
+	const editorContainerRef = useRef<HTMLDivElement>(null);
+	const [editorInstance, setEditorInstance] = useState<Editor | null>(null);
+	const [popover, setPopover] = useState<PopoverState | null>(null);
+
+	const { detectedSpans, unresolvedCount, scanParagraph, scanFullDocument } =
+		useEntityDetection({
+			editor: editorInstance,
+			campaignId,
+			dismissedRef,
+		});
+
+	const onUnresolvedCountChangeRef = useRef(onUnresolvedCountChange);
+	onUnresolvedCountChangeRef.current = onUnresolvedCountChange;
+	useEffect(() => {
+		onUnresolvedCountChangeRef.current?.(unresolvedCount);
+	}, [unresolvedCount]);
+
+	const actionBar = useActionBar({
+		editorRef: editorContainerRef,
+		onDismiss: () => {},
+	});
+
+	const handleDismiss = useCallback(
+		(text: string) => {
+			const normalized = text.toLowerCase();
+			if (!dismissedRef.current.includes(normalized)) {
+				dismissedRef.current = [...dismissedRef.current, normalized];
+				onDismissedEntityTextsChangeRef.current?.(dismissedRef.current);
+			}
+			actionBar.hide();
+			if (!editorInstance) return;
+			// Re-scan to drop the now-dismissed span. Cheap for typical session sizes.
+			scanFullDocument();
+		},
+		[actionBar, editorInstance, scanFullDocument],
+	);
+
+	const openPopoverForRange = useCallback(
+		(range: { from: number; to: number }, initialType: EntityType = "npc") => {
+			const ed = editorInstance;
+			if (!ed) return;
+			const text = ed.state.doc.textBetween(range.from, range.to);
+			if (!text.trim()) return;
+			const containerRect = editorContainerRef.current?.getBoundingClientRect();
+			let top = 0;
+			let left = 0;
+			try {
+				const start = ed.view.coordsAtPos(range.from);
+				const end = ed.view.coordsAtPos(range.to);
+				if (containerRect) {
+					top = end.bottom - containerRect.top + 6;
+					left = start.left - containerRect.left;
+				}
+			} catch {
+				// Position lookup can fail on freshly-mounted editors; default to (0,0).
+			}
+			setPopover({
+				spanText: text,
+				initialType,
+				position: { top, left },
+				markRange: range,
+			});
+		},
+		[editorInstance],
+	);
+
+	const handleActionBarCreate = useCallback(() => {
+		const ed = editorInstance;
+		if (!ed) return;
+		const { from, to, entityType } = actionBar.state;
+		actionBar.hide();
+		if (from >= to) return;
+		openPopoverForRange(
+			{ from, to },
+			(entityType as EntityType | null) ?? "npc",
+		);
+	}, [actionBar, editorInstance, openPopoverForRange]);
+
+	const handlePopoverCreated = useCallback(
+		(entity: { id: string; name: string; type: string }) => {
+			const ed = editorInstance;
+			const range = popover?.markRange;
+			setPopover(null);
+			if (!ed || !range) return;
+			const markType = ed.schema.marks.entityHighlight;
+			if (!markType) return;
+			const tr = ed.state.tr;
+			tr.removeMark(range.from, range.to, markType);
+			tr.addMark(
+				range.from,
+				range.to,
+				markType.create({
+					entityId: entity.id,
+					entityType: entity.type,
+					state: "confirmed",
+					candidates: "[]",
+				}),
+			);
+			ed.view.dispatch(tr);
+			scanFullDocument();
+		},
+		[editorInstance, popover, scanFullDocument],
+	);
+
+	const handleScrollToSpan = useCallback(
+		(span: EntitySpan) => {
+			const ed = editorInstance;
+			if (!ed) return;
+			ed.commands.focus();
+			ed.commands.setTextSelection({
+				from: span.startIndex,
+				to: span.endIndex,
+			});
+			ed.commands.scrollIntoView();
+		},
+		[editorInstance],
+	);
+
+	const handleActivateActionBar = useCallback(
+		(span: EntitySpan) => {
+			handleScrollToSpan(span);
+			// The hover handler will pick this up after focus; to be deterministic,
+			// open the popover directly for unresolved spans.
+			openPopoverForRange(
+				{ from: span.startIndex, to: span.endIndex },
+				span.entityType,
+			);
+		},
+		[handleScrollToSpan, openPopoverForRange],
+	);
 
 	const editor = useEditor(
 		{
@@ -143,6 +309,7 @@ export function SessionEditor({
 				Placeholder.configure({
 					placeholder,
 				}),
+				EntityHighlight,
 			],
 			content: parseInitialContent(content),
 			editorProps: {
@@ -157,12 +324,46 @@ export function SessionEditor({
 					].join("; "),
 				},
 			},
-			onUpdate: ({ editor: ed }) => {
+			onCreate: ({ editor: ed }) => {
+				setEditorInstance(ed);
+				onEditorReadyRef.current?.(ed);
+			},
+			onUpdate: ({ editor: ed, transaction }) => {
 				onContentChangeRef.current(JSON.stringify(ed.getJSON()));
+				// Skip our own setEntitySpans transactions (they have no docChanged
+				// content beyond mark changes, but we don't want to feedback-loop).
+				if (transaction.getMeta("addToHistory") === false) return;
+				if (!transaction.docChanged) return;
+				// Find paragraphs touched by this transaction and re-scan them.
+				const touched = new Set<number>();
+				const { doc } = ed.state;
+				for (const stepMap of transaction.mapping.maps) {
+					stepMap.forEach((_oldStart, _oldEnd, newStart, newEnd) => {
+						doc.nodesBetween(newStart, newEnd, (node, pos) => {
+							if (node.isTextblock) {
+								touched.add(pos + 1);
+								return false;
+							}
+							return undefined;
+						});
+					});
+				}
+				for (const paragraphPos of touched) {
+					scanParagraph(paragraphPos);
+				}
+			},
+			onDestroy: () => {
+				setEditorInstance(null);
 			},
 		},
 		[sessionId],
 	);
+
+	// Initial scan once editor is ready (also handles orphaned marks).
+	useEffect(() => {
+		if (!editorInstance) return;
+		scanFullDocument();
+	}, [editorInstance, scanFullDocument]);
 
 	useEffect(() => {
 		if (!editor) return;
@@ -218,17 +419,78 @@ export function SessionEditor({
 		return () => dom.removeEventListener("keydown", onKeyDown, true);
 	}, [editor]);
 
+	// Hover detection on entity spans → open action bar.
+	useEffect(() => {
+		if (!editor) return;
+		const dom = editor.view.dom as HTMLElement;
+		const onMouseOver = (e: MouseEvent) => {
+			const target = (e.target as HTMLElement | null)?.closest(
+				"span[data-entity-state]",
+			) as HTMLElement | null;
+			if (!target) return;
+			let from = 0;
+			let to = 0;
+			try {
+				from = editor.view.posAtDOM(target, 0);
+				const $pos = editor.state.doc.resolve(from);
+				const markType = editor.schema.marks.entityHighlight;
+				if (!markType) return;
+				const range = getMarkRange($pos, markType);
+				if (!range) return;
+				from = range.from;
+				to = range.to;
+			} catch {
+				return;
+			}
+			const text = editor.state.doc.textBetween(from, to);
+			const entityId = target.dataset.entityId ?? null;
+			const entityType =
+				(target.dataset.entityType as EntityType | undefined) ?? null;
+			actionBar.showForSpan(target, text, entityId, entityType, from, to);
+		};
+		const onMouseOut = (e: MouseEvent) => {
+			const related = e.relatedTarget as HTMLElement | null;
+			if (related?.closest("[data-action-bar]")) return;
+			const leaving = (e.target as HTMLElement | null)?.closest(
+				"span[data-entity-state]",
+			);
+			if (!leaving) return;
+			actionBar.scheduleHide();
+		};
+		dom.addEventListener("mouseover", onMouseOver);
+		dom.addEventListener("mouseout", onMouseOut);
+		return () => {
+			dom.removeEventListener("mouseover", onMouseOver);
+			dom.removeEventListener("mouseout", onMouseOut);
+		};
+	}, [editor, actionBar]);
+
 	if (!editor) {
 		return null;
 	}
 
+	const handleEntityBubbleMenu = () => {
+		const { from, to } = editor.state.selection;
+		if (from >= to) return;
+		// Apply unlinked mark first so the popover can reuse the range.
+		editor.commands.setEntityMark({
+			entityId: null,
+			entityType: null,
+			state: "unlinked",
+			candidates: "[]",
+		});
+		openPopoverForRange({ from, to }, "npc");
+	};
+
 	return (
 		<div
+			ref={editorContainerRef}
 			style={{
 				...editorSurface,
 				padding: 0,
 				display: "flex",
 				flexDirection: "column",
+				position: "relative",
 			}}
 		>
 			<BubbleMenu editor={editor}>
@@ -278,6 +540,9 @@ export function SessionEditor({
 					>
 						H
 					</IconButton>
+					<IconButton label="Entity" size={24} onClick={handleEntityBubbleMenu}>
+						⬡
+					</IconButton>
 				</div>
 			</BubbleMenu>
 
@@ -308,6 +573,39 @@ export function SessionEditor({
 			</FloatingMenu>
 
 			<EditorContent editor={editor} style={{ flex: 1, minHeight: 0 }} />
+
+			{actionBar.state.visible && editorInstance ? (
+				<EntityActionBar
+					spanText={actionBar.state.spanText}
+					entityId={actionBar.state.entityId}
+					entityType={actionBar.state.entityType}
+					campaignId={campaignId}
+					position={actionBar.state.position}
+					onDismiss={(text) => handleDismiss(text)}
+					onCreate={handleActionBarCreate}
+					onLink={() => actionBar.hide()}
+					onClose={() => actionBar.hide()}
+					onBarMouseEnter={() => actionBar.setBarHovered(true)}
+					onBarMouseLeave={() => actionBar.setBarHovered(false)}
+				/>
+			) : null}
+
+			{popover ? (
+				<EntityQuickCreatePopover
+					spanText={popover.spanText}
+					initialType={popover.initialType}
+					campaignId={campaignId}
+					position={popover.position}
+					onCreated={handlePopoverCreated}
+					onClose={() => setPopover(null)}
+				/>
+			) : null}
+
+			<DetectedEntitiesPanel
+				detectedSpans={detectedSpans}
+				onScrollToSpan={handleScrollToSpan}
+				onActivateActionBar={handleActivateActionBar}
+			/>
 		</div>
 	);
 }
