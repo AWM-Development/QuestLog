@@ -24,22 +24,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ### Added — M4.2 Entity Detection & Linking
 
-- **Entity matching service** (`entity.service.ts`): paragraph-scoped `detectSpans` using `pg_trgm` fuzzy matching against campaign entities; returns confirmed, ambiguous, and unlinked spans with candidate lists
-- **`entity` tRPC router**: `detectSpans` query and `create` mutation; Zod validators in `packages/shared/src/validators/entity.ts` enforce enum type against `ENTITY_TYPES`
-- **`EntityHighlight` TipTap extension**: ProseMirror Mark that renders `confirmed`, `ambiguous`, and `unlinked` spans with per-state CSS classes; `setEntitySpans` command handles paragraph-scoped re-scan while preserving user-placed unlinked marks; `tr.setMeta("addToHistory", false)` keeps scan noise out of undo history
-- **`useEntityDetection` hook**: imperative paragraph-scoped detection using `trpc.useUtils().entity.detectSpans.fetch`; per-paragraph debounced timers (400ms); full-document scan on mount
-- **`DetectedEntitiesPanel`**: sidebar listing grouped by entity type (NPC / Faction / Location / Item / Arc), collapsible groups, click-to-scroll for confirmed spans, click-to-activate-action-bar for unlinked/ambiguous
-- **`EntityActionBar`**: hover-triggered action bar above/below entity spans; `showForSpan` tracks ProseMirror positions; combined hover zone with 120ms hide delay prevents flicker; Link (deferred), Create, and Dismiss actions
-- **`EntityQuickCreatePopover`**: inline popover for creating new entities from an unlinked span; type selector, name pre-filled from span text, optional description; calls `entity.create` mutation
-- **Dismissed entity texts**: `sessions.dismissed_entity_texts` column; passed to `detectSpans` so dismissed spans are never re-surfaced; persisted via `session.update` on change
-- **Migration `0006_entity_linking_schema.sql`**: `CREATE EXTENSION IF NOT EXISTS pg_trgm`; GIN trgm index on `entities.name`; `dismissed_entity_texts` text[] column on `sessions`
-- **Entity highlight CSS** (`entity-highlight.css`): confirmed/ambiguous/unlinked base states; hover uses `color-mix(in srgb, var(--ent-{type}) 70%, white)` — theme-adaptive without a parallel hex table
-- **Design tokens**: `--status-warning-rgb` and `--text-secondary-rgb` added to `:root` and all 4 campaign theme overrides for rgba() usage in CSS
-
-### Changed — M4.2 naming cleanup
-
-- `"story_arc"` renamed to `"arc"` in `ENTITY_TYPES` constant (`packages/shared/src/constants/index.ts`); `entityBorderColors` and `entityAvatarColors` keys in `components/styles.ts` updated; `guessEntityType` fallback in `ContextPanel.tsx` updated
-- `EntityCreateInput.type` now validated against `z.enum(ENTITY_TYPES)` (was `z.string()`)
+- **Entity matching service** (`apps/server/src/services/entity.service.ts`): two-phase pg_trgm fuzzy matching (`word_similarity` pre-filter + per-token `similarity`) against campaign entities; greedy longest-span selection; dismissed text exclusion
+- **Entity tRPC router** with two procedures: `entity.detectSpans` (query) and `entity.create` (mutation)
+- **`dismissedEntityTexts` column** on `sessions` table (JSONB `string[]`, default `[]`) with Drizzle migration `0006_entity_linking_schema.sql`
+- **GIN trigram index** `entities_name_trgm_idx` on `entities.name` for sub-millisecond candidate pre-filtering
+- **`EntityHighlight` TipTap Mark extension** with attributes (entityId, entityType, state, candidates); `setEntitySpans` and `setEntityMark` commands; CSS class rendering for all states (confirmed/ambiguous/unlinked)
+- **`useEntityDetection` hook**: 500ms debounced detection, paragraph-range span merging, `detectedSpans` + `unresolvedCount` state
+- **Entity highlight CSS** (`features/session-log/styles/entity-highlight.css`): per-state × per-type CSS classes with underline styling and hover states
+- **RGB triplet tokens** (`--ent-{type}-rgb`) added to `index.css` `:root` for `rgba()` usage in entity highlight CSS
+- **`EntityActionBar` component** with Link/Create/Dismiss buttons, 80ms hover delay, above/below placement flip at 60px from editor top, Escape key to close
+- **`EntityQuickCreatePopover` component**: type selector row (NPC/Faction/Location/Item/Arc), tinted header, name + description inputs, "Create {type}" button calling `entity.create`
+- **`DetectedEntitiesPanel` component**: collapsible type-group sections, status dots (confirmed/ambiguous/unlinked), click-to-scroll and click-to-action-bar routing, empty state
+- **Save-time validation warning** in `FinalizeForm`: soft `unresolvedCount` warning block with "Review in editor" button; warning never blocks save; `unresolvedCount` threaded from `useEntityDetection` → `SessionEditor` → parent pages → `FinalizeForm`
 
 ### Added — M4.5 Polish: Style Audit & Component Reorganization
 
