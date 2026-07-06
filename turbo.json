@@ -1,6 +1,5 @@
 {
   "$schema": "https://v2-9-4.turborepo.dev/schema.json",
-  "globalPassThroughEnv": ["ANTHROPIC_API_KEY", "VOYAGE_API_KEY"],
   "tasks": {
     "dev": {
       "cache": false,
@@ -11,6 +10,10 @@
       "outputs": ["dist/**"]
     },
     "test": {},
+    "test:e2e": {
+      "cache": false,
+      "passThroughEnv": ["ANTHROPIC_API_KEY", "VOYAGE_API_KEY"]
+    },
     "lint": {},
     "typecheck": {}
   }

@@ -29,8 +29,6 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://questlog:questlog@localhost:5433/questlog_test
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-      VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -72,6 +70,9 @@ jobs:
         run: pnpm --filter @questlog/server db:migrate
 
       # ── Full test suite ───────────────────────────────────────────────────
+      # Unit + integration only (real DB, mocked external APIs). The real-API
+      # e2e tier (*.e2e.test.ts) is deliberately excluded from this gate — see
+      # the e2e-nightly workflow and Docs/IMPLEMENTATION_NOTES.md.
       - name: Test
         run: pnpm turbo test
 
