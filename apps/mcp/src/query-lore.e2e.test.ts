@@ -90,6 +90,10 @@ describe.skipIf(!process.env.VOYAGE_API_KEY)(
 			const { source } = uploadResponse.json();
 
 			const finalStatus = await waitForStatus(source.id, "done");
+			if (finalStatus === "error") {
+				const failed = await sourceService.getById(db, source.id);
+				console.error("DIAGNOSTIC errorReason:", failed.metadata?.errorReason);
+			}
 			expect(finalStatus).toBe("done");
 
 			const mcpServer = createMcpServer({ db });
