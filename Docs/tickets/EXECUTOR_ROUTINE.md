@@ -14,7 +14,15 @@ CRITICAL BRANCH RULES — NEVER VIOLATE:
 - NEVER merge any branch — not into `develop`, not into `main`. You open a PR against `develop`; you never merge it.
 - Model: sonnet, always. Never opus/fable for execution.
 
-## Step 1: Pre-flight (cheapest possible check — do this before reading anything else)
+## Step 0: Land on `develop` — do not trust the branch you were started on
+The sandbox this routine runs in may be created from an arbitrary starting point (not necessarily `develop`) — never assume the working directory already reflects `develop`. Before anything else, unconditionally:
+```bash
+git fetch origin develop
+git checkout -B develop origin/develop
+```
+This is safe because the sandbox is a fresh, disposable workspace — there is nothing on the starting branch worth preserving. Only after this succeeds, proceed to Step 1.
+
+## Step 1: Pre-flight (cheapest possible check)
 List `Docs/tickets/in-progress/*.md`, then `Docs/tickets/queue/*.md`.
 - If `in-progress/` has a ticket: a prior run was interrupted before it reached `done/` or `blocked/`. Resume that ticket (skip Step 2's move — it's already in-progress) and proceed to Step 3 from wherever the branch's commit history shows it left off.
 - Else if `queue/` has one or more tickets: pick the lowest-numbered one and proceed to Step 2.
