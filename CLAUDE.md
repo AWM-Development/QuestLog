@@ -32,7 +32,7 @@ pnpm test           # Vitest, all packages (needs Postgres on :5433, migrated)
 
 ## Hard rules for autonomous runs
 
-- Never push to `main`. Never merge a PR yourself.
+- `main` is the deployed branch — never push to it, never target it. Ticket branches cut from `develop`, PR back into `develop`. Never merge a PR yourself.
 - Never modify files under `Docs/mockups/`.
 - Obey the ticket's iteration cap. On cap, follow the Blocked Protocol (`Docs/tickets/BLOCKED_TEMPLATE.md`) and stop.
 - A ticket referencing a mockup is not visually gated — the mockup is the answer. A 🧠 strategy gate has no answer available to you — skip it, log it in the report, continue to the next ticket.

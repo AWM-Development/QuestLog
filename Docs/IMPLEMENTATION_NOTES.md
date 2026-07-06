@@ -344,13 +344,17 @@ All three are idempotent (safe to re-run). `docker compose up -d` is a no-op if 
 
 ## Agentic pipeline — CI hardening & branch protection (Phase 2, 2026-07)
 
-`.github/workflows/ci.yml` gained a **Mockup Guard** job (hard fail if a PR diff touches `Docs/mockups/` — mockups are read-only to agents, generated manually by Alex in Claude Design). This mirrors the existing Migration Guard's pattern (checkout with `fetch-depth: 0`, diff against `origin/${{ github.base_ref }}`, hard `exit 1`).
+`.github/workflows/ci.yml` gained a **Mockup Guard** job (hard fail if a PR diff touches `Docs/mockups/` — mockups are read-only to agents, generated manually by Alex in Claude Design). This mirrors the existing Migration Guard's pattern (checkout with `fetch-depth: 0`, diff against `origin/${{ github.base_ref }}`, hard `exit 1`). CI's trigger (`ci.yml` top) covers `[master, main, develop]` — see the branch-model note below for why `develop` is in that list.
 
-**Branch protection on `main` — not code, must be configured in GitHub repo settings (Settings → Branches → Add rule) by Alex:**
+### Branch model (2026-07 — `develop` reinstated as the integration branch)
+
+`main` is the **deployed** branch — protected maximally, never a ticket's base or target, updated only when Alex merges `develop` into it as a deliberate release step. `develop` is the **integration** branch — every ticket branch is cut from `develop` and PR'd back into `develop`; this is what the nightly executor and `Docs/tickets/TICKET_SPEC.md` assume. `develop` and `main` were in sync as of this change (verified via `git rev-list origin/main...origin/develop` — the only divergent commit was PR #22's own merge commit), so there was no reconciliation needed to reinstate this.
+
+**Branch protection — not code, must be configured in GitHub repo settings (Settings → Branches → Add rule) by Alex, for BOTH `main` and `develop`:**
 - Require status checks to pass before merging: `pr`, `mockup-guard`, `migration-guard`, `actionlint` (the hard-fail jobs; `doc-sync` and `impl-notes-health` are warning-only by design and need not be required).
 - Require branches to be up to date before merging.
 - No force pushes.
-- No branch deletions (optional, but recommended for `main`).
-- PRs only — disallow direct pushes to `main` (the nightly executor never pushes to `main` per `CLAUDE.md`; this makes it structurally impossible, not just a convention).
+- No branch deletions (optional, but recommended for both).
+- PRs only — disallow direct pushes. On `develop` this makes every ticket's landing structurally reviewed; on `main` it means the `develop` → `main` release is itself a PR (or a manual fast-forward Alex performs when there's something to deploy) rather than an ad hoc push.
 
 This was not yet applied as of Phase 2 — it's a manual one-time setup step, tracked here so it isn't lost between sessions.

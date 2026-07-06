@@ -39,6 +39,7 @@ Definition of done includes: checkbox flipped in MILESTONES_V1_MCP.md,
 ## Field notes
 
 - **Context files** is the ticket's entire token budget for "what to read besides the ticket itself." If a file isn't listed, the executor shouldn't need it — if it turns out it does, that's a signal the ticket was scoped too tightly and worth noting in the report, not silently working around.
+- **Branch** is always cut from `develop`, never `main` — `main` is the deployed branch and is never a ticket's base or target. The ticket's PR merges back into `develop`; `develop` → `main` is a separate, manual release step Alex performs when there's something to deploy.
 - **Mockup** replaces a 🎨 gate. A ticket that names a mockup path is not visually gated — the mockup is the answer. A ticket with `Mockup: none` has no visual component at all (most M-MCP tickets, since the milestone has no UI).
 - **Model: sonnet** is fixed. Planning and ticket-writing happen on Fable/Opus; execution never does.
 - **Out of scope** exists because "while I'm here" is the most common way a 5-hour ticket becomes a 12-hour one. Name the adjacent temptations explicitly.
