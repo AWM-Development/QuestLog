@@ -34,6 +34,8 @@ Two isolation strategies, pick based on whether the code under test opens its ow
 
 The test DB (`questlog_test` on `:5433`) must be migrated before running tests — `global-setup.ts` only truncates, it does not run migrations. If a test fails with a missing-column error, run `db:migrate` against `questlog_test` first.
 
-## Mocking external HTTP (Voyage, Anthropic)
+## Mocking external HTTP (Voyage, Anthropic) — mocks are the default, live calls are the occasional exception
 
-Every function that calls an external API accepts an injectable override — `fetchFn` for Voyage (`voyage.client.ts`), a DI'd client for Anthropic (`createLlmService(client?)` in `llm.service.ts`). Tests always inject a mock; never patch `process.env` or hit the network in a test. Do not add a second HTTP client for either provider — everything Voyage-related goes through `voyage.client.ts`.
+Every function that calls an external API accepts an injectable override — `fetchFn` for Voyage (`voyage.client.ts`), a DI'd client for Anthropic (`createLlmService(client?)` in `llm.service.ts`). Tests always inject a mock; never patch `process.env` or hit the network in a `*.test.ts`/`*.integration.test.ts` file. Do not add a second HTTP client for either provider — everything Voyage-related goes through `voyage.client.ts`.
+
+Mocked tests are the default and the priority: fast, free, deterministic, and they're what actually gates PR merges. The one exception is the separate `*.e2e.test.ts` tier (real DB + real external API, `describe.skipIf(!process.env.VOYAGE_API_KEY)`-gated), which is deliberately excluded from the default test run and merge gate — it runs on its own schedule instead (`.github/workflows/e2e-nightly.yml`, `pnpm test:e2e`). See `.claude/skills/tdd-loop/SKILL.md` and `Docs/IMPLEMENTATION_NOTES.md` for why: a shared per-vendor rate limit made it unreliable as a per-PR gate, and it answers "does the vendor integration still work," not "is this PR correct" — reach for a mock unless you're specifically proving a new real-API path for the first time.

@@ -1,0 +1,69 @@
+name: E2E Nightly (real external APIs)
+
+# Real-API integration proof (*.e2e.test.ts): real DB + the real Voyage
+# embeddings API, run periodically rather than on every PR. This is
+# deliberately decoupled from the pr-gate workflow (ci.yml) — see
+# Docs/IMPLEMENTATION_NOTES.md for why (Voyage's free-tier 3 RPM cap makes it
+# unreliable as a per-PR merge gate, and it tests whether the model/account
+# integration still works, not whether a given PR's code is correct — the
+# mocked suite in ci.yml is the merge gate for that).
+#
+# `schedule` triggers only fire from the repo's default branch, but the
+# checkout step below explicitly pulls `develop` regardless — that's the
+# branch where real ticket work actually lands and is worth checking.
+
+on:
+  schedule:
+    - cron: "0 9 * * *" # ~daily, well after the midnight nightly ticket executor
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch or ref to test"
+        required: false
+        default: "develop"
+
+jobs:
+  e2e:
+    name: Real-API E2E Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: questlog
+          POSTGRES_PASSWORD: questlog
+          POSTGRES_DB: questlog_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://questlog:questlog@localhost:5433/questlog_test
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || 'develop' }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run database migrations
+        run: pnpm --filter @questlog/server db:migrate
+
+      - name: Real-API e2e tests
+        run: pnpm turbo test:e2e
