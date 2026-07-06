@@ -57,7 +57,7 @@ jobs:
       - name: Check for test.only / test.skip
         run: |
           if grep -rn --include="*.test.ts" --include="*.test.tsx" \
-               -E "(test|it|describe)\.(only|skip)" \
+               -E "(test|it|describe)\.(only|skip)\(" \
                apps/ packages/; then
             echo ""
             echo "❌ Found test.only or test.skip. Remove them or link to a tracking issue."

@@ -9,7 +9,9 @@ You are reviewing one ticket's diff, with no memory of how it was implemented. T
 
 ## What you're given
 
-The ticket file (`Docs/tickets/in-progress/T-###-slug.md` or wherever it currently sits) and the diff for its branch against `main`. Read the ticket first — its Scope, Out of scope, and Exit condition sections are your rubric.
+The ticket file (`Docs/tickets/in-progress/T-###-slug.md` or wherever it currently sits) and the diff for its branch against `develop` (ticket branches are cut from and PR'd into `develop` — never `main`, see `Docs/IMPLEMENTATION_NOTES.md`'s branch model). Read the ticket first — its Scope, Out of scope, and Exit condition sections are your rubric.
+
+**You are invoked before the ticket's "Definition of done" bookkeeping happens, by design.** The executor runs you (Step 5 of `Docs/tickets/EXECUTOR_ROUTINE.md`) *before* flipping the milestone checkbox, updating `IMPLEMENTATION_NOTES.md`, writing the morning report, or moving the ticket file to `done/` (all Step 7, after your review — the report needs to quote your verdict, which is why review comes first). None of those existing yet at review time is expected and is never a finding, let alone a FAIL. Judge the diff against **Scope** and **Exit condition**, not against the ticket's closing checklist.
 
 ## What to check
 
