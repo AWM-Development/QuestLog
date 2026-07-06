@@ -1,20 +1,25 @@
-name: E2E Nightly (real external APIs)
+name: E2E Release Check (real external APIs)
 
 # Real-API integration proof (*.e2e.test.ts): real DB + the real Voyage
-# embeddings API, run periodically rather than on every PR. This is
-# deliberately decoupled from the pr-gate workflow (ci.yml) — see
-# Docs/IMPLEMENTATION_NOTES.md for why (Voyage's free-tier 3 RPM cap makes it
-# unreliable as a per-PR merge gate, and it tests whether the model/account
-# integration still works, not whether a given PR's code is correct — the
-# mocked suite in ci.yml is the merge gate for that).
+# embeddings API. Deliberately decoupled from the pr-gate workflow (ci.yml)
+# — see Docs/IMPLEMENTATION_NOTES.md for why (Voyage's free-tier 3 RPM cap
+# makes it unreliable as a per-PR merge gate, and it answers "does the
+# vendor/account integration still work," not "is this PR's code correct,"
+# which the mocked suite in ci.yml already gates on).
 #
-# `schedule` triggers only fire from the repo's default branch, but the
-# checkout step below explicitly pulls `develop` regardless — that's the
-# branch where real ticket work actually lands and is worth checking.
+# Triggered by a push to `main` — i.e. exactly when `develop` gets promoted
+# to `main` as a deliberate release (per this repo's branch model: main is
+# deploy-only, releases are rare and manual). That's the meaningful moment
+# to confirm the real integration still works, not an arbitrary nightly
+# cadence disconnected from whether anything actually shipped.
+#
+# workflow_dispatch is also available for an on-demand check against
+# `develop` (or any ref) whenever you want confidence before deciding to
+# release, without waiting for an actual merge to main.
 
 on:
-  schedule:
-    - cron: "0 9 * * *" # ~daily, well after the midnight nightly ticket executor
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       ref:
@@ -50,7 +55,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.ref || 'develop' }}
+          ref: ${{ inputs.ref || github.ref }}
 
       - uses: pnpm/action-setup@v4
 
