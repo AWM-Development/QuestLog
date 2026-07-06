@@ -355,6 +355,8 @@ All three are idempotent (safe to re-run). `docker compose up -d` is a no-op if 
 - Require branches to be up to date before merging.
 - No force pushes.
 - No branch deletions (optional, but recommended for both).
-- PRs only — disallow direct pushes. On `develop` this makes every ticket's landing structurally reviewed; on `main` it means the `develop` → `main` release is itself a PR (or a manual fast-forward Alex performs when there's something to deploy) rather than an ad hoc push.
+- PRs only — disallow direct pushes. On `develop` this makes every ticket's landing structurally reviewed; on `main` it means there is no path for a push to land there outside a PR.
+
+**No automation in this pipeline ever opens or merges a `develop` → `main` PR, at any point.** The nightly executor's world stops entirely at "PR into `develop`" (per `TICKET_SPEC.md` and `CLAUDE.md`'s hard rules). Promoting `develop` to `main` is a distinct, wholly manual action — opened and merged by Alex, at a time of Alex's choosing (the intent is "once v1 is done, months out," not per-ticket) — not a step any ticket or routine performs. Branch protection above is the technical backstop; the actual gate is that nothing here is designed to even attempt that merge.
 
 This was not yet applied as of Phase 2 — it's a manual one-time setup step, tracked here so it isn't lost between sessions.
