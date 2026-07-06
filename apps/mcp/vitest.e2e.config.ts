@@ -1,11 +1,11 @@
 import { fileURLToPath } from "node:url";
-import { configDefaults, defineConfig } from "vitest/config";
+import { defineConfig } from "vitest/config";
 
 /**
- * Default test tier: unit + integration (real DB, mocked external APIs).
- * `*.e2e.test.ts` (real DB + real Voyage API) is excluded here — it has its
- * own config (vitest.e2e.config.ts) and its own script (`test:e2e`), run on
- * a schedule rather than every PR. See Docs/IMPLEMENTATION_NOTES.md.
+ * Real-external-API test tier — separate from the default `vitest.config.ts`.
+ * Runs only `*.e2e.test.ts` files (real DB + real Voyage API), invoked via
+ * `pnpm test:e2e`, not `pnpm test`. Not part of the default PR gate — see
+ * Docs/IMPLEMENTATION_NOTES.md for why.
  */
 export default defineConfig({
 	resolve: {
@@ -22,7 +22,7 @@ export default defineConfig({
 		globals: true,
 		sequence: { concurrent: false },
 		globalSetup: ["../server/src/db/global-setup.ts"],
-		exclude: [...configDefaults.exclude, "**/*.e2e.test.ts"],
+		include: ["**/*.e2e.test.ts"],
 		env: {
 			DATABASE_URL:
 				"postgresql://questlog:questlog@localhost:5433/questlog_test",
