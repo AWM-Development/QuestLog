@@ -1,0 +1,26 @@
+---
+paths:
+  - "apps/web/**"
+---
+
+<!-- Mirrored to .cursor/rules/frontend.mdc — edit here first, then copy the body (not frontmatter) over. Do not edit the .mdc directly. -->
+
+# Frontend conventions (`apps/web`)
+
+## CSS custom properties only — never Tailwind color utilities
+
+All layout and component styling uses CSS custom property tokens (`Docs/DESIGN_SYSTEM.md` is canonical), applied via inline `style` objects so token references stay auditable. This is the foundation for per-campaign theming (deferred v2 milestone) — a Tailwind color class bypasses it. Tailwind v4 is present for utility classes with no color semantics (spacing, flex, etc.) only; there is no `tailwind.config.js` in v4, don't create one.
+
+There is no single `--accent`. Each entity type has its own hue; `--accent` aliases `--ent-npc`. Four background depth planes only: `--bg-void` → `--bg-surface` → `--bg-elevated` → `--bg-focal` — don't invent a fifth.
+
+## Component-first — reach for `apps/web/src/components/` before a raw element
+
+Check `components/buttons|inputs|surfaces|feedback|overlays|layout|utilities/` before writing a raw `<button>`/`<input>`/`<div style={...}>`. Import from the subdirectory path directly (`../../components/buttons/Button.js`) — there is no root barrel. Style presets in `components/styles.ts` (`buttonAccent`, `chipBase`, etc.) are internal implementation details of those components; feature code does not import them directly. Full component/preset inventory: `Docs/DEVELOPMENT_GUIDE.md §5.5`.
+
+## Feature co-location
+
+Each feature under `src/features/<name>/` owns its `components/`, `pages/`, `hooks/`, and `api.ts` (tRPC hook wrappers). Don't scatter feature-specific code into shared directories.
+
+## v2-deferred surfaces stay as-is
+
+`features/agent-chat/` and `features/session-log/` (chat UI, TipTap editor, entity linking UI) are shipped but deferred to v2 per `Docs/MILESTONES_V1_MCP.md`. Keep their tests green if you touch shared code they depend on; do not add features to them.
