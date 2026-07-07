@@ -22,8 +22,10 @@ git checkout -B develop origin/develop
 ```
 This is safe because the sandbox is a fresh, disposable workspace — there is nothing on the starting branch worth preserving. Only after this succeeds, proceed to Step 1.
 
-## Step 1: Pre-flight (cheapest possible check)
-List `Docs/tickets/in-progress/*.md`, then `Docs/tickets/queue/*.md`.
+## Step 1: Pre-flight (cheapest possible check — do this before reading anything else)
+First, promote unblocked backlog tickets: list `Docs/tickets/backlog/*.md`. For each one, read its `Blocked on:` line and check whether every ticket id it names has a matching file under `Docs/tickets/done/` (glob `Docs/tickets/done/T-###-*.md` — a match means that ticket's PR has merged into `develop`, since a ticket file only lands in `done/` on `develop` once its own PR merges). If every named id is cleared, promote it: `git mv` the file into `Docs/tickets/queue/`, delete its `Blocked on:` line, commit (`chore: promote T-### from backlog — <blocking ticket(s)> merged`). If any named id isn't yet in `done/`, leave that ticket in `backlog/` untouched and move on to the next one — do not stop at the first still-blocked ticket. `backlog/` tickets are never picked up for execution directly, only ever promoted to `queue/` first.
+
+Then list `Docs/tickets/in-progress/*.md`, then `Docs/tickets/queue/*.md` (including anything just promoted above).
 - If `in-progress/` has a ticket: a prior run was interrupted before it reached `done/` or `blocked/`. Resume that ticket (skip Step 2's move — it's already in-progress) and proceed to Step 3 from wherever the branch's commit history shows it left off.
 - Else if `queue/` has one or more tickets: pick the lowest-numbered one and proceed to Step 2.
 - Else: output 'NO_TICKET_QUEUED. Exiting.' and stop. Do not read CLAUDE.md, rules, or any other file.
