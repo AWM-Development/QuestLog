@@ -53,3 +53,4 @@ secret, or should I fall back to voyage-3?">
 - This is not a failure to hide. A precise blocked report is more valuable than a fragile "fix" that papers over a real ambiguity or a real bug in a dependency.
 - The iteration cap applies to review remediation too — if the reviewer subagent returns FAIL and the one remediation pass doesn't resolve it, that's also a stop, filed the same way.
 - Do not weaken the ticket's exit condition to make it pass. If the exit condition itself seems wrong, that's the "exact question" — not something to silently reinterpret.
+- Resolving this is Alex's job, not the executor's. A future run will only ever *skip* this ticket if it encounters its branch again (`EXECUTOR_ROUTINE.md` Step 1, case 3) — it never re-attempts or unblocks it. See `TICKET_SPEC.md` §"Unblocking a blocked ticket" for how it gets back into `queue/`.

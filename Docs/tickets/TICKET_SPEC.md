@@ -69,7 +69,7 @@ Both land in `develop` only — never `main`. A `git branch -a` scan is enough t
 
 ## Lifecycle
 
-`Docs/tickets/backlog/` (optional) → `Docs/tickets/queue/` → (nightly executor picks up the oldest) → `Docs/tickets/in-progress/` → `Docs/tickets/done/` or `Docs/tickets/blocked/`. An empty `queue/` is the entire on/off switch for nightly spend — see `Docs/MILESTONES_V1_MCP.md`'s parent handoff for the pre-flight check that makes an empty night cost one cheap tool call.
+`Docs/tickets/backlog/` (optional) → `Docs/tickets/queue/` → (nightly executor picks up the oldest ticket that isn't already shipped or blocked — see below) → `Docs/tickets/in-progress/` → `Docs/tickets/done/` or `Docs/tickets/blocked/`. An empty `queue/` is the entire on/off switch for nightly spend — see `Docs/MILESTONES_V1_MCP.md`'s parent handoff for the pre-flight check that makes an empty night cost one cheap tool call.
 
 `backlog/` holds tickets that are fully drafted but not ready for the
 executor yet — most commonly because their Context files or Scope depend on
@@ -82,3 +82,33 @@ prerequisite(s) have all merged into `develop`; a still-blocked ticket is
 left untouched and re-checked on the next run. The executor never executes
 directly out of `backlog/` — promotion to `queue/` always happens first, so
 a ticket is never picked up before its dependency has actually landed.
+
+### Why `develop`'s ticket directories can lag reality
+
+`develop` is PR-only, same as `main` — nothing lands there outside a merge.
+The `queue/`→`in-progress/` move (`EXECUTOR_ROUTINE.md` Step 2) is committed
+on a local checkout that's never pushed directly; an `in-progress/`→`blocked/`
+move (Step 6) is committed on the feature branch, which gets pushed but never
+opens a PR. So a ticket's file on `develop` only ever actually moves at two
+moments: when its PR merges (straight from `queue/` to `done/` in one shot —
+`in-progress/` on `develop` is essentially never populated in practice), or
+never, if it was blocked. **A ticket sitting in `queue/` on `develop` can
+therefore already be shipped-and-under-review, previously blocked, or
+genuinely untouched — the directory alone doesn't tell you which.** The
+executor's pre-flight resolves this per-candidate-ticket by checking the
+named branch and PR state before deciding to pick up, resume, or skip it
+(`EXECUTOR_ROUTINE.md` Step 1).
+
+### Unblocking a blocked ticket
+
+Blocked tickets are never re-queued automatically — this is a deliberate
+manual step, not something the nightly executor does (it only ever *skips*
+a blocked ticket it encounters; see `EXECUTOR_ROUTINE.md` Step 1). Once Alex
+has an answer to the blocked report's "Exact question for Alex"
+(`BLOCKED_TEMPLATE.md`), resolve it in an interactive session: read the
+report and diff on the pushed-but-never-merged branch named in the ticket,
+append the resolution to the ticket file, and commit a fresh copy of it to
+`Docs/tickets/queue/` on `develop` (a normal, small, human-reviewed PR — this
+is exactly the kind of change that's fine to land that way). The abandoned
+branch can be deleted; the executor creates a new one from `develop` the next
+time it picks the ticket up.
