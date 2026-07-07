@@ -21,7 +21,7 @@ Context files (load ONLY these):
   - apps/server/src/db/schema/tables.ts
   - apps/server/src/db/schema/index.ts
   - packages/shared/src/validators/session.ts
-  - apps/mcp/ — the `query_lore` tool file and registration/entry point, plus `get_entity`/`list_entities` from T-001, as the established tool-file pattern to mirror
+  - apps/mcp/ — the `query_lore` tool file and registration/entry point, plus `get_entity`/`list_entities` from T-006, as the established tool-file pattern to mirror
 
 Mockup: none
 
@@ -40,7 +40,7 @@ Scope:
      re-logged with the ambiguity resolved — no interactive resolution UI
      exists in v1, so ambiguous spans are simply reported, not silently
      guessed.
-  3. Two MCP tools in `apps/mcp`, mirroring the T-001 tool shape:
+  3. Two MCP tools in `apps/mcp`, mirroring the T-006 tool shape:
      - `log_session(campaignId, content, title?, summary?, tags?, sessionNumber?, date?)`
        — runs `entityService.detectSpans`, builds a preview payload
        (`{ session: {title, content, summary, tags, sessionNumber, date},

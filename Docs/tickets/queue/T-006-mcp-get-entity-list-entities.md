@@ -1,4 +1,4 @@
-# T-001 — `get_entity` / `list_entities` MCP tools (read)
+# T-006 — `get_entity` / `list_entities` MCP tools (read)
 
 Milestone ref: M-MCP.2 (`Docs/MILESTONES_V1_MCP.md`)
 
