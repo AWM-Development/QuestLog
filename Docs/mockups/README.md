@@ -1,6 +1,7 @@
 # Mockup Station
 
 **Location:** `Docs/mockups/`
+**Last Updated:** 2026-07-05
 **Purpose:** Visual specs for tickets whose scope includes UI, generated manually during interactive planning sessions.
 
 ## How mockups get here

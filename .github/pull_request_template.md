@@ -43,8 +43,8 @@
 
 - [ ] `Docs/PRD.md` updated if behaviour changed or spec was wrong
 - [ ] `Docs/IMPLEMENTATION_NOTES.md` updated if a non-obvious decision was made
-- [ ] `Docs/MILESTONES.md` task checked off
-- [ ] `CHANGELOG.md` entry added
+- [ ] `Docs/MILESTONES_V1_MCP.md` task checked off
+- [ ] `CHANGELOG.md` entry added under `[Unreleased]`
 
 ## Migration Guard
 
@@ -57,4 +57,4 @@
 
 ---
 
-<!-- Code review: run the §10 protocol from Docs/DEVELOPMENT_GUIDE.md before marking ready. -->
+<!-- Code review: for ticket-pipeline PRs this is the `reviewer` subagent's verdict (see Docs/tickets/EXECUTOR_ROUTINE.md Step 5); for interactive work, run the /code-review skill before marking ready. -->

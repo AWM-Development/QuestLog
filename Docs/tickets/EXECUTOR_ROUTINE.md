@@ -1,6 +1,7 @@
 # Executor Routine
 
 **Location:** `Docs/tickets/EXECUTOR_ROUTINE.md`
+**Last Updated:** 2026-07-07
 **Purpose:** The exact prompt configured in the nightly scheduled agent. Kept here, version-controlled, so changes to the nightly loop are diffable and reviewable like everything else in the pipeline — the scheduler config is a copy of this file, not a separate source of truth. If you edit the routine, edit here first, then update the scheduler config to match.
 **Assumes:** `Docs/tickets/TICKET_SPEC.md` (ticket format), `Docs/tickets/BLOCKED_TEMPLATE.md` / `REPORT_TEMPLATE.md` (protocols), `.claude/agents/reviewer.md` (review step), `.claude/skills/tdd-loop/SKILL.md` (implementation loop), and the branch model documented in `Docs/IMPLEMENTATION_NOTES.md` (`main` deployed, `develop` integration).
 
@@ -65,6 +66,7 @@ Invoke the `reviewer` subagent against the ticket file and the diff (`git diff d
 ## Step 7: Wrap up (shipped path only)
 - Flip the checkbox for this task in `Docs/MILESTONES_V1_MCP.md`.
 - Update `Docs/IMPLEMENTATION_NOTES.md` if any non-obvious decision was made.
+- Add an entry to `CHANGELOG.md` under `[Unreleased]` (use the existing section headings — Added/Changed/Fixed — grouped by this ticket's id, e.g. `### Added — T-###`) describing what shipped, in user/developer-facing terms, not an internal diff summary.
 - Write `Docs/tickets/reports/T-###-slug.md` per `Docs/tickets/REPORT_TEMPLATE.md` — outcome, diff stats, pasted test evidence (not a summary), exit-condition-by-exit-condition check, the reviewer's verbatim verdict, anything Alex must decide.
 - `git mv` the ticket from `in-progress/` to `Docs/tickets/done/T-###-slug.md`.
 - Commit all of the above.

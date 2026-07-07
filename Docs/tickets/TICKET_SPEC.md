@@ -1,6 +1,7 @@
 # Ticket Spec
 
 **Location:** `Docs/tickets/TICKET_SPEC.md`
+**Last Updated:** 2026-07-07
 **Purpose:** The exact, complete format for every ticket file. `.claude/skills/ticket-writer/SKILL.md` produces tickets in this shape; the nightly executor and the reviewer subagent both assume it.
 
 Every ticket lives at `Docs/tickets/T-###-slug.md` (`###` sequential, zero-padded, never reused across `queue/`, `in-progress/`, `done/`, `blocked/`) and contains exactly these fields, in this order:
@@ -35,7 +36,7 @@ Iteration cap: 3 distinct approaches on any single failure, then Blocked Protoco
 
 Definition of done includes: checkbox flipped in MILESTONES_V1_MCP.md,
   IMPLEMENTATION_NOTES.md updated if any non-obvious decision was made,
-  morning report written.
+  a CHANGELOG.md entry under [Unreleased], morning report written.
 ```
 
 ## Field notes

@@ -1,5 +1,8 @@
 # Blocked Protocol
 
+**Location:** `Docs/tickets/BLOCKED_TEMPLATE.md`
+**Last Updated:** 2026-07-05
+
 > A blocked ticket that cost one clean explanation is a success; a "solved" ticket that burned the weekly budget is a failure.
 
 Copy this into `Docs/tickets/blocked/T-###-slug.md` (moved from `in-progress/`) when a ticket hits its iteration cap — 3 distinct approaches attempted on the same blocking failure — without reaching its exit condition. Do not attempt a 4th approach. Stop, fill this out, and end the session.

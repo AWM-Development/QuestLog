@@ -4,7 +4,7 @@ All notable changes to QuestLog are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This project has not yet reached v1.0; all work is grouped under `[Unreleased]` until the first production release.
 
-**Obligation:** Every merge to `main` must add an entry here. Document this in `CLAUDE.md` and `Docs/DEVELOPMENT_GUIDE.md §7`.
+**Obligation:** Every ticket PR merged into `develop` must add an entry here — this is part of the nightly executor's definition of done (`Docs/tickets/TICKET_SPEC.md`, `Docs/tickets/EXECUTOR_ROUTINE.md` Step 7). `[Unreleased]` accumulates entries across `develop` until Alex promotes `develop` → `main` for a release, at which point it's cut into a dated version section.
 
 ---
 
