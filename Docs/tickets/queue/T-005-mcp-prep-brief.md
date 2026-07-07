@@ -2,7 +2,7 @@
 
 Milestone ref: M-MCP.4 (`Docs/MILESTONES_V1_MCP.md`)
 
-Branch: feat/m-mcp/prep-brief
+Branch: feat/m-mcp/t-005-prep-brief
 
 Depends on: T-003/T-004 are not a hard blocker (fixtures can seed `sessions`
 rows directly without going through `log_session`), but the brief is far more

@@ -15,9 +15,11 @@ Turns one milestone task from `Docs/MILESTONES_V1_MCP.md` into one or more ticke
 
 ## Procedure
 
+0. Make sure the session is on a ticket-creation branch, not whatever it started on: `tickets/<milestone-slug>` (e.g. `tickets/m-mcp.1`, or `tickets/m-mcp.2-4` for a session extracting several milestones), cut from `develop`. This is docs-only work, so it's PR'd into `develop` like everything else — the distinct `tickets/` prefix (vs. `feat/`) is what lets a PR list show planning PRs apart from implementation PRs at a glance. See `TICKET_SPEC.md`'s "Branch naming" section.
 1. Read the milestone task in full. Read the codebase (relevant routers/services/schema) to understand what already exists — the ticket names exact files, so you need to know which ones are real.
 2. Decide whether the task is one ticket or several. **Sizing rule: one ticket = one verifiable unit for a single ~5-hour session with headroom for review and testing.** Rule of thumb: if the description needs more than ~10 acceptance checks to be verifiable, split it. Prefer splitting along natural seams (e.g. "write path" vs "embed+consolidate" vs "preview/confirm plumbing" for `log_session`), not arbitrary halves.
 3. For each ticket, fill out every field in `Docs/tickets/TICKET_SPEC.md` exactly:
+   - **Branch** — `feat/<milestone-group>/t-###-<slug>` (ticket id prepended to the slug — see `TICKET_SPEC.md`'s "Branch naming" section). Not the same as this session's own `tickets/*` branch.
    - **Context files** — an explicit list (file paths, PRD `§` references), never "read the whole PRD" or "read the whole service."
    - **Mockup** — the exact `Docs/mockups/<view>/` path, or `none`.
    - **Model** — always `sonnet`. Never opus or fable for execution.

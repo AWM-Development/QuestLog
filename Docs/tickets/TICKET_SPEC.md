@@ -12,7 +12,7 @@ Milestone ref: <Docs/MILESTONES_V1_MCP.md section, e.g. "M-MCP.1">
 
 Blocked on: <ticket id(s)> — must be merged into develop first  # backlog/ only, omit otherwise
 
-Branch: feat/<milestone>/<slug>
+Branch: feat/<milestone-group>/t-###-<slug>
 
 Context files (load ONLY these):
   - <explicit file path or PRD §ref — never "the whole PRD" or "the whole service">
@@ -49,13 +49,22 @@ Definition of done includes: checkbox flipped in MILESTONES_V1_MCP.md,
   never need to promote one by hand unless you want it to jump the queue
   before the executor's next run.
 - **Context files** is the ticket's entire token budget for "what to read besides the ticket itself." If a file isn't listed, the executor shouldn't need it — if it turns out it does, that's a signal the ticket was scoped too tightly and worth noting in the report, not silently working around.
-- **Branch** is always cut from `develop`, never `main` — `main` is the deployed branch and is never a ticket's base or target. The ticket's PR merges back into `develop`; `develop` → `main` is a separate, manual release step Alex performs when there's something to deploy.
+- **Branch** is always cut from `develop`, never `main` — `main` is the deployed branch and is never a ticket's base or target. The ticket's PR merges back into `develop`; `develop` → `main` is a separate, manual release step Alex performs when there's something to deploy. Format: `feat/<milestone-group>/t-###-<slug>` — `<milestone-group>` is the milestone family lowercased (e.g. `m-mcp` for any `M-MCP.*` ticket, dropping the numeric suffix — multiple milestones share one group), and the ticket id is prepended to the slug (e.g. `feat/m-mcp/t-002-write-preview-confirm-audit-plumbing`) so a branch or PR can be traced back to its ticket without opening it. See "Branch naming" below for how this fits with ticket-creation branches.
 - **Mockup** replaces a 🎨 gate. A ticket that names a mockup path is not visually gated — the mockup is the answer. A ticket with `Mockup: none` has no visual component at all (most M-MCP tickets, since the milestone has no UI).
 - **Model: sonnet** is fixed. Planning and ticket-writing happen on Fable/Opus; execution never does.
 - **Out of scope** exists because "while I'm here" is the most common way a 5-hour ticket becomes a 12-hour one. Name the adjacent temptations explicitly.
 - **Exit condition** must be checkable without human judgment — a script, a test assertion, a specific query against a specific fixture. "Looks right" is not an exit condition.
 - **Iteration cap** is per-ticket, not per-checkpoint. Three failed distinct approaches on any single blocking failure triggers `Docs/tickets/BLOCKED_TEMPLATE.md`, not three attempts per test.
 - **Definition of done** is fixed across every ticket — it's the closing checklist, not something the ticket-writer customizes.
+
+## Branch naming
+
+Two distinct branch kinds exist in this pipeline, and they're named differently so a PR's kind is obvious from its branch alone:
+
+- **Ticket-creation branches** — the interactive session where `.claude/skills/ticket-writer/SKILL.md` runs and drafts one or more ticket files. Docs-only, no implementation code. Name: `tickets/<milestone-slug>`, where `<milestone-slug>` is the milestone(s) being extracted, lowercased (e.g. `tickets/m-mcp.1`, or `tickets/m-mcp.2-4` for a session spanning several). Cut from `develop`, PR'd into `develop`.
+- **Implementation branches** — one per ticket, created by the nightly executor (`EXECUTOR_ROUTINE.md` Step 2) from the ticket's own `Branch:` field. Name: `feat/<milestone-group>/t-###-<slug>` (see the Branch field note above). Cut from `develop`, PR'd into `develop`.
+
+Both land in `develop` only — never `main`. A `git branch -a` scan is enough to tell ticket-planning PRs (`tickets/*`) apart from ticket-implementation PRs (`feat/*/t-###-*`) without reading any of them.
 
 ## Lifecycle
 

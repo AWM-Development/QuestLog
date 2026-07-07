@@ -6,7 +6,7 @@ Blocked on: T-002 — must be merged into `develop` before this ticket is
 promoted to `queue/`. `write-request.service.ts` (T-002) doesn't exist on
 `develop` until then, and this ticket's Context files and Scope both assume it.
 
-Branch: feat/m-mcp/log-session-write-path
+Branch: feat/m-mcp/t-003-log-session-write-path
 
 Context files (load ONLY these):
   - Docs/MILESTONES_V1_MCP.md — M-MCP.3 section

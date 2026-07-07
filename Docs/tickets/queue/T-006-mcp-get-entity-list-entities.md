@@ -2,7 +2,7 @@
 
 Milestone ref: M-MCP.2 (`Docs/MILESTONES_V1_MCP.md`)
 
-Branch: feat/m-mcp/get-entity-list-entities
+Branch: feat/m-mcp/t-006-get-entity-list-entities
 
 Context files (load ONLY these):
   - Docs/MILESTONES_V1_MCP.md — M-MCP.2 section and "Ordering constraint"

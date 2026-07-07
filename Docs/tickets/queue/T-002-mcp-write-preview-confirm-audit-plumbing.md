@@ -2,7 +2,7 @@
 
 Milestone ref: M-MCP.3 (`Docs/MILESTONES_V1_MCP.md`) — infrastructure seam ("preview-confirm plumbing") ahead of `log_session`'s write path (T-003) and embed+consolidate (T-004)
 
-Branch: feat/m-mcp/write-request-plumbing
+Branch: feat/m-mcp/t-002-write-preview-confirm-audit-plumbing
 
 Context files (load ONLY these):
   - Docs/MILESTONES_V1_MCP.md — M-MCP.3 section

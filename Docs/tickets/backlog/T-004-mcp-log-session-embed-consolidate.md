@@ -7,7 +7,7 @@ ticket is promoted to `queue/`. This ticket extends the
 `log_session`/`confirm_log_session` preview payload and `applyFn` built in
 T-003, which itself depends on T-002.
 
-Branch: feat/m-mcp/log-session-embed-consolidate
+Branch: feat/m-mcp/t-004-log-session-embed-consolidate
 
 Context files (load ONLY these):
   - Docs/MILESTONES_V1_MCP.md — M-MCP.3 section
