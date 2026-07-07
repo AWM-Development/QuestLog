@@ -2,9 +2,9 @@ name: CI
 
 on:
   pull_request:
-    branches: [master, main, develop]
+    branches: [main, develop]
   push:
-    branches: [master, main, develop]
+    branches: [main, develop]
 
 jobs:
   # ── PR Quality Gate ────────────────────────────────────────────────────────

@@ -1,5 +1,8 @@
 # Morning Report
 
+**Location:** `Docs/tickets/REPORT_TEMPLATE.md`
+**Last Updated:** 2026-07-07
+
 Written to `Docs/tickets/reports/T-###-slug.md` on completion (shipped or blocked) and posted as the PR description (shipped tickets only — blocked tickets have no PR). Alex reads this in the 20–45 minute morning review window; it should be scannable in under 2 minutes with detail available if something looks off.
 
 ```markdown
@@ -41,4 +44,4 @@ follow-up ticket this work implies. "None" is a valid, common answer.>
 
 - If blocked, use `Docs/tickets/BLOCKED_TEMPLATE.md` instead — that's the full report for a blocked ticket, there's no separate morning report on top of it.
 - "Test evidence" means pasted output. A report that says "tests pass" without showing the run is not acceptable — this is the same discipline as `CLAUDE.md`'s "never claim done without showing output."
-- Definition of done (per `TICKET_SPEC.md`) includes updating `MILESTONES_V1_MCP.md`'s checkbox and `IMPLEMENTATION_NOTES.md` if applicable — confirm both happened before writing "shipped."
+- Definition of done (per `TICKET_SPEC.md`) includes updating `MILESTONES_V1_MCP.md`'s checkbox, `IMPLEMENTATION_NOTES.md` if applicable, and a `CHANGELOG.md` entry under `[Unreleased]` — confirm all three happened before writing "shipped."

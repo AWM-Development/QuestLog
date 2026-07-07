@@ -10,7 +10,7 @@
 **Related Docs:**
 - `Docs/README.md` — Overview of all project documentation
 - `Docs/DEVELOPMENT_GUIDE.md` — Coding conventions and patterns
-- `Docs/MILESTONES.md` — Task breakdown with branch names
+- `Docs/MILESTONES_V1_MCP.md` — Canonical v1 task breakdown (see `Docs/MILESTONES_PT1.md`/`PT2.md` for full v2 task detail)
 - `Docs/DESIGN_SYSTEM.md` — Visual design specification (colors, components, entity system)
 
 ---

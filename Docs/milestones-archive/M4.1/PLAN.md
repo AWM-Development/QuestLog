@@ -154,7 +154,7 @@ Do NOT re-implement these — they exist and their tests pass:
 - `apps/web/src/layouts/AppShell.tsx` — wire dock here (CP-4)
 - `apps/web/src/router.tsx` — add route here (CP-2)
 - `apps/web/src/features/session-log/hooks/useSessionAutoSave.ts` — add `flushSave` here in CP-3 (currently returns `{ saveState, scheduleSave, lastSavedRef }` only)
-- `Docs/milestones/M4.1/DESIGN_SPEC.md` — visual spec and layout decisions
+- `Docs/milestones-archive/M4.1/DESIGN_SPEC.md` — visual spec and layout decisions
 - `Docs/IMPLEMENTATION_NOTES.md §Session notes (Milestone 4.1)` — authoritative decisions on save-and-remount, context semantics, route structure
 
 ---
@@ -171,7 +171,7 @@ Do NOT re-implement these — they exist and their tests pass:
 
 ## Human Gates
 
-- [x] 🎨 Visual spec required — resolved in `Docs/milestones/M4.1/DESIGN_SPEC.md` and `Docs/IMPLEMENTATION_NOTES.md §Session notes (Milestone 4.1)`
+- [x] 🎨 Visual spec required — resolved in `Docs/milestones-archive/M4.1/DESIGN_SPEC.md` and `Docs/IMPLEMENTATION_NOTES.md §Session notes (Milestone 4.1)`
 
 ---
 

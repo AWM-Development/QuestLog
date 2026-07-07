@@ -1,6 +1,7 @@
 # Executor Routine
 
 **Location:** `Docs/tickets/EXECUTOR_ROUTINE.md`
+**Last Updated:** 2026-07-07
 **Purpose:** The exact prompt configured in the nightly scheduled agent. Kept here, version-controlled, so changes to the nightly loop are diffable and reviewable like everything else in the pipeline — the scheduler config is a copy of this file, not a separate source of truth. If you edit the routine, edit here first, then update the scheduler config to match.
 **Assumes:** `Docs/tickets/TICKET_SPEC.md` (ticket format), `Docs/tickets/BLOCKED_TEMPLATE.md` / `REPORT_TEMPLATE.md` (protocols), `.claude/agents/reviewer.md` (review step), `.claude/skills/tdd-loop/SKILL.md` (implementation loop), and the branch model documented in `Docs/IMPLEMENTATION_NOTES.md` (`main` deployed, `develop` integration).
 
@@ -25,15 +26,20 @@ This is safe because the sandbox is a fresh, disposable workspace — there is n
 ## Step 1: Pre-flight (cheapest possible check — do this before reading anything else)
 First, promote unblocked backlog tickets: list `Docs/tickets/backlog/*.md`. For each one, read its `Blocked on:` line and check whether every ticket id it names has a matching file under `Docs/tickets/done/` (glob `Docs/tickets/done/T-###-*.md` — a match means that ticket's PR has merged into `develop`, since a ticket file only lands in `done/` on `develop` once its own PR merges). If every named id is cleared, promote it: `git mv` the file into `Docs/tickets/queue/`, delete its `Blocked on:` line, commit (`chore: promote T-### from backlog — <blocking ticket(s)> merged`). If any named id isn't yet in `done/`, leave that ticket in `backlog/` untouched and move on to the next one — do not stop at the first still-blocked ticket. `backlog/` tickets are never picked up for execution directly, only ever promoted to `queue/` first.
 
-Then list `Docs/tickets/in-progress/*.md`, then `Docs/tickets/queue/*.md` (including anything just promoted above).
-- If `in-progress/` has a ticket: a prior run was interrupted before it reached `done/` or `blocked/`. Resume that ticket (skip Step 2's move — it's already in-progress) and proceed to Step 3 from wherever the branch's commit history shows it left off.
-- Else if `queue/` has one or more tickets: pick the lowest-numbered one and proceed to Step 2.
-- Else: output 'NO_TICKET_QUEUED. Exiting.' and stop. Do not read CLAUDE.md, rules, or any other file.
+Then build the candidate list: `Docs/tickets/in-progress/*.md`, then `Docs/tickets/queue/*.md` in numeric order (including anything just promoted above). If both are empty: output `NO_TICKET_QUEUED. Exiting.` and stop. Do not read CLAUDE.md, rules, or any other file.
+
+`develop`'s copy of these directories can lag reality (`Docs/tickets/TICKET_SPEC.md` §"Why develop's ticket directories can lag reality") — a ticket sitting in `queue/` may already be shipped-and-under-review or previously blocked, not untouched. Resolve this before picking anything: walk the candidate list in order, and for each ticket, check whether a branch by its `Branch:` field already exists on `origin`:
+1. **No branch exists** — this ticket has never been touched. Pick it and proceed to Step 2. Stop the loop here.
+2. **Branch exists, open PR against `develop` found for it** — already shipped, awaiting Alex's review. Do not check it out, do not touch it, do not push to it. Note it (`T-### skipped — PR open`) and continue to the next candidate.
+3. **Branch exists, no open PR, but `Docs/tickets/blocked/T-###-slug.md` exists on that branch** (e.g. `git show <branch>:Docs/tickets/blocked/T-###-slug.md`) — already hit its iteration cap and is waiting on Alex to unblock it (`TICKET_SPEC.md` §"Unblocking a blocked ticket" — you never do this yourself). Note it (`T-### skipped — blocked`) and continue to the next candidate.
+4. **Branch exists, no open PR, not blocked** — a prior run was interrupted before this ticket reached `done/` or `blocked/`. Resume it: skip Step 2's move (it's already in-progress on that branch), check out the branch and pull latest, and proceed to Step 3 from wherever the branch's commit history shows it left off. Stop the loop here.
+
+If the loop exhausts every candidate without a pick (case 1) or a resume (case 4): output `NO_ACTIONABLE_TICKET — every queued ticket is already shipped (PR open) or blocked; nothing independent to pick up. Exiting.` and stop. Do not start work on a skipped ticket's branch under any circumstance, even if it's the only thing in `queue/`.
 
 ## Step 2: Pick up the ticket (new tickets only — skip if resuming per Step 1)
 - `git mv` the ticket from `Docs/tickets/queue/T-###-slug.md` to `Docs/tickets/in-progress/T-###-slug.md`, commit ('chore: pick up T-### — move to in-progress').
 - Read the ticket in full. Note its Branch field, Context files list, Mockup field, Scope, Out of scope, Exit condition, and Iteration cap.
-- Create the feature branch from `develop` (the exact name in the ticket's Branch field). If it already exists remotely (a resumed ticket), check it out and pull latest instead of creating it.
+- Create the feature branch from `develop` (the exact name in the ticket's Branch field). Step 1 has already confirmed no branch by this name exists yet.
 
 ## Step 3: Load context — ONLY what the ticket names
 - Read `CLAUDE.md` (always — it's the top-level pointer, ~40 lines).
@@ -65,6 +71,7 @@ Invoke the `reviewer` subagent against the ticket file and the diff (`git diff d
 ## Step 7: Wrap up (shipped path only)
 - Flip the checkbox for this task in `Docs/MILESTONES_V1_MCP.md`.
 - Update `Docs/IMPLEMENTATION_NOTES.md` if any non-obvious decision was made.
+- Add an entry to `CHANGELOG.md` under `[Unreleased]` (use the existing section headings — Added/Changed/Fixed — grouped by this ticket's id, e.g. `### Added — T-###`) describing what shipped, in user/developer-facing terms, not an internal diff summary.
 - Write `Docs/tickets/reports/T-###-slug.md` per `Docs/tickets/REPORT_TEMPLATE.md` — outcome, diff stats, pasted test evidence (not a summary), exit-condition-by-exit-condition check, the reviewer's verbatim verdict, anything Alex must decide.
 - `git mv` the ticket from `in-progress/` to `Docs/tickets/done/T-###-slug.md`.
 - Commit all of the above.
