@@ -1,6 +1,6 @@
 {
-  "id": "6",
-  "prevId": "5",
+  "id": "b5b9efa7-82df-44cf-a7af-e92bcc89ac6e",
+  "prevId": "6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -596,6 +596,13 @@
           "notNull": false,
           "default": "'[]'::jsonb"
         },
+        "dismissed_entity_texts": {
+          "name": "dismissed_entity_texts",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false,
+          "default": "'[]'::jsonb"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -609,13 +616,6 @@
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
-        },
-        "dismissed_entity_texts": {
-          "name": "dismissed_entity_texts",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false,
-          "default": "'[]'::jsonb"
         }
       },
       "indexes": {},
@@ -727,6 +727,83 @@
         "sources_campaign_id_campaigns_id_fk": {
           "name": "sources_campaign_id_campaigns_id_fk",
           "tableFrom": "sources",
+          "tableTo": "campaigns",
+          "columnsFrom": [
+            "campaign_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.write_requests": {
+      "name": "write_requests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "campaign_id": {
+          "name": "campaign_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tool_name": {
+          "name": "tool_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "applied_result": {
+          "name": "applied_result",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "confirmed_at": {
+          "name": "confirmed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "write_requests_campaign_id_campaigns_id_fk": {
+          "name": "write_requests_campaign_id_campaigns_id_fk",
+          "tableFrom": "write_requests",
           "tableTo": "campaigns",
           "columnsFrom": [
             "campaign_id"
