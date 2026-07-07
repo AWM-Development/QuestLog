@@ -42,10 +42,12 @@ Definition of done includes: checkbox flipped in MILESTONES_V1_MCP.md,
 
 - **Blocked on** only appears on tickets living in `backlog/` (see Lifecycle
   below). It names the ticket id(s) whose PR must be merged into `develop`
-  before this one is promoted to `queue/`. The nightly executor never reads
-  `backlog/`, so it never sees or enforces this field — it's a note for
-  whoever promotes the ticket. Drop the line entirely when moving the file
-  to `queue/`.
+  before this one is promoted to `queue/`. The nightly executor's pre-flight
+  (`EXECUTOR_ROUTINE.md` Step 1) checks this field on every run and
+  auto-promotes the ticket the first time every named id has a file under
+  `Docs/tickets/done/` — dropping the line as part of that promotion. You
+  never need to promote one by hand unless you want it to jump the queue
+  before the executor's next run.
 - **Context files** is the ticket's entire token budget for "what to read besides the ticket itself." If a file isn't listed, the executor shouldn't need it — if it turns out it does, that's a signal the ticket was scoped too tightly and worth noting in the report, not silently working around.
 - **Branch** is always cut from `develop`, never `main` — `main` is the deployed branch and is never a ticket's base or target. The ticket's PR merges back into `develop`; `develop` → `main` is a separate, manual release step Alex performs when there's something to deploy.
 - **Mockup** replaces a 🎨 gate. A ticket that names a mockup path is not visually gated — the mockup is the answer. A ticket with `Mockup: none` has no visual component at all (most M-MCP tickets, since the milestone has no UI).
@@ -63,8 +65,10 @@ Definition of done includes: checkbox flipped in MILESTONES_V1_MCP.md,
 executor yet — most commonly because their Context files or Scope depend on
 code from a predecessor ticket whose PR hasn't been merged into `develop`
 yet (the queue is numeric-order-only; it has no way to express "wait for
-X"). The executor's pre-flight (`EXECUTOR_ROUTINE.md` Step 1) only ever
-reads `in-progress/` and `queue/` — it does not look at `backlog/`, so a
-ticket sitting there is never picked up by accident. Promoting a ticket out
-of `backlog/` (`git mv` into `queue/`, dropping its `Blocked on:` line) is a
-manual step for Alex once the dependency clears.
+X"). The executor's pre-flight (`EXECUTOR_ROUTINE.md` Step 1) checks
+`backlog/` at the start of every run and auto-promotes (`git mv` into
+`queue/`, dropping the `Blocked on:` line) any ticket whose named
+prerequisite(s) have all merged into `develop`; a still-blocked ticket is
+left untouched and re-checked on the next run. The executor never executes
+directly out of `backlog/` — promotion to `queue/` always happens first, so
+a ticket is never picked up before its dependency has actually landed.
