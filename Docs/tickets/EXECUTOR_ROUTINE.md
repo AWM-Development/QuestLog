@@ -15,7 +15,7 @@ CRITICAL BRANCH RULES — NEVER VIOLATE:
 - Model: sonnet, always. Never opus/fable for execution.
 
 ## Step 1: Pre-flight (cheapest possible check — do this before reading anything else)
-List `Docs/tickets/in-progress/*.md`, then `Docs/tickets/queue/*.md`.
+List `Docs/tickets/in-progress/*.md`, then `Docs/tickets/queue/*.md`. Never read `Docs/tickets/backlog/` — it holds tickets not yet ready (typically waiting on a predecessor ticket's PR to merge into `develop`) and is entirely outside this routine's scope; promoting a ticket out of it is a manual step Alex performs.
 - If `in-progress/` has a ticket: a prior run was interrupted before it reached `done/` or `blocked/`. Resume that ticket (skip Step 2's move — it's already in-progress) and proceed to Step 3 from wherever the branch's commit history shows it left off.
 - Else if `queue/` has one or more tickets: pick the lowest-numbered one and proceed to Step 2.
 - Else: output 'NO_TICKET_QUEUED. Exiting.' and stop. Do not read CLAUDE.md, rules, or any other file.

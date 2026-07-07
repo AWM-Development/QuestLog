@@ -5,7 +5,7 @@ description: Extract a milestone (or a slice of one) from Docs/MILESTONES_V1_MCP
 
 # Ticket Writer
 
-Turns one milestone task from `Docs/MILESTONES_V1_MCP.md` into one or more ticket files in `Docs/tickets/queue/`, following `Docs/tickets/TICKET_SPEC.md` exactly. This is an interactive-session skill — it runs with Alex present, right after a planning conversation has resolved any 🎨/🧠 gates for the milestone in question.
+Turns one milestone task from `Docs/MILESTONES_V1_MCP.md` into one or more ticket files in `Docs/tickets/queue/` (or `Docs/tickets/backlog/` for tickets that depend on an unmerged predecessor — see step 6), following `Docs/tickets/TICKET_SPEC.md` exactly. This is an interactive-session skill — it runs with Alex present, right after a planning conversation has resolved any 🎨/🧠 gates for the milestone in question.
 
 ## Inputs you need before starting
 
@@ -25,9 +25,9 @@ Turns one milestone task from `Docs/MILESTONES_V1_MCP.md` into one or more ticke
    - **Exit condition** — machine-checkable: tests green + typecheck/lint clean, plus at least one concrete behavioral check (e.g. "search endpoint returns ≥1 relevant chunk for query X against seeded fixture Y" — a real assertion, not "works correctly").
    - **Iteration cap** — 3 distinct approaches on any single failure, then Blocked Protocol. Lower it for small/well-understood tickets if appropriate; never raise it above 3 without asking.
 4. Never invent scope beyond what the milestone task describes. If implementing the task well requires something the milestone doesn't mention (e.g. a new shared type), that's fine to include in scope — but don't add unrelated improvements, refactors, or "while I'm here" work.
-5. Name the file `Docs/tickets/T-###-slug.md` — `###` is the next unused number across `queue/`, `in-progress/`, `done/`, and `blocked/` (zero-padded, sequential, never reused).
-6. Write the file(s) to `Docs/tickets/queue/`. Do not move anything to `in-progress/` — that transition belongs to the nightly executor picking up the ticket.
-7. Report back: ticket id(s), one-line scope each, and confirmation that the milestone task's checkbox in `MILESTONES_V1_MCP.md` still reflects reality (unchecked, since the ticket hasn't shipped).
+5. Name the file `Docs/tickets/T-###-slug.md` — `###` is the next unused number across `backlog/`, `queue/`, `in-progress/`, `done/`, and `blocked/` (zero-padded, sequential, never reused).
+6. If a ticket's Context files or Scope depend on a file/service that only exists once an earlier, not-yet-merged ticket lands (e.g. ticket B in a split chain needs a service ticket A creates), write it to `Docs/tickets/backlog/` instead of `queue/`, with a `Blocked on: <ticket id(s)> — must be merged into develop first` line directly under `Milestone ref:` (see `TICKET_SPEC.md`'s field notes). The nightly executor never reads `backlog/`, so this is the only way to sequence a dependent ticket without it being picked up prematurely. Everything else goes straight to `Docs/tickets/queue/`. Do not move anything to `in-progress/` either way — that transition belongs to the nightly executor picking up the ticket.
+7. Report back: ticket id(s), one-line scope each, whether each landed in `queue/` or `backlog/` (and why, for any `backlog/` ticket), and confirmation that the milestone task's checkbox in `MILESTONES_V1_MCP.md` still reflects reality (unchecked, since the ticket hasn't shipped).
 
 ## What this skill does not do
 
