@@ -50,7 +50,7 @@ Also on main from the pre-pivot era: session editor + entity linking frontends (
 
 - [x] **M-MCP.0 — Ticket Zero: verify vector search end-to-end** (= task 2.3 closure, see above). *Executed interactively with Alex 2026-07 — validated the pipeline (ticket format, rules, reviewer, CI), not just the code. Headless-readiness probe confirmed: `docker compose up -d && db:migrate && pnpm test` runs clean end-to-end (see `IMPLEMENTATION_NOTES.md`). One new gotcha found: the dev Voyage account is on the free tier (3 RPM without a payment method) — see `IMPLEMENTATION_NOTES.md §Embedding`.*
 
-- [ ] **M-MCP.1 — `apps/mcp` scaffold + `query_lore` (read)**
+- [x] **M-MCP.1 — `apps/mcp` scaffold + `query_lore` (read)**
   - Scaffold `apps/mcp` (TypeScript, MCP SDK, stdio transport), wired into pnpm workspace + turbo.
   - `query_lore(campaignId, query, limit?)` → context assembly service (read-only). Returns assembled context: ranked chunks with source attribution + confidence score.
   - Exit: MCP client can call `query_lore` against the T-000 fixture and get relevant chunks back.

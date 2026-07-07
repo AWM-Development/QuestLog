@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { configDefaults, defineConfig } from "vitest/config";
 
 /**
@@ -7,10 +8,20 @@ import { configDefaults, defineConfig } from "vitest/config";
  * a schedule rather than every PR. See Docs/IMPLEMENTATION_NOTES.md.
  */
 export default defineConfig({
+	resolve: {
+		alias: [
+			{
+				find: /^@questlog\/server\/(.*)$/,
+				replacement: fileURLToPath(
+					new URL("../server/src/$1", import.meta.url),
+				),
+			},
+		],
+	},
 	test: {
 		globals: true,
 		sequence: { concurrent: false },
-		globalSetup: ["./src/db/global-setup.ts"],
+		globalSetup: ["../server/src/db/global-setup.ts"],
 		exclude: [...configDefaults.exclude, "**/*.e2e.test.ts"],
 		env: {
 			DATABASE_URL:

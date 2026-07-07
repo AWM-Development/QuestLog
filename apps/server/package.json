@@ -8,6 +8,7 @@
 		"build": "tsc",
 		"process-imports": "tsx --env-file=../../.env src/process-imports.ts",
 		"test": "vitest run",
+		"test:e2e": "vitest run --config vitest.e2e.config.ts",
 		"typecheck": "tsc -b",
 		"lint": "biome check .",
 		"db:generate": "drizzle-kit generate",
