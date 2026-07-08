@@ -14,6 +14,7 @@ const TABLES_IN_DELETE_ORDER = [
 	"conversations",
 	"chunks",
 	"sources",
+	"write_requests",
 	"entity_relationships",
 	"entities",
 	"sessions",
