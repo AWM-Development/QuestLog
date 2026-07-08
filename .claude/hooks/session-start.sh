@@ -17,9 +17,20 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
 
-PGPORT=5433
-DB_USER=questlog
-DB_PASSWORD=questlog
+# Derive credentials/port from the project's own DATABASE_URL rather than
+# hardcoding a fourth copy alongside docker-compose.yml/.env.example/CI.
+ENV_FILE="$CLAUDE_PROJECT_DIR/.env"
+[ -f "$ENV_FILE" ] || ENV_FILE="$CLAUDE_PROJECT_DIR/.env.example"
+DATABASE_URL_LINE=$(grep -m1 '^DATABASE_URL=' "$ENV_FILE")
+DATABASE_URL_VALUE="${DATABASE_URL_LINE#DATABASE_URL=}"
+if [[ "$DATABASE_URL_VALUE" =~ ^postgresql://([^:]+):([^@]+)@[^:/]+:([0-9]+)/ ]]; then
+  DB_USER="${BASH_REMATCH[1]}"
+  DB_PASSWORD="${BASH_REMATCH[2]}"
+  PGPORT="${BASH_REMATCH[3]}"
+else
+  echo "session-start.sh: couldn't parse DATABASE_URL from $ENV_FILE" >&2
+  exit 1
+fi
 
 if ! dpkg -s postgresql-16-pgvector >/dev/null 2>&1; then
   apt-get update -qq
@@ -45,16 +56,14 @@ if [ "$role_exists" != "1" ]; then
   sudo -u postgres psql -p "$PGPORT" -c "CREATE ROLE ${DB_USER} WITH LOGIN PASSWORD '${DB_PASSWORD}'"
 fi
 
+# Extension creation is left to `db:migrate` (apps/server/src/db/migrate.ts
+# runs `CREATE EXTENSION IF NOT EXISTS` before applying migrations), so each
+# database only needs a role-existence check plus one migrate call here.
 for dbname in questlog questlog_test; do
   db_exists=$(sudo -u postgres psql -p "$PGPORT" -tAc "SELECT 1 FROM pg_database WHERE datname='${dbname}'")
   if [ "$db_exists" != "1" ]; then
     sudo -u postgres psql -p "$PGPORT" -c "CREATE DATABASE ${dbname} OWNER ${DB_USER}"
   fi
-  sudo -u postgres psql -p "$PGPORT" -d "$dbname" -c "CREATE EXTENSION IF NOT EXISTS vector;" >/dev/null
-  sudo -u postgres psql -p "$PGPORT" -d "$dbname" -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;" >/dev/null
+  DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${PGPORT}/${dbname}" \
+    pnpm --filter @questlog/server db:migrate
 done
-
-DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${PGPORT}/questlog" \
-  pnpm --filter @questlog/server db:migrate
-DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${PGPORT}/questlog_test" \
-  pnpm --filter @questlog/server db:migrate
