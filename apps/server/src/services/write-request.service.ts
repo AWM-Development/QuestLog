@@ -42,9 +42,11 @@ export const writeRequestService = {
 		token: string,
 		applyFn: (db: Transaction, payload: unknown) => Promise<unknown>,
 	) {
-		const row = await findPendingRow(db, token);
-
 		return db.transaction(async (tx) => {
+			// Locked within the transaction so concurrent confirm() calls for the
+			// same token serialize on this row: the second call blocks here until
+			// the first commits, then sees confirmedAt already set and 404s.
+			const row = await findPendingRow(tx, token, { forUpdate: true });
 			const appliedResult = await applyFn(tx, row.payload);
 			await tx
 				.update(writeRequests)
@@ -55,11 +57,16 @@ export const writeRequestService = {
 	},
 };
 
-async function findPendingRow(db: Database, token: string) {
-	const rows = await db
+async function findPendingRow(
+	db: Database | Transaction,
+	token: string,
+	options?: { forUpdate?: boolean },
+) {
+	const query = db
 		.select()
 		.from(writeRequests)
 		.where(eq(writeRequests.id, token));
+	const rows = await (options?.forUpdate ? query.for("update") : query);
 	const row = rows[0];
 	if (
 		!row ||

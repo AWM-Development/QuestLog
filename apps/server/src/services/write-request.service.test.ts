@@ -1,4 +1,6 @@
 import { sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import {
 	afterAll,
 	afterEach,
@@ -8,6 +10,7 @@ import {
 	it,
 	vi,
 } from "vitest";
+import * as schema from "../db/schema/index.js";
 import { createTestDb, deleteCampaignTree } from "../db/test-helpers.js";
 import { NotFoundError } from "../lib/errors.js";
 import { campaignService } from "./campaign.service.js";
@@ -119,6 +122,46 @@ describe("writeRequestService", () => {
 				writeRequestService.confirm(db, id, applyFn),
 			).rejects.toThrow(NotFoundError);
 			expect(applyFn).not.toHaveBeenCalled();
+		});
+	});
+
+	describe("concurrent confirm calls on the same token", () => {
+		it("does not double-apply when two confirm calls race for the same token", async () => {
+			// A dedicated multi-connection client is required here: createTestDb()
+			// uses { max: 1 }, which serializes all queries onto one physical
+			// connection and would mask a real cross-connection race.
+			const connectionString =
+				process.env.DATABASE_URL ??
+				"postgresql://questlog:questlog@localhost:5433/questlog_test";
+			const client = postgres(connectionString, { max: 5 });
+			const concurrentDb = drizzle(client, { schema });
+
+			try {
+				const preview = await writeRequestService.createPreview(concurrentDb, {
+					campaignId,
+					toolName: "log_session",
+					payload: { content: "race" },
+				});
+
+				const applyFn = vi.fn().mockImplementation(async () => {
+					await new Promise((resolve) => setTimeout(resolve, 50));
+					return { ok: true };
+				});
+
+				const results = await Promise.allSettled([
+					writeRequestService.confirm(concurrentDb, preview.token, applyFn),
+					writeRequestService.confirm(concurrentDb, preview.token, applyFn),
+				]);
+
+				const fulfilled = results.filter((r) => r.status === "fulfilled");
+				const rejected = results.filter((r) => r.status === "rejected");
+
+				expect(fulfilled).toHaveLength(1);
+				expect(rejected).toHaveLength(1);
+				expect(applyFn).toHaveBeenCalledTimes(1);
+			} finally {
+				await client.end();
+			}
 		});
 	});
 
