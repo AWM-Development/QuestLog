@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-005
+
+- **`prep_brief` MCP tool**: read-only session prep brief for a campaign, combining a "Previously on" recap of the most recent 1-2 sessions, active plot threads derived from session tags (closed by a `resolved:<tag>` marker), a "Likely NPCs" list of NPC entities mentioned in recent session content, and quick links mirroring those NPCs. Loose ends & suggested follow-ups return a stable empty-with-explanation shape — both require agent analysis that's out of scope for v1.
+
 ### Fixed
 
 - **Navigation after agent chat / conversation:** `campaign/:id` uses **`<Outlet />`**; **`AppShell`** derives **`campaignId`** from **`location.pathname`** (not `useMatch`). **Context** tablet overlay scrim no longer covers the **nav rail** (`left: var(--rail-width)`); rail gets **`z-index: 25`**. Agent chat cites sync via **`agentChatContextSources`**; **`AppShell`** renders **one** **`ContextPanel`** on chat routes (no per-tick React node replacement). Leaving **`/campaign/:id/chat`** clears **`agentChatContextSources`**. **`useMediaQuery`** tolerates environments without **`window.matchMedia`** (e.g. jsdom)
