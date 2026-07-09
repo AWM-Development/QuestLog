@@ -1,6 +1,7 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { Database } from "../db/index.js";
 import { entities } from "../db/schema/index.js";
+import { NotFoundError } from "../lib/errors.js";
 
 export interface EntitySpan {
 	entityId: string;
@@ -89,6 +90,10 @@ function trigramSimilarity(a: string, b: string): number {
 	return (2 * intersection) / (setA.size + setB.size);
 }
 
+// Confirmation threshold for pure-JS trigram similarity, shared by detectSpans'
+// fuzzy span matching and getByName's fuzzy name lookup.
+const FUZZY_THRESHOLD = 0.4;
+
 function findFuzzyPositions(
 	entityName: string,
 	text: string,
@@ -98,7 +103,6 @@ function findFuzzyPositions(
 	if (tokens.length === 0) return [];
 
 	const results: Array<{ start: number; end: number }> = [];
-	const FUZZY_THRESHOLD = 0.4;
 
 	if (entityWordCount === 1) {
 		for (const token of tokens) {
@@ -248,11 +252,60 @@ export const entityService = {
 		return row;
 	},
 
-	async list(db: Database, campaignId: string) {
+	async list(db: Database, campaignId: string, type?: string) {
 		return db
 			.select()
 			.from(entities)
-			.where(eq(entities.campaignId, campaignId));
+			.where(
+				type
+					? and(eq(entities.campaignId, campaignId), eq(entities.type, type))
+					: eq(entities.campaignId, campaignId),
+			);
+	},
+
+	async getById(db: Database, campaignId: string, entityId: string) {
+		const rows = await db
+			.select()
+			.from(entities)
+			.where(
+				and(eq(entities.id, entityId), eq(entities.campaignId, campaignId)),
+			);
+		const row = rows[0];
+		if (!row) throw new NotFoundError("Entity", entityId);
+		return row;
+	},
+
+	async getByName(db: Database, campaignId: string, name: string) {
+		const candidateRows = await db.execute<Record<string, unknown>>(sql`
+      SELECT id, name, type, summary, description, attributes, dm_notes,
+        created_at, updated_at
+      FROM ${entities}
+      WHERE campaign_id = ${campaignId}
+        AND word_similarity(name, ${name}) > 0.15
+    `);
+
+		let best: { row: Record<string, unknown>; score: number } | null = null;
+		for (const row of candidateRows) {
+			const score = trigramSimilarity(name, row.name as string);
+			if (score >= FUZZY_THRESHOLD && (!best || score > best.score)) {
+				best = { row, score };
+			}
+		}
+		if (!best) throw new NotFoundError("Entity", name);
+
+		const { row } = best;
+		return {
+			id: row.id as string,
+			campaignId,
+			name: row.name as string,
+			type: row.type as string,
+			summary: row.summary as string | null,
+			description: row.description as string | null,
+			attributes: row.attributes as Record<string, unknown> | null,
+			dmNotes: row.dm_notes as string | null,
+			createdAt: row.created_at as Date,
+			updatedAt: row.updated_at as Date,
+		};
 	},
 
 	async countByCampaign(db: Database, campaignId: string): Promise<number> {
