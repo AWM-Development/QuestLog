@@ -10,6 +10,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-006
+
+- **`get_entity` / `list_entities` MCP tools** (`apps/mcp`): `list_entities(campaignId, type?)` lists a campaign's entities, optionally filtered by type; `get_entity(campaignId, entityId?, name?)` looks up a single entity by id or by fuzzy name match (reuses the existing pg_trgm matching from entity detection), returning a structured not-found error instead of throwing when nothing matches
+- **`entityService.getById` / `getByName`** (`apps/server/src/services/entity.service.ts`): campaign-scoped id lookup and fuzzy name lookup (`word_similarity` pre-filter + trigram-similarity confirmation, same threshold as `detectSpans`); `entityService.list` now accepts an optional `type` filter
+- **`ListEntitiesInput` / `GetEntityInput` Zod schemas** (`packages/shared`) for the two new MCP tools
+
 ### Fixed
 
 - **Navigation after agent chat / conversation:** `campaign/:id` uses **`<Outlet />`**; **`AppShell`** derives **`campaignId`** from **`location.pathname`** (not `useMatch`). **Context** tablet overlay scrim no longer covers the **nav rail** (`left: var(--rail-width)`); rail gets **`z-index: 25`**. Agent chat cites sync via **`agentChatContextSources`**; **`AppShell`** renders **one** **`ContextPanel`** on chat routes (no per-tick React node replacement). Leaving **`/campaign/:id/chat`** clears **`agentChatContextSources`**. **`useMediaQuery`** tolerates environments without **`window.matchMedia`** (e.g. jsdom)
