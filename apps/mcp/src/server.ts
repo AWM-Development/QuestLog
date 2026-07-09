@@ -5,8 +5,13 @@ import {
 	CONTEXT_CONFIG,
 	contextService,
 } from "@questlog/server/services/context.service.js";
+import { entityService } from "@questlog/server/services/entity.service.js";
 import type { FetchFn } from "@questlog/server/services/voyage.client.js";
-import { QueryLoreInput } from "@questlog/shared";
+import {
+	GetEntityInput,
+	ListEntitiesInput,
+	QueryLoreInput,
+} from "@questlog/shared";
 
 export interface CreateMcpServerOptions {
 	db: Database;
@@ -37,6 +42,55 @@ export function createMcpServer({
 				});
 				return {
 					content: [{ type: "text", text: JSON.stringify(assembled) }],
+				};
+			} catch (error) {
+				if (error instanceof NotFoundError) {
+					return {
+						isError: true,
+						content: [
+							{
+								type: "text",
+								text: JSON.stringify({
+									error: { code: "NOT_FOUND", message: error.message },
+								}),
+							},
+						],
+					};
+				}
+				throw error;
+			}
+		},
+	);
+
+	server.registerTool(
+		"list_entities",
+		{
+			description:
+				"List entities in a campaign, optionally filtered by type (npc, location, faction, item, arc).",
+			inputSchema: ListEntitiesInput,
+		},
+		async ({ campaignId, type }) => {
+			const entities = await entityService.list(db, campaignId, type);
+			return {
+				content: [{ type: "text", text: JSON.stringify({ entities }) }],
+			};
+		},
+	);
+
+	server.registerTool(
+		"get_entity",
+		{
+			description:
+				"Look up a single entity by id or by fuzzy name match. Exactly one of entityId or name must be provided.",
+			inputSchema: GetEntityInput,
+		},
+		async ({ campaignId, entityId, name }) => {
+			try {
+				const entity = entityId
+					? await entityService.getById(db, campaignId, entityId)
+					: await entityService.getByName(db, campaignId, name as string);
+				return {
+					content: [{ type: "text", text: JSON.stringify(entity) }],
 				};
 			} catch (error) {
 				if (error instanceof NotFoundError) {
