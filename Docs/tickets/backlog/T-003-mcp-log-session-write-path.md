@@ -2,9 +2,12 @@
 
 Milestone ref: M-MCP.3 (`Docs/MILESTONES_V1_MCP.md`) — "write path" seam
 
-Blocked on: T-002 — must be merged into `develop` before this ticket is
-promoted to `queue/`. `write-request.service.ts` (T-002) doesn't exist on
-`develop` until then, and this ticket's Context files and Scope both assume it.
+Blocked on: T-002, T-007 — must be merged into `develop` before this ticket
+is promoted to `queue/`. `write-request.service.ts` (T-002) doesn't exist on
+`develop` until then, and this ticket's Context files and Scope both assume
+it. T-007 (added post-T-002-merge) hardens `confirm()`'s locking mechanism
+that this ticket's `confirm_log_session` directly calls — sequencing after
+it avoids building a caller against internals that are about to change.
 
 Branch: feat/m-mcp/t-003-log-session-write-path
 
