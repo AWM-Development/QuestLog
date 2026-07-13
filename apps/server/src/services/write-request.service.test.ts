@@ -194,5 +194,71 @@ describe("writeRequestService", () => {
 			);
 			expect(result).toEqual({ ok: true });
 		});
+
+		it("clears claimed_at (not confirmed_at) so the token isn't left permanently claimed", async () => {
+			const preview = await writeRequestService.createPreview(db, {
+				campaignId,
+				toolName: "log_session",
+				payload: { content: "will fail again" },
+			});
+			const failingApplyFn = vi.fn().mockRejectedValue(new Error("boom"));
+
+			await expect(
+				writeRequestService.confirm(db, preview.token, failingApplyFn),
+			).rejects.toThrow("boom");
+
+			const rows = await db.execute(sql`
+        SELECT claimed_at, confirmed_at FROM write_requests WHERE id = ${preview.token}
+      `);
+			const row = rows[0] as {
+				claimed_at: Date | null;
+				confirmed_at: Date | null;
+			};
+			expect(row.claimed_at).toBeNull();
+			expect(row.confirmed_at).toBeNull();
+		});
+	});
+
+	describe("claim step", () => {
+		it("claims the row (sets claimed_at) atomically before applyFn runs, ahead of setting confirmed_at", async () => {
+			// A dedicated connection is required to observe row state mid-applyFn:
+			// createTestDb() uses { max: 1 }, so a query issued against the same
+			// connection while confirm()'s own transaction is in flight would
+			// queue behind it and never resolve until the transaction ends.
+			const connectionString =
+				process.env.DATABASE_URL ??
+				"postgresql://questlog:questlog@localhost:5433/questlog_test";
+			const client = postgres(connectionString, { max: 5 });
+			const observerDb = drizzle(client, { schema });
+
+			try {
+				const preview = await writeRequestService.createPreview(db, {
+					campaignId,
+					toolName: "log_session",
+					payload: { content: "claim check" },
+				});
+
+				let sawDuringApplyFn:
+					| { claimed_at: Date | null; confirmed_at: Date | null }
+					| undefined;
+				const applyFn = vi.fn().mockImplementation(async () => {
+					const rows = await observerDb.execute(sql`
+            SELECT claimed_at, confirmed_at FROM write_requests WHERE id = ${preview.token}
+          `);
+					sawDuringApplyFn = rows[0] as {
+						claimed_at: Date | null;
+						confirmed_at: Date | null;
+					};
+					return { ok: true };
+				});
+
+				await writeRequestService.confirm(db, preview.token, applyFn);
+
+				expect(sawDuringApplyFn?.claimed_at).not.toBeNull();
+				expect(sawDuringApplyFn?.confirmed_at).toBeNull();
+			} finally {
+				await client.end();
+			}
+		});
 	});
 });
