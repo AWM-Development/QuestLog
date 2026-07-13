@@ -2,12 +2,18 @@
 
 Milestone ref: M-MCP.3 (`Docs/MILESTONES_V1_MCP.md`) — "write path" seam
 
-Blocked on: T-002, T-007 — must be merged into `develop` before this ticket
-is promoted to `queue/`. `write-request.service.ts` (T-002) doesn't exist on
-`develop` until then, and this ticket's Context files and Scope both assume
-it. T-007 (added post-T-002-merge) hardens `confirm()`'s locking mechanism
-that this ticket's `confirm_log_session` directly calls — sequencing after
-it avoids building a caller against internals that are about to change.
+Blocked on: T-002, T-007, T-010 — must be merged into `develop` before this
+ticket is promoted to `queue/`. `write-request.service.ts` (T-002) doesn't
+exist on `develop` until then, and this ticket's Context files and Scope both
+assume it. T-007 (added post-T-002-merge) hardens `confirm()`'s locking
+mechanism that this ticket's `confirm_log_session` directly calls —
+sequencing after it avoids building a caller against internals that are
+about to change. T-010 (added post-T-005-review) moves tool registrations
+into per-tool files under `apps/mcp/src/tools/` with a shared
+`withToolErrors` wrapper — the "tool file pattern" this ticket's Context
+files and Scope tell the executor to mirror only actually exists after it
+lands, and sequencing after it means `log_session`/`confirm_log_session`
+are born in the new structure instead of being moved by hand later.
 
 Branch: feat/m-mcp/t-003-log-session-write-path
 
@@ -24,7 +30,7 @@ Context files (load ONLY these):
   - apps/server/src/db/schema/tables.ts
   - apps/server/src/db/schema/index.ts
   - packages/shared/src/validators/session.ts
-  - apps/mcp/ — the `query_lore` tool file and registration/entry point, plus `get_entity`/`list_entities` from T-006, as the established tool-file pattern to mirror
+  - apps/mcp/src/tools/ — the per-tool registration files (`query-lore.ts`, `get-entity.ts`, `list-entities.ts`, `prep-brief.ts`) and the shared `withToolErrors` wrapper from T-010, plus `apps/mcp/src/server.ts` where each tool adds its one `register*` line — the established pattern to mirror
 
 Mockup: none
 
@@ -43,7 +49,8 @@ Scope:
      re-logged with the ambiguity resolved — no interactive resolution UI
      exists in v1, so ambiguous spans are simply reported, not silently
      guessed.
-  3. Two MCP tools in `apps/mcp`, mirroring the T-006 tool shape:
+  3. Two MCP tools, each a new file under `apps/mcp/src/tools/` using the
+     T-010 registration + `withToolErrors` pattern:
      - `log_session(campaignId, content, title?, summary?, tags?, sessionNumber?, date?)`
        — runs `entityService.detectSpans`, builds a preview payload
        (`{ session: {title, content, summary, tags, sessionNumber, date},
