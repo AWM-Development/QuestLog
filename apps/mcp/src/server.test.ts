@@ -357,4 +357,36 @@ describe("get_entity tool", () => {
 		const payload = JSON.parse(content[0]?.text ?? "{}");
 		expect(payload.error.code).toBe("NOT_FOUND");
 	});
+
+	it("rejects a call providing both entityId and name", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: entity.id, name: "Mira Duskwood" },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		expect(content[0]?.text).toMatch(/Exactly one of entityId or name/);
+	});
+
+	it("rejects a call providing neither entityId nor name", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		expect(content[0]?.text).toMatch(/Exactly one of entityId or name/);
+	});
 });
