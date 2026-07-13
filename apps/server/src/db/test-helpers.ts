@@ -12,6 +12,7 @@ import {
 	messages,
 	sessions,
 	sources,
+	writeRequests,
 } from "./schema/index.js";
 
 /**
@@ -71,6 +72,9 @@ export async function deleteCampaignTree(db: Database, campaignId: string) {
 		.where(eq(conversations.campaignId, campaignId));
 	await db.delete(chunks).where(eq(chunks.campaignId, campaignId));
 	await db.delete(sources).where(eq(sources.campaignId, campaignId));
+	await db
+		.delete(writeRequests)
+		.where(eq(writeRequests.campaignId, campaignId));
 	await db
 		.delete(entityRelationships)
 		.where(eq(entityRelationships.campaignId, campaignId));
