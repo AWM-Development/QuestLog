@@ -54,7 +54,10 @@ export interface Brief {
 
 function excerpt(text: string, length = CONTENT_EXCERPT_LENGTH): string {
 	if (text.length <= length) return text;
-	return `${text.slice(0, length).trimEnd()}…`;
+	let cut = text.slice(0, length);
+	// Don't split a surrogate pair (e.g. an emoji) at the cut point.
+	if (/[\uD800-\uDBFF]$/.test(cut)) cut = cut.slice(0, -1);
+	return `${cut.trimEnd()}…`;
 }
 
 export const briefService = {

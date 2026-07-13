@@ -20,6 +20,10 @@ import { createMcpServer } from "./server.js";
 
 const { db, close } = createTestDb();
 
+afterAll(async () => {
+	await close();
+});
+
 function createMockFetch(embedding: number[]): FetchFn {
 	return vi.fn().mockImplementation(async () => ({
 		ok: true,
@@ -110,10 +114,6 @@ describe("query_lore tool", () => {
 
 describe("prep_brief tool", () => {
 	let campaignId: string;
-
-	afterAll(async () => {
-		await close();
-	});
 
 	beforeEach(async () => {
 		await db.execute(sql`BEGIN`);

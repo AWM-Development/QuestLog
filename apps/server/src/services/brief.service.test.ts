@@ -115,6 +115,36 @@ describe("briefService", () => {
 
 			expect(brief.activeThreads.map((t) => t.tag)).not.toContain("bones");
 		});
+
+		it("keeps a resolved tag closed even if a later session uses it again", async () => {
+			const s1 = await sessionService.create(db, {
+				campaignId,
+				content: "The party seeks the bones of St. Andral.",
+			});
+			await sessionService.finalize(db, { id: s1.id, tags: ["bones"] });
+			const s2 = await sessionService.create(db, {
+				campaignId,
+				content: "The bones are restored to the church.",
+			});
+			await sessionService.finalize(db, {
+				id: s2.id,
+				sessionNumber: 2,
+				tags: ["resolved:bones"],
+			});
+			const s3 = await sessionService.create(db, {
+				campaignId,
+				content: "Rumors about the bones resurface.",
+			});
+			await sessionService.finalize(db, {
+				id: s3.id,
+				sessionNumber: 3,
+				tags: ["bones"],
+			});
+
+			const brief = await briefService.assemble(db, { campaignId });
+
+			expect(brief.activeThreads.map((t) => t.tag)).not.toContain("bones");
+		});
 	});
 
 	describe("likely NPCs", () => {
