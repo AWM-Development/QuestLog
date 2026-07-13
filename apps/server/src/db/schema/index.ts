@@ -7,5 +7,6 @@ export {
 	messages,
 	sessions,
 	sources,
+	writeRequests,
 } from "./tables.js";
 export type { MessageSource } from "./tables.js";

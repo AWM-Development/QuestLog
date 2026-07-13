@@ -1,6 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { Database } from "@questlog/server/db/index.js";
 import { NotFoundError } from "@questlog/server/lib/errors.js";
+import { briefService } from "@questlog/server/services/brief.service.js";
 import {
 	CONTEXT_CONFIG,
 	contextService,
@@ -10,6 +11,7 @@ import type { FetchFn } from "@questlog/server/services/voyage.client.js";
 import {
 	GetEntityInput,
 	ListEntitiesInput,
+	PrepBriefInput,
 	QueryLoreInput,
 } from "@questlog/shared";
 
@@ -42,6 +44,41 @@ export function createMcpServer({
 				});
 				return {
 					content: [{ type: "text", text: JSON.stringify(assembled) }],
+				};
+			} catch (error) {
+				if (error instanceof NotFoundError) {
+					return {
+						isError: true,
+						content: [
+							{
+								type: "text",
+								text: JSON.stringify({
+									error: { code: "NOT_FOUND", message: error.message },
+								}),
+							},
+						],
+					};
+				}
+				throw error;
+			}
+		},
+	);
+
+	server.registerTool(
+		"prep_brief",
+		{
+			description:
+				"Assemble a session prep brief for a campaign: a recap of recent sessions, active plot threads, likely NPCs, and quick links.",
+			inputSchema: PrepBriefInput,
+		},
+		async ({ campaignId, sessionCount }) => {
+			try {
+				const brief = await briefService.assemble(db, {
+					campaignId,
+					sessionCount,
+				});
+				return {
+					content: [{ type: "text", text: JSON.stringify(brief) }],
 				};
 			} catch (error) {
 				if (error instanceof NotFoundError) {

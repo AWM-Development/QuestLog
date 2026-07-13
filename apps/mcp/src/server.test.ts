@@ -4,6 +4,7 @@ import { chunks, sources } from "@questlog/server/db/schema/index.js";
 import { basisVector, createTestDb } from "@questlog/server/db/test-helpers.js";
 import { campaignService } from "@questlog/server/services/campaign.service.js";
 import { entityService } from "@questlog/server/services/entity.service.js";
+import { sessionService } from "@questlog/server/services/session.service.js";
 import type { FetchFn } from "@questlog/server/services/voyage.client.js";
 import { sql } from "drizzle-orm";
 import {
@@ -103,6 +104,98 @@ describe("query_lore tool", () => {
 		const result = await client.callTool({
 			name: "query_lore",
 			arguments: { campaignId: unknownCampaignId, query: "anything" },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		expect(content[0]?.text).toContain(unknownCampaignId);
+	});
+});
+
+describe("prep_brief tool", () => {
+	let campaignId: string;
+
+	beforeEach(async () => {
+		await db.execute(sql`BEGIN`);
+		vi.clearAllMocks();
+
+		const campaign = await campaignService.create(db, {
+			name: "Curse of Strahd",
+			theme: "horror",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await db.execute(sql`ROLLBACK`);
+	});
+
+	it("returns previously-on text and the mentioned NPC under likely NPCs", async () => {
+		const npc = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni",
+			type: "npc",
+			description: "Obsessed with Ireena.",
+		});
+		await sessionService.create(db, {
+			campaignId,
+			content: "Izek Strazni was seen watching Ireena from the square.",
+		});
+		const s2 = await sessionService.create(db, {
+			campaignId,
+			content: "The party rests at the inn.",
+		});
+		await sessionService.finalize(db, {
+			id: s2.id,
+			summary: "The party rested at the inn after a long day.",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "prep_brief",
+			arguments: { campaignId },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const brief = JSON.parse(content[0]?.text ?? "{}");
+		expect(brief.previouslyOn[0]?.text).toBe(
+			"The party rested at the inn after a long day.",
+		);
+		expect(brief.likelyNpcs).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ entityId: npc.id, name: "Izek Strazni" }),
+			]),
+		);
+	});
+
+	it("returns a well-formed empty brief for a campaign with zero sessions", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "prep_brief",
+			arguments: { campaignId },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const brief = JSON.parse(content[0]?.text ?? "{}");
+		expect(brief.previouslyOn).toEqual([]);
+		expect(brief.activeThreads).toEqual([]);
+		expect(brief.likelyNpcs).toEqual([]);
+		expect(brief.quickLinks).toEqual([]);
+		expect(brief.looseEnds.items).toEqual([]);
+		expect(brief.suggestedFollowUps.items).toEqual([]);
+	});
+
+	it("returns isError for an unknown campaignId instead of throwing", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const unknownCampaignId = "00000000-0000-0000-0000-000000000000";
+
+		const result = await client.callTool({
+			name: "prep_brief",
+			arguments: { campaignId: unknownCampaignId },
 		});
 
 		expect(result.isError).toBe(true);
