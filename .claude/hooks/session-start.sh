@@ -26,14 +26,25 @@ if ! DATABASE_URL_LINE=$(grep -m1 '^DATABASE_URL=' "$ENV_FILE"); then
   exit 1
 fi
 DATABASE_URL_VALUE="${DATABASE_URL_LINE#DATABASE_URL=}"
-if [[ "$DATABASE_URL_VALUE" =~ ^postgresql://([^:]+):([^@]+)@[^:/]+:([0-9]+)/ ]]; then
-  DB_USER="${BASH_REMATCH[1]}"
-  DB_PASSWORD="${BASH_REMATCH[2]}"
-  PGPORT="${BASH_REMATCH[3]}"
-else
+# A real URL parser instead of a hand-written regex: the regex required an
+# explicit `:PORT` and split on the first `@`, so it failed on a portless
+# DATABASE_URL and silently truncated any password containing an unescaped `@`.
+if ! PARSED=$(DATABASE_URL_VALUE="$DATABASE_URL_VALUE" node -e '
+  try {
+    const u = new URL(process.env.DATABASE_URL_VALUE);
+    if ((u.protocol !== "postgresql:" && u.protocol !== "postgres:") || !u.username) {
+      throw new Error("not a valid postgres URL");
+    }
+    const port = u.port || "5432";
+    process.stdout.write(`${decodeURIComponent(u.username)}\n${decodeURIComponent(u.password)}\n${port}\n`);
+  } catch (e) {
+    process.exit(1);
+  }
+' 2>/dev/null); then
   echo "session-start.sh: couldn't parse DATABASE_URL from $ENV_FILE" >&2
   exit 1
 fi
+{ read -r DB_USER; read -r DB_PASSWORD; read -r PGPORT; } <<< "$PARSED"
 
 if ! dpkg -s postgresql-16-pgvector >/dev/null 2>&1; then
   apt-get update -qq
