@@ -174,6 +174,9 @@ Nested routes under **`campaign/:id`** use **`element: <Outlet />`** in `router.
 ### Biome is the sole linter + formatter — not ESLint or Prettier
 Config is at root `biome.json`. Auto-fix: `pnpm exec biome check --write .` inside a package directory.
 
+### `session-start.sh` parses `DATABASE_URL` with Node's `URL`, not a regex (T-008)
+The hand-written regex (`^postgresql://([^:]+):([^@]+)@[^:/]+:([0-9]+)/`) required an explicit `:PORT` and split on the *first* `@`, silently truncating any password containing an unescaped `@`. Replaced with `new URL(DATABASE_URL)` in a `node -e` one-liner: username/password come from `decodeURIComponent(u.username)`/`.password` (WHATWG URL parsing correctly treats the *last* `@` before the host as the userinfo/host boundary), and a missing `u.port` defaults to `5432`. Output is passed from Node to bash as three newline-separated fields consumed via `read -r` (not `eval`), so special characters in the password can't be interpreted as shell syntax.
+
 ---
 
 ## TypeScript & Module Resolution

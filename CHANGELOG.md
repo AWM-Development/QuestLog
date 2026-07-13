@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Changed — T-008
+
+- **`session-start.sh` `DATABASE_URL` parsing:** replaced the hand-written regex (which required an explicit port and silently truncated passwords containing an unescaped `@`) with a real URL parser (`node -e` using the `URL` class). A `DATABASE_URL` with no explicit port now defaults to `5432` instead of failing to parse, and passwords containing `@` are extracted intact.
+
 ### Changed — T-007
 
 - **`writeRequestService.confirm` claim step** (`apps/server/src/services/write-request.service.ts`): replaced the `SELECT ... FOR UPDATE` row lock (held across the caller-supplied `applyFn`) with an atomic conditional `UPDATE` that claims the row via a new `claimed_at` column before `applyFn` runs. Preserves the existing single-use/no-double-apply and throw-then-retry guarantees without depending on a caller correctly requesting a lock, and no longer holds a lock across `applyFn`'s I/O.
