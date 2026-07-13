@@ -4,12 +4,6 @@ Milestone ref: M-MCP.2/M-MCP.4 (`Docs/MILESTONES_V1_MCP.md`) — structural
 follow-up from T-005's code review; not itself a milestone task (code
 organization only, no behavior change)
 
-Blocked on: T-005, T-006 — must be merged into `develop` before this ticket
-is promoted to `queue/`. Both add tool registrations inline to
-`apps/mcp/src/server.ts` (PRs #29 and #30, open at ticket-writing time);
-refactoring that file before they land guarantees merge conflicts, and the
-refactor should move every registered tool in one pass.
-
 Branch: feat/m-mcp/t-010-mcp-tools-directory-refactor
 
 Context files (load ONLY these):
