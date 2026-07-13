@@ -1,0 +1,1 @@
+ALTER TABLE "write_requests" ADD COLUMN "claimed_at" timestamp with time zone;

@@ -219,4 +219,9 @@ export const writeRequests = pgTable("write_requests", {
 		.notNull(),
 	expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
 	confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+	// Set by an atomic conditional UPDATE at the start of confirm(), before
+	// applyFn runs — the claim mechanism itself, distinct from confirmedAt.
+	// Cleared (not confirmedAt) if applyFn throws, so the token stays
+	// retryable. See write-request.service.ts.
+	claimedAt: timestamp("claimed_at", { withTimezone: true }),
 });
