@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-005
+
+- **`prep_brief` MCP tool**: read-only session prep brief for a campaign, combining a "Previously on" recap of the most recent 1-2 sessions, active plot threads derived from session tags (closed by a `resolved:<tag>` marker), a "Likely NPCs" list of NPC entities mentioned in recent session content, and quick links mirroring those NPCs. Loose ends & suggested follow-ups return a stable empty-with-explanation shape — both require agent analysis that's out of scope for v1.
+
 ### Added — T-002
 
 - **Preview/confirm/audit plumbing for MCP writes** (`apps/server/src/services/write-request.service.ts`): a generic mechanism backing every MCP write tool. `createPreview` stages a proposed change-set and returns a single-use confirmation token; `confirm` re-validates the token, applies the change inside a transaction, and records the result — a confirmed row doubles as the audit entry, no separate audit table needed. New `write_requests` table (migration `0007_funny_true_believers.sql`). This is infrastructure only — `log_session` itself doesn't use it yet (T-003/T-004).

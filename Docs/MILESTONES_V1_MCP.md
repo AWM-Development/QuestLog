@@ -65,7 +65,7 @@ Also on main from the pre-pivot era: session editor + entity linking frontends (
   - Likely splits into 2–3 tickets at planning time (write path / embed+consolidate / preview-confirm plumbing).
   - Exit: a logged session is retrievable via `query_lore`, its entity links exist, and an unconfirmed preview writes nothing.
 
-- [ ] **M-MCP.4 — `prep_brief` (read)**
+- [x] **M-MCP.4 — `prep_brief` (read)**
   - Context assembly scoped to recent sessions + open threads + current entity state (per PRD §4.4 brief components, minus all UI).
   - Exit: brief generated against fixture campaign contains the expected sections.
 

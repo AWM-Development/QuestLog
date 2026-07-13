@@ -19,4 +19,4 @@ export {
 export type { SourceSchemaType } from "./source.js";
 export { SearchSourcesInput } from "./search.js";
 export { EntityCreateInput, EntityDetectSpansInput } from "./entity.js";
-export { QueryLoreInput } from "./mcp.js";
+export { PrepBriefInput, QueryLoreInput } from "./mcp.js";
