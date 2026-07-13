@@ -55,7 +55,7 @@ Also on main from the pre-pivot era: session editor + entity linking frontends (
   - `query_lore(campaignId, query, limit?)` → context assembly service (read-only). Returns assembled context: ranked chunks with source attribution + confidence score.
   - Exit: MCP client can call `query_lore` against the T-000 fixture and get relevant chunks back.
 
-- [ ] **M-MCP.2 — `get_entity` / `list_entities` (read)**
+- [x] **M-MCP.2 — `get_entity` / `list_entities` (read)**
   - `list_entities(campaignId, type?)` and `get_entity(campaignId, entityId | name)` → entity service (read-only; name lookup reuses pg_trgm fuzzy matching).
   - Exit: both tools return seeded fixture entities; unknown entity returns a well-formed not-found error, not a crash.
 

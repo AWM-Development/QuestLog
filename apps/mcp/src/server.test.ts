@@ -203,3 +203,190 @@ describe("prep_brief tool", () => {
 		expect(content[0]?.text).toContain(unknownCampaignId);
 	});
 });
+
+describe("list_entities tool", () => {
+	let campaignId: string;
+
+	beforeEach(async () => {
+		await db.execute(sql`BEGIN`);
+		vi.clearAllMocks();
+
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await db.execute(sql`ROLLBACK`);
+	});
+
+	it("returns all entities when type is omitted", async () => {
+		await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+		await entityService.create(db, {
+			campaignId,
+			name: "Ashfall Peak",
+			type: "location",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "list_entities",
+			arguments: { campaignId },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.entities).toHaveLength(2);
+	});
+
+	it("returns only the matching subset when type is passed", async () => {
+		await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+		await entityService.create(db, {
+			campaignId,
+			name: "Ashfall Peak",
+			type: "location",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "list_entities",
+			arguments: { campaignId, type: "npc" },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.entities).toHaveLength(1);
+		expect(payload.entities[0].name).toBe("Mira Duskwood");
+	});
+});
+
+describe("get_entity tool", () => {
+	let campaignId: string;
+
+	beforeEach(async () => {
+		await db.execute(sql`BEGIN`);
+		vi.clearAllMocks();
+
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await db.execute(sql`ROLLBACK`);
+	});
+
+	it("returns the seeded entity by entityId", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.id).toBe(entity.id);
+		expect(payload.name).toBe("Mira Duskwood");
+	});
+
+	it("returns the correct entity by name with a deliberate typo via fuzzy match", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, name: "Mria Duskwood" },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.id).toBe(entity.id);
+	});
+
+	it("returns a structured not-found error for a nonexistent entityId", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const unknownEntityId = "00000000-0000-0000-0000-000000000000";
+
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: unknownEntityId },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+	});
+
+	it("returns a structured not-found error for a nonexistent name", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, name: "Zzyzx Nonexistent" },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+	});
+
+	it("rejects a call providing both entityId and name", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: entity.id, name: "Mira Duskwood" },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		expect(content[0]?.text).toMatch(/Exactly one of entityId or name/);
+	});
+
+	it("rejects a call providing neither entityId nor name", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		expect(content[0]?.text).toMatch(/Exactly one of entityId or name/);
+	});
+});
