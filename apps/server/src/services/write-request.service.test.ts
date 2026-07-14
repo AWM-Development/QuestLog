@@ -1,6 +1,4 @@
 import { sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/postgres-js";
-import postgres from "postgres";
 import {
 	afterAll,
 	afterEach,
@@ -10,7 +8,6 @@ import {
 	it,
 	vi,
 } from "vitest";
-import * as schema from "../db/schema/index.js";
 import { createTestDb, deleteCampaignTree } from "../db/test-helpers.js";
 import { NotFoundError } from "../lib/errors.js";
 import { campaignService } from "./campaign.service.js";
@@ -128,13 +125,9 @@ describe("writeRequestService", () => {
 	describe("concurrent confirm calls on the same token", () => {
 		it("does not double-apply when two confirm calls race for the same token", async () => {
 			// A dedicated multi-connection client is required here: createTestDb()
-			// uses { max: 1 }, which serializes all queries onto one physical
-			// connection and would mask a real cross-connection race.
-			const connectionString =
-				process.env.DATABASE_URL ??
-				"postgresql://questlog:questlog@localhost:5433/questlog_test";
-			const client = postgres(connectionString, { max: 5 });
-			const concurrentDb = drizzle(client, { schema });
+			// defaults to { max: 1 }, which serializes all queries onto one
+			// physical connection and would mask a real cross-connection race.
+			const { db: concurrentDb, close } = createTestDb({ max: 5 });
 
 			try {
 				const preview = await writeRequestService.createPreview(concurrentDb, {
@@ -160,7 +153,7 @@ describe("writeRequestService", () => {
 				expect(rejected).toHaveLength(1);
 				expect(applyFn).toHaveBeenCalledTimes(1);
 			} finally {
-				await client.end();
+				await close();
 			}
 		});
 	});
@@ -222,14 +215,10 @@ describe("writeRequestService", () => {
 	describe("claim step", () => {
 		it("claims the row (sets claimed_at) atomically before applyFn runs, ahead of setting confirmed_at", async () => {
 			// A dedicated connection is required to observe row state mid-applyFn:
-			// createTestDb() uses { max: 1 }, so a query issued against the same
-			// connection while confirm()'s own transaction is in flight would
+			// createTestDb() defaults to { max: 1 }, so a query issued against the
+			// same connection while confirm()'s own transaction is in flight would
 			// queue behind it and never resolve until the transaction ends.
-			const connectionString =
-				process.env.DATABASE_URL ??
-				"postgresql://questlog:questlog@localhost:5433/questlog_test";
-			const client = postgres(connectionString, { max: 5 });
-			const observerDb = drizzle(client, { schema });
+			const { db: observerDb, close } = createTestDb({ max: 5 });
 
 			try {
 				const preview = await writeRequestService.createPreview(db, {
@@ -257,7 +246,7 @@ describe("writeRequestService", () => {
 				expect(sawDuringApplyFn?.claimed_at).not.toBeNull();
 				expect(sawDuringApplyFn?.confirmed_at).toBeNull();
 			} finally {
-				await client.end();
+				await close();
 			}
 		});
 	});

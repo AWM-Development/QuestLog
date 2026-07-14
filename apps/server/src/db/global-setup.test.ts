@@ -1,18 +1,14 @@
-import postgres from "postgres";
 import { afterAll, describe, expect, it } from "vitest";
 import { truncateAllTables } from "./global-setup.js";
-
-const connectionString =
-	process.env.DATABASE_URL ??
-	"postgresql://questlog:questlog@localhost:5433/questlog_test";
+import { createTestDb } from "./test-helpers.js";
 
 class RollbackForTest extends Error {}
 
 describe("global-setup", () => {
-	const client = postgres(connectionString, { max: 1 });
+	const { client, close } = createTestDb();
 
 	afterAll(async () => {
-		await client.end();
+		await close();
 	});
 
 	it("cleans up an orphaned write_requests row instead of throwing an FK violation on campaigns", async () => {

@@ -28,7 +28,9 @@ export function basisVector(axis: number, dims = 1024): number[] {
 /**
  * Creates an isolated test database connection.
  *
- * Uses { max: 1 } so all queries within a test share the same connection.
+ * Defaults to { max: 1 } so all queries within a test share the same
+ * connection. Pass { max } to override — e.g. a dedicated multi-connection
+ * client for tests that need to observe genuine cross-connection behavior.
  *
  * Pair with `BEGIN` / `ROLLBACK` in beforeEach/afterEach for isolation **unless**
  * the code under test calls `db.transaction()` (e.g. conversation chat): a second
@@ -38,15 +40,19 @@ export function basisVector(axis: number, dims = 1024): number[] {
  *
  * Call close() in afterAll to release the connection.
  */
-export function createTestDb() {
+export function createTestDb(options?: { max?: number }) {
 	const connectionString =
 		process.env.DATABASE_URL ??
 		"postgresql://questlog:questlog@localhost:5433/questlog_test";
-	const client = postgres(connectionString, { max: 1, idle_timeout: 10 });
+	const client = postgres(connectionString, {
+		max: options?.max ?? 1,
+		idle_timeout: 10,
+	});
 	const db = drizzle(client, { schema });
 
 	return {
 		db,
+		client,
 		close: () => client.end(),
 	};
 }
