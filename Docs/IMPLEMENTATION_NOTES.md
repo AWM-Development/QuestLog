@@ -203,6 +203,9 @@ Each package has `composite: true`. Typecheck runs `tsc -b` (build mode), not `t
 ### postgres.js is the Drizzle driver — not `pg`
 Use `drizzle-orm/postgres-js`. postgres.js is ESM-native; `pg` (node-postgres) is not.
 
+### `createTestDb()` accepts `{ max? }` and also returns the raw `client` (T-009)
+`test-helpers.ts`'s `createTestDb()` defaults to `{ max: 1, idle_timeout: 10 }`; pass `{ max }` for a dedicated multi-connection client (e.g. tests observing genuine cross-connection behavior — see `write-request.service.test.ts`'s concurrency/claim-step tests). It also returns the raw postgres.js `client` alongside `db`/`close`, since some tests (`global-setup.test.ts`) need `client.begin()`/`tx.unsafe()` directly and can't get that through the Drizzle-wrapped `db`. All test files should call `createTestDb()` rather than hand-rolling their own `postgres()`/`drizzle()` construction.
+
 ### Import pipeline: storage provider and worker
 - **Storage:** Pluggable `StorageProvider`; default is local filesystem (`UPLOAD_PATH`). Use `createMemoryStorage()` in tests. Swap for S3 without touching import service.
 - **Worker:** Run `pnpm run process-imports` to process pending sources. No queue table — `sources.status` drives polling. `processSource` is idempotent.
