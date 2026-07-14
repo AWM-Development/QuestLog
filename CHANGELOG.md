@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Changed — T-010
+
+- **MCP tool registrations split into `apps/mcp/src/tools/`:** each of the four MCP tools (`query_lore`, `prep_brief`, `list_entities`, `get_entity`) now lives in its own file exporting a `register*(server, deps)` function, instead of being inlined in `apps/mcp/src/server.ts`. A new shared `withToolErrors` wrapper (`apps/mcp/src/tools/errors.ts`) replaces the duplicated per-tool `try/catch`-`NotFoundError` blocks with one source of the `{ isError: true, content: [...] }` error shape. `server.ts` now just constructs the `McpServer` and calls each `register*` function — adding a future tool is one new file plus one line there. Purely structural: no change to any tool's name, description, input schema, or response/error payload.
+
 ### Changed — T-009
 
 - **Test-DB client construction deduplicated:** `createTestDb()` (`apps/server/src/db/test-helpers.ts`) now accepts an optional `{ max? }` argument (defaulting to today's `{ max: 1 }` behavior) and also returns the raw postgres.js `client`. `write-request.service.test.ts`'s cross-connection concurrency/claim-step tests and `global-setup.test.ts` now call `createTestDb()` instead of each hand-rolling their own `postgres()`/`drizzle()` client with slightly different, duplicated settings.
