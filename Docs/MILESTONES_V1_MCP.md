@@ -59,7 +59,7 @@ Also on main from the pre-pivot era: session editor + entity linking frontends (
   - `list_entities(campaignId, type?)` and `get_entity(campaignId, entityId | name)` → entity service (read-only; name lookup reuses pg_trgm fuzzy matching).
   - Exit: both tools return seeded fixture entities; unknown entity returns a well-formed not-found error, not a crash.
 
-- [ ] **M-MCP.3 — `log_session` (structured write path)**
+- [x] **M-MCP.3 — `log_session` (structured write path)**
   - Writes to the `sessions` table with entity links; chunks + embeds session content into pgvector; runs a **consolidation step** distinguishing *episodic memory* (append-only session log) from *mutable entity state* (updates to entity records).
   - **Safe write-back = preview/confirm/audit:** the tool returns a preview of intended writes; nothing persists until a confirm call; every confirmed write is auditable (what changed, when, from which session).
   - Likely splits into 2–3 tickets at planning time (write path / embed+consolidate / preview-confirm plumbing).
