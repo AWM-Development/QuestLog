@@ -10,6 +10,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-003
+
+- **`log_session` / `confirm_log_session` MCP tools** (`apps/mcp`): `log_session(campaignId, content, title?, summary?, tags?, sessionNumber?, date?)` detects entity mentions in the session content and returns a preview of the session record plus confirmed/ambiguous entity links, without writing anything; `confirm_log_session(token)` takes the returned token and, in a single transaction, creates the session record and links its confirmed entities. Follows the mandatory preview/confirm/audit pattern (`.claude/rules/mcp.md`) — nothing is persisted until confirm, and a second confirm with an already-used token returns a structured not-found error instead of writing a duplicate session.
+- **`session_entities` table** (`apps/server/src/db/schema/tables.ts`): links a session to the entities detected in it, recording the match type (`confirmed` | `ambiguous`) each link was made with.
+- **`sessionService.linkEntities`** (`apps/server/src/services/session.service.ts`): inserts one `session_entities` row per entity span passed in.
+- **`LogSessionInput` / `ConfirmLogSessionInput` Zod schemas** (`packages/shared`) for the two new MCP tools.
+
 ### Changed — T-010
 
 - **MCP tool registrations split into `apps/mcp/src/tools/`:** each of the four MCP tools (`query_lore`, `prep_brief`, `list_entities`, `get_entity`) now lives in its own file exporting a `register*(server, deps)` function, instead of being inlined in `apps/mcp/src/server.ts`. A new shared `withToolErrors` wrapper (`apps/mcp/src/tools/errors.ts`) replaces the duplicated per-tool `try/catch`-`NotFoundError` blocks with one source of the `{ isError: true, content: [...] }` error shape. `server.ts` now just constructs the `McpServer` and calls each `register*` function — adding a future tool is one new file plus one line there. Purely structural: no change to any tool's name, description, input schema, or response/error payload.
