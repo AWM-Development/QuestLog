@@ -2,19 +2,6 @@
 
 Milestone ref: M-MCP.3 (`Docs/MILESTONES_V1_MCP.md`) — "write path" seam
 
-Blocked on: T-002, T-007, T-010 — must be merged into `develop` before this
-ticket is promoted to `queue/`. `write-request.service.ts` (T-002) doesn't
-exist on `develop` until then, and this ticket's Context files and Scope both
-assume it. T-007 (added post-T-002-merge) hardens `confirm()`'s locking
-mechanism that this ticket's `confirm_log_session` directly calls —
-sequencing after it avoids building a caller against internals that are
-about to change. T-010 (added post-T-005-review) moves tool registrations
-into per-tool files under `apps/mcp/src/tools/` with a shared
-`withToolErrors` wrapper — the "tool file pattern" this ticket's Context
-files and Scope tell the executor to mirror only actually exists after it
-lands, and sequencing after it means `log_session`/`confirm_log_session`
-are born in the new structure instead of being moved by hand later.
-
 Branch: feat/m-mcp/t-003-log-session-write-path
 
 Context files (load ONLY these):
