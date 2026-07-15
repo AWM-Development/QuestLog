@@ -1,7 +1,8 @@
 import { and, eq, sql } from "drizzle-orm";
-import type { Database } from "../db/index.js";
+import type { Database, Transaction } from "../db/index.js";
 import { entities } from "../db/schema/index.js";
 import { NotFoundError } from "../lib/errors.js";
+import { first } from "../lib/utils.js";
 
 export interface EntitySpan {
 	entityId: string;
@@ -124,6 +125,38 @@ function findFuzzyPositions(
 	}
 
 	return results;
+}
+
+function isSentenceEndChar(ch: string | undefined): boolean {
+	return ch === "." || ch === "!" || ch === "?";
+}
+
+/**
+ * Extract the sentence surrounding a matched entity span, for the
+ * deterministic consolidation excerpt (log_session's entity consolidation
+ * step). Falls back to the whole text when no sentence boundary is found.
+ */
+export function extractExcerpt(
+	text: string,
+	span: { startIndex: number; endIndex: number },
+): string {
+	let start = 0;
+	for (let i = span.startIndex - 1; i >= 0; i--) {
+		if (isSentenceEndChar(text[i])) {
+			start = i + 1;
+			break;
+		}
+	}
+
+	let end = text.length;
+	for (let i = span.endIndex; i < text.length; i++) {
+		if (isSentenceEndChar(text[i])) {
+			end = i + 1;
+			break;
+		}
+	}
+
+	return text.slice(start, end).trim();
 }
 
 export const entityService = {
@@ -313,5 +346,33 @@ export const entityService = {
 			sql`SELECT count(*)::int AS count FROM entities WHERE campaign_id = ${campaignId}`,
 		);
 		return Number((result[0] as { count: string } | undefined)?.count ?? 0);
+	},
+
+	/**
+	 * Append a deterministic excerpt to an entity's description (append, never
+	 * overwrite) — the log_session consolidation step's write path.
+	 */
+	async appendToDescription(
+		db: Database | Transaction,
+		entityId: string,
+		note: string,
+	) {
+		const rows = await db
+			.select({ description: entities.description })
+			.from(entities)
+			.where(eq(entities.id, entityId));
+		const row = rows[0];
+		if (!row) throw new NotFoundError("Entity", entityId);
+
+		const updated = row.description?.trim()
+			? `${row.description.trim()}\n\n${note}`
+			: note;
+
+		const updatedRows = await db
+			.update(entities)
+			.set({ description: updated })
+			.where(eq(entities.id, entityId))
+			.returning();
+		return first(updatedRows);
 	},
 };

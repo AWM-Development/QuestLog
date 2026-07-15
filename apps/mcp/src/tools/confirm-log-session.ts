@@ -1,10 +1,19 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { chunkText } from "@questlog/server/services/chunking.service.js";
+import { embedChunks } from "@questlog/server/services/embedding.service.js";
+import { entityService } from "@questlog/server/services/entity.service.js";
 import type { EntitySpan } from "@questlog/server/services/entity.service.js";
 import { sessionService } from "@questlog/server/services/session.service.js";
 import { writeRequestService } from "@questlog/server/services/write-request.service.js";
 import { ConfirmLogSessionInput } from "@questlog/shared";
 import { withToolErrors } from "./errors.js";
 import type { ToolDeps } from "./types.js";
+
+interface EntityConsolidationEntry {
+	entityId: string;
+	appendedNote: string;
+	attribution: { sessionId: string | null; sessionNumber: number | null };
+}
 
 interface LogSessionPayload {
 	campaignId: string;
@@ -20,14 +29,18 @@ interface LogSessionPayload {
 		confirmed: EntitySpan[];
 		ambiguous: EntitySpan[];
 	};
+	entityConsolidation: EntityConsolidationEntry[];
 }
 
-export function registerConfirmLogSession(server: McpServer, { db }: ToolDeps) {
+export function registerConfirmLogSession(
+	server: McpServer,
+	{ db, fetchFn }: ToolDeps,
+) {
 	server.registerTool(
 		"confirm_log_session",
 		{
 			description:
-				"Confirm a previously-previewed log_session change-set: creates the session record and links its confirmed entities inside a single transaction.",
+				"Confirm a previously-previewed log_session change-set: creates the session record, links its confirmed entities, chunks + embeds the content, and applies entity consolidation updates, all inside a single transaction.",
 			inputSchema: ConfirmLogSessionInput,
 		},
 		withToolErrors(async ({ token }) => {
@@ -35,7 +48,7 @@ export function registerConfirmLogSession(server: McpServer, { db }: ToolDeps) {
 				db,
 				token,
 				async (tx, rawPayload) => {
-					const { campaignId, session, entityLinks } =
+					const { campaignId, session, entityLinks, entityConsolidation } =
 						rawPayload as LogSessionPayload;
 
 					const created = await sessionService.create(tx, {
@@ -59,9 +72,33 @@ export function registerConfirmLogSession(server: McpServer, { db }: ToolDeps) {
 						entityLinks.confirmed,
 					);
 
+					const textChunks = chunkText(session.content, {
+						sessionId: finalized.id,
+						campaignId,
+					});
+					await embedChunks(tx, textChunks, { fetchFn });
+
+					const entitiesUpdated: EntityConsolidationEntry[] = [];
+					for (const entry of entityConsolidation) {
+						await entityService.appendToDescription(
+							tx,
+							entry.entityId,
+							entry.appendedNote,
+						);
+						entitiesUpdated.push({
+							...entry,
+							attribution: {
+								sessionId: finalized.id,
+								sessionNumber: finalized.sessionNumber,
+							},
+						});
+					}
+
 					return {
 						session: finalized,
 						linkedEntityIds: linked.map((link) => link.entityId),
+						chunksCreated: textChunks.length,
+						entitiesUpdated,
 					};
 				},
 			);

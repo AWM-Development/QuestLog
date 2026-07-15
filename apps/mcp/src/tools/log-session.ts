@@ -1,5 +1,9 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { entityService } from "@questlog/server/services/entity.service.js";
+import { chunkText } from "@questlog/server/services/chunking.service.js";
+import {
+	entityService,
+	extractExcerpt,
+} from "@questlog/server/services/entity.service.js";
 import { writeRequestService } from "@questlog/server/services/write-request.service.js";
 import { LogSessionInput } from "@questlog/shared";
 import { withToolErrors } from "./errors.js";
@@ -27,6 +31,28 @@ export function registerLogSession(server: McpServer, { db }: ToolDeps) {
 					campaignId,
 					text: content,
 				});
+				const confirmed = spans.filter(
+					(span) => span.matchType === "confirmed",
+				);
+
+				// Anchor the preview's chunk count/excerpt to a placeholder — the
+				// real session id (and its chunk rows) only exist after confirm.
+				const chunkPreviewChunks = chunkText(content, {
+					sessionId: "preview",
+					campaignId,
+				});
+
+				const entityConsolidation = confirmed.map((span) => ({
+					entityId: span.entityId,
+					appendedNote: extractExcerpt(content, {
+						startIndex: span.startIndex,
+						endIndex: span.endIndex,
+					}),
+					attribution: {
+						sessionId: null as string | null,
+						sessionNumber: sessionNumber ?? null,
+					},
+				}));
 
 				const payload = {
 					campaignId,
@@ -39,9 +65,14 @@ export function registerLogSession(server: McpServer, { db }: ToolDeps) {
 						date: date?.toISOString(),
 					},
 					entityLinks: {
-						confirmed: spans.filter((span) => span.matchType === "confirmed"),
+						confirmed,
 						ambiguous: spans.filter((span) => span.matchType === "ambiguous"),
 					},
+					chunkPreview: {
+						count: chunkPreviewChunks.length,
+						firstChunkExcerpt: chunkPreviewChunks[0]?.content ?? "",
+					},
+					entityConsolidation,
 				};
 
 				const { token } = await writeRequestService.createPreview(db, {
