@@ -10,6 +10,7 @@ import {
 	entities,
 	entityRelationships,
 	messages,
+	sessionEntities,
 	sessions,
 	sources,
 	writeRequests,
@@ -84,6 +85,16 @@ export async function deleteCampaignTree(db: Database, campaignId: string) {
 	await db
 		.delete(entityRelationships)
 		.where(eq(entityRelationships.campaignId, campaignId));
+	const sessionRows = await db
+		.select({ id: sessions.id })
+		.from(sessions)
+		.where(eq(sessions.campaignId, campaignId));
+	const sessionIds = sessionRows.map((r) => r.id);
+	if (sessionIds.length > 0) {
+		await db
+			.delete(sessionEntities)
+			.where(inArray(sessionEntities.sessionId, sessionIds));
+	}
 	await db.delete(entities).where(eq(entities.campaignId, campaignId));
 	await db.delete(sessions).where(eq(sessions.campaignId, campaignId));
 	await db.delete(campaigns).where(eq(campaigns.id, campaignId));
