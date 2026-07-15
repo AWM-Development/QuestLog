@@ -117,10 +117,15 @@ export const sessionService = {
 	) {
 		if (spans.length === 0) return [];
 
+		// A session can mention the same entity in more than one span (e.g. an
+		// NPC named twice); the link table tracks "mentioned in this session",
+		// not individual mentions, so dedupe by entityId before inserting.
+		const uniqueByEntity = new Map(spans.map((span) => [span.entityId, span]));
+
 		return db
 			.insert(sessionEntities)
 			.values(
-				spans.map((span) => ({
+				Array.from(uniqueByEntity.values()).map((span) => ({
 					sessionId,
 					entityId: span.entityId,
 					matchType: span.matchType,

@@ -201,5 +201,44 @@ describe("sessionService", () => {
       `);
 			expect(rows).toHaveLength(0);
 		});
+
+		it("dedupes repeated mentions of the same entity into one row", async () => {
+			const session = await sessionService.create(db, { campaignId });
+			const entity = await entityService.create(db, {
+				campaignId,
+				name: "Mira Duskwood",
+				type: "npc",
+			});
+
+			const linked = await sessionService.linkEntities(db, session.id, [
+				{
+					entityId: entity.id,
+					entityName: "Mira Duskwood",
+					entityType: "npc",
+					startIndex: 0,
+					endIndex: 13,
+					matchType: "confirmed",
+					candidates: [],
+				},
+				{
+					entityId: entity.id,
+					entityName: "Mira Duskwood",
+					entityType: "npc",
+					startIndex: 40,
+					endIndex: 53,
+					matchType: "confirmed",
+					candidates: [],
+				},
+			]);
+
+			expect(linked).toHaveLength(1);
+			expect(linked[0]?.entityId).toBe(entity.id);
+
+			const rows = await db.execute(sql`
+        SELECT session_id, entity_id, match_type FROM session_entities
+        WHERE session_id = ${session.id}
+      `);
+			expect(rows).toHaveLength(1);
+		});
 	});
 });
