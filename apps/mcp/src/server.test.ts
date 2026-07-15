@@ -551,4 +551,57 @@ describe("log_session + confirm_log_session tools", () => {
 			.where(eq(sessions.campaignId, campaignId));
 		expect(sessionRows).toHaveLength(1);
 	});
+
+	it("previews an ambiguous entity mention and does not link it on confirm", async () => {
+		await entityService.create(db, {
+			campaignId,
+			name: "Aldric",
+			type: "npc",
+		});
+		await entityService.create(db, {
+			campaignId,
+			name: "Aldric",
+			type: "location",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "log_session",
+			arguments: {
+				campaignId,
+				content: "Aldric was mentioned at the tavern.",
+			},
+		});
+
+		expect(previewResult.isError).toBeFalsy();
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token, preview } = JSON.parse(previewContent[0]?.text ?? "{}");
+
+		expect(preview.entityLinks.confirmed).toHaveLength(0);
+		expect(preview.entityLinks.ambiguous).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ entityName: "Aldric" }),
+			]),
+		);
+
+		await client.callTool({
+			name: "confirm_log_session",
+			arguments: { token },
+		});
+
+		const sessionRows = await db
+			.select()
+			.from(sessions)
+			.where(eq(sessions.campaignId, campaignId));
+		expect(sessionRows).toHaveLength(1);
+
+		const linkRows = await db
+			.select()
+			.from(sessionEntities)
+			.where(eq(sessionEntities.sessionId, sessionRows[0]?.id ?? ""));
+		expect(linkRows).toHaveLength(0);
+	});
 });
