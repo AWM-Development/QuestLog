@@ -41,6 +41,8 @@ jobs:
 
       - name: Find the ticket this PR shipped and its target branch name
         id: ticket
+        env:
+          CURRENT_BRANCH: ${{ github.head_ref }}
         run: |
           set -euo pipefail
 
@@ -60,13 +62,13 @@ jobs:
             exit 0
           fi
 
-          if [ "$TARGET_BRANCH" = "${{ github.head_ref }}" ]; then
+          if [ "$TARGET_BRANCH" = "$CURRENT_BRANCH" ]; then
             echo "Branch already matches the ticket's convention — nothing to do."
             echo "should_rename=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          echo "Found $TICKET_FILE → renaming '${{ github.head_ref }}' to '$TARGET_BRANCH'"
+          echo "Found $TICKET_FILE → renaming '$CURRENT_BRANCH' to '$TARGET_BRANCH'"
           echo "should_rename=true" >> "$GITHUB_OUTPUT"
           echo "target_branch=$TARGET_BRANCH" >> "$GITHUB_OUTPUT"
 
