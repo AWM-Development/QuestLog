@@ -5,9 +5,10 @@ import type {
 } from "@questlog/shared";
 import { desc, eq, max } from "drizzle-orm";
 import type { Database } from "../db/index.js";
-import { campaigns, sessions } from "../db/schema/index.js";
+import { campaigns, sessionEntities, sessions } from "../db/schema/index.js";
 import { NotFoundError } from "../lib/errors.js";
 import { first } from "../lib/utils.js";
+import type { EntitySpan } from "./entity.service.js";
 
 export const sessionService = {
 	async create(db: Database, input: SessionCreateInput) {
@@ -107,5 +108,20 @@ export const sessionService = {
 			throw new NotFoundError("Session", id);
 		}
 		return first(rows);
+	},
+
+	async linkEntities(db: Database, sessionId: string, spans: EntitySpan[]) {
+		if (spans.length === 0) return [];
+
+		return db
+			.insert(sessionEntities)
+			.values(
+				spans.map((span) => ({
+					sessionId,
+					entityId: span.entityId,
+					matchType: span.matchType,
+				})),
+			)
+			.returning();
 	},
 };
