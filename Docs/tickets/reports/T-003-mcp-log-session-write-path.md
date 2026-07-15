@@ -2,7 +2,7 @@
 
 **Outcome:** shipped
 **Branch:** `claude/admiring-heisenberg-ie7bql` (session branch — see note below; ticket's nominal `feat/m-mcp/t-003-log-session-write-path` was not cut)
-**Diff:** 23 files changed, 1573 insertions(+), 23 deletions(-)
+**Diff:** 24 files changed, 1632 insertions(+), 24 deletions(-)
 
 ## Note on branch
 
