@@ -1,12 +1,21 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import { chunks, sources } from "@questlog/server/db/schema/index.js";
-import { basisVector, createTestDb } from "@questlog/server/db/test-helpers.js";
+import {
+	chunks,
+	sessionEntities,
+	sessions,
+	sources,
+} from "@questlog/server/db/schema/index.js";
+import {
+	basisVector,
+	createTestDb,
+	deleteCampaignTree,
+} from "@questlog/server/db/test-helpers.js";
 import { campaignService } from "@questlog/server/services/campaign.service.js";
 import { entityService } from "@questlog/server/services/entity.service.js";
 import { sessionService } from "@questlog/server/services/session.service.js";
 import type { FetchFn } from "@questlog/server/services/voyage.client.js";
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import {
 	afterAll,
 	afterEach,
@@ -388,5 +397,158 @@ describe("get_entity tool", () => {
 		expect(result.isError).toBe(true);
 		const content = result.content as Array<{ type: string; text: string }>;
 		expect(content[0]?.text).toMatch(/Exactly one of entityId or name/);
+	});
+});
+
+describe("log_session + confirm_log_session tools", () => {
+	// confirm_log_session opens its own db.transaction() (via
+	// writeRequestService.confirm), which does not compose with a raw
+	// BEGIN/ROLLBACK wrapper on the same connection (.claude/rules/backend.md
+	// "Test DB pattern") — use explicit FK-safe cleanup instead.
+	let campaignId: string;
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, campaignId);
+	});
+
+	it("previews a session with a confirmed entity link and writes nothing yet", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "log_session",
+			arguments: {
+				campaignId,
+				content: "Mira Duskwood met the party at the gates.",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+
+		expect(payload.token).toBeDefined();
+		expect(payload.preview.entityLinks.confirmed).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ entityId: entity.id }),
+			]),
+		);
+
+		const sessionRows = await db
+			.select()
+			.from(sessions)
+			.where(eq(sessions.campaignId, campaignId));
+		expect(sessionRows).toHaveLength(0);
+	});
+
+	it("creates the session and links the confirmed entity on confirm", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "log_session",
+			arguments: {
+				campaignId,
+				content: "Mira Duskwood met the party at the gates.",
+				title: "Session One",
+			},
+		});
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token } = JSON.parse(previewContent[0]?.text ?? "{}");
+
+		const confirmResult = await client.callTool({
+			name: "confirm_log_session",
+			arguments: { token },
+		});
+
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const confirmed = JSON.parse(confirmContent[0]?.text ?? "{}");
+		expect(confirmed.session.title).toBe("Session One");
+
+		const sessionRows = await db
+			.select()
+			.from(sessions)
+			.where(eq(sessions.campaignId, campaignId));
+		expect(sessionRows).toHaveLength(1);
+		expect(sessionRows[0]?.content).toBe(
+			"Mira Duskwood met the party at the gates.",
+		);
+
+		const linkRows = await db
+			.select()
+			.from(sessionEntities)
+			.where(eq(sessionEntities.sessionId, sessionRows[0]?.id ?? ""));
+		expect(linkRows).toHaveLength(1);
+		expect(linkRows[0]?.entityId).toBe(entity.id);
+	});
+
+	it("returns a structured not-found error on a second confirm with the same token and does not create a second session", async () => {
+		await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "log_session",
+			arguments: {
+				campaignId,
+				content: "Mira Duskwood met the party at the gates.",
+			},
+		});
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token } = JSON.parse(previewContent[0]?.text ?? "{}");
+
+		await client.callTool({
+			name: "confirm_log_session",
+			arguments: { token },
+		});
+		const secondResult = await client.callTool({
+			name: "confirm_log_session",
+			arguments: { token },
+		});
+
+		expect(secondResult.isError).toBe(true);
+		const secondContent = secondResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const secondPayload = JSON.parse(secondContent[0]?.text ?? "{}");
+		expect(secondPayload.error.code).toBe("NOT_FOUND");
+
+		const sessionRows = await db
+			.select()
+			.from(sessions)
+			.where(eq(sessions.campaignId, campaignId));
+		expect(sessionRows).toHaveLength(1);
 	});
 });

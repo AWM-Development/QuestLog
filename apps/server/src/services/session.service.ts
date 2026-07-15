@@ -4,14 +4,14 @@ import type {
 	SessionUpdateInput,
 } from "@questlog/shared";
 import { desc, eq, max } from "drizzle-orm";
-import type { Database } from "../db/index.js";
+import type { Database, Transaction } from "../db/index.js";
 import { campaigns, sessionEntities, sessions } from "../db/schema/index.js";
 import { NotFoundError } from "../lib/errors.js";
 import { first } from "../lib/utils.js";
 import type { EntitySpan } from "./entity.service.js";
 
 export const sessionService = {
-	async create(db: Database, input: SessionCreateInput) {
+	async create(db: Database | Transaction, input: SessionCreateInput) {
 		const [campaign] = await db
 			.select({ id: campaigns.id })
 			.from(campaigns)
@@ -87,7 +87,7 @@ export const sessionService = {
 		return first(rows);
 	},
 
-	async finalize(db: Database, input: SessionFinalizeInput) {
+	async finalize(db: Database | Transaction, input: SessionFinalizeInput) {
 		const { id, title, summary, tags, sessionNumber, date } = input;
 		const updateData: Record<string, unknown> = {
 			status: "finalized",
@@ -110,7 +110,11 @@ export const sessionService = {
 		return first(rows);
 	},
 
-	async linkEntities(db: Database, sessionId: string, spans: EntitySpan[]) {
+	async linkEntities(
+		db: Database | Transaction,
+		sessionId: string,
+		spans: EntitySpan[],
+	) {
 		if (spans.length === 0) return [];
 
 		return db

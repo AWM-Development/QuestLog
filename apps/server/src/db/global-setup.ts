@@ -16,6 +16,7 @@ export const TABLES_IN_DELETE_ORDER = [
 	"sources",
 	"write_requests",
 	"entity_relationships",
+	"session_entities",
 	"entities",
 	"sessions",
 	"campaigns",

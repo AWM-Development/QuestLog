@@ -33,3 +33,19 @@ export const SessionListInput = z.object({
 	campaignId: z.string().uuid(),
 });
 export type SessionListInput = z.infer<typeof SessionListInput>;
+
+export const LogSessionInput = z.object({
+	campaignId: z.string().uuid(),
+	content: z.string().min(1),
+	title: z.string().max(200).optional(),
+	summary: z.string().max(2000).optional(),
+	tags: z.array(z.string().max(100)).max(50).optional(),
+	sessionNumber: z.number().int().positive().optional(),
+	date: z.coerce.date().optional(),
+});
+export type LogSessionInput = z.infer<typeof LogSessionInput>;
+
+export const ConfirmLogSessionInput = z.object({
+	token: z.string().uuid(),
+});
+export type ConfirmLogSessionInput = z.infer<typeof ConfirmLogSessionInput>;

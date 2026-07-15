@@ -3,6 +3,8 @@ export {
 	CampaignUpdateInput,
 } from "./campaign.js";
 export {
+	ConfirmLogSessionInput,
+	LogSessionInput,
 	SessionCreateInput,
 	SessionFinalizeInput,
 	SessionListInput,
