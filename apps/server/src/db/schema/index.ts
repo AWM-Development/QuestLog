@@ -5,6 +5,7 @@ export {
 	entities,
 	entityRelationships,
 	messages,
+	sessionEntities,
 	sessions,
 	sources,
 	writeRequests,

@@ -10,3 +10,5 @@ if (!connectionString) {
 const client = postgres(connectionString);
 export const db = drizzle(client, { schema });
 export type Database = typeof db;
+/** The handle passed to a `db.transaction()` callback — shares the query builder API with `Database` but lacks `$client`. */
+export type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];

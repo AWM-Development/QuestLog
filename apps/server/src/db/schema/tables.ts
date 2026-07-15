@@ -114,6 +114,22 @@ export const entities = pgTable(
 	],
 );
 
+// No updatedAt: a session's entity links are recorded once at confirm time
+// and not mutated afterward.
+export const sessionEntities = pgTable("session_entities", {
+	id: uuid("id").defaultRandom().primaryKey(),
+	sessionId: uuid("session_id")
+		.references(() => sessions.id)
+		.notNull(),
+	entityId: uuid("entity_id")
+		.references(() => entities.id)
+		.notNull(),
+	matchType: text("match_type").notNull(),
+	createdAt: timestamp("created_at", { withTimezone: true })
+		.defaultNow()
+		.notNull(),
+});
+
 // No updatedAt: relationships are immutable edges in the knowledge graph.
 // To change a relationship, delete and recreate it.
 export const entityRelationships = pgTable("entity_relationships", {

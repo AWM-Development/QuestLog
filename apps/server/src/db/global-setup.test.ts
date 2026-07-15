@@ -50,6 +50,48 @@ describe("global-setup", () => {
 		).rejects.toThrow(RollbackForTest);
 	});
 
+	it("cleans up an orphaned session_entities row instead of throwing an FK violation on entities/sessions", async () => {
+		await expect(
+			client.begin(async (tx) => {
+				const campaignRows = await tx.unsafe<{ id: string }[]>(
+					"INSERT INTO campaigns (name, theme) VALUES ($1, $2) RETURNING id",
+					["Orphan Link Test Campaign", "fantasy"],
+				);
+				const campaignId = (campaignRows[0] as { id: string }).id;
+
+				const sessionRows = await tx.unsafe<{ id: string }[]>(
+					`INSERT INTO sessions (campaign_id, session_number, content)
+					 VALUES ($1, $2, $3) RETURNING id`,
+					[campaignId, 1, "text"],
+				);
+				const sessionId = (sessionRows[0] as { id: string }).id;
+
+				const entityRows = await tx.unsafe<{ id: string }[]>(
+					`INSERT INTO entities (campaign_id, name, type)
+					 VALUES ($1, $2, $3) RETURNING id`,
+					[campaignId, "Orphan Entity", "npc"],
+				);
+				const entityId = (entityRows[0] as { id: string }).id;
+
+				await tx.unsafe(
+					`INSERT INTO session_entities (session_id, entity_id, match_type)
+					 VALUES ($1, $2, $3)`,
+					[sessionId, entityId, "confirmed"],
+				);
+
+				await expect(truncateAllTables(tx)).resolves.not.toThrow();
+
+				const linkCountRows = await tx.unsafe<{ count: number }[]>(
+					"SELECT count(*)::int AS count FROM session_entities WHERE session_id = $1",
+					[sessionId],
+				);
+				expect((linkCountRows[0] as { count: number }).count).toBe(0);
+
+				throw new RollbackForTest();
+			}),
+		).rejects.toThrow(RollbackForTest);
+	});
+
 	it("does not silently skip the rest of the delete order when a single table is missing (vs. the whole database being missing)", async () => {
 		await expect(
 			client.begin(async (tx) => {

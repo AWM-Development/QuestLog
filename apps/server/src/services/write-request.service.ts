@@ -1,12 +1,10 @@
 import { and, eq, gt, isNull } from "drizzle-orm";
-import type { Database } from "../db/index.js";
+import type { Database, Transaction } from "../db/index.js";
 import { writeRequests } from "../db/schema/index.js";
 import { NotFoundError } from "../lib/errors.js";
 import { first } from "../lib/utils.js";
 
 const DEFAULT_TTL_MS = 15 * 60 * 1000;
-
-type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 export const writeRequestService = {
 	async createPreview(

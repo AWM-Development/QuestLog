@@ -25,6 +25,7 @@ describe("database schema", () => {
 		expect(tables).toContain("chunks");
 		expect(tables).toContain("conversations");
 		expect(tables).toContain("messages");
+		expect(tables).toContain("session_entities");
 	});
 
 	it("has pgvector extension enabled", async () => {
