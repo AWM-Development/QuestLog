@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Changed — T-011
+
+- **`entity.service.ts`'s fuzzy-candidate lookup consolidated onto a shared, Drizzle-typed helper:** `detectSpans` and `getByName` each ran a near-identical raw `db.execute` query for the `word_similarity` pre-filter, then manually cast every field out of `Record<string, unknown>` — `getByName` in particular hand-mapped each column (`dm_notes` → `dmNotes`, etc.). Both now call a new private `findWordSimilarityCandidates` helper built on Drizzle's typed query builder (mirroring `search.service.ts`'s existing raw-`sql`-fragment-inside-query-builder pattern), so both callers get fully-typed, already-camelCased rows with zero manual casting. No change to matching behavior, thresholds, or index usage.
+
 ### Added — T-004
 
 - **`log_session` now chunks + embeds session content and consolidates entity state, closing M-MCP.3**: `confirm_log_session` chunks the confirmed session's content and embeds it into pgvector (`chunks.sessionId` set, `sourceId` null) inside the same transaction as the session write, so a logged session's content becomes queryable via `query_lore` immediately after confirm. A deterministic (non-AI) consolidation step also appends a short excerpt around each confirmed entity mention to that entity's existing `description` — append-only, never overwriting prior notes.

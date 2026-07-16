@@ -46,11 +46,14 @@ jobs:
         run: |
           set -euo pipefail
 
-          ADDED=$(git diff --name-only --diff-filter=A "origin/${{ github.base_ref }}...HEAD")
+          # AR, not just A: a ticket file travels queue/ -> in-progress/ -> done/
+          # via `git mv` with its content untouched, so relative to the base
+          # branch git reports it as a rename (R100), not an add.
+          ADDED=$(git diff --name-only --diff-filter=AR "origin/${{ github.base_ref }}...HEAD")
           TICKET_FILE=$(echo "$ADDED" | grep -E '^Docs/tickets/done/T-[0-9]+-.*\.md$' | head -n1 || true)
 
           if [ -z "$TICKET_FILE" ]; then
-            echo "No Docs/tickets/done/T-###-*.md added by this PR — not a ticket-pipeline PR, skipping."
+            echo "No Docs/tickets/done/T-###-*.md added or renamed-in by this PR — not a ticket-pipeline PR, skipping."
             echo "should_rename=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi

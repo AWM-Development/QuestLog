@@ -32,6 +32,21 @@ interface TextToken {
 	end: number;
 }
 
+/**
+ * Shared fuzzy-candidate predicate: rows whose name clears the low-threshold
+ * word_similarity cutoff for a campaign. Callers select only the columns
+ * they need onto this filter, fully Drizzle-typed so nobody hand-casts
+ * columns out of Record<string, unknown>. Mirrors search.service.ts's
+ * pattern of a raw `sql` fragment embedded inside the query builder rather
+ * than a fully raw execute call.
+ */
+function wordSimilarityCandidateFilter(campaignId: string, query: string) {
+	return and(
+		eq(entities.campaignId, campaignId),
+		sql`word_similarity(${entities.name}, ${query}) > 0.15`,
+	);
+}
+
 function escapeRegex(s: string): string {
 	return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -168,12 +183,10 @@ export const entityService = {
 
 		const dismissed = new Set(dismissedEntityTexts.map((t) => t.toLowerCase()));
 
-		const candidateRows = await db.execute<Record<string, unknown>>(sql`
-      SELECT id, name, type
-      FROM ${entities}
-      WHERE campaign_id = ${campaignId}
-        AND word_similarity(name, ${text}) > 0.15
-    `);
+		const candidateRows = await db
+			.select({ id: entities.id, name: entities.name, type: entities.type })
+			.from(entities)
+			.where(wordSimilarityCandidateFilter(campaignId, text));
 
 		if (candidateRows.length === 0) return [];
 
@@ -181,9 +194,9 @@ export const entityService = {
 
 		for (const row of candidateRows) {
 			const entity: EntityCandidate = {
-				id: row.id as string,
-				name: row.name as string,
-				type: row.type as string,
+				id: row.id,
+				name: row.name,
+				type: row.type,
 			};
 			let positions = findExactPositions(entity.name, text);
 			if (positions.length === 0) {
@@ -309,36 +322,22 @@ export const entityService = {
 	},
 
 	async getByName(db: Database, campaignId: string, name: string) {
-		const candidateRows = await db.execute<Record<string, unknown>>(sql`
-      SELECT id, name, type, summary, description, attributes, dm_notes,
-        created_at, updated_at
-      FROM ${entities}
-      WHERE campaign_id = ${campaignId}
-        AND word_similarity(name, ${name}) > 0.15
-    `);
+		const candidateRows = await db
+			.select()
+			.from(entities)
+			.where(wordSimilarityCandidateFilter(campaignId, name));
 
-		let best: { row: Record<string, unknown>; score: number } | null = null;
+		let best: { row: (typeof candidateRows)[number]; score: number } | null =
+			null;
 		for (const row of candidateRows) {
-			const score = trigramSimilarity(name, row.name as string);
+			const score = trigramSimilarity(name, row.name);
 			if (score >= FUZZY_THRESHOLD && (!best || score > best.score)) {
 				best = { row, score };
 			}
 		}
 		if (!best) throw new NotFoundError("Entity", name);
 
-		const { row } = best;
-		return {
-			id: row.id as string,
-			campaignId,
-			name: row.name as string,
-			type: row.type as string,
-			summary: row.summary as string | null,
-			description: row.description as string | null,
-			attributes: row.attributes as Record<string, unknown> | null,
-			dmNotes: row.dm_notes as string | null,
-			createdAt: row.created_at as Date,
-			updatedAt: row.updated_at as Date,
-		};
+		return best.row;
 	},
 
 	async countByCampaign(db: Database, campaignId: string): Promise<number> {
