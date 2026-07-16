@@ -1,8 +1,7 @@
-import { desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray } from "drizzle-orm";
 import type { Database } from "../db/index.js";
-import { entities, sessions } from "../db/schema/index.js";
+import { entities, sessionEntities, sessions } from "../db/schema/index.js";
 import { campaignService } from "./campaign.service.js";
-import { entityService } from "./entity.service.js";
 
 const RESOLVED_PREFIX = "resolved:";
 const CONTENT_EXCERPT_LENGTH = 500;
@@ -103,37 +102,47 @@ export const briefService = {
 			.filter((thread) => !resolvedTags.has(thread.tag))
 			.sort((a, b) => b.lastTouchedSessionNumber - a.lastTouchedSessionNumber);
 
-		// Likely NPCs: session_entities (T-003) isn't on develop yet, so fall
-		// back to re-detecting spans against recent session content.
+		// Likely NPCs: read confirmed links from session_entities (populated at
+		// confirm time by confirm_log_session) instead of re-deriving them by
+		// re-scanning session content on every prep_brief call.
+		const recentSessionIds = recentSessions.map((s) => s.id);
+		const npcMentions =
+			recentSessionIds.length === 0
+				? []
+				: await db
+						.select({
+							sessionId: sessionEntities.sessionId,
+							entityId: entities.id,
+							name: entities.name,
+							summary: entities.summary,
+						})
+						.from(sessionEntities)
+						.innerJoin(entities, eq(sessionEntities.entityId, entities.id))
+						.where(
+							and(
+								inArray(sessionEntities.sessionId, recentSessionIds),
+								eq(sessionEntities.matchType, "confirmed"),
+								eq(entities.type, "npc"),
+							),
+						);
+
+		const npcMentionsBySession = new Map<string, typeof npcMentions>();
+		for (const mention of npcMentions) {
+			const mentions = npcMentionsBySession.get(mention.sessionId) ?? [];
+			mentions.push(mention);
+			npcMentionsBySession.set(mention.sessionId, mentions);
+		}
+
+		// recentSessions is newest-first, so the first hit per entity is its
+		// most recent mention.
 		const npcsBySessionRecency = new Map<string, LikelyNpc>();
 		for (const session of recentSessions) {
-			const spans = await entityService.detectSpans(db, {
-				campaignId,
-				text: session.content,
-			});
-			const confirmedEntityIds = Array.from(
-				new Set(
-					spans
-						.filter((span) => span.matchType === "confirmed")
-						.map((span) => span.entityId),
-				),
-			);
-			if (confirmedEntityIds.length === 0) continue;
-
-			const matchedEntities = await db
-				.select()
-				.from(entities)
-				.where(inArray(entities.id, confirmedEntityIds));
-
-			for (const entity of matchedEntities) {
-				if (entity.type !== "npc") continue;
-				// recentSessions is newest-first, so the first hit per entity is its
-				// most recent mention.
-				if (npcsBySessionRecency.has(entity.id)) continue;
-				npcsBySessionRecency.set(entity.id, {
-					entityId: entity.id,
-					name: entity.name,
-					summary: entity.summary,
+			for (const mention of npcMentionsBySession.get(session.id) ?? []) {
+				if (npcsBySessionRecency.has(mention.entityId)) continue;
+				npcsBySessionRecency.set(mention.entityId, {
+					entityId: mention.entityId,
+					name: mention.name,
+					summary: mention.summary,
 					lastSessionNumber: session.sessionNumber,
 				});
 			}
