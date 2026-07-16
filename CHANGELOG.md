@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-014
+
+- **`campaign_id` btree indexes added across every campaign-scoped table** (`sessions`, `entities`, `entity_relationships`, `sources`, `chunks`, `conversations`, `write_requests`): previously only `entities.name` had an index, so every campaign-scoped query Seq Scanned its full table to find one campaign's rows. Invisible at today's single-user scale; matters once multiple users each have multiple campaigns and total rows per table grow independently of any one campaign's slice. No behavior change — same query results, cheaper query plans. Closes the scaling gap T-012's won't-fix investigation identified.
+
 ### Changed — T-013
 
 - **`prep_brief`'s "Likely NPCs" now reads confirmed entity links from `session_entities` instead of re-scanning session text on every call:** `brief.service.ts` previously ran `entityService.detectSpans` against each recent session's content at read time, re-deriving the same links `confirm_log_session` already persisted at write time. It now joins `session_entities` → `entities` for the recent-session window directly. Behavior change: a session's NPC mentions only surface in "Likely NPCs" if that session went through `log_session`/`confirm_log_session` (which link entities) — a session created via the raw service layer with no linked entities no longer falls back to text matching, even if its content mentions an NPC by name.

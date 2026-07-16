@@ -535,3 +535,58 @@ The ticket's exit condition claimed "the existing `prep_brief` suite in `apps/mc
 
 ### This session's harness-pinned branch (`claude/admiring-heisenberg-l91cvf`) was stale, not just differently-named
 Per `EXECUTOR_ROUTINE.md` Step 2's documented fallback, work was done on the harness-enforced session branch instead of the ticket's nominal `Branch:` field. Unlike the T-004 case documented above (a *fresh* auto-generated branch with no history to lose), this session's pinned branch already existed on `origin` — but `git merge-base --is-ancestor` confirmed it was a pure ancestor of `develop` (its tip, "docs: commit the nightly executor routine to the repo," is a commit `develop` has long since merged past), i.e. stale from session creation, carrying no unique work. Reset it to the feature branch's tip (`develop` + this ticket's commits) and pushed under the enforced name rather than preserving/merging the stale history, the same "restart from latest default branch" treatment the outer harness instructions specify for an already-merged designated branch.
+
+## T-014 — `campaign_id` btree indexes across campaign-scoped tables (2026-07)
+
+### Index list
+Plain btree index on `campaign_id`, one per campaign-scoped table, declared in `tables.ts` the same way as `entities_name_trgm_idx` (`index("<table>_campaign_id_idx").using("btree", table.campaignId)`), migration `0010_outgoing_skreet.sql`:
+
+- `sessions_campaign_id_idx`
+- `entities_campaign_id_idx`
+- `entity_relationships_campaign_id_idx`
+- `sources_campaign_id_idx`
+- `chunks_campaign_id_idx`
+- `conversations_campaign_id_idx`
+- `write_requests_campaign_id_idx`
+
+### EXPLAIN evidence needs low per-campaign selectivity to actually pick the index — a 3-campaign, ~1,000-row seed wasn't enough
+A first attempt seeded exactly 3 campaigns with ~1,000 total `entities`/`sessions` rows, one campaign holding ~46% of the table. Postgres correctly chose `Seq Scan` over the new index for that query — not a bug, just correct planner behavior: at that selectivity and table size (a handful of pages), scanning everything is cheaper than random index lookups. That result was actually a useful signal that the seed wasn't representative of the scenario this ticket is about (row counts growing with *user × campaign count*, not any one campaign's share shrinking). Re-seeded with 50 campaigns and ~4,900 `entities` / 3,000 `sessions` total, target campaign at a realistic ~4% slice — every query below then chose `Index Scan using *_campaign_id_idx`. Takeaway for future index-verification work: selectivity relative to *total campaigns*, not just total row count, is what makes an index win; a 3-campaign minimum seed can accidentally prove nothing.
+
+Seed and queries run inside `BEGIN`/`ROLLBACK` against `questlog_test` (no permanent data change). 50 campaigns; `entities`: campaign 1 = 200 rows + 1 verbatim "Strahd" row, campaigns 2–3 = 10 rows each (siblings, for the `detectSpans`/`getByName`-shaped check), campaigns 4–50 = 100 rows each filler (4,921 total); `sessions`: 60 rows × 50 campaigns (3,000 total).
+
+```
+=== entities: plain campaign_id filter ===
+ Index Scan using entities_campaign_id_idx on entities  (cost=0.28..14.80 rows=201 width=70) (actual time=0.006..0.032 rows=201 loops=1)
+   Index Cond: (campaign_id = '00000000-0000-0000-0000-000000000001'::uuid)
+   Buffers: shared hit=6
+ Execution Time: 0.045 ms
+
+=== sessions: plain campaign_id filter ===
+ Index Scan using sessions_campaign_id_idx on sessions  (cost=0.28..10.33 rows=60 width=16) (actual time=0.007..0.014 rows=60 loops=1)
+   Index Cond: (campaign_id = '00000000-0000-0000-0000-000000000001'::uuid)
+   Buffers: shared hit=4
+ Execution Time: 0.021 ms
+
+=== entities: detectSpans/getByName-shaped query (campaign_id + word_similarity), large campaign ===
+ Index Scan using entities_campaign_id_idx on entities  (cost=0.28..15.81 rows=67 width=70) (actual time=2.326..2.327 rows=1 loops=1)
+   Index Cond: (campaign_id = '00000000-0000-0000-0000-000000000001'::uuid)
+   Filter: (word_similarity(name, 'a realistic session log mentioning Strahd among other things'::text) > '0.15'::double precision)
+   Rows Removed by Filter: 200
+   Buffers: shared hit=6
+ Execution Time: 2.360 ms
+
+=== entities: detectSpans/getByName-shaped query, sibling campaign ===
+ Index Scan using entities_campaign_id_idx on entities  (cost=0.28..8.51 rows=3 width=70) (actual time=0.021..0.105 rows=10 loops=1)
+   Index Cond: (campaign_id = '00000000-0000-0000-0000-000000000002'::uuid)
+   Filter: (word_similarity(name, 'looking up one specific entity by name'::text) > '0.15'::double precision)
+   Buffers: shared hit=3
+ Execution Time: 0.112 ms
+```
+
+The `campaign_id` index narrows to the target campaign first in every case (`Index Cond`), and the existing (unchanged) `word_similarity` predicate then runs as a cheap in-memory `Filter` over that already-small row set — closing the loop T-012's won't-fix investigation opened.
+
+### `chunks` has no rows in this seed — the pgvector ANN index gap flagged by T-012/T-014's own scope, not fixed here
+`chunks.embedding` has no index (`<=>` runs an unindexed distance scan); out of scope per this ticket's own text. Noted here for whoever picks up that follow-up, not filed as a new ticket by this session.
+
+### Sandbox note: no Docker in this execution environment (recurrence of the M-MCP.1 note)
+Same situation as M-MCP.1/M-MCP.3: no `docker` daemon available. Native `postgresql-16` + `postgresql-16-pgvector` (apt) install, cluster moved to port 5433, `questlog`/`questlog_test` databases and the `questlog` role created from scratch, migrations run against both before any test could pass.
