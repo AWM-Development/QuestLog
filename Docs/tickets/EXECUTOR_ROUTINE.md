@@ -13,7 +13,7 @@ CRITICAL BRANCH RULES — NEVER VIOLATE:
 - `main` is the deployed branch. NEVER push to it, NEVER target it, NEVER base a ticket branch on it. If any step would require touching `main`, STOP and log it as a blocker.
 - Ticket branches are cut from `develop` and PR'd back into `develop`. `develop` → `main` is a separate release step only Alex performs.
 - NEVER merge any branch — not into `develop`, not into `main`. You open a PR against `develop`; you never merge it.
-- This routine's repo config enables "Allow unrestricted git push" so you can create the ticket's nominal feature branch. That permission exists for exactly one purpose: pushing the current ticket's feature branch (or, when resuming, the branch that ticket's prior work actually lives on). Never push any other ref — not `develop`, not `main`, not another ticket's branch.
+- The only ref you ever push is the current ticket's feature branch — its nominal `Branch:` name, or your session's harness-assigned branch as Step 2's fallback (or, when resuming per Step 1 case 4, the branch that ticket's prior work actually lives on). Never push `develop`, `main`, or any other existing branch: the git proxy blocks those pushes mechanically, and you must never attempt them regardless.
 - Model: sonnet, always. Never opus/fable for execution.
 
 ## Step 0: Land on `develop` — do not trust the branch you were started on
@@ -43,7 +43,7 @@ If the loop exhausts every candidate without a pick (case 1) or a resume (case 4
 ## Step 2: Pick up the ticket (new tickets only — skip if resuming per Step 1)
 - `git mv` the ticket from `Docs/tickets/queue/T-###-slug.md` to `Docs/tickets/in-progress/T-###-slug.md`, commit ('chore: pick up T-### — move to in-progress').
 - Read the ticket in full. Note its Branch field, Context files list, Mockup field, Scope, Out of scope, Exit condition, and Iteration cap.
-- Create the feature branch from `develop` using the exact name in the ticket's Branch field, and push it immediately (`git push -u origin <branch>`) to confirm push access before doing any work. Step 1 has already confirmed no matching PR or branch exists yet. Pushing this non-`claude/*` branch name is explicitly authorized by this routine's repo config ("Allow unrestricted git push") — that authorization covers this one feature branch only, per the CRITICAL BRANCH RULES. Only if that push is rejected (e.g. a 403 from the git proxy because the unrestricted-push setting was reset): proceed on the session's harness-assigned branch instead — same one-ticket/one-branch/one-PR shape, different name — and flag the deviation under "Anything Alex must decide" in the eventual report. This doesn't break Step 1's dedup check on future runs, since that check searches by ticket id, not by exact branch name.
+- Create the feature branch from `develop` locally, using the exact name in the ticket's Branch field (`git checkout -b <name>`). Step 1 has already confirmed no matching PR or branch exists yet. **Do not push it yet** — the branch reaches origin as a single new-branch push at the end (Step 6 or 7). The git proxy permits creating a new branch name even though it isn't your session's assigned `claude/*` branch (verified empirically in this repo — T-004's session, 2026-07-15), and this routine explicitly authorizes that one push per the CRITICAL BRANCH RULES; pushing *again* to the branch once it exists on origin is not similarly known-safe, which is why all work lands in the one final push. If that final push is rejected (e.g. proxy behavior has tightened): push the same commits to your session's harness-assigned branch instead — same one-ticket/one-branch/one-PR shape, different name — and flag the deviation under "Anything Alex must decide" in the eventual report. Either way, Step 1's dedup check on future runs is unaffected, since it searches by ticket id, not by exact branch name.
 
 ## Step 3: Load context — ONLY what the ticket names
 - Read `CLAUDE.md` (always — it's the top-level pointer, ~40 lines).
@@ -69,7 +69,7 @@ Invoke the `reviewer` subagent against the ticket file and the diff (`git diff d
 ## Step 6: Blocked (only if Step 4 or Step 5 hit the cap)
 - Fill out `Docs/tickets/BLOCKED_TEMPLATE.md` for this ticket: what failed, the distinct approaches attempted with evidence, your hypothesis, the exact question for Alex, and branch state.
 - `git mv` the ticket from `in-progress/` to `Docs/tickets/blocked/T-###-slug.md`, commit the ticket move and the blocked report together.
-- Push the feature branch (for inspection) but do NOT open a PR.
+- Push the feature branch (for inspection) but do NOT open a PR. This is the single new-branch push described in Step 2; its fallback applies if rejected.
 - Output the blocked report as your summary. Stop — do not proceed to Step 7.
 
 ## Step 7: Wrap up (shipped path only)
@@ -79,5 +79,5 @@ Invoke the `reviewer` subagent against the ticket file and the diff (`git diff d
 - Write `Docs/tickets/reports/T-###-slug.md` per `Docs/tickets/REPORT_TEMPLATE.md` — outcome, diff stats, pasted test evidence (not a summary), exit-condition-by-exit-condition check, the reviewer's verbatim verdict, anything Alex must decide.
 - `git mv` the ticket from `in-progress/` to `Docs/tickets/done/T-###-slug.md`.
 - Commit all of the above.
-- Push the feature branch and open a PR against `develop` using the morning report as the PR description. Do NOT merge it.
+- Push the feature branch and open a PR against `develop` using the morning report as the PR description. Do NOT merge it. This is the single new-branch push described in Step 2; its fallback applies if rejected.
 - Output a brief summary: ticket id, outcome, PR link.
