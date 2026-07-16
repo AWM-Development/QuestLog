@@ -10,6 +10,13 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-004
+
+- **`log_session` now chunks + embeds session content and consolidates entity state, closing M-MCP.3**: `confirm_log_session` chunks the confirmed session's content and embeds it into pgvector (`chunks.sessionId` set, `sourceId` null) inside the same transaction as the session write, so a logged session's content becomes queryable via `query_lore` immediately after confirm. A deterministic (non-AI) consolidation step also appends a short excerpt around each confirmed entity mention to that entity's existing `description` — append-only, never overwriting prior notes.
+- **`log_session` preview payload extended** (`apps/mcp/src/tools/log-session.ts`) with `chunkPreview: { count, firstChunkExcerpt }` and `entityConsolidation: Array<{entityId, appendedNote, attribution}>`, so the DM can see what would be chunked/appended before confirming; an unconfirmed preview still writes nothing.
+- **`chunking.service.ts` / `embedding.service.ts` generalized** to anchor a chunk to either a `sourceId` (source documents) or a `sessionId` (session logs), not only the former.
+- **`entityService.appendToDescription`** (`apps/server/src/services/entity.service.ts`): appends a note to an entity's `description` with a blank-line separator, or sets it if empty. Paired with a new `extractExcerpt` helper that pulls the sentence surrounding a detected entity span.
+
 ### Added — T-003
 
 - **`log_session` / `confirm_log_session` MCP tools** (`apps/mcp`): `log_session(campaignId, content, title?, summary?, tags?, sessionNumber?, date?)` detects entity mentions in the session content and returns a preview of the session record plus confirmed/ambiguous entity links, without writing anything; `confirm_log_session(token)` takes the returned token and, in a single transaction, creates the session record and links its confirmed entities. Follows the mandatory preview/confirm/audit pattern (`.claude/rules/mcp.md`) — nothing is persisted until confirm, and a second confirm with an already-used token returns a structured not-found error instead of writing a duplicate session.

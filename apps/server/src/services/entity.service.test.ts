@@ -3,7 +3,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createTestDb } from "../db/test-helpers.js";
 import { NotFoundError } from "../lib/errors.js";
 import { campaignService } from "./campaign.service.js";
-import { entityService } from "./entity.service.js";
+import { entityService, extractExcerpt } from "./entity.service.js";
 
 const { db, close } = createTestDb();
 
@@ -267,5 +267,87 @@ describe("entityService.list with type filter", () => {
 		const results = await entityService.list(db, campaignId, "npc");
 		expect(results).toHaveLength(1);
 		expect(results[0]?.name).toBe("Strahd");
+	});
+});
+
+describe("entityService.appendToDescription", () => {
+	let campaignId: string;
+
+	beforeEach(async () => {
+		await db.execute(sql`BEGIN`);
+		const campaign = await campaignService.create(db, {
+			name: "Test Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await db.execute(sql`ROLLBACK`);
+	});
+
+	it("appends to an existing description with a separator", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Strahd",
+			type: "npc",
+			description: "The vampire lord of Barovia.",
+		});
+
+		const updated = await entityService.appendToDescription(
+			db,
+			entity.id,
+			"Seen prowling the castle halls at night.",
+		);
+
+		expect(updated.description).toBe(
+			"The vampire lord of Barovia.\n\nSeen prowling the castle halls at night.",
+		);
+	});
+
+	it("sets the description when none exists yet", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Ismark",
+			type: "npc",
+		});
+
+		const updated = await entityService.appendToDescription(
+			db,
+			entity.id,
+			"Met the party at the tavern.",
+		);
+
+		expect(updated.description).toBe("Met the party at the tavern.");
+	});
+
+	it("throws NotFoundError for a nonexistent entity", async () => {
+		const unknownId = "00000000-0000-0000-0000-000000000000";
+		await expect(
+			entityService.appendToDescription(db, unknownId, "note"),
+		).rejects.toThrow(NotFoundError);
+	});
+});
+
+describe("extractExcerpt", () => {
+	it("returns the sentence containing the span when surrounded by other sentences", () => {
+		const text =
+			"The party entered the tavern. Mira Duskwood greeted them warmly. They ordered ale.";
+		const startIndex = text.indexOf("Mira Duskwood");
+		const endIndex = startIndex + "Mira Duskwood".length;
+
+		const excerpt = extractExcerpt(text, { startIndex, endIndex });
+
+		expect(excerpt).toBe("Mira Duskwood greeted them warmly.");
+	});
+
+	it("returns the whole text when it is a single sentence", () => {
+		const text = "Mira Duskwood met the party at the gates.";
+		const startIndex = text.indexOf("Mira Duskwood");
+		const endIndex = startIndex + "Mira Duskwood".length;
+
+		const excerpt = extractExcerpt(text, { startIndex, endIndex });
+
+		expect(excerpt).toBe("Mira Duskwood met the party at the gates.");
 	});
 });

@@ -4,12 +4,6 @@ Milestone ref: M-MCP.4 (`Docs/MILESTONES_V1_MCP.md`) — hardening follow-up
 flagged in T-003's post-merge review; not itself a milestone task (M-MCP.4
 is already done)
 
-Blocked on: T-003 — must be merged into `develop` before this ticket is
-promoted to `queue/`. The `session_entities` table and
-`sessionService.linkEntities` don't exist on `develop` until then, and this
-ticket's whole point is reading from that table instead of the
-`entityService.detectSpans` fallback `brief.service.ts` currently uses.
-
 Branch: feat/m-mcp/t-013-brief-service-session-entities-swap
 
 Context files (load ONLY these):

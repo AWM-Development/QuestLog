@@ -5,7 +5,7 @@
  * Batches requests in groups of 128 (Voyage API max).
  */
 
-import type { Database } from "../db/index.js";
+import type { Database, Transaction } from "../db/index.js";
 import { chunks } from "../db/schema/index.js";
 import { estimateTokens } from "../lib/utils.js";
 import type { TextChunk } from "./chunking.service.js";
@@ -25,7 +25,7 @@ export interface EmbedOptions {
  * Skips silently if VOYAGE_API_KEY is not set (dev-mode guard).
  */
 export async function embedChunks(
-	db: Database,
+	db: Database | Transaction,
 	textChunks: TextChunk[],
 	options?: EmbedOptions,
 ): Promise<void> {
@@ -52,7 +52,8 @@ export async function embedChunks(
 			const embeddingData = result.data.find((d) => d.index === batchIndex);
 			return {
 				campaignId: chunk.campaignId,
-				sourceId: chunk.sourceId,
+				sourceId: chunk.sourceId ?? null,
+				sessionId: chunk.sessionId ?? null,
 				content: chunk.content,
 				embedding: embeddingData?.embedding ?? [],
 				metadata: {

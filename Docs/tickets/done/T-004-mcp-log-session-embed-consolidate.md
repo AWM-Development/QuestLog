@@ -2,11 +2,6 @@
 
 Milestone ref: M-MCP.3 (`Docs/MILESTONES_V1_MCP.md`) — "embed+consolidate" seam, closes M-MCP.3
 
-Blocked on: T-002 and T-003 — both must be merged into `develop` before this
-ticket is promoted to `queue/`. This ticket extends the
-`log_session`/`confirm_log_session` preview payload and `applyFn` built in
-T-003, which itself depends on T-002.
-
 Branch: feat/m-mcp/t-004-log-session-embed-consolidate
 
 Context files (load ONLY these):

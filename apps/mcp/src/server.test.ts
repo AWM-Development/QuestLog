@@ -2,6 +2,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import {
 	chunks,
+	entities,
 	sessionEntities,
 	sessions,
 	sources,
@@ -603,5 +604,142 @@ describe("log_session + confirm_log_session tools", () => {
 			.from(sessionEntities)
 			.where(eq(sessionEntities.sessionId, sessionRows[0]?.id ?? ""));
 		expect(linkRows).toHaveLength(0);
+	});
+
+	it("includes chunkPreview and entityConsolidation in the preview for a confirmed entity mention", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+			description: "A ranger who knows the Old Road.",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "log_session",
+			arguments: {
+				campaignId,
+				content: "Mira Duskwood met the party at the gates.",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const { preview } = JSON.parse(content[0]?.text ?? "{}");
+
+		expect(preview.chunkPreview.count).toBe(1);
+		expect(preview.chunkPreview.firstChunkExcerpt).toContain(
+			"Mira Duskwood met the party at the gates.",
+		);
+		expect(preview.entityConsolidation).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					entityId: entity.id,
+					appendedNote: "Mira Duskwood met the party at the gates.",
+				}),
+			]),
+		);
+	});
+
+	it("chunks + embeds the session content and appends the consolidation note on confirm", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+			description: "A ranger who knows the Old Road.",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "log_session",
+			arguments: {
+				campaignId,
+				content: "Mira Duskwood met the party at the gates.",
+			},
+		});
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token } = JSON.parse(previewContent[0]?.text ?? "{}");
+
+		const confirmResult = await client.callTool({
+			name: "confirm_log_session",
+			arguments: { token },
+		});
+		expect(confirmResult.isError).toBeFalsy();
+
+		const sessionRows = await db
+			.select()
+			.from(sessions)
+			.where(eq(sessions.campaignId, campaignId));
+		const sessionId = sessionRows[0]?.id ?? "";
+
+		const chunkRows = await db
+			.select()
+			.from(chunks)
+			.where(eq(chunks.sessionId, sessionId));
+		expect(chunkRows).toHaveLength(1);
+		expect(chunkRows[0]?.content).toContain(
+			"Mira Duskwood met the party at the gates.",
+		);
+		expect(chunkRows[0]?.embedding).toHaveLength(1024);
+
+		// Retrievable via query_lore against a phrase unique to this session.
+		const queryResult = await client.callTool({
+			name: "query_lore",
+			arguments: { campaignId, query: "Who met the party at the gates?" },
+		});
+		expect(queryResult.isError).toBeFalsy();
+		const queryContent = queryResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const queryPayload = JSON.parse(queryContent[0]?.text ?? "{}");
+		expect(queryPayload.citations).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ chunkId: chunkRows[0]?.id }),
+			]),
+		);
+
+		const [updatedEntity] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, entity.id));
+		expect(updatedEntity?.description).toBe(
+			"A ranger who knows the Old Road.\n\nMira Duskwood met the party at the gates.",
+		);
+	});
+
+	it("leaves the chunks table and entity description unchanged when a preview is never confirmed", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+			description: "A ranger who knows the Old Road.",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		await client.callTool({
+			name: "log_session",
+			arguments: {
+				campaignId,
+				content: "Mira Duskwood met the party at the gates.",
+			},
+		});
+
+		const chunkRows = await db
+			.select()
+			.from(chunks)
+			.where(eq(chunks.campaignId, campaignId));
+		expect(chunkRows).toHaveLength(0);
+
+		const [unchangedEntity] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, entity.id));
+		expect(unchangedEntity?.description).toBe(
+			"A ranger who knows the Old Road.",
+		);
 	});
 });
