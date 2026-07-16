@@ -1,4 +1,4 @@
-# T-012 — Switch entity fuzzy-name pre-filter to the indexable pg_trgm operator form
+# T-012 — Switch entity fuzzy-name pre-filter to the indexable pg_trgm operator form — WON'T FIX
 
 Milestone ref: M-MCP.2 (`Docs/MILESTONES_V1_MCP.md`) — hardening follow-up
 from T-006's post-merge code review; not itself a milestone task
@@ -83,3 +83,39 @@ Definition of done includes: checkbox flip in MILESTONES_V1_MCP.md is NOT
   document the word_similarity function-vs-operator index gotcha (this is
   exactly the kind of non-obvious decision that doc exists for), a
   CHANGELOG.md entry under [Unreleased], morning report written.
+
+## Resolution — WON'T FIX (2026-07-16)
+
+An investigation pass (session branch `claude/admiring-heisenberg-sl43m8`,
+never merged) hit this ticket's iteration cap: no `%>`/`<%` operator form is
+both indexable via `entities_name_trgm_idx` and semantics-preserving for
+`detectSpans`'s call shape. The only indexable form computes
+`word_similarity(query, name)` — the reverse of the original
+`word_similarity(name, query)` — which silently drops a verbatim entity-name
+match from `1.0` to `0.029` on realistic session-log-length text, well under
+the `0.15` threshold. Full evidence (EXPLAIN output, `word_similarity` score
+comparison) is preserved in that branch's
+`Docs/tickets/blocked/T-012-entity-trgm-index-pre-filter.md`, which was
+never merged since this ticket resolves as won't-fix rather than being
+unblocked.
+
+Reviewed with Alex 2026-07-16. Decision: don't pursue any operator-form
+rewrite. Per-campaign entity counts are bounded regardless of user count
+(one DM's one campaign realistically has dozens to low hundreds of named
+entities, not thousands) — the risk of silently reversing `word_similarity`'s
+argument order isn't worth taking on for a Seq Scan that's cheap once
+correctly scoped to one campaign's rows. The actual gap is that
+`entities` (and every other campaign-scoped table) has no index on
+`campaign_id` at all, so today's Seq Scan runs over the *entire* table, not
+just one campaign's slice — that will matter well before per-campaign
+entity count does, especially once multi-user support lands and total row
+counts grow across many campaigns. Follow-up: `T-014` (`Docs/tickets/queue/T-014-campaign-scoped-btree-indexes.md`)
+adds `campaign_id` btree indexes across those tables instead; once that
+lands, `detectSpans`/`getByName`'s existing function-call `word_similarity`
+predicate runs over an already-narrowed, small row set, making this
+ticket's original optimization unnecessary.
+
+See `Docs/IMPLEMENTATION_NOTES.md` §"word_similarity is non-symmetric —
+pg_trgm's indexable operator form can't preserve it here" for the durable
+writeup, and `Docs/tickets/reports/T-012-entity-trgm-index-pre-filter.md`
+for the full report.

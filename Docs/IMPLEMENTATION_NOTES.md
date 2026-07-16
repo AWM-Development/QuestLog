@@ -140,6 +140,52 @@ Migration `0006_entity_linking_schema.sql` adds `CREATE EXTENSION IF NOT EXISTS 
 
 `entityService.getByName` matches a single input name against candidate entity names using the same two-phase approach as `detectSpans`: a cheap `word_similarity(name, ...) > 0.15` SQL pre-filter, then the pure-JS `trigramSimilarity` helper (module-scoped `FUZZY_THRESHOLD = 0.4`, hoisted out of `findFuzzyPositions` so both callers share one constant) to pick the best-scoring candidate. This was a deliberate choice over calling pg_trgm's `similarity()` in SQL directly — `trigramSimilarity` is already documented as "same algorithm as pg_trgm `similarity()`," so a second SQL-side ranking would just be a redundant round trip computing the same score a different way. If `detectSpans`' matching logic ever changes, `getByName` inherits the change for free since it calls the same helper.
 
+## Session notes (T-012 investigation, won't-fix) — 2026-07-16
+
+### `word_similarity` is non-symmetric — pg_trgm's indexable operator form can't preserve it here
+
+`entity.service.ts`'s fuzzy-candidate pre-filter (`detectSpans`, `getByName`)
+uses `word_similarity(name, query) > 0.15` as a direct function-call
+predicate, which cannot use `entities_name_trgm_idx` (a GIN index with
+`gin_trgm_ops`) — confirmed via `EXPLAIN` with `enable_seqscan = off` forced,
+no alternate plan exists. T-012 investigated switching this to the indexable
+`%>` operator form and hit a real limitation, not an implementation mistake:
+`gin_trgm_ops`'s only indexable operator arrangement is `name %> query`
+(indexed column on the left), and that computes `word_similarity(query, name)`
+— the reverse of the original argument order. `word_similarity` is
+documented as non-symmetric (intended usage: short string first, long string
+second), and `detectSpans` already calls it in that correct orientation
+(short entity `name`, long session-log `text` as `query`). Reversing it for
+indexability measurably breaks matching: a verbatim entity-name match
+embedded in a realistic ~1.9KB session-log text scores `1.0` in the current
+orientation vs. `0.029` reversed — under the `0.15` threshold, silently
+dropping the match. No operator form is both indexable and
+semantics-preserving for `detectSpans`'s call shape. Full EXPLAIN evidence:
+`Docs/tickets/done/T-012-entity-trgm-index-pre-filter.md`.
+
+**Rule of thumb:** before proposing an operator-form rewrite of any
+`word_similarity`/`similarity` predicate to make it indexable, check which
+argument is the indexed column and confirm that orientation matches the
+call site's actual short-string/long-string shape — the indexable and
+semantics-preserving orientations are not guaranteed to be the same one.
+
+### The real gap: no `campaign_id` index anywhere, not the trgm operator form
+
+T-012's won't-fix decision surfaced a bigger, unrelated finding: **no table
+in `apps/server/src/db/schema/tables.ts` has an index on `campaign_id`** —
+`entities_name_trgm_idx` is the only declared index in the schema. Every
+campaign-scoped query in the app (not just entity search) currently Seq
+Scans its full table to find one campaign's rows. Invisible today at
+single-user, single-campaign scale; will matter once multi-user support
+lands, since total rows per table then grow with user × campaign count even
+though each query still only wants one campaign's slice. `T-014` adds
+`campaign_id` btree indexes across every campaign-scoped table to close
+this gap. It also resolves T-012's original motivation as a side effect:
+once a query narrows to one campaign's small row set via an indexed
+`campaign_id` lookup, `detectSpans`/`getByName`'s existing (unchanged)
+`word_similarity` function-call filter runs cheaply over that narrowed set,
+without ever needing the risky operator-order rewrite.
+
 ## Database Migrations
 
 ### Always use `db:migrate` (the journal), never `drizzle-kit push` for shared envs
