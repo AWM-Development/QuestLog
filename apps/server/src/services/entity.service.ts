@@ -33,26 +33,18 @@ interface TextToken {
 }
 
 /**
- * Shared candidate pre-filter for fuzzy entity matching: rows whose name
- * clears the low-threshold word_similarity cutoff, fully Drizzle-typed so
- * callers never hand-cast columns out of Record<string, unknown>. Mirrors
- * search.service.ts's pattern of a raw `sql` fragment embedded inside the
- * query builder rather than a fully raw execute call.
+ * Shared fuzzy-candidate predicate: rows whose name clears the low-threshold
+ * word_similarity cutoff for a campaign. Callers select only the columns
+ * they need onto this filter, fully Drizzle-typed so nobody hand-casts
+ * columns out of Record<string, unknown>. Mirrors search.service.ts's
+ * pattern of a raw `sql` fragment embedded inside the query builder rather
+ * than a fully raw execute call.
  */
-function findWordSimilarityCandidates(
-	db: Database | Transaction,
-	campaignId: string,
-	query: string,
-) {
-	return db
-		.select()
-		.from(entities)
-		.where(
-			and(
-				eq(entities.campaignId, campaignId),
-				sql`word_similarity(${entities.name}, ${query}) > 0.15`,
-			),
-		);
+function wordSimilarityCandidateFilter(campaignId: string, query: string) {
+	return and(
+		eq(entities.campaignId, campaignId),
+		sql`word_similarity(${entities.name}, ${query}) > 0.15`,
+	);
 }
 
 function escapeRegex(s: string): string {
@@ -191,11 +183,10 @@ export const entityService = {
 
 		const dismissed = new Set(dismissedEntityTexts.map((t) => t.toLowerCase()));
 
-		const candidateRows = await findWordSimilarityCandidates(
-			db,
-			campaignId,
-			text,
-		);
+		const candidateRows = await db
+			.select({ id: entities.id, name: entities.name, type: entities.type })
+			.from(entities)
+			.where(wordSimilarityCandidateFilter(campaignId, text));
 
 		if (candidateRows.length === 0) return [];
 
@@ -331,11 +322,10 @@ export const entityService = {
 	},
 
 	async getByName(db: Database, campaignId: string, name: string) {
-		const candidateRows = await findWordSimilarityCandidates(
-			db,
-			campaignId,
-			name,
-		);
+		const candidateRows = await db
+			.select()
+			.from(entities)
+			.where(wordSimilarityCandidateFilter(campaignId, name));
 
 		let best: { row: (typeof candidateRows)[number]; score: number } | null =
 			null;
