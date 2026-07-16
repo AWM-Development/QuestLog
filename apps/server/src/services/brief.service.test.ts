@@ -155,10 +155,21 @@ describe("briefService", () => {
 				type: "npc",
 				description: "Obsessed with Ireena.",
 			});
-			await sessionService.create(db, {
+			const session = await sessionService.create(db, {
 				campaignId,
 				content: "Izek Strazni was seen watching Ireena from the square.",
 			});
+			await sessionService.linkEntities(db, session.id, [
+				{
+					entityId: npc.id,
+					entityName: "Izek Strazni",
+					entityType: "npc",
+					startIndex: 0,
+					endIndex: 12,
+					matchType: "confirmed",
+					candidates: [],
+				},
+			]);
 
 			const brief = await briefService.assemble(db, { campaignId });
 
@@ -175,20 +186,49 @@ describe("briefService", () => {
 		});
 
 		it("excludes a mentioned entity that is not an NPC", async () => {
-			await entityService.create(db, {
+			const location = await entityService.create(db, {
 				campaignId,
 				name: "Old Bonegrinder",
 				type: "location",
 				description: "A windmill.",
 			});
-			await sessionService.create(db, {
+			const session = await sessionService.create(db, {
 				campaignId,
 				content: "The party approaches Old Bonegrinder at dusk.",
+			});
+			await sessionService.linkEntities(db, session.id, [
+				{
+					entityId: location.id,
+					entityName: "Old Bonegrinder",
+					entityType: "location",
+					startIndex: 0,
+					endIndex: 15,
+					matchType: "confirmed",
+					candidates: [],
+				},
+			]);
+
+			const brief = await briefService.assemble(db, { campaignId });
+
+			expect(brief.likelyNpcs).toEqual([]);
+		});
+
+		it("excludes an entity textually mentioned but never linked via session_entities", async () => {
+			await entityService.create(db, {
+				campaignId,
+				name: "Izek Strazni",
+				type: "npc",
+				description: "Obsessed with Ireena.",
+			});
+			await sessionService.create(db, {
+				campaignId,
+				content: "Izek Strazni was seen watching Ireena from the square.",
 			});
 
 			const brief = await briefService.assemble(db, { campaignId });
 
 			expect(brief.likelyNpcs).toEqual([]);
+			expect(brief.quickLinks).toEqual([]);
 		});
 	});
 

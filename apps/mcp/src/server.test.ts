@@ -147,10 +147,21 @@ describe("prep_brief tool", () => {
 			type: "npc",
 			description: "Obsessed with Ireena.",
 		});
-		await sessionService.create(db, {
+		const s1 = await sessionService.create(db, {
 			campaignId,
 			content: "Izek Strazni was seen watching Ireena from the square.",
 		});
+		await sessionService.linkEntities(db, s1.id, [
+			{
+				entityId: npc.id,
+				entityName: "Izek Strazni",
+				entityType: "npc",
+				startIndex: 0,
+				endIndex: 12,
+				matchType: "confirmed",
+				candidates: [],
+			},
+		]);
 		const s2 = await sessionService.create(db, {
 			campaignId,
 			content: "The party rests at the inn.",
