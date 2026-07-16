@@ -14,17 +14,12 @@ const MAX_WORDS = 1000;
 /** Pattern that identifies a section boundary: heading or double-newline. */
 const SECTION_BOUNDARY = /\n(?=#{1,6}\s)|\n{2,}/;
 
-export interface ChunkMeta {
-	sourceId: string;
-	campaignId: string;
-}
+export type ChunkMeta = { campaignId: string } & (
+	| { sourceId: string; sessionId?: undefined }
+	| { sessionId: string; sourceId?: undefined }
+);
 
-export interface TextChunk {
-	content: string;
-	position: number;
-	sourceId: string;
-	campaignId: string;
-}
+export type TextChunk = { content: string; position: number } & ChunkMeta;
 
 /**
  * Split text into semantically-bounded chunks.
@@ -44,10 +39,9 @@ export function chunkText(text: string, meta: ChunkMeta): TextChunk[] {
 		const trimmed = currentContent.trim();
 		if (trimmed) {
 			chunks.push({
+				...meta,
 				content: trimmed,
 				position: chunks.length,
-				sourceId: meta.sourceId,
-				campaignId: meta.campaignId,
 			});
 		}
 		currentContent = "";

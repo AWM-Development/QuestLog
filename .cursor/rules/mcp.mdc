@@ -14,6 +14,14 @@ alwaysApply: false
 
 Each tool is a thin adapter: Zod-validate the MCP input, call the service, shape the service's return into the tool's response schema. Same thin-adapter discipline as tRPC routers (`.claude/rules/backend.md`) — if you're writing more than a few lines of logic in a tool handler, that logic belongs in a service.
 
+## File organization
+
+One file per tool under `apps/mcp/src/tools/`, each exporting a `register<ToolName>(server, deps)` function that calls `server.registerTool(...)` with the tool's name, description, and `inputSchema`. `apps/mcp/src/server.ts` only constructs the `McpServer` and calls each `register*` function — adding a tool is one new file under `tools/` plus one line in `server.ts`, never a new inline block there.
+
+Shared dependencies (`db`, `fetchFn`, etc.) are typed once as `ToolDeps` in `apps/mcp/src/tools/types.ts` and destructured per tool file — don't redeclare the shape per file.
+
+Wrap any handler whose underlying service can throw a typed error (e.g. `NotFoundError`) in `withToolErrors` (`apps/mcp/src/tools/errors.ts`) rather than hand-rolling a `try/catch`. It's safe to apply even to handlers that don't currently throw — it's a no-op that keeps every tool file the same shape and costs nothing if that changes later.
+
 ## Read tools (`query_lore`, `get_entity`, `list_entities`, `prep_brief`)
 
 Straightforward call-through: validate input, call the service, return. No write-back concerns.

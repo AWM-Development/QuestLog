@@ -4,11 +4,63 @@ All notable changes to QuestLog are documented here.
 
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This project has not yet reached v1.0; all work is grouped under `[Unreleased]` until the first production release.
 
-**Obligation:** Every merge to `main` must add an entry here. Document this in `CLAUDE.md` and `Docs/DEVELOPMENT_GUIDE.md §7`.
+**Obligation:** Every ticket PR merged into `develop` must add an entry here — this is part of the nightly executor's definition of done (`Docs/tickets/TICKET_SPEC.md`, `Docs/tickets/EXECUTOR_ROUTINE.md` Step 7). `[Unreleased]` accumulates entries across `develop` until Alex promotes `develop` → `main` for a release, at which point it's cut into a dated version section.
 
 ---
 
 ## [Unreleased]
+
+### Changed — T-013
+
+- **`prep_brief`'s "Likely NPCs" now reads confirmed entity links from `session_entities` instead of re-scanning session text on every call:** `brief.service.ts` previously ran `entityService.detectSpans` against each recent session's content at read time, re-deriving the same links `confirm_log_session` already persisted at write time. It now joins `session_entities` → `entities` for the recent-session window directly. Behavior change: a session's NPC mentions only surface in "Likely NPCs" if that session went through `log_session`/`confirm_log_session` (which link entities) — a session created via the raw service layer with no linked entities no longer falls back to text matching, even if its content mentions an NPC by name.
+
+### Changed — T-011
+
+- **`entity.service.ts`'s fuzzy-candidate lookup consolidated onto a shared, Drizzle-typed helper:** `detectSpans` and `getByName` each ran a near-identical raw `db.execute` query for the `word_similarity` pre-filter, then manually cast every field out of `Record<string, unknown>` — `getByName` in particular hand-mapped each column (`dm_notes` → `dmNotes`, etc.). Both now call a new private `findWordSimilarityCandidates` helper built on Drizzle's typed query builder (mirroring `search.service.ts`'s existing raw-`sql`-fragment-inside-query-builder pattern), so both callers get fully-typed, already-camelCased rows with zero manual casting. No change to matching behavior, thresholds, or index usage.
+
+### Added — T-004
+
+- **`log_session` now chunks + embeds session content and consolidates entity state, closing M-MCP.3**: `confirm_log_session` chunks the confirmed session's content and embeds it into pgvector (`chunks.sessionId` set, `sourceId` null) inside the same transaction as the session write, so a logged session's content becomes queryable via `query_lore` immediately after confirm. A deterministic (non-AI) consolidation step also appends a short excerpt around each confirmed entity mention to that entity's existing `description` — append-only, never overwriting prior notes.
+- **`log_session` preview payload extended** (`apps/mcp/src/tools/log-session.ts`) with `chunkPreview: { count, firstChunkExcerpt }` and `entityConsolidation: Array<{entityId, appendedNote, attribution}>`, so the DM can see what would be chunked/appended before confirming; an unconfirmed preview still writes nothing.
+- **`chunking.service.ts` / `embedding.service.ts` generalized** to anchor a chunk to either a `sourceId` (source documents) or a `sessionId` (session logs), not only the former.
+- **`entityService.appendToDescription`** (`apps/server/src/services/entity.service.ts`): appends a note to an entity's `description` with a blank-line separator, or sets it if empty. Paired with a new `extractExcerpt` helper that pulls the sentence surrounding a detected entity span.
+
+### Added — T-003
+
+- **`log_session` / `confirm_log_session` MCP tools** (`apps/mcp`): `log_session(campaignId, content, title?, summary?, tags?, sessionNumber?, date?)` detects entity mentions in the session content and returns a preview of the session record plus confirmed/ambiguous entity links, without writing anything; `confirm_log_session(token)` takes the returned token and, in a single transaction, creates the session record and links its confirmed entities. Follows the mandatory preview/confirm/audit pattern (`.claude/rules/mcp.md`) — nothing is persisted until confirm, and a second confirm with an already-used token returns a structured not-found error instead of writing a duplicate session.
+- **`session_entities` table** (`apps/server/src/db/schema/tables.ts`): links a session to the entities detected in it, recording the match type (`confirmed` | `ambiguous`) each link was made with.
+- **`sessionService.linkEntities`** (`apps/server/src/services/session.service.ts`): inserts one `session_entities` row per entity span passed in.
+- **`LogSessionInput` / `ConfirmLogSessionInput` Zod schemas** (`packages/shared`) for the two new MCP tools.
+
+### Changed — T-010
+
+- **MCP tool registrations split into `apps/mcp/src/tools/`:** each of the four MCP tools (`query_lore`, `prep_brief`, `list_entities`, `get_entity`) now lives in its own file exporting a `register*(server, deps)` function, instead of being inlined in `apps/mcp/src/server.ts`. A new shared `withToolErrors` wrapper (`apps/mcp/src/tools/errors.ts`) replaces the duplicated per-tool `try/catch`-`NotFoundError` blocks with one source of the `{ isError: true, content: [...] }` error shape. `server.ts` now just constructs the `McpServer` and calls each `register*` function — adding a future tool is one new file plus one line there. Purely structural: no change to any tool's name, description, input schema, or response/error payload.
+
+### Changed — T-009
+
+- **Test-DB client construction deduplicated:** `createTestDb()` (`apps/server/src/db/test-helpers.ts`) now accepts an optional `{ max? }` argument (defaulting to today's `{ max: 1 }` behavior) and also returns the raw postgres.js `client`. `write-request.service.test.ts`'s cross-connection concurrency/claim-step tests and `global-setup.test.ts` now call `createTestDb()` instead of each hand-rolling their own `postgres()`/`drizzle()` client with slightly different, duplicated settings.
+
+### Changed — T-008
+
+- **`session-start.sh` `DATABASE_URL` parsing:** replaced the hand-written regex (which required an explicit port and silently truncated passwords containing an unescaped `@`) with a real URL parser (`node -e` using the `URL` class). A `DATABASE_URL` with no explicit port now defaults to `5432` instead of failing to parse, and passwords containing `@` are extracted intact.
+
+### Changed — T-007
+
+- **`writeRequestService.confirm` claim step** (`apps/server/src/services/write-request.service.ts`): replaced the `SELECT ... FOR UPDATE` row lock (held across the caller-supplied `applyFn`) with an atomic conditional `UPDATE` that claims the row via a new `claimed_at` column before `applyFn` runs. Preserves the existing single-use/no-double-apply and throw-then-retry guarantees without depending on a caller correctly requesting a lock, and no longer holds a lock across `applyFn`'s I/O.
+
+### Added — T-006
+
+- **`get_entity` / `list_entities` MCP tools** (`apps/mcp`): `list_entities(campaignId, type?)` lists a campaign's entities, optionally filtered by type; `get_entity(campaignId, entityId?, name?)` looks up a single entity by id or by fuzzy name match (reuses the existing pg_trgm matching from entity detection), returning a structured not-found error instead of throwing when nothing matches
+- **`entityService.getById` / `getByName`** (`apps/server/src/services/entity.service.ts`): campaign-scoped id lookup and fuzzy name lookup (`word_similarity` pre-filter + trigram-similarity confirmation, same threshold as `detectSpans`); `entityService.list` now accepts an optional `type` filter
+- **`ListEntitiesInput` / `GetEntityInput` Zod schemas** (`packages/shared`) for the two new MCP tools
+
+### Added — T-005
+
+- **`prep_brief` MCP tool**: read-only session prep brief for a campaign, combining a "Previously on" recap of the most recent 1-2 sessions, active plot threads derived from session tags (closed by a `resolved:<tag>` marker), a "Likely NPCs" list of NPC entities mentioned in recent session content, and quick links mirroring those NPCs. Loose ends & suggested follow-ups return a stable empty-with-explanation shape — both require agent analysis that's out of scope for v1.
+
+### Added — T-002
+
+- **Preview/confirm/audit plumbing for MCP writes** (`apps/server/src/services/write-request.service.ts`): a generic mechanism backing every MCP write tool. `createPreview` stages a proposed change-set and returns a single-use confirmation token; `confirm` re-validates the token, applies the change inside a transaction, and records the result — a confirmed row doubles as the audit entry, no separate audit table needed. New `write_requests` table (migration `0007_funny_true_believers.sql`). This is infrastructure only — `log_session` itself doesn't use it yet (T-003/T-004).
 
 ### Fixed
 

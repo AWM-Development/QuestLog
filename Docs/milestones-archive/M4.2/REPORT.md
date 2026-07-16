@@ -1,5 +1,7 @@
 # Agent Report — M4.2: Session Editor Visual Polish
 
+> **Note (added 2026-07-07, doc audit):** This is the report for a visual-polish follow-up pass, not the original M4.2 (Entity Detection & Linking) milestone. The original milestone's work (schema migration, matching service, TipTap highlight extension, quick-create popover, detected-entities panel) never got a standalone report — only an embedded "Agent Report" section in the pre-overwrite `PLAN.md`, recoverable via `git show 212930d:Docs/milestones/M4.2/PLAN.md`. See `Docs/AUDIT_2026-07-M4.md` for the full finding.
+
 **Branch:** `feat/session-log/editor-polish`
 **Status:** Complete
 **Tests:** 262 passed, 0 failed

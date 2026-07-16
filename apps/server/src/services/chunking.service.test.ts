@@ -83,6 +83,18 @@ describe("chunkText", () => {
 		expect(chunks).toHaveLength(0);
 	});
 
+	it("anchors chunks to a sessionId when passed instead of a sourceId", () => {
+		const chunks = chunkText("The party arrived at the gates.", {
+			sessionId: "sess-1",
+			campaignId: "c1",
+		});
+
+		expect(chunks).toHaveLength(1);
+		expect(chunks[0]?.sessionId).toBe("sess-1");
+		expect(chunks[0]?.sourceId).toBeUndefined();
+		expect(chunks[0]?.campaignId).toBe("c1");
+	});
+
 	it("does not exceed max chunk size even without natural boundaries", () => {
 		// One giant paragraph with no headings or double-newlines
 		const words = Array.from({ length: 1500 }, (_, i) => `word${i}`);

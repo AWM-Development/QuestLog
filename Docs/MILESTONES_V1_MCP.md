@@ -50,22 +50,22 @@ Also on main from the pre-pivot era: session editor + entity linking frontends (
 
 - [x] **M-MCP.0 — Ticket Zero: verify vector search end-to-end** (= task 2.3 closure, see above). *Executed interactively with Alex 2026-07 — validated the pipeline (ticket format, rules, reviewer, CI), not just the code. Headless-readiness probe confirmed: `docker compose up -d && db:migrate && pnpm test` runs clean end-to-end (see `IMPLEMENTATION_NOTES.md`). One new gotcha found: the dev Voyage account is on the free tier (3 RPM without a payment method) — see `IMPLEMENTATION_NOTES.md §Embedding`.*
 
-- [ ] **M-MCP.1 — `apps/mcp` scaffold + `query_lore` (read)**
+- [x] **M-MCP.1 — `apps/mcp` scaffold + `query_lore` (read)**
   - Scaffold `apps/mcp` (TypeScript, MCP SDK, stdio transport), wired into pnpm workspace + turbo.
   - `query_lore(campaignId, query, limit?)` → context assembly service (read-only). Returns assembled context: ranked chunks with source attribution + confidence score.
   - Exit: MCP client can call `query_lore` against the T-000 fixture and get relevant chunks back.
 
-- [ ] **M-MCP.2 — `get_entity` / `list_entities` (read)**
+- [x] **M-MCP.2 — `get_entity` / `list_entities` (read)**
   - `list_entities(campaignId, type?)` and `get_entity(campaignId, entityId | name)` → entity service (read-only; name lookup reuses pg_trgm fuzzy matching).
   - Exit: both tools return seeded fixture entities; unknown entity returns a well-formed not-found error, not a crash.
 
-- [ ] **M-MCP.3 — `log_session` (structured write path)**
+- [x] **M-MCP.3 — `log_session` (structured write path)**
   - Writes to the `sessions` table with entity links; chunks + embeds session content into pgvector; runs a **consolidation step** distinguishing *episodic memory* (append-only session log) from *mutable entity state* (updates to entity records).
   - **Safe write-back = preview/confirm/audit:** the tool returns a preview of intended writes; nothing persists until a confirm call; every confirmed write is auditable (what changed, when, from which session).
   - Likely splits into 2–3 tickets at planning time (write path / embed+consolidate / preview-confirm plumbing).
   - Exit: a logged session is retrievable via `query_lore`, its entity links exist, and an unconfirmed preview writes nothing.
 
-- [ ] **M-MCP.4 — `prep_brief` (read)**
+- [x] **M-MCP.4 — `prep_brief` (read)**
   - Context assembly scoped to recent sessions + open threads + current entity state (per PRD §4.4 brief components, minus all UI).
   - Exit: brief generated against fixture campaign contains the expected sections.
 

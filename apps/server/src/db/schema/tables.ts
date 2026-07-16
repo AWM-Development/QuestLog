@@ -1,5 +1,7 @@
+import { sql } from "drizzle-orm";
 import {
 	customType,
+	index,
 	integer,
 	jsonb,
 	pgTable,
@@ -81,24 +83,51 @@ export const sessions = pgTable("sessions", {
 		.$onUpdate(() => new Date()),
 });
 
-export const entities = pgTable("entities", {
+export const entities = pgTable(
+	"entities",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		campaignId: uuid("campaign_id")
+			.references(() => campaigns.id)
+			.notNull(),
+		name: text("name").notNull(),
+		type: text("type").notNull(),
+		summary: text("summary"),
+		description: text("description"),
+		attributes: jsonb("attributes")
+			.$type<Record<string, unknown>>()
+			.default({}),
+		dmNotes: text("dm_notes"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.notNull()
+			.$onUpdate(() => new Date()),
+	},
+	(table) => [
+		index("entities_name_trgm_idx").using(
+			"gin",
+			sql`${table.name} gin_trgm_ops`,
+		),
+	],
+);
+
+// No updatedAt: a session's entity links are recorded once at confirm time
+// and not mutated afterward.
+export const sessionEntities = pgTable("session_entities", {
 	id: uuid("id").defaultRandom().primaryKey(),
-	campaignId: uuid("campaign_id")
-		.references(() => campaigns.id)
+	sessionId: uuid("session_id")
+		.references(() => sessions.id)
 		.notNull(),
-	name: text("name").notNull(),
-	type: text("type").notNull(),
-	summary: text("summary"),
-	description: text("description"),
-	attributes: jsonb("attributes").$type<Record<string, unknown>>().default({}),
-	dmNotes: text("dm_notes"),
+	entityId: uuid("entity_id")
+		.references(() => entities.id)
+		.notNull(),
+	matchType: text("match_type").notNull(),
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
 		.notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true })
-		.defaultNow()
-		.notNull()
-		.$onUpdate(() => new Date()),
 });
 
 // No updatedAt: relationships are immutable edges in the knowledge graph.
@@ -189,4 +218,26 @@ export const messages = pgTable("messages", {
 	createdAt: timestamp("created_at", { withTimezone: true })
 		.defaultNow()
 		.notNull(),
+});
+
+// Rows with `confirmedAt` set double as the audit log for MCP writes: what
+// changed (payload/appliedResult), when (confirmedAt), which tool (toolName).
+export const writeRequests = pgTable("write_requests", {
+	id: uuid("id").defaultRandom().primaryKey(),
+	campaignId: uuid("campaign_id")
+		.references(() => campaigns.id)
+		.notNull(),
+	toolName: text("tool_name").notNull(),
+	payload: jsonb("payload").$type<unknown>().notNull(),
+	appliedResult: jsonb("applied_result").$type<unknown>(),
+	createdAt: timestamp("created_at", { withTimezone: true })
+		.defaultNow()
+		.notNull(),
+	expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+	confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+	// Set by an atomic conditional UPDATE at the start of confirm(), before
+	// applyFn runs — the claim mechanism itself, distinct from confirmedAt.
+	// Cleared (not confirmedAt) if applyFn throws, so the token stays
+	// retryable. See write-request.service.ts.
+	claimedAt: timestamp("claimed_at", { withTimezone: true }),
 });

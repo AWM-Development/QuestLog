@@ -1,6 +1,8 @@
-import { eq, sql } from "drizzle-orm";
-import type { Database } from "../db/index.js";
+import { and, eq, sql } from "drizzle-orm";
+import type { Database, Transaction } from "../db/index.js";
 import { entities } from "../db/schema/index.js";
+import { NotFoundError } from "../lib/errors.js";
+import { first } from "../lib/utils.js";
 
 export interface EntitySpan {
 	entityId: string;
@@ -28,6 +30,21 @@ interface TextToken {
 	word: string;
 	start: number;
 	end: number;
+}
+
+/**
+ * Shared fuzzy-candidate predicate: rows whose name clears the low-threshold
+ * word_similarity cutoff for a campaign. Callers select only the columns
+ * they need onto this filter, fully Drizzle-typed so nobody hand-casts
+ * columns out of Record<string, unknown>. Mirrors search.service.ts's
+ * pattern of a raw `sql` fragment embedded inside the query builder rather
+ * than a fully raw execute call.
+ */
+function wordSimilarityCandidateFilter(campaignId: string, query: string) {
+	return and(
+		eq(entities.campaignId, campaignId),
+		sql`word_similarity(${entities.name}, ${query}) > 0.15`,
+	);
 }
 
 function escapeRegex(s: string): string {
@@ -89,6 +106,10 @@ function trigramSimilarity(a: string, b: string): number {
 	return (2 * intersection) / (setA.size + setB.size);
 }
 
+// Confirmation threshold for pure-JS trigram similarity, shared by detectSpans'
+// fuzzy span matching and getByName's fuzzy name lookup.
+const FUZZY_THRESHOLD = 0.4;
+
 function findFuzzyPositions(
 	entityName: string,
 	text: string,
@@ -98,7 +119,6 @@ function findFuzzyPositions(
 	if (tokens.length === 0) return [];
 
 	const results: Array<{ start: number; end: number }> = [];
-	const FUZZY_THRESHOLD = 0.4;
 
 	if (entityWordCount === 1) {
 		for (const token of tokens) {
@@ -122,6 +142,38 @@ function findFuzzyPositions(
 	return results;
 }
 
+function isSentenceEndChar(ch: string | undefined): boolean {
+	return ch === "." || ch === "!" || ch === "?";
+}
+
+/**
+ * Extract the sentence surrounding a matched entity span, for the
+ * deterministic consolidation excerpt (log_session's entity consolidation
+ * step). Falls back to the whole text when no sentence boundary is found.
+ */
+export function extractExcerpt(
+	text: string,
+	span: { startIndex: number; endIndex: number },
+): string {
+	let start = 0;
+	for (let i = span.startIndex - 1; i >= 0; i--) {
+		if (isSentenceEndChar(text[i])) {
+			start = i + 1;
+			break;
+		}
+	}
+
+	let end = text.length;
+	for (let i = span.endIndex; i < text.length; i++) {
+		if (isSentenceEndChar(text[i])) {
+			end = i + 1;
+			break;
+		}
+	}
+
+	return text.slice(start, end).trim();
+}
+
 export const entityService = {
 	async detectSpans(
 		db: Database,
@@ -131,12 +183,10 @@ export const entityService = {
 
 		const dismissed = new Set(dismissedEntityTexts.map((t) => t.toLowerCase()));
 
-		const candidateRows = await db.execute<Record<string, unknown>>(sql`
-      SELECT id, name, type
-      FROM ${entities}
-      WHERE campaign_id = ${campaignId}
-        AND word_similarity(name, ${text}) > 0.15
-    `);
+		const candidateRows = await db
+			.select({ id: entities.id, name: entities.name, type: entities.type })
+			.from(entities)
+			.where(wordSimilarityCandidateFilter(campaignId, text));
 
 		if (candidateRows.length === 0) return [];
 
@@ -144,9 +194,9 @@ export const entityService = {
 
 		for (const row of candidateRows) {
 			const entity: EntityCandidate = {
-				id: row.id as string,
-				name: row.name as string,
-				type: row.type as string,
+				id: row.id,
+				name: row.name,
+				type: row.type,
 			};
 			let positions = findExactPositions(entity.name, text);
 			if (positions.length === 0) {
@@ -248,11 +298,46 @@ export const entityService = {
 		return row;
 	},
 
-	async list(db: Database, campaignId: string) {
+	async list(db: Database, campaignId: string, type?: string) {
 		return db
 			.select()
 			.from(entities)
-			.where(eq(entities.campaignId, campaignId));
+			.where(
+				type
+					? and(eq(entities.campaignId, campaignId), eq(entities.type, type))
+					: eq(entities.campaignId, campaignId),
+			);
+	},
+
+	async getById(db: Database, campaignId: string, entityId: string) {
+		const rows = await db
+			.select()
+			.from(entities)
+			.where(
+				and(eq(entities.id, entityId), eq(entities.campaignId, campaignId)),
+			);
+		const row = rows[0];
+		if (!row) throw new NotFoundError("Entity", entityId);
+		return row;
+	},
+
+	async getByName(db: Database, campaignId: string, name: string) {
+		const candidateRows = await db
+			.select()
+			.from(entities)
+			.where(wordSimilarityCandidateFilter(campaignId, name));
+
+		let best: { row: (typeof candidateRows)[number]; score: number } | null =
+			null;
+		for (const row of candidateRows) {
+			const score = trigramSimilarity(name, row.name);
+			if (score >= FUZZY_THRESHOLD && (!best || score > best.score)) {
+				best = { row, score };
+			}
+		}
+		if (!best) throw new NotFoundError("Entity", name);
+
+		return best.row;
 	},
 
 	async countByCampaign(db: Database, campaignId: string): Promise<number> {
@@ -260,5 +345,33 @@ export const entityService = {
 			sql`SELECT count(*)::int AS count FROM entities WHERE campaign_id = ${campaignId}`,
 		);
 		return Number((result[0] as { count: string } | undefined)?.count ?? 0);
+	},
+
+	/**
+	 * Append a deterministic excerpt to an entity's description (append, never
+	 * overwrite) — the log_session consolidation step's write path.
+	 */
+	async appendToDescription(
+		db: Database | Transaction,
+		entityId: string,
+		note: string,
+	) {
+		const rows = await db
+			.select({ description: entities.description })
+			.from(entities)
+			.where(eq(entities.id, entityId));
+		const row = rows[0];
+		if (!row) throw new NotFoundError("Entity", entityId);
+
+		const updated = row.description?.trim()
+			? `${row.description.trim()}\n\n${note}`
+			: note;
+
+		const updatedRows = await db
+			.update(entities)
+			.set({ description: updated })
+			.where(eq(entities.id, entityId))
+			.returning();
+		return first(updatedRows);
 	},
 };

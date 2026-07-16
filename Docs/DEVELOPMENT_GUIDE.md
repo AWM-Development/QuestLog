@@ -2,14 +2,15 @@
 
 **Location:** `Docs/DEVELOPMENT_GUIDE.md`
 
-**Purpose:** Repeatable instructions for every feature implementation session. Read this at the start of each coding session. It defines the patterns, testing discipline, review process, and conventions that keep the codebase consistent as features accumulate.
+**Purpose:** Coding conventions, patterns, and discipline that keep the codebase consistent as features accumulate — project structure, tooling choices, TDD, code patterns (tRPC/Drizzle/React), error handling, and the completion checklist. This is the "how we write code" doc. For "how work gets picked up and shipped," see `Docs/tickets/EXECUTOR_ROUTINE.md` (the live pipeline) — §3 and §10 below cover only the parts of that process a human needs when working interactively rather than through a ticket.
 
 **Related Docs:**
 - `Docs/README.md` — Overview of all project documentation
 - `Docs/PRD.md` — Product specification (reference for feature details)
-- `Docs/MILESTONES.md` — Task breakdown with branch names
+- `Docs/MILESTONES_V1_MCP.md` — Canonical v1 task breakdown
+- `Docs/tickets/TICKET_SPEC.md` / `EXECUTOR_ROUTINE.md` — the ticket pipeline (supersedes the old copy-paste session template previously referenced here)
 
-**Last Updated:** 2026-04-24
+**Last Updated:** 2026-07-07
 
 ---
 
@@ -110,34 +111,42 @@ questlog/
 
 ## 3. Branching Strategy
 
+**`main` is the deployed branch — never a base or target for feature work.** `develop` is the integration branch: every feature branch is cut from `develop` and PR's back into `develop`. `develop` → `main` is a separate, manual release step Alex performs when there's something to deploy; no automation ever opens or merges that PR. Full detail and rationale: `Docs/IMPLEMENTATION_NOTES.md` §"Branch model".
+
 ### Branch Naming
 
+For ticket-pipeline work (the normal case — see `Docs/tickets/TICKET_SPEC.md` §"Branch naming"):
+
 ```
-main                          # Always deployable
-├── feat/<milestone>/<task>   # Feature work
+develop                                    # Integration branch — PRs land here
+├── tickets/<milestone-slug>               # Ticket-drafting sessions (docs-only)
+└── feat/<milestone-group>/t-###-<slug>    # One per ticket, executor-created
+```
+
+For interactive (non-ticket) work — fixes, chores, exploratory refactors not tracked as a ticket:
+
+```
 ├── fix/<description>         # Bug fixes
 ├── refactor/<description>    # Non-functional improvements
 └── chore/<description>       # Tooling, config, deps
 ```
 
 **Examples:**
-- `feat/foundation/db-schema`
-- `feat/import-pipeline/pdf-extraction`
-- `feat/agent-chat/context-assembly`
+- `feat/m-mcp/t-002-write-preview-confirm-audit-plumbing`
 - `fix/entity-linking-duplicate-detection`
 - `chore/ci-pipeline-setup`
 
 ### Workflow Per Feature
 
 ```
-1. Branch from main            →  git checkout -b feat/milestone/task
-2. Implement with TDD          →  (see §4)
-3. Self-review                 →  (see §7)
-4. Squash merge to main        →  git merge --squash feat/milestone/task
-5. Delete feature branch       →  git branch -d feat/milestone/task
+1. Branch from develop          →  git checkout -b <branch-name> develop
+2. Implement with TDD           →  (see §4)
+3. Self-review                  →  (see §10)
+4. Open a PR into develop       →  never merge it yourself if a ticket; Alex merges
+5. Delete feature branch        →  after merge
 ```
 
-Keep branches short-lived. A feature branch should live for 1–3 sessions max. If a feature is bigger than that, break it into smaller branches that each merge independently.
+Keep branches short-lived. A feature branch should live for 1–3 sessions max (a ticket's ~5-hour session budget, per `TICKET_SPEC.md`). If a feature is bigger than that, break it into smaller branches/tickets that each merge independently.
 
 ---
 
@@ -158,9 +167,10 @@ This isn't optional or aspirational — it's the process. The benefit for a lear
 | Layer | What to Test | Tool | Location |
 |---|---|---|---|
 | **Unit** | Services, utilities, pure functions, Zod schemas | Vitest | `*.test.ts` next to source file |
-| **Integration** | tRPC routers with real DB, RAG pipeline end-to-end | Vitest + test DB | `*.integration.test.ts` next to source file |
+| **Integration** | tRPC routers with real DB, RAG pipeline wiring — external APIs (Voyage, Anthropic) mocked via injected `fetchFn`/client | Vitest + test DB | `*.integration.test.ts` next to source file |
+| **Real-API E2E** | Full pipeline against a real DB *and* the real external API (e.g. Voyage embeddings) — proves retrieval quality, not just wiring. Skips (not fails) when the relevant API key is absent (`describe.skipIf(!process.env.VOYAGE_API_KEY)`). Runs in CI on push to `main` and on-demand via `workflow_dispatch`, not on every PR (`.github/workflows/e2e-release-check.yml`) — see `Docs/IMPLEMENTATION_NOTES.md` §Embedding for why it's decoupled from the PR gate | Vitest + test DB + real API key | `*.e2e.test.ts` next to source file |
 | **Component** | React components in isolation | Vitest + Testing Library | `*.test.tsx` next to component |
-| **E2E** | Critical user flows (import → chat → get answer) | Playwright (later) | `e2e/` directory |
+| **Browser E2E** | Critical user flows (import → chat → get answer) | Playwright (later) | `e2e/` directory |
 
 ### What to Test (Prioritized)
 
@@ -474,9 +484,9 @@ Run through this before merging **every** feature branch. This is your self-revi
 - [ ] Run the full test suite one more time
 - [ ] Commit history is clean (squash fixup commits)
 - [ ] Update PRD.md if the implementation deviates from spec (spec stays in sync with reality)
-- [ ] Check off this task in MILESTONES.md
+- [ ] Check off this task in MILESTONES_V1_MCP.md
 - [ ] Append an entry to IMPLEMENTATION_NOTES.md for any non-obvious decision made
-- [ ] Add a CHANGELOG.md entry summarising what shipped
+- [ ] Add a CHANGELOG.md entry under `[Unreleased]` summarising what shipped
 - [ ] If a new pattern was established, update DEVELOPMENT_GUIDE.md §5
 
 ---
@@ -532,6 +542,8 @@ VOYAGE_API_KEY=pa-...
 
 ## 9. AI-Assisted Development Notes
 
+**Scope note:** this section and §10 describe *interactive* sessions — Alex working directly with Claude Code on something not tracked as a ticket (a fix, a chore, exploration). Ticket-pipeline work follows `Docs/tickets/EXECUTOR_ROUTINE.md` instead, which runs the TDD loop (`.claude/skills/tdd-loop/SKILL.md`) and review step (`.claude/agents/reviewer.md`) automatically — you don't need to invoke either by hand there.
+
 Since you're using Claude for implementation, keep these patterns in mind:
 
 ### Starting a Coding Session
@@ -562,7 +574,7 @@ The AI doesn't remember previous sessions. At minimum, provide:
 
 ## 10. AI-Assisted Code Review Protocol
 
-After the AI finishes implementing a task, ask it to conduct a code review using this format. Paste this prompt verbatim:
+For interactive sessions, invoke the `/code-review` skill, or ask the AI to conduct a code review using this format directly. Paste this prompt verbatim:
 
 ```
 Conduct a code review of all files changed in this task. For each file, evaluate:
@@ -584,7 +596,7 @@ The AI will flag both real issues and false positives. Common false positives in
 - **`.js` extensions in TypeScript imports** — Correct for ESM with `moduleResolution: "bundler"`. TypeScript resolves `.js` → `.ts` at compile time.
 - **Workspace package exports pointing to `./src/*.ts`** — Intentional for internal `workspace:*` packages. Vite and tsx consume raw TS source; no build step needed.
 - **Missing build scripts on `packages/shared`** — Same reason. Only add a build script if the package is published externally.
-- **Dependencies installed but unused** — May be scaffolding for the next task. Check MILESTONES.md before removing.
+- **Dependencies installed but unused** — May be scaffolding for the next task. Check MILESTONES_V1_MCP.md before removing.
 
 ### Severity definitions
 
@@ -613,10 +625,10 @@ The methodology recognizes that AI assistants are powerful executors but weak na
 Every feature implementation begins with a specification read. Before writing a single line of code, the AI reads the relevant PRD section, IMPLEMENTATION_NOTES, and DEVELOPMENT_GUIDE. The spec is the source of truth; the code is the expression of the spec. When they diverge, the spec is updated to match reality — not silently abandoned.
 
 **2. AI as guided executor, not autonomous architect.**
-The AI writes code, writes tests, and runs the review protocol. The human makes product decisions: which feature to build next, how to resolve ambiguity, what the UI should look like, which trade-off to accept. The 🎨 and 🧠 gates in `CLAUDE.md` and the copy-paste session template enforce this boundary mechanically.
+The AI writes code, writes tests, and runs the review protocol. The human makes product decisions: which feature to build next, how to resolve ambiguity, what the UI should look like, which trade-off to accept. Under the ticket pipeline this boundary is enforced mechanically by `Docs/tickets/TICKET_SPEC.md`'s `Mockup:` field (visual direction supplied once, during planning — see below) and by the 🧠 gate in `CLAUDE.md`'s hard rules.
 
 **3. Human gates on ambiguity.**
-Any task marked 🎨 (visual spec required) or 🧠 (strategy discussion required) stops before implementation begins. The AI explicitly asks for the missing input. This is not optional — it is enforced by the session startup prompt. The cost of pausing for clarity is a few minutes; the cost of building the wrong thing is an entire session.
+The pipeline replaced the old 🎨 (visual spec) gate with mockups: a ticket whose `Mockup:` field names a path is *not* visually gated — the mockup, generated by Alex in Claude Design during planning, is the answer (`Docs/mockups/README.md`). 🧠 (strategy discussion required) still stops the executor cold: it skips that item, logs it in the morning report, and continues with whatever in the ticket doesn't depend on it (`CLAUDE.md` hard rules, `Docs/tickets/EXECUTOR_ROUTINE.md` Step 3). The cost of pausing for clarity is a few minutes; the cost of building the wrong thing is an entire session.
 
 **4. Automated enforcement via CI.**
 Good intentions drift. Automated gates do not. The CI workflow (`github/workflows/ci.yml`) enforces:
@@ -626,22 +638,17 @@ Good intentions drift. Automated gates do not. The CI workflow (`github/workflow
 These are not perfect enforcement — they are forcing functions that surface the most common forms of drift.
 
 **5. Closed feedback loop via mandatory doc updates.**
-Every session ends with a fixed set of doc update obligations: check off the task in MILESTONES.md, append to IMPLEMENTATION_NOTES.md, add a CHANGELOG.md entry, update PRD.md if spec diverged, and update DEVELOPMENT_GUIDE.md §5 if a new pattern was established. These obligations are encoded in `CLAUDE.md` (AI-facing), the copy-paste session template in MILESTONES.md, and the PR template checklist (human-facing). Each reinforces the other.
+Every unit of work ends with a fixed set of doc update obligations: check off the task in `MILESTONES_V1_MCP.md`, append to `IMPLEMENTATION_NOTES.md` if a non-obvious decision was made, add a `CHANGELOG.md` entry, update `PRD.md` if spec diverged, and update this guide's §5 if a new pattern was established. For ticket work these are fixed fields in every ticket's "Definition of done" (`Docs/tickets/TICKET_SPEC.md`) and enforced by `EXECUTOR_ROUTINE.md` Step 7; for interactive work they're the PR template checklist. Each reinforces the other.
 
 ### The Single Encoding Point
 
-`CLAUDE.md` at the repo root is the single file that encodes all of SAAD for the AI agent. It includes:
-- The ordered session startup sequence
-- The TDD hard rule
-- The 🎨 and 🧠 gates verbatim
-- The code review trigger and false positives list
-- The mandatory doc update obligations
+`CLAUDE.md` at the repo root is the top-level pointer that encodes SAAD's hard rules for an AI agent — the ordered pointer map, the TDD hard rule, the 🧠/mockup gate distinction, and the autonomous-run branch rules. `Docs/tickets/EXECUTOR_ROUTINE.md` is the detailed, literal procedure the nightly executor follows (it's the actual scheduler config, version-controlled); this guide is the narrative reference for code patterns and conventions that both ticket work and interactive work draw on.
 
 Every AI coding session reads `CLAUDE.md` first. If the methodology evolves, update `CLAUDE.md` — it is the canonical instruction set.
 
 ### Running the Audit
 
-To run a full doc infrastructure audit (equivalent to task 3.3.5), use the audit prompt documented in the project's internal process documentation. The audit covers: code vs. spec drift (checked vs. actual implementation), documentation freshness (stale entries, missing entries), infrastructure gaps (CLAUDE.md, PR template, CI, CHANGELOG, acceptance criteria, e2e stubs), and MILESTONES.md consistency.
+Two prior audits are the concrete template for what a full doc/code audit looks like in this repo — evidence-cited verdicts (`done-and-verified` / `done-unchecked` / `partial` / `absent`), not a re-reading of checkboxes: `Docs/AUDIT_2026-07.md` (Milestones 1–3, build health, dead-weight inventory) and `Docs/AUDIT_2026-07-M4.md` (Milestone 4). Run a new one the same way when code vs. spec drift needs checking: state vs. code inventory per task, doc-freshness pass across `Docs/`, and infrastructure gaps (CLAUDE.md, PR template, CI, CHANGELOG, MILESTONES_V1_MCP.md consistency).
 
 ---
 

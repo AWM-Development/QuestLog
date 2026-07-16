@@ -320,12 +320,16 @@
         "entities_name_trgm_idx": {
           "name": "entities_name_trgm_idx",
           "columns": [
-            "name"
+            {
+              "expression": "\"name\" gin_trgm_ops",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
           ],
           "isUnique": false,
           "concurrently": false,
           "method": "gin",
-          "where": null,
           "with": {}
         }
       },

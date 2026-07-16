@@ -8,7 +8,7 @@ import {
 	it,
 	vi,
 } from "vitest";
-import { chunks, sources } from "../db/schema/index.js";
+import { chunks, sessions, sources } from "../db/schema/index.js";
 import { createTestDb } from "../db/test-helpers.js";
 import { campaignService } from "./campaign.service.js";
 import type { TextChunk } from "./chunking.service.js";
@@ -150,6 +150,40 @@ describe("embedChunks", () => {
 		await expect(
 			embedChunks(db, textChunks, { fetchFn: mockFetch }),
 		).rejects.toThrow("Voyage embeddings API error");
+	});
+
+	it("inserts sessionId on the chunk row when the input chunk carries one", async () => {
+		const [session] = await db
+			.insert(sessions)
+			.values({ campaignId, sessionNumber: 1, content: "The party rests." })
+			.returning();
+		const sessionId = session?.id ?? "";
+
+		const textChunks: TextChunk[] = [
+			{
+				content: "The party rests at the inn.",
+				position: 0,
+				sessionId,
+				campaignId,
+			},
+		];
+
+		const mockFetch = vi.fn().mockResolvedValue({
+			ok: true,
+			json: async () => ({
+				data: [{ embedding: fakeEmbedding(0), index: 0 }],
+			}),
+		});
+
+		await embedChunks(db, textChunks, { fetchFn: mockFetch });
+
+		const rows = await db
+			.select()
+			.from(chunks)
+			.where(eq(chunks.campaignId, campaignId));
+		expect(rows).toHaveLength(1);
+		expect(rows[0]?.sessionId).toBe(sessionId);
+		expect(rows[0]?.sourceId).toBeNull();
 	});
 
 	it("handles empty chunk array gracefully", async () => {

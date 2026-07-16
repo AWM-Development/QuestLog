@@ -3,6 +3,8 @@ export {
 	CampaignUpdateInput,
 } from "./campaign.js";
 export {
+	ConfirmLogSessionInput,
+	LogSessionInput,
 	SessionCreateInput,
 	SessionFinalizeInput,
 	SessionListInput,
@@ -18,4 +20,10 @@ export {
 } from "./source.js";
 export type { SourceSchemaType } from "./source.js";
 export { SearchSourcesInput } from "./search.js";
-export { EntityCreateInput, EntityDetectSpansInput } from "./entity.js";
+export {
+	EntityCreateInput,
+	EntityDetectSpansInput,
+	GetEntityInput,
+	ListEntitiesInput,
+} from "./entity.js";
+export { PrepBriefInput, QueryLoreInput } from "./mcp.js";

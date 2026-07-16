@@ -8,7 +8,7 @@
 **Related Docs:**
 - `Docs/PRD.md` — Product specification (this doc replaces §5)
 - `Docs/DEVELOPMENT_GUIDE.md` — Coding conventions
-- `Docs/workflow/COMMANDS.md §style-audit` — Repeatable audit/refactor playbook for tokens vs shared vs feature styles
+- `Docs/STYLE_AUDIT.md` — Repeatable audit/refactor playbook for tokens vs shared vs feature styles
 - `apps/web/src/index.css` — Token implementation (to be updated)
 - `apps/web/src/components/styles.ts` — Shared style presets (to be updated)
 

@@ -3,6 +3,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createTestDb } from "../db/test-helpers.js";
 import { NotFoundError } from "../lib/errors.js";
 import { campaignService } from "./campaign.service.js";
+import { entityService } from "./entity.service.js";
 import { sessionService } from "./session.service.js";
 
 const { db, close } = createTestDb();
@@ -138,6 +139,106 @@ describe("sessionService", () => {
 					id: "00000000-0000-0000-0000-000000000000",
 				}),
 			).rejects.toThrow(NotFoundError);
+		});
+	});
+
+	describe("linkEntities", () => {
+		it("inserts one session_entities row per span", async () => {
+			const session = await sessionService.create(db, { campaignId });
+			const entityA = await entityService.create(db, {
+				campaignId,
+				name: "Mira Duskwood",
+				type: "npc",
+			});
+			const entityB = await entityService.create(db, {
+				campaignId,
+				name: "Ashfall Peak",
+				type: "location",
+			});
+
+			const linked = await sessionService.linkEntities(db, session.id, [
+				{
+					entityId: entityA.id,
+					entityName: "Mira Duskwood",
+					entityType: "npc",
+					startIndex: 0,
+					endIndex: 13,
+					matchType: "confirmed",
+					candidates: [],
+				},
+				{
+					entityId: entityB.id,
+					entityName: "Ashfall Peak",
+					entityType: "location",
+					startIndex: 20,
+					endIndex: 32,
+					matchType: "ambiguous",
+					candidates: [],
+				},
+			]);
+
+			expect(linked).toHaveLength(2);
+			expect(linked[0]?.entityId).toBe(entityA.id);
+			expect(linked[0]?.matchType).toBe("confirmed");
+			expect(linked[1]?.entityId).toBe(entityB.id);
+			expect(linked[1]?.matchType).toBe("ambiguous");
+
+			const rows = await db.execute(sql`
+        SELECT session_id, entity_id, match_type FROM session_entities
+        WHERE session_id = ${session.id}
+      `);
+			expect(rows).toHaveLength(2);
+		});
+
+		it("inserts nothing and returns an empty array for zero spans", async () => {
+			const session = await sessionService.create(db, { campaignId });
+
+			const linked = await sessionService.linkEntities(db, session.id, []);
+
+			expect(linked).toEqual([]);
+			const rows = await db.execute(sql`
+        SELECT id FROM session_entities WHERE session_id = ${session.id}
+      `);
+			expect(rows).toHaveLength(0);
+		});
+
+		it("dedupes repeated mentions of the same entity into one row", async () => {
+			const session = await sessionService.create(db, { campaignId });
+			const entity = await entityService.create(db, {
+				campaignId,
+				name: "Mira Duskwood",
+				type: "npc",
+			});
+
+			const linked = await sessionService.linkEntities(db, session.id, [
+				{
+					entityId: entity.id,
+					entityName: "Mira Duskwood",
+					entityType: "npc",
+					startIndex: 0,
+					endIndex: 13,
+					matchType: "confirmed",
+					candidates: [],
+				},
+				{
+					entityId: entity.id,
+					entityName: "Mira Duskwood",
+					entityType: "npc",
+					startIndex: 40,
+					endIndex: 53,
+					matchType: "confirmed",
+					candidates: [],
+				},
+			]);
+
+			expect(linked).toHaveLength(1);
+			expect(linked[0]?.entityId).toBe(entity.id);
+
+			const rows = await db.execute(sql`
+        SELECT session_id, entity_id, match_type FROM session_entities
+        WHERE session_id = ${session.id}
+      `);
+			expect(rows).toHaveLength(1);
 		});
 	});
 });

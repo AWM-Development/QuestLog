@@ -1,5 +1,7 @@
 # Task Plan — M4.2: Session Editor Visual Polish
 
+> **Note (added 2026-07-07, doc audit):** This file documents a visual-polish follow-up pass, not the original M4.2 (Entity Detection & Linking) milestone described in `Docs/MILESTONES_PT1.md`. Commit `47e249a` ("docs(M4.2): replace plan + design spec for editor polish", 2026-04-26) overwrote the original milestone's `PLAN.md`/`DESIGN_SPEC.md` in place with this later, unrelated plan. The original entity-linking milestone's plan and embedded agent report (9 checkpoints, schema migration through save-time validation warning) survive only in git history — `git show 212930d:Docs/milestones/M4.2/PLAN.md`. See `Docs/AUDIT_2026-07-M4.md` for the full finding.
+
 ## Metadata
 
 | Field       | Value |
@@ -79,7 +81,7 @@ Refine the shipped M4.2 session editor UX to match approved handoff states: flus
 
 ## References
 
-- `Docs/milestones/M4.2/DESIGN_SPEC.md` — milestone visual spec for this polish pass
+- `Docs/milestones-archive/M4.2/DESIGN_SPEC.md` — milestone visual spec for this polish pass
 - `/Users/alexandermeyer/Desktop/QuestLog/design_handoff_session_editor_polish/README.md` — handoff narrative and target-state intent
 - `/Users/alexandermeyer/Desktop/QuestLog/design_handoff_session_editor_polish/mocks/states.jsx` — canonical Empty/Writing/Resolving state behavior
 - `/Users/alexandermeyer/Desktop/QuestLog/design_handoff_session_editor_polish/mocks/shared.jsx` — header + dock chrome composition reference

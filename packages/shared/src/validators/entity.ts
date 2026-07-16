@@ -15,3 +15,20 @@ export const EntityCreateInput = z.object({
 	description: z.string().max(2000).optional(),
 });
 export type EntityCreateInput = z.infer<typeof EntityCreateInput>;
+
+export const ListEntitiesInput = z.object({
+	campaignId: z.string().uuid(),
+	type: z.enum(ENTITY_TYPES).optional(),
+});
+export type ListEntitiesInput = z.infer<typeof ListEntitiesInput>;
+
+export const GetEntityInput = z
+	.object({
+		campaignId: z.string().uuid(),
+		entityId: z.string().uuid().optional(),
+		name: z.string().min(1).optional(),
+	})
+	.refine((input) => Boolean(input.entityId) !== Boolean(input.name), {
+		message: "Exactly one of entityId or name must be provided",
+	});
+export type GetEntityInput = z.infer<typeof GetEntityInput>;

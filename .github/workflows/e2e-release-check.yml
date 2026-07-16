@@ -1,0 +1,74 @@
+name: E2E Release Check (real external APIs)
+
+# Real-API integration proof (*.e2e.test.ts): real DB + the real Voyage
+# embeddings API. Deliberately decoupled from the pr-gate workflow (ci.yml)
+# — see Docs/IMPLEMENTATION_NOTES.md for why (Voyage's free-tier 3 RPM cap
+# makes it unreliable as a per-PR merge gate, and it answers "does the
+# vendor/account integration still work," not "is this PR's code correct,"
+# which the mocked suite in ci.yml already gates on).
+#
+# Triggered by a push to `main` — i.e. exactly when `develop` gets promoted
+# to `main` as a deliberate release (per this repo's branch model: main is
+# deploy-only, releases are rare and manual). That's the meaningful moment
+# to confirm the real integration still works, not an arbitrary nightly
+# cadence disconnected from whether anything actually shipped.
+#
+# workflow_dispatch is also available for an on-demand check against
+# `develop` (or any ref) whenever you want confidence before deciding to
+# release, without waiting for an actual merge to main.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch or ref to test"
+        required: false
+        default: "develop"
+
+jobs:
+  e2e:
+    name: Real-API E2E Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: questlog
+          POSTGRES_PASSWORD: questlog
+          POSTGRES_DB: questlog_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://questlog:questlog@localhost:5433/questlog_test
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.ref }}
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run database migrations
+        run: pnpm --filter @questlog/server db:migrate
+
+      - name: Real-API e2e tests
+        run: pnpm turbo test:e2e
