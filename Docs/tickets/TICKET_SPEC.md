@@ -112,3 +112,20 @@ append the resolution to the ticket file, and commit a fresh copy of it to
 is exactly the kind of change that's fine to land that way). The abandoned
 branch can be deleted; the executor creates a new one from `develop` the next
 time it picks the ticket up.
+
+### Won't-fix as an alternative resolution
+
+Not every blocked ticket gets unblocked and re-queued — sometimes Alex's
+answer to the blocked report's question is "don't do this." There's no
+separate `wontfix/` directory: `git mv` the ticket into `Docs/tickets/done/`
+(same as a shipped ticket — `done/` means "resolved, no further action,"
+not strictly "code shipped"), suffix the title with `— WON'T FIX`, and
+append a `## Resolution — WON'T FIX (<date>)` section to the ticket file
+recording the decision and why. Write a matching report in
+`Docs/tickets/reports/` with `**Outcome:** won't-fix` (mirroring the
+`**Outcome:** shipped` field a normal report uses). No `CHANGELOG.md` entry
+is needed — the "every merged ticket PR adds a changelog entry" obligation
+covers shipped behavior, and a won't-fix ticket changes none. See
+`Docs/tickets/done/T-012-entity-trgm-index-pre-filter.md` and
+`Docs/tickets/reports/T-012-entity-trgm-index-pre-filter.md` for a worked
+example.
