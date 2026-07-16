@@ -121,6 +121,7 @@ export const briefService = {
 						.where(
 							and(
 								inArray(sessionEntities.sessionId, recentSessionIds),
+								eq(sessionEntities.matchType, "confirmed"),
 								eq(entities.type, "npc"),
 							),
 						);

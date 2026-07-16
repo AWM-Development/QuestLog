@@ -230,6 +230,35 @@ describe("briefService", () => {
 			expect(brief.likelyNpcs).toEqual([]);
 			expect(brief.quickLinks).toEqual([]);
 		});
+
+		it("excludes an NPC whose only link is not a confirmed match", async () => {
+			const npc = await entityService.create(db, {
+				campaignId,
+				name: "Izek Strazni",
+				type: "npc",
+				description: "Obsessed with Ireena.",
+			});
+			const session = await sessionService.create(db, {
+				campaignId,
+				content: "Izek Strazni was seen watching Ireena from the square.",
+			});
+			await sessionService.linkEntities(db, session.id, [
+				{
+					entityId: npc.id,
+					entityName: "Izek Strazni",
+					entityType: "npc",
+					startIndex: 0,
+					endIndex: 12,
+					matchType: "ambiguous",
+					candidates: [],
+				},
+			]);
+
+			const brief = await briefService.assemble(db, { campaignId });
+
+			expect(brief.likelyNpcs).toEqual([]);
+			expect(brief.quickLinks).toEqual([]);
+		});
 	});
 
 	describe("empty campaign", () => {
