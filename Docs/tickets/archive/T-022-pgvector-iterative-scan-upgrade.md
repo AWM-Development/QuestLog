@@ -3,9 +3,22 @@
 Milestone ref: M-MCP.1 (`Docs/MILESTONES_V1_MCP.md`) — hardening follow-up
 from T-016's ANN index recall-cliff finding; not itself a milestone task
 
-Blocked on: T-016 — must be merged into develop first
-
 Branch: feat/m-mcp/t-022-pgvector-iterative-scan-upgrade
+
+## Resolution — superseded (2026-07-17)
+
+Archived, not implemented as its own ticket. QuestLog has not deployed to
+production yet — the pgvector-version concern this ticket tracked (install
+≥ 0.8.0 so `hnsw.iterative_scan` closes T-016's recall cliff) is real but
+premature to fix in isolation: there is no dev/prod database to fix it
+*on* yet. It's folded into the new M-MCP.5 deploy milestone instead —
+specifically `Docs/tickets/queue/T-023-v1-deploy-readiness-audit.md`
+(pins the `pgvector/pgvector` Docker image tag used in dev/CI to an
+explicit ≥ 0.8.0 release instead of the rolling `pg16` tag, as a listed
+automatable item) and `Docs/tickets/backlog/T-024-dev-prod-environment-database-setup.md`
+(carries that same pin into whatever actually provisions the production
+database). See `Docs/IMPLEMENTATION_NOTES.md` § "T-016" for the original
+evidence — still accurate, just tracked under a different ticket now.
 
 Context files (load ONLY these):
   - apps/server/src/db/schema/tables.ts (`chunks_embedding_hnsw_idx`, added

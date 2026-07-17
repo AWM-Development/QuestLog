@@ -69,9 +69,15 @@ Also on main from the pre-pivot era: session editor + entity linking frontends (
   - Context assembly scoped to recent sessions + open threads + current entity state (per PRD §4.4 brief components, minus all UI).
   - Exit: brief generated against fixture campaign contains the expected sections.
 
+- [ ] **M-MCP.5 — Deploy v1 (MCP server + backend + DB) to dev and production**
+  - M-MCP.0–4 are all shipped — the MCP server itself is feature-complete. Nothing in this repo yet stands it up anywhere Alex can actually point an MCP client at outside a local checkout: no `Dockerfile` for `apps/server`/`apps/mcp`, no deploy workflow, no provisioned dev or prod environment or database. This task closes that gap.
+  - Real infrastructure decisions (hosting provider, managed vs. self-hosted Postgres/pgvector, secrets management, backup/DR policy, long-term maintenance ownership) are 🧠 **strategy gates** — an agent may investigate and propose, but never resolve these unilaterally or take an action with real cost/credential/DNS/production-data consequences without Alex present. Automatable prep work (Dockerfiles, CI/CD workflow scaffolding, IaC template files Alex reviews before applying, migration/seed/reset scripts, docs) is normal nightly-eligible work like any other ticket.
+  - Splits into multiple tickets at planning time: a read-only deploy-readiness investigation, the actual dev/prod environment + database setup (gated on the investigation's decisions), and a safety-boundary ticket ensuring routine/nightly agents can only ever reach the dev environment and that production starts from a clean database.
+  - Exit: production is reachable and serving the real MCP server, or — for any sub-ticket that hits an unresolved 🧠 gate — a complete, concrete todo list exists distinguishing what's already automated from what only Alex can do manually, with every open decision explicitly named rather than defaulted.
+
 ### Ordering constraint
 
-M-MCP.0 → M-MCP.1 → (M-MCP.2 anytime after 1) → M-MCP.3 → M-MCP.4. Ticket One (first nightly run) = M-MCP.1.
+M-MCP.0 → M-MCP.1 → (M-MCP.2 anytime after 1) → M-MCP.3 → M-MCP.4 → M-MCP.5. Ticket One (first nightly run) = M-MCP.1.
 
 ---
 
@@ -86,7 +92,9 @@ No ticket may be written against these, and no agent may select them, regardless
 | 6.1–6.3 | Prep brief UI, secret management, player recaps — `prep_brief` MCP tool (M-MCP.4) covers the v1 need |
 | 7.1–7.3 | At-the-table: map reference, combat tracker, quick lookup |
 | 8.1–8.3 | Theming, mascot (Ember), style profiles |
-| 9.1–9.6 | Polish & deploy (responsive, perf, deployment, nav rail, real-campaign testing, TipTap link UI) |
+| 9.1, 9.2, 9.4, 9.5, 9.6 | Web-app-only polish (responsive, perf, nav rail, real-campaign testing, TipTap link UI) |
 | 10–19 | Everything in `MILESTONES_PT2.md` (observability, agent safety UI, autosave resilience, destructive-action safety, shortcuts, onboarding, global search, import streaming, export, token guardrails) |
+
+**Deployment note (2026-07):** the original `9.1–9.6` row bundled *deployment* together with web-app-only polish, written before the MCP-first pivot. Deploying the v1 product (MCP server + backend + DB) is not a v2-deferred concern — it now ships as **M-MCP.5** above, eligible for the normal ticket pipeline like any other v1 work. The remaining `9.x` items (responsive, perf, nav rail, real-campaign testing, TipTap link UI) are genuinely web-app-only and stay deferred. This whole table predates the pivot in more than this one place and is due a full re-audit against the current v1 shape — not done here, flagged for a future pass.
 
 Already-shipped v2 surfaces (chat UI, session editor, entity linking UI) remain in the repo untouched — maintain green tests, but no feature work.
