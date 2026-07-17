@@ -10,6 +10,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-016
+
+- **`chunks.embedding` cosine search has an ANN index available**: added `chunks_embedding_hnsw_idx` (`hnsw`, `vector_cosine_ops`) so `search.service.ts`'s `<=>` query is no longer forced into an exact brute-force scan of every campaign's chunks. `hnsw` chosen over `ivfflat` — no training-data-at-build-time requirement, better fit for a table that grows incrementally rather than via bulk load. **Caveat (see `IMPLEMENTATION_NOTES.md` for full evidence):** the installed pgvector (`0.6.0`) predates iterative index scan (added in `0.8.0`), so once a campaign is a small-enough fraction of the whole `chunks` table that the planner prefers this index over the existing `campaign_id` bitmap scan, a filtered query can return far fewer rows than its `LIMIT` — reproduced directly, not theoretical. Flagged for Alex as a decision item, not silently shipped.
+
+### Changed — T-015
+
+- **`query_lore`/`prep_brief`'s keyword-search leg made indexable**: `context.service.ts`'s `keywordSearch` (the pg_trgm half of hybrid search, run on every `query_lore`/`prep_brief` call) previously filtered with `similarity(chunks.content, query) > threshold` as a direct function call, which can never use a GIN trgm index — confirmed the same class of limitation T-012 found for `word_similarity`, but for `similarity()` this time. Added a `chunks_content_trgm_idx` GIN index and added the indexable `content % query` operator alongside the original strict `similarity(...) > threshold` filter (`%`'s own truth test is `>=`, not `>`, so it's used only to reach the index for candidate generation, not as a replacement for the exact threshold check; `pg_trgm.similarity_threshold` is scoped via `SET LOCAL` inside a transaction, never the global config). Confirmed `similarity()` is genuinely symmetric for this use case (unlike `word_similarity`), so the net result is a pure query-plan change — identical scores, identical ranking, no behavior change for callers. See `IMPLEMENTATION_NOTES.md` for the full EXPLAIN evidence and an honest caveat: the speedup is data-dependent at production chunk size, not uniformly dramatic.
+
+### Added — T-014
+
+- **`campaign_id` btree indexes added across every campaign-scoped table** (`sessions`, `entities`, `entity_relationships`, `sources`, `chunks`, `conversations`, `write_requests`): previously only `entities.name` had an index, so every campaign-scoped query Seq Scanned its full table to find one campaign's rows. Invisible at today's single-user scale; matters once multiple users each have multiple campaigns and total rows per table grow independently of any one campaign's slice. No behavior change — same query results, cheaper query plans. Closes the scaling gap T-012's won't-fix investigation identified.
+
 ### Changed — T-013
 
 - **`prep_brief`'s "Likely NPCs" now reads confirmed entity links from `session_entities` instead of re-scanning session text on every call:** `brief.service.ts` previously ran `entityService.detectSpans` against each recent session's content at read time, re-deriving the same links `confirm_log_session` already persisted at write time. It now joins `session_entities` → `entities` for the recent-session window directly. Behavior change: a session's NPC mentions only surface in "Likely NPCs" if that session went through `log_session`/`confirm_log_session` (which link entities) — a session created via the raw service layer with no linked entities no longer falls back to text matching, even if its content mentions an NPC by name.

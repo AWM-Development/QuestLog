@@ -5,9 +5,6 @@ from the T-012/T-014 index audit; not itself a milestone task (performance
 only — see "Behavior note" below on the one way this ISN'T purely
 transparent)
 
-Blocked on: T-014 — must be merged into `develop` first, for the same
-shared-schema-file reason as `T-015`.
-
 Branch: feat/m-mcp/t-016-chunks-embedding-ann-index
 
 Context files (load ONLY these):
