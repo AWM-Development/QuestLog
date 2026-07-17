@@ -59,29 +59,35 @@ export const campaigns = pgTable("campaigns", {
 		.$onUpdate(() => new Date()),
 });
 
-export const sessions = pgTable("sessions", {
-	id: uuid("id").defaultRandom().primaryKey(),
-	campaignId: uuid("campaign_id")
-		.references(() => campaigns.id)
-		.notNull(),
-	sessionNumber: integer("session_number").notNull(),
-	date: timestamp("date", { withTimezone: true }).defaultNow().notNull(),
-	title: text("title"),
-	summary: text("summary"),
-	content: text("content").notNull(),
-	status: text("status").notNull().default("draft"),
-	tags: jsonb("tags").$type<string[]>().default([]),
-	dismissedEntityTexts: jsonb("dismissed_entity_texts")
-		.$type<string[]>()
-		.default([]),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.defaultNow()
-		.notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true })
-		.defaultNow()
-		.notNull()
-		.$onUpdate(() => new Date()),
-});
+export const sessions = pgTable(
+	"sessions",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		campaignId: uuid("campaign_id")
+			.references(() => campaigns.id)
+			.notNull(),
+		sessionNumber: integer("session_number").notNull(),
+		date: timestamp("date", { withTimezone: true }).defaultNow().notNull(),
+		title: text("title"),
+		summary: text("summary"),
+		content: text("content").notNull(),
+		status: text("status").notNull().default("draft"),
+		tags: jsonb("tags").$type<string[]>().default([]),
+		dismissedEntityTexts: jsonb("dismissed_entity_texts")
+			.$type<string[]>()
+			.default([]),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.notNull()
+			.$onUpdate(() => new Date()),
+	},
+	(table) => [
+		index("sessions_campaign_id_idx").using("btree", table.campaignId),
+	],
+);
 
 export const entities = pgTable(
 	"entities",
@@ -111,6 +117,7 @@ export const entities = pgTable(
 			"gin",
 			sql`${table.name} gin_trgm_ops`,
 		),
+		index("entities_campaign_id_idx").using("btree", table.campaignId),
 	],
 );
 
@@ -132,78 +139,103 @@ export const sessionEntities = pgTable("session_entities", {
 
 // No updatedAt: relationships are immutable edges in the knowledge graph.
 // To change a relationship, delete and recreate it.
-export const entityRelationships = pgTable("entity_relationships", {
-	id: uuid("id").defaultRandom().primaryKey(),
-	campaignId: uuid("campaign_id")
-		.references(() => campaigns.id)
-		.notNull(),
-	sourceEntityId: uuid("source_entity_id")
-		.references(() => entities.id)
-		.notNull(),
-	targetEntityId: uuid("target_entity_id")
-		.references(() => entities.id)
-		.notNull(),
-	label: text("label").notNull(),
-	description: text("description"),
-	weight: integer("weight"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.defaultNow()
-		.notNull(),
-});
+export const entityRelationships = pgTable(
+	"entity_relationships",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		campaignId: uuid("campaign_id")
+			.references(() => campaigns.id)
+			.notNull(),
+		sourceEntityId: uuid("source_entity_id")
+			.references(() => entities.id)
+			.notNull(),
+		targetEntityId: uuid("target_entity_id")
+			.references(() => entities.id)
+			.notNull(),
+		label: text("label").notNull(),
+		description: text("description"),
+		weight: integer("weight"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+	},
+	(table) => [
+		index("entity_relationships_campaign_id_idx").using(
+			"btree",
+			table.campaignId,
+		),
+	],
+);
 
-export const sources = pgTable("sources", {
-	id: uuid("id").defaultRandom().primaryKey(),
-	campaignId: uuid("campaign_id")
-		.references(() => campaigns.id)
-		.notNull(),
-	name: text("name").notNull(),
-	type: text("type").notNull(), // "file" | "pasted_text" (source kind)
-	mimeType: text("mime_type"),
-	storageKey: text("storage_key"),
-	sizeBytes: integer("size_bytes"),
-	hash: text("hash"),
-	status: text("status").notNull().default("pending"),
-	metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.defaultNow()
-		.notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true })
-		.defaultNow()
-		.notNull()
-		.$onUpdate(() => new Date()),
-});
+export const sources = pgTable(
+	"sources",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		campaignId: uuid("campaign_id")
+			.references(() => campaigns.id)
+			.notNull(),
+		name: text("name").notNull(),
+		type: text("type").notNull(), // "file" | "pasted_text" (source kind)
+		mimeType: text("mime_type"),
+		storageKey: text("storage_key"),
+		sizeBytes: integer("size_bytes"),
+		hash: text("hash"),
+		status: text("status").notNull().default("pending"),
+		metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.notNull()
+			.$onUpdate(() => new Date()),
+	},
+	(table) => [
+		index("sources_campaign_id_idx").using("btree", table.campaignId),
+	],
+);
 
-export const chunks = pgTable("chunks", {
-	id: uuid("id").defaultRandom().primaryKey(),
-	campaignId: uuid("campaign_id")
-		.references(() => campaigns.id)
-		.notNull(),
-	sourceId: uuid("source_id").references(() => sources.id),
-	sessionId: uuid("session_id").references(() => sessions.id),
-	content: text("content").notNull(),
-	embedding: vector("embedding", 1024),
-	metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.defaultNow()
-		.notNull(),
-});
+export const chunks = pgTable(
+	"chunks",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		campaignId: uuid("campaign_id")
+			.references(() => campaigns.id)
+			.notNull(),
+		sourceId: uuid("source_id").references(() => sources.id),
+		sessionId: uuid("session_id").references(() => sessions.id),
+		content: text("content").notNull(),
+		embedding: vector("embedding", 1024),
+		metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+	},
+	(table) => [index("chunks_campaign_id_idx").using("btree", table.campaignId)],
+);
 
-export const conversations = pgTable("conversations", {
-	id: uuid("id").defaultRandom().primaryKey(),
-	campaignId: uuid("campaign_id")
-		.references(() => campaigns.id)
-		.notNull(),
-	title: text("title"),
-	tags: jsonb("tags").$type<string[]>().default([]),
-	status: text("status").notNull().default("active"),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.defaultNow()
-		.notNull(),
-	updatedAt: timestamp("updated_at", { withTimezone: true })
-		.defaultNow()
-		.notNull()
-		.$onUpdate(() => new Date()),
-});
+export const conversations = pgTable(
+	"conversations",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		campaignId: uuid("campaign_id")
+			.references(() => campaigns.id)
+			.notNull(),
+		title: text("title"),
+		tags: jsonb("tags").$type<string[]>().default([]),
+		status: text("status").notNull().default("active"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.notNull()
+			.$onUpdate(() => new Date()),
+	},
+	(table) => [
+		index("conversations_campaign_id_idx").using("btree", table.campaignId),
+	],
+);
 
 export const messages = pgTable("messages", {
 	id: uuid("id").defaultRandom().primaryKey(),
@@ -222,22 +254,28 @@ export const messages = pgTable("messages", {
 
 // Rows with `confirmedAt` set double as the audit log for MCP writes: what
 // changed (payload/appliedResult), when (confirmedAt), which tool (toolName).
-export const writeRequests = pgTable("write_requests", {
-	id: uuid("id").defaultRandom().primaryKey(),
-	campaignId: uuid("campaign_id")
-		.references(() => campaigns.id)
-		.notNull(),
-	toolName: text("tool_name").notNull(),
-	payload: jsonb("payload").$type<unknown>().notNull(),
-	appliedResult: jsonb("applied_result").$type<unknown>(),
-	createdAt: timestamp("created_at", { withTimezone: true })
-		.defaultNow()
-		.notNull(),
-	expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-	confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
-	// Set by an atomic conditional UPDATE at the start of confirm(), before
-	// applyFn runs — the claim mechanism itself, distinct from confirmedAt.
-	// Cleared (not confirmedAt) if applyFn throws, so the token stays
-	// retryable. See write-request.service.ts.
-	claimedAt: timestamp("claimed_at", { withTimezone: true }),
-});
+export const writeRequests = pgTable(
+	"write_requests",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		campaignId: uuid("campaign_id")
+			.references(() => campaigns.id)
+			.notNull(),
+		toolName: text("tool_name").notNull(),
+		payload: jsonb("payload").$type<unknown>().notNull(),
+		appliedResult: jsonb("applied_result").$type<unknown>(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+		confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+		// Set by an atomic conditional UPDATE at the start of confirm(), before
+		// applyFn runs — the claim mechanism itself, distinct from confirmedAt.
+		// Cleared (not confirmedAt) if applyFn throws, so the token stays
+		// retryable. See write-request.service.ts.
+		claimedAt: timestamp("claimed_at", { withTimezone: true }),
+	},
+	(table) => [
+		index("write_requests_campaign_id_idx").using("btree", table.campaignId),
+	],
+);

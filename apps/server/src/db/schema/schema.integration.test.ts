@@ -41,4 +41,29 @@ describe("database schema", () => {
 		);
 		expect(result.length).toBe(1);
 	});
+
+	it("has a btree index on campaign_id for every campaign-scoped table", async () => {
+		const campaignScopedTables = [
+			"sessions",
+			"entities",
+			"entity_relationships",
+			"sources",
+			"chunks",
+			"conversations",
+			"write_requests",
+		];
+
+		const result = await db.execute(sql`
+			SELECT tablename, indexname FROM pg_indexes
+			WHERE schemaname = 'public'
+				AND indexdef ILIKE '%USING btree (campaign_id)%'
+		`);
+		const indexedTables = result.map(
+			(r) => (r as Record<string, unknown>).tablename,
+		);
+
+		for (const table of campaignScopedTables) {
+			expect(indexedTables).toContain(table);
+		}
+	});
 });
