@@ -85,6 +85,13 @@
       "when": 1784301634157,
       "tag": "0011_square_talkback",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1784307145778,
+      "tag": "0012_gifted_doctor_spectrum",
+      "breakpoints": true
     }
   ]
 }
