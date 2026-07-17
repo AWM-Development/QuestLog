@@ -217,6 +217,10 @@ export const chunks = pgTable(
 			"gin",
 			sql`${table.content} gin_trgm_ops`,
 		),
+		index("chunks_embedding_hnsw_idx").using(
+			"hnsw",
+			table.embedding.op("vector_cosine_ops"),
+		),
 	],
 );
 
