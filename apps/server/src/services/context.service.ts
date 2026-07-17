@@ -27,7 +27,7 @@
  *     embedding drifts from the query.
  */
 
-import { desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import type { Database } from "../db/index.js";
 import {
 	campaigns,
@@ -155,41 +155,59 @@ async function keywordSearch(
 	query: string,
 	limit: number,
 ): Promise<SearchResult[]> {
-	// Compute similarity once in a subquery so the expression isn't
-	// evaluated separately in SELECT, WHERE, and ORDER BY.
-	const sq = db
-		.select({
-			chunkId: chunks.id,
-			content: chunks.content,
-			trgmScore: sql<number>`similarity(${chunks.content}, ${query})`.as(
-				"trgm_score",
-			),
-			sourceName: sources.name,
-			sourceId: chunks.sourceId,
-			metadata: chunks.metadata,
-			createdAt: chunks.createdAt,
-		})
-		.from(chunks)
-		.leftJoin(sources, eq(chunks.sourceId, sources.id))
-		.where(eq(chunks.campaignId, campaignId))
-		.as("sq");
+	// The `%` operator is the indexable form of pg_trgm similarity matching
+	// (chunks_content_trgm_idx) — the equivalent similarity(...) > threshold
+	// function-call form can never use a GIN trgm index, regardless of
+	// indexing. pg_trgm.similarity_threshold is scoped to this transaction
+	// via SET LOCAL, never the global config, and `%`'s truth test
+	// (similarity(a, b) > threshold) is identical to the prior predicate.
+	return db.transaction(async (tx) => {
+		// SET does not accept bind parameters — the threshold is an internal
+		// constant, not user input, so inlining via sql.raw is safe here.
+		await tx.execute(
+			sql`SET LOCAL pg_trgm.similarity_threshold = ${sql.raw(String(CONTEXT_CONFIG.keywordSearchThreshold))}`,
+		);
 
-	const rows = await db
-		.select()
-		.from(sq)
-		.where(sql`${sq.trgmScore} > ${CONTEXT_CONFIG.keywordSearchThreshold}`)
-		.orderBy(sql`${sq.trgmScore} DESC`)
-		.limit(limit);
+		// Compute similarity once in a subquery so the expression isn't
+		// evaluated separately in SELECT and ORDER BY.
+		const sq = tx
+			.select({
+				chunkId: chunks.id,
+				content: chunks.content,
+				trgmScore: sql<number>`similarity(${chunks.content}, ${query})`.as(
+					"trgm_score",
+				),
+				sourceName: sources.name,
+				sourceId: chunks.sourceId,
+				metadata: chunks.metadata,
+				createdAt: chunks.createdAt,
+			})
+			.from(chunks)
+			.leftJoin(sources, eq(chunks.sourceId, sources.id))
+			.where(
+				and(
+					eq(chunks.campaignId, campaignId),
+					sql`${chunks.content} % ${query}`,
+				),
+			)
+			.as("sq");
 
-	return rows.map((row) => ({
-		chunkId: row.chunkId,
-		content: row.content,
-		score: Number(row.trgmScore),
-		sourceName: row.sourceName,
-		sourceId: row.sourceId,
-		metadata: (row.metadata ?? {}) as Record<string, unknown>,
-		createdAt: row.createdAt,
-	}));
+		const rows = await tx
+			.select()
+			.from(sq)
+			.orderBy(sql`${sq.trgmScore} DESC`)
+			.limit(limit);
+
+		return rows.map((row) => ({
+			chunkId: row.chunkId,
+			content: row.content,
+			score: Number(row.trgmScore),
+			sourceName: row.sourceName,
+			sourceId: row.sourceId,
+			metadata: (row.metadata ?? {}) as Record<string, unknown>,
+			createdAt: row.createdAt,
+		}));
+	});
 }
 
 /**
