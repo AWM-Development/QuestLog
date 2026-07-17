@@ -159,8 +159,12 @@ async function keywordSearch(
 	// (chunks_content_trgm_idx) — the equivalent similarity(...) > threshold
 	// function-call form can never use a GIN trgm index, regardless of
 	// indexing. pg_trgm.similarity_threshold is scoped to this transaction
-	// via SET LOCAL, never the global config, and `%`'s truth test
-	// (similarity(a, b) > threshold) is identical to the prior predicate.
+	// via SET LOCAL, never the global config. `%`'s truth test is
+	// similarity(a, b) >= threshold (not the prior predicate's strict `>`),
+	// so `%` is used only to reach the index for candidate generation; the
+	// original strict `>` filter is ANDed alongside it to keep the exact
+	// same result set as before (a chunk scoring exactly the threshold was
+	// excluded before and must stay excluded).
 	return db.transaction(async (tx) => {
 		// SET does not accept bind parameters — the threshold is an internal
 		// constant, not user input, so inlining via sql.raw is safe here.
@@ -188,6 +192,7 @@ async function keywordSearch(
 				and(
 					eq(chunks.campaignId, campaignId),
 					sql`${chunks.content} % ${query}`,
+					sql`similarity(${chunks.content}, ${query}) > ${CONTEXT_CONFIG.keywordSearchThreshold}`,
 				),
 			)
 			.as("sq");
