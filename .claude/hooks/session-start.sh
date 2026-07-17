@@ -17,6 +17,19 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
 
+# A remote session's working tree can start from a snapshot that predates a
+# slash command or skill being added to develop (e.g. cut from main, or from
+# an older point on develop), which leaves it undiscoverable until something
+# happens to fetch/checkout develop mid-session. Sync just these two
+# tooling directories from origin/develop so they're present from the first
+# turn, without switching the session's actual branch. Skip if either path
+# already has local changes, so we never clobber in-progress edits to a
+# command/skill file itself.
+if [ -z "$(git status --porcelain -- .claude/commands .claude/skills 2>/dev/null)" ]; then
+  git fetch origin develop --quiet 2>/dev/null \
+    && git checkout origin/develop -- .claude/commands .claude/skills 2>/dev/null || true
+fi
+
 # Derive credentials/port from the project's own DATABASE_URL rather than
 # hardcoding a fourth copy alongside docker-compose.yml/.env.example/CI.
 ENV_FILE="$CLAUDE_PROJECT_DIR/.env"
