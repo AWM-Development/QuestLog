@@ -4,12 +4,6 @@ Milestone ref: M-MCP.1 (`Docs/MILESTONES_V1_MCP.md`) — hardening follow-up
 from the T-012/T-014 index audit; not itself a milestone task (performance
 only, no behavior change for callers)
 
-Blocked on: T-014 — must be merged into `develop` first. T-014 adds the
-`campaign_id` btree index this ticket's EXPLAIN verification depends on to
-reflect the real post-T-014 query plan, and both tickets touch
-`apps/server/src/db/schema/tables.ts` / generate migrations, so serializing
-avoids two in-flight schema diffs.
-
 Branch: feat/m-mcp/t-015-chunks-content-trgm-index
 
 Context files (load ONLY these):
