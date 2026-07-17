@@ -11,7 +11,7 @@ Context files (load ONLY these):
     existing index, `entities_name_trgm_idx`, as the pattern to follow for
     declaring an index in Drizzle)
   - .claude/rules/db.md — migration workflow section
-  - Docs/tickets/done/T-012-entity-trgm-index-pre-filter.md — why this
+  - Docs/tickets/archive/T-012-entity-trgm-index-pre-filter.md — why this
     ticket exists instead of T-012's original approach
 
 Mockup: none

@@ -161,7 +161,7 @@ embedded in a realistic ~1.9KB session-log text scores `1.0` in the current
 orientation vs. `0.029` reversed — under the `0.15` threshold, silently
 dropping the match. No operator form is both indexable and
 semantics-preserving for `detectSpans`'s call shape. Full EXPLAIN evidence:
-`Docs/tickets/done/T-012-entity-trgm-index-pre-filter.md`.
+`Docs/tickets/archive/T-012-entity-trgm-index-pre-filter.md`.
 
 **Rule of thumb:** before proposing an operator-form rewrite of any
 `word_similarity`/`similarity` predicate to make it indexable, check which

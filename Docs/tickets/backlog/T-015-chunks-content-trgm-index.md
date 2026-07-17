@@ -19,7 +19,7 @@ Context files (load ONLY these):
   - apps/server/src/db/schema/tables.ts (`chunks`, and
     `entities_name_trgm_idx` as the existing GIN-index-declaration pattern)
   - .claude/rules/db.md — pg_trgm conventions section
-  - Docs/tickets/done/T-012-entity-trgm-index-pre-filter.md — read this
+  - Docs/tickets/archive/T-012-entity-trgm-index-pre-filter.md — read this
     first: it documents that `word_similarity()` (asymmetric, entity-name
     matching) could NOT be safely made indexable. This ticket is about
     `similarity()` (symmetric — same score regardless of argument order),
