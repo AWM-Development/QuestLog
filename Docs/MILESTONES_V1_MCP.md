@@ -42,7 +42,7 @@ Also on main from the pre-pivot era: session editor + entity linking frontends (
 
 ## Milestone M-MCP: The MCP Server — 🎯 THE v1 MILESTONE
 
-**Goal:** `apps/mcp` — a sibling app in the monorepo importing existing services from `apps/server`, exposing four tools over MCP. No new business logic where a service already exists; the MCP layer is thin adapters + input validation + the write-back safety pattern.
+**Goal:** `apps/mcp` — a sibling app in the monorepo importing existing services from `apps/server`, exposing five tools over MCP (`query_lore`, `get_entity`/`list_entities`, `list_campaigns`, `log_session`, `prep_brief`). No new business logic where a service already exists; the MCP layer is thin adapters + input validation + the write-back safety pattern.
 
 **PRD ref:** `Docs/PRD.md` §4.2 (context assembly semantics), §4.3 (session log), §4.4 (prep brief), §4.5 (entities). Visual specs: none — this milestone has no UI.
 

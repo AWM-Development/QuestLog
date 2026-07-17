@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-018
+
+- **New `list_campaigns` MCP tool**: read-only, no-input tool returning every active campaign's `id`, `name`, `description`, `theme`, `gameSystem`, and `status`. Every other MCP tool requires a `campaignId`, but nothing over MCP could previously discover one — a DM connecting a fresh MCP client had no way to find their campaign's id without leaving the conversation. Mirrors the existing `list_entities` tool's pattern; delegates straight to the existing `campaignService.list(db)`, no new business logic.
+
 ### Added — T-016
 
 - **`chunks.embedding` cosine search has an ANN index available**: added `chunks_embedding_hnsw_idx` (`hnsw`, `vector_cosine_ops`) so `search.service.ts`'s `<=>` query is no longer forced into an exact brute-force scan of every campaign's chunks. `hnsw` chosen over `ivfflat` — no training-data-at-build-time requirement, better fit for a table that grows incrementally rather than via bulk load. **Caveat (see `IMPLEMENTATION_NOTES.md` for full evidence):** the installed pgvector (`0.6.0`) predates iterative index scan (added in `0.8.0`), so once a campaign is a small-enough fraction of the whole `chunks` table that the planner prefers this index over the existing `campaign_id` bitmap scan, a filtered query can return far fewer rows than its `LIMIT` — reproduced directly, not theoretical. Flagged for Alex as a decision item, not silently shipped.

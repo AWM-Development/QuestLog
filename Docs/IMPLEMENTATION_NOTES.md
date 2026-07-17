@@ -2,7 +2,7 @@
 
 **Purpose:** Non-obvious decisions and gotchas that aren't derivable from reading the code. Read at the start of every session. Add an entry when you make a non-obvious decision.
 
-**Last Updated:** 2026-07-15
+**Last Updated:** 2026-07-17
 
 ## Session notes (Milestone 4.1) — Main-area editor + dock model (revised)
 
@@ -692,3 +692,10 @@ Execution Time: 4.468 ms
 
 ### `VOYAGE_API_KEY` unavailable in this sandbox — `search.e2e.test.ts`'s before/after recall check could not be run for real
 Per the existing documented pattern (`describe.skipIf(!process.env.VOYAGE_API_KEY)`, see above), `pnpm test:e2e` skipped `search.e2e.test.ts` cleanly rather than failing. The real-API recall check the ticket asks for was not executed; the synthetic reproduction above (direct SQL, realistic row counts and selectivity, the app's actual query shape and both real `LIMIT` values) is offered as a substitute rigor check, but it is not the same as confirming the fixture's specific expected chunks still surface — flagged for Alex, matching the precedent already set by prior tickets run in this same sandbox (T-000/T-001 notes above).
+
+## T-018 — `list_campaigns` MCP tool (2026-07)
+
+### `apps/mcp/src/server.test.ts`'s "empty" case for `list_campaigns` doesn't test a literal empty table — global `DELETE`s are unsafe in this shared test DB
+Every other tool suite in `server.test.ts` scopes its data by a `campaignId` it creates and cleans up itself, so any two suites' data never collides. `list_campaigns` takes no input — there's no `campaignId` to scope a query by — so its exit condition ("an empty database returns a well-formed empty list, not an error") can't be verified the same way. The obvious approach, `DELETE FROM campaigns` (optionally wrapped in `BEGIN`/`ROLLBACK`), is unsafe here specifically: `createTestDb()` uses `{ max: 1 }` (one physical connection per package's test run), and `turbo test` fans `apps/mcp`'s and `apps/server`'s test suites out as separate concurrent processes against the same physical `questlog_test` database (no `dependsOn` serializes them — see `turbo.json`). `BEGIN`/`ROLLBACK` only defers *visibility* of this transaction's own writes to other connections; it does not protect an unscoped `DELETE` from failing at execution time against a live FK reference from a row `apps/server`'s own concurrently-running suite has already committed. Hit this empirically while iterating: `DELETE FROM campaigns` failed with `sources_campaign_id_campaigns_id_fk` violation mid-run, tracing back to a campaign+source pair created by `apps/server`'s own service tests in the same window.
+
+The test instead mirrors `campaignService.list`'s own "does not return archived campaigns" case (`apps/server/src/services/campaign.service.test.ts`): create a campaign, archive it, assert it's excluded from `list_campaigns`'s result. This proves the well-formed-array/no-error path without any destructive global mutation, but — per the reviewer's Step 5 note — it's a strictly weaker claim than the ticket's literal wording: it asserts one known id is *absent*, not that the array is zero-length. No test in this suite currently asserts `list_campaigns` returns `[]` (not `null`/undefined/an error) from a table with genuinely zero rows. The implementation trivially handles this (`campaignList.map(...)` on `[]` produces `[]`, no special-casing), so this is a coverage gap in the *test*, not a known implementation risk — but a future reader should not mistake the archived-exclusion test for literal empty-list coverage.
