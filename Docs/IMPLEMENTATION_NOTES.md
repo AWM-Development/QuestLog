@@ -649,3 +649,46 @@ Same class of finding as T-012's `word_similarity`, now confirmed for `similarit
 
 ### Test isolation: `context.service.test.ts` and `apps/mcp/src/server.test.ts`'s `query_lore` suite switched from `BEGIN`/`ROLLBACK` to `deleteCampaignTree()`
 Wrapping `keywordSearch` in `db.transaction()` (needed to scope `SET LOCAL pg_trgm.similarity_threshold`) means any test suite exercising `contextService.assemble` now hits the same nested-transaction issue `.claude/rules/backend.md` already documents for `conversation.service.ts`/`write-request.service.ts`: a raw `BEGIN` on the connection doesn't compose with Drizzle's own `db.transaction()`, and Postgres emits `there is already a transaction in progress` / `there is no transaction in progress` warnings — worse, the inner `transaction()`'s `COMMIT` actually commits the outer test transaction for real, silently defeating the test's rollback-based isolation (confirmed: tests still reported green, but data was durably written to `questlog_test` instead of rolled back). Both suites now use `deleteCampaignTree()` instead, matching the established pattern. `apps/mcp/src/server.test.ts`'s `prep_brief`/`list_entities`/`get_entity`/`log_session` suites are unaffected (`prep_brief`'s `brief.service.ts` doesn't call `contextService`; `log_session` already used `deleteCampaignTree()` for the same reason via `write-request.service.ts`).
+
+## T-016 — `chunks.embedding` pgvector ANN index (2026-07)
+
+### Index type: `hnsw`, not `ivfflat` — confirmed against this table's actual write pattern, not just row count
+`ivfflat` needs representative training data present *at index-build time* to place its cluster centroids well, and re-clustering as the table grows requires an explicit `REINDEX` — a poor fit for `chunks`, which grows continuously via `log_session`/source upload rather than in one bulk load. `hnsw` has no training step and its graph absorbs new rows incrementally, so it was chosen without needing to tune a `lists` parameter against a row-count estimate that will be stale again in a month. Added as `chunks_embedding_hnsw_idx` (`USING hnsw (embedding vector_cosine_ops)`, migration `0012_gifted_doctor_spectrum.sql`), default `m`/`ef_construction` build parameters — no tuning beyond that, per ticket scope.
+
+### Critical finding: the installed pgvector (0.6.0) has no iterative index scan, so a campaign-filtered ANN query can return far fewer rows than `LIMIT` asks for — not just "slightly re-ranked," a real recall cliff
+The ticket's own "Behavior note" anticipated *some* approximation — a chunk ranking 6th instead of 5th. What was actually found empirically is worse in kind, not degree: pgvector's HNSW index scan enumerates candidates from the *global* (campaign-agnostic) nearest-neighbor graph up to `hnsw.ef_search` (default `40`), then applies the `campaign_id` filter as a post-scan `Filter` — it does **not** keep expanding the graph search to backfill rows the filter rejected. `iterative_scan` (`hnsw.iterative_scan = relaxed_order|strict_order`), the pgvector feature that fixes exactly this by continuing the search until the filtered result set is satisfied, was added in pgvector **0.8.0** — three minor versions ahead of what's installed (`0.6.0`, confirmed via `SELECT extversion FROM pg_extension WHERE extname='vector'`).
+
+Reproduced directly against `questlog_test` (rolled-back scratch transaction, not committed): seeded one target campaign with 2,000 chunks and 30,000 background chunks spread across 20 other campaigns (so the target is ~6% of the table — the regime where the planner actually prefers the new index over the existing `chunks_campaign_id_idx` bitmap scan + explicit sort; a single-campaign table, as tested first, never triggers the index at all and is not representative), then ran `search.service.ts`'s exact query shape (`WHERE campaign_id = $1 ORDER BY embedding <=> $2 LIMIT $3`) at both of the app's real limits:
+
+```
+=== default hnsw.ef_search (40), 5 runs each ===
+LIMIT 5  (search.service.ts DEFAULT_LIMIT):        got 1, 2, 1, 0, 1 rows   — expected 5 every time
+LIMIT 40 (context.service.ts defaultSearchLimit):   got 2, 3, 1, 1, 0 rows  — expected 40 every time
+
+=== hnsw.ef_search raised to 1000 (session-level GUC, no query-shape change), 5 runs each ===
+LIMIT 5:  got 5, 5, 5, 5, 5 rows   — fully recovered
+LIMIT 40: got 40, 38, 40, 34, 40 rows — mostly recovered, still occasionally short
+```
+
+```
+EXPLAIN ANALYZE, default ef_search, LIMIT 40:
+Limit  (cost=324.74..767.19 rows=40 width=1256) (actual time=4.283..4.405 rows=2 loops=1)
+  ->  Nested Loop Left Join  (cost=324.74..22391.82 rows=1995 width=1256) (actual time=4.281..4.402 rows=2 loops=1)
+        ->  Index Scan using chunks_embedding_hnsw_idx on chunks  (cost=324.60..22060.60 rows=1995 width=1226) (actual time=4.210..4.317 rows=2 loops=1)
+              Order By: (embedding <=> '[...]'::vector)
+              Filter: (campaign_id = '...'::uuid)
+              Rows Removed by Filter: 38
+        ->  Index Scan using sources_pkey on sources  (cost=0.14..0.16 rows=1 width=48) (actual time=0.002..0.002 rows=0 loops=2)
+              Index Cond: (id = chunks.source_id)
+Planning Time: 0.707 ms
+Execution Time: 4.468 ms
+```
+
+`Rows Removed by Filter: 38` alongside `ef_search`'s default of 40 makes the mechanism legible directly from the plan: of the 40 globally-nearest candidates the index scan visited, only 2 belonged to the queried campaign, and the scan stopped there instead of continuing — `query_lore`/`prep_brief` would silently receive 2 chunks of "relevant campaign knowledge" instead of the requested 40, with no error, warning, or empty-result signal to the caller.
+
+**Why this didn't surface in the existing mocked suites or in the ticket's own reproduction:** every mocked test (`search.service.test.ts`, `context.service.test.ts`) seeds at most a handful of rows in a single campaign. At that scale Postgres's planner never picks the HNSW index over a trivial sequential scan regardless of cost settings — the recall cliff only exists in the row-count/selectivity regime this ticket's own seeding script (single campaign, no background rows) also failed to reproduce on the first attempt; it only appeared once background rows from other campaigns were added to make the target genuinely selective. This is exactly the gap the ticket flagged as a risk ("if recall degrades in a way the existing e2e fixture doesn't catch") — the *existing* e2e fixture (`search.e2e.test.ts`, one campaign, a few dozen chunks) would not have caught this either, independent of the `VOYAGE_API_KEY` availability problem noted below.
+
+**Not fixed in this ticket, by design:** ticket scope explicitly excludes "tuning beyond a reasonable default parameter choice" for the index, and raising `hnsw.ef_search` is a query-time GUC, not an index-build parameter, but changing it would still be a `search.service.ts` behavior change beyond "add the index" — out of scope for a ticket framed as index-addition-only. Flagged in the ticket report for Alex to decide between: (a) accept the index as shipped, given QuestLog's actual per-user data volume today (single user, few campaigns) means the planner mostly won't choose the lossy path yet — the cliff appears exactly *as* the app scales into needing the index, which is a bad property but not an immediate one; (b) upgrade the `pgvector` extension to >= 0.8.0 and set `hnsw.iterative_scan` before relying on this index under filtered queries; or (c) hold off enabling filtered-ANN behavior until (b) is done. No code in this repo currently sets `hnsw.ef_search`, so today's behavior is entirely the Postgres/pgvector default.
+
+### `VOYAGE_API_KEY` unavailable in this sandbox — `search.e2e.test.ts`'s before/after recall check could not be run for real
+Per the existing documented pattern (`describe.skipIf(!process.env.VOYAGE_API_KEY)`, see above), `pnpm test:e2e` skipped `search.e2e.test.ts` cleanly rather than failing. The real-API recall check the ticket asks for was not executed; the synthetic reproduction above (direct SQL, realistic row counts and selectivity, the app's actual query shape and both real `LIMIT` values) is offered as a substitute rigor check, but it is not the same as confirming the fixture's specific expected chunks still surface — flagged for Alex, matching the precedent already set by prior tickets run in this same sandbox (T-000/T-001 notes above).
