@@ -4,7 +4,7 @@
 **Last Updated:** 2026-07-07
 **Purpose:** The exact, complete format for every ticket file. `.claude/skills/ticket-writer/SKILL.md` produces tickets in this shape; the nightly executor and the reviewer subagent both assume it.
 
-Every ticket lives at `Docs/tickets/T-###-slug.md` (`###` sequential, zero-padded, never reused across `queue/`, `in-progress/`, `done/`, `blocked/`) and contains exactly these fields, in this order:
+Every ticket lives at `Docs/tickets/T-###-slug.md` (`###` sequential, zero-padded, never reused across `backlog/`, `queue/`, `in-progress/`, `done/`, `blocked/`, `archive/`) and contains exactly these fields, in this order:
 
 ```markdown
 # T-### — <title>
@@ -71,6 +71,22 @@ Both land in `develop` only — never `main`. A `git branch -a` scan is enough t
 
 `Docs/tickets/backlog/` (optional) → `Docs/tickets/queue/` → (nightly executor picks up the oldest ticket that isn't already shipped or blocked — see below) → `Docs/tickets/in-progress/` → `Docs/tickets/done/` or `Docs/tickets/blocked/`. An empty `queue/` is the entire on/off switch for nightly spend — see `Docs/MILESTONES_V1_MCP.md`'s parent handoff for the pre-flight check that makes an empty night cost one cheap tool call.
 
+`Docs/tickets/archive/` sits outside this pipeline entirely — it's not a
+pipeline state a ticket passes through, it's a manual park. A ticket lands
+here only when Alex decides, in an interactive session, that it shouldn't
+run right now — a priority/scale call, not a `Blocked on:` dependency
+(that's what `backlog/` is for) and not necessarily a final `— WON'T FIX`
+verdict (that's `done/`, and implies the investigation actually ran — see
+below). Drop the `Blocked on:` line when archiving a ticket that had one;
+it no longer applies once the ticket is out of `backlog/`'s auto-promotion
+path. The nightly executor's pre-flight (`EXECUTOR_ROUTINE.md` Step 1) only
+ever globs `backlog/`, `in-progress/`, and `queue/` — it never reads
+`archive/`, so a ticket parked there stays inert no matter what merges
+later, with no corresponding change needed to `EXECUTOR_ROUTINE.md` itself.
+To resume an archived ticket, move it back into `queue/` (or `backlog/` if
+it still has a real dependency) by hand — same manual step as unblocking a
+blocked ticket, below.
+
 `backlog/` holds tickets that are fully drafted but not ready for the
 executor yet — most commonly because their Context files or Scope depend on
 code from a predecessor ticket whose PR hasn't been merged into `develop`
@@ -116,16 +132,21 @@ time it picks the ticket up.
 ### Won't-fix as an alternative resolution
 
 Not every blocked ticket gets unblocked and re-queued — sometimes Alex's
-answer to the blocked report's question is "don't do this." There's no
-separate `wontfix/` directory: `git mv` the ticket into `Docs/tickets/done/`
-(same as a shipped ticket — `done/` means "resolved, no further action,"
-not strictly "code shipped"), suffix the title with `— WON'T FIX`, and
+answer to the blocked report's question is "don't do this," backed by a
+completed investigation (e.g. the `EXPLAIN` evidence a ticket's exit
+condition demanded). There's no separate `wontfix/` directory for that
+case: `git mv` the ticket into `Docs/tickets/done/` (same as a shipped
+ticket — `done/` means "resolved, no further action," not strictly "code
+shipped"), suffix the title with `— WON'T FIX`, and
 append a `## Resolution — WON'T FIX (<date>)` section to the ticket file
 recording the decision and why. Write a matching report in
 `Docs/tickets/reports/` with `**Outcome:** won't-fix` (mirroring the
 `**Outcome:** shipped` field a normal report uses). No `CHANGELOG.md` entry
 is needed — the "every merged ticket PR adds a changelog entry" obligation
 covers shipped behavior, and a won't-fix ticket changes none. See
-`Docs/tickets/done/T-012-entity-trgm-index-pre-filter.md` and
+`Docs/tickets/archive/T-012-entity-trgm-index-pre-filter.md` and
 `Docs/tickets/reports/T-012-entity-trgm-index-pre-filter.md` for a worked
-example.
+example. (T-012 was later moved from `done/` into `archive/` alongside
+other deprioritized/won't-pursue tickets — see the Lifecycle section above
+— but the won't-fix mechanics that produced it, and its report, are
+unchanged.)
