@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Changed — T-015
+
+- **`query_lore`/`prep_brief`'s keyword-search leg made indexable**: `context.service.ts`'s `keywordSearch` (the pg_trgm half of hybrid search, run on every `query_lore`/`prep_brief` call) previously filtered with `similarity(chunks.content, query) > threshold` as a direct function call, which can never use a GIN trgm index — confirmed the same class of limitation T-012 found for `word_similarity`, but for `similarity()` this time. Added a `chunks_content_trgm_idx` GIN index and added the indexable `content % query` operator alongside the original strict `similarity(...) > threshold` filter (`%`'s own truth test is `>=`, not `>`, so it's used only to reach the index for candidate generation, not as a replacement for the exact threshold check; `pg_trgm.similarity_threshold` is scoped via `SET LOCAL` inside a transaction, never the global config). Confirmed `similarity()` is genuinely symmetric for this use case (unlike `word_similarity`), so the net result is a pure query-plan change — identical scores, identical ranking, no behavior change for callers. See `IMPLEMENTATION_NOTES.md` for the full EXPLAIN evidence and an honest caveat: the speedup is data-dependent at production chunk size, not uniformly dramatic.
+
 ### Added — T-014
 
 - **`campaign_id` btree indexes added across every campaign-scoped table** (`sessions`, `entities`, `entity_relationships`, `sources`, `chunks`, `conversations`, `write_requests`): previously only `entities.name` had an index, so every campaign-scoped query Seq Scanned its full table to find one campaign's rows. Invisible at today's single-user scale; matters once multiple users each have multiple campaigns and total rows per table grow independently of any one campaign's slice. No behavior change — same query results, cheaper query plans. Closes the scaling gap T-012's won't-fix investigation identified.

@@ -1,4 +1,3 @@
-import { sql } from "drizzle-orm";
 import {
 	afterAll,
 	afterEach,
@@ -15,7 +14,11 @@ import {
 	messages,
 	sources,
 } from "../db/schema/index.js";
-import { basisVector, createTestDb } from "../db/test-helpers.js";
+import {
+	basisVector,
+	createTestDb,
+	deleteCampaignTree,
+} from "../db/test-helpers.js";
 import { campaignService } from "./campaign.service.js";
 import { contextService, mergeSearchResults } from "./context.service.js";
 import type { SearchResult } from "./search.service.js";
@@ -44,7 +47,6 @@ describe("contextService", () => {
 	});
 
 	beforeEach(async () => {
-		await db.execute(sql`BEGIN`);
 		vi.clearAllMocks();
 
 		const campaign = await campaignService.create(db, {
@@ -68,7 +70,7 @@ describe("contextService", () => {
 	});
 
 	afterEach(async () => {
-		await db.execute(sql`ROLLBACK`);
+		await deleteCampaignTree(db, campaignId);
 	});
 
 	// -----------------------------------------------------------------------

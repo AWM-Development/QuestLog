@@ -211,7 +211,13 @@ export const chunks = pgTable(
 			.defaultNow()
 			.notNull(),
 	},
-	(table) => [index("chunks_campaign_id_idx").using("btree", table.campaignId)],
+	(table) => [
+		index("chunks_campaign_id_idx").using("btree", table.campaignId),
+		index("chunks_content_trgm_idx").using(
+			"gin",
+			sql`${table.content} gin_trgm_ops`,
+		),
+	],
 );
 
 export const conversations = pgTable(

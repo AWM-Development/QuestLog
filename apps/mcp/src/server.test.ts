@@ -54,11 +54,15 @@ async function connectedClient(fetchFn: FetchFn) {
 }
 
 describe("query_lore tool", () => {
+	// query_lore assembles context via contextService.assemble, whose
+	// keywordSearch opens its own db.transaction() (T-015's indexable trgm
+	// operator rewrite) — this does not compose with a raw BEGIN/ROLLBACK
+	// wrapper on the same connection (.claude/rules/backend.md "Test DB
+	// pattern") — use explicit FK-safe cleanup instead.
 	let campaignId: string;
 	let sourceId: string;
 
 	beforeEach(async () => {
-		await db.execute(sql`BEGIN`);
 		vi.clearAllMocks();
 
 		const campaign = await campaignService.create(db, {
@@ -75,7 +79,7 @@ describe("query_lore tool", () => {
 	});
 
 	afterEach(async () => {
-		await db.execute(sql`ROLLBACK`);
+		await deleteCampaignTree(db, campaignId);
 	});
 
 	it("returns the seeded chunk in citations with confidence > 0", async () => {

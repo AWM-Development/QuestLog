@@ -590,3 +590,62 @@ The `campaign_id` index narrows to the target campaign first in every case (`Ind
 
 ### Sandbox note: no Docker in this execution environment (recurrence of the M-MCP.1 note)
 Same situation as M-MCP.1/M-MCP.3: no `docker` daemon available. Native `postgresql-16` + `postgresql-16-pgvector` (apt) install, cluster moved to port 5433, `questlog`/`questlog_test` databases and the `questlog` role created from scratch, migrations run against both before any test could pass.
+
+## T-015 — `chunks.content` trgm GIN index for `keywordSearch` (2026-07)
+
+### `similarity()` is symmetric here (unlike T-012's `word_similarity()`) — confirmed, not assumed
+`similarity(a, b) == similarity(b, a)` held exactly (`0.16312057` both directions) against a realistic ~667-word chunk body (T-014-style filler + an appended verbatim "Strahd" sentence) and a short query, so no argument-order trap like T-012's `word_similarity`. `pg_trgm.similarity_threshold` is set to `CONTEXT_CONFIG.keywordSearchThreshold` via `SET LOCAL` inside a `db.transaction()` wrapping `keywordSearch`'s query, never the global config.
+
+### `%` is NOT a drop-in replacement for `similarity(...) > threshold` — it's `>=`, not `>` (reviewer-caught, fixed before merge)
+The first pass of this ticket rewrote the predicate to `content % query` alone and asserted (in a code comment, this doc, and `CHANGELOG.md`) that its truth test was identical to the original `similarity(content, query) > threshold`. That was wrong and unverified: `%`'s definition is `similarity(a, b) >= pg_trgm.similarity_threshold` (confirmed directly — `'abcde' % 'abcdz'` is `true` at threshold `0.5` while `similarity('abcde','abcdz') > 0.5` is `false`, only `>=` is `true`). A chunk scoring *exactly* the threshold — realistic for trigram similarity, a ratio of small integers — would have been included by the new predicate but excluded by the old one, a real scoring/ranking change the ticket's exit condition explicitly forbids. Fixed by keeping `%` only to reach the index for candidate generation, ANDed with the original strict `similarity(content, query) > threshold` filter to reproduce the exact prior result set (`context.service.ts`'s `keywordSearch` subquery `WHERE`). This doesn't cost a second index scan — `%` still drives the `Bitmap Index Scan`, and the strict filter runs as a cheap in-memory recheck alongside the existing `campaign_id` filter.
+
+### The function-call form (`similarity(...) > threshold`) can never use a GIN trgm index — confirmed with `enable_seqscan = off`
+Same class of finding as T-012's `word_similarity`, now confirmed for `similarity()` too: with `chunks_content_trgm_idx` present and `enable_seqscan = off` forced, `EXPLAIN` shows **no alternate plan at all** for the function-call predicate — it stays on `Seq Scan` regardless. Only `%`/`%>`/`<%` are indexable; wrapping the indexed column in a function call (`similarity(content, query)`) defeats it structurally, not as an implementation oversight. The operator rewrite is therefore required, not optional, to reach the index at all.
+
+### The operator form's *real* speedup is highly data-dependent at production chunk size (~800 words) and the existing 0.1 threshold — reliably reaches the index, but false-positive rate on the lossy candidate check varies a lot
+`chunking.service.ts` targets 650–1000 words per chunk (`TARGET_WORDS`/`MAX_WORDS`) — this is the length that matters for `EXPLAIN` verification, not the much shorter single-sentence fixtures `context.service.test.ts` uses for correctness tests. At that length, GIN's lossy "consistent" check for `%` can only prove a *necessary* condition for `similarity() >= threshold` (it can't know a candidate row's total trigram count without visiting it), so its candidate set gets less selective as the indexed text gets longer relative to the query. Across multiple `EXPLAIN ANALYZE` runs against the same script (20,000 rows, ~650-word chunks templated from a 27,000-combination sentence pool, 20 rows amended with an exact "Strahd Barovia vampire" match, seeded/rolled-back in `questlog_test`, final compound predicate `content % query AND similarity(content, query) > threshold`), the plan **always** chose `Bitmap Heap Scan` / `Bitmap Index Scan on chunks_content_trgm_idx` — never `Seq Scan` — but wall-clock ranged from ~20ms (few false-candidate rows) to ~7.5s, statistically indistinguishable from the function-call/`Seq Scan` baseline, depending purely on how much incidental trigram overlap that run's random filler content happened to share with the query. Both runs below satisfy the exit condition's plan-shape requirement; the honest characterization is "reliably indexable, sometimes dramatically faster, not reliably fast" for this specific chunk-length/threshold combination — real campaign lore with distinctive proper nouns (character/place names, per the `query_lore` use case) should trend toward the fast end more often than generic vocabulary, but this is not a guarantee this ticket can make.
+
+```
+=== fast run: realistic ~650-word chunks (chunking.service.ts's TARGET_WORDS shape), final compound predicate, natural planner choice ===
+ Limit  (cost=862.03..862.13 rows=40 width=193) (actual time=20.187..20.193 rows=20 loops=1)
+   ->  Sort  (cost=862.03..862.20 rows=67 width=193) (actual time=20.185..20.188 rows=20 loops=1)
+         Sort Key: (similarity(chunks.content, 'Strahd Barovia vampire'::text)) DESC
+         Sort Method: quicksort  Memory: 35kB
+         ->  Nested Loop Left Join  (cost=263.49..860.00 rows=67 width=193) (actual time=1.145..20.158 rows=20 loops=1)
+               Join Filter: (chunks.source_id = sources.id)
+               ->  Bitmap Heap Scan on chunks  (cost=263.49..857.82 rows=67 width=178) (actual time=0.793..13.715 rows=20 loops=1)
+                     Recheck Cond: (content % 'Strahd Barovia vampire'::text)
+                     Filter: ((campaign_id = '...'::uuid) AND (similarity(content, 'Strahd Barovia vampire'::text) > '0.1'::double precision))
+                     Heap Blocks: exact=2
+                     ->  Bitmap Index Scan on chunks_content_trgm_idx  (cost=0.00..263.48 rows=200 width=0) (actual time=0.070..0.070 rows=20 loops=1)
+                           Index Cond: (content % 'Strahd Barovia vampire'::text)
+               ->  Materialize  (cost=0.00..1.01 rows=1 width=27) (actual time=0.000..0.000 rows=1 loops=20)
+                     ->  Seq Scan on sources  (cost=0.00..1.01 rows=1 width=27) (actual time=0.004..0.005 rows=1 loops=1)
+ Planning Time: 0.330 ms
+ Execution Time: 20.234 ms
+
+=== slow run: same script re-run (fresh random filler content), same compound predicate — still Bitmap Index Scan, not Seq Scan, but the recheck visits nearly the whole table ===
+ Limit  (cost=890.91..891.01 rows=40 width=216) (actual time=7536.505..7536.515 rows=20 loops=1)
+   ->  Sort  (cost=890.91..891.08 rows=67 width=216) (actual time=7536.502..7536.508 rows=20 loops=1)
+         ->  Nested Loop Left Join  (cost=292.37..888.88 rows=67 width=216) (actual time=4262.861..7536.473 rows=20 loops=1)
+               ->  Bitmap Heap Scan on chunks  (cost=292.37..886.69 rows=67 width=201) (actual time=4262.398..7528.408 rows=20 loops=1)
+                     Recheck Cond: (content % 'Strahd Barovia vampire'::text)
+                     Rows Removed by Index Recheck: 19980
+                     Filter: ((campaign_id = '...'::uuid) AND (similarity(content, 'Strahd Barovia vampire'::text) > '0.1'::double precision))
+                     Heap Blocks: exact=648
+                     ->  Bitmap Index Scan on chunks_content_trgm_idx  (cost=0.00..292.35 rows=200 width=0) (actual time=4.152..4.153 rows=20020 loops=1)
+                           Index Cond: (content % 'Strahd Barovia vampire'::text)
+ Execution Time: 7536.569 ms
+
+=== for comparison: function-call form alone (no operator, no index) — always Seq Scan, never reaches the index, regardless of data ===
+ Limit  (cost=1251.43..1251.53 rows=40 width=186) (actual time=6135.413..6135.418 rows=20 loops=1)
+   ->  Sort ...
+         ->  Nested Loop Left Join  (cost=0.00..1040.68 rows=6667 width=186) (actual time=6122.828..6135.371 rows=20 loops=1)
+               ->  Seq Scan on chunks  (cost=0.00..923.00 rows=6667 width=171) (actual time=6122.491..6128.805 rows=20 loops=1)
+                     Filter: ((campaign_id = '...'::uuid) AND (similarity(content, 'Strahd Barovia vampire'::text) > '0.1'::double precision))
+                     Rows Removed by Filter: 19980
+ Execution Time: 6135.439 ms
+```
+
+### Test isolation: `context.service.test.ts` and `apps/mcp/src/server.test.ts`'s `query_lore` suite switched from `BEGIN`/`ROLLBACK` to `deleteCampaignTree()`
+Wrapping `keywordSearch` in `db.transaction()` (needed to scope `SET LOCAL pg_trgm.similarity_threshold`) means any test suite exercising `contextService.assemble` now hits the same nested-transaction issue `.claude/rules/backend.md` already documents for `conversation.service.ts`/`write-request.service.ts`: a raw `BEGIN` on the connection doesn't compose with Drizzle's own `db.transaction()`, and Postgres emits `there is already a transaction in progress` / `there is no transaction in progress` warnings — worse, the inner `transaction()`'s `COMMIT` actually commits the outer test transaction for real, silently defeating the test's rollback-based isolation (confirmed: tests still reported green, but data was durably written to `questlog_test` instead of rolled back). Both suites now use `deleteCampaignTree()` instead, matching the established pattern. `apps/mcp/src/server.test.ts`'s `prep_brief`/`list_entities`/`get_entity`/`log_session` suites are unaffected (`prep_brief`'s `brief.service.ts` doesn't call `contextService`; `log_session` already used `deleteCampaignTree()` for the same reason via `write-request.service.ts`).
