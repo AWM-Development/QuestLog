@@ -1,6 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import {
+	campaigns,
 	chunks,
 	entities,
 	sessionEntities,
@@ -294,6 +295,81 @@ describe("list_entities tool", () => {
 		const payload = JSON.parse(content[0]?.text ?? "{}");
 		expect(payload.entities).toHaveLength(1);
 		expect(payload.entities[0].name).toBe("Mira Duskwood");
+	});
+});
+
+describe("list_campaigns tool", () => {
+	let campaignId: string;
+
+	afterEach(async () => {
+		if (campaignId) {
+			await db.delete(campaigns).where(eq(campaigns.id, campaignId));
+		}
+	});
+
+	it("returns the seeded campaign with the specified fields", async () => {
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+			description: "A frontier town beset by ash storms.",
+			gameSystem: "D&D 5e",
+		});
+		campaignId = campaign.id;
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "list_campaigns",
+			arguments: {},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		const found = payload.campaigns.find(
+			(c: { id: string }) => c.id === campaignId,
+		);
+		expect(found).toMatchObject({
+			id: campaignId,
+			name: "Ashfall Primer Campaign",
+			description: "A frontier town beset by ash storms.",
+			theme: "fantasy",
+			gameSystem: "D&D 5e",
+			status: "active",
+		});
+	});
+
+	it("excludes an archived campaign, returning a well-formed list rather than an error", async () => {
+		// list_campaigns has no input to scope a query by, so (unlike every
+		// other tool in this suite) its test can't isolate itself with a
+		// campaignId filter. Asserting a literal zero-row table is unsafe here:
+		// apps/server's test suite runs concurrently against this same shared
+		// questlog_test database (`pnpm test` fans out via turbo), so any
+		// unscoped mutation like `DELETE FROM campaigns` can hit a live FK
+		// reference from a campaign that suite is using at that instant. Mirror
+		// campaignService.list's own "does not return archived campaigns" test
+		// (apps/server/src/services/campaign.service.test.ts) instead: prove
+		// the well-formed-list guarantee via exclusion of a known id, which
+		// needs no destructive global mutation.
+		const campaign = await campaignService.create(db, {
+			name: "Retired Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+		await campaignService.archive(db, campaignId);
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "list_campaigns",
+			arguments: {},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(Array.isArray(payload.campaigns)).toBe(true);
+		expect(
+			payload.campaigns.find((c: { id: string }) => c.id === campaignId),
+		).toBeUndefined();
 	});
 });
 
