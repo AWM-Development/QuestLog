@@ -10,6 +10,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-019
+
+- **`apps/mcp/README.md`**: the full setup path for connecting a real MCP client (Claude Desktop or otherwise) to QuestLog — prerequisites, bootstrap, build, the Claude Desktop `mcpServers` config snippet, and a "first conversation" walkthrough (`list_campaigns` → `query_lore`).
+- **`pnpm --filter @questlog/mcp smoke`**: a stdio smoke test that spawns the *built* `dist/main.js` the same way a real MCP client would, performs the MCP initialize handshake, and asserts all 7 tools are present — machine-checkable proof the documented setup actually boots, distinct from the existing in-process test suite.
+
+### Fixed — T-019
+
+- **`apps/mcp`'s built `dist/main.js` now actually runs under plain `node`**: previously `pnpm --filter @questlog/mcp build` (plain `tsc`) produced a `dist/main.js` that immediately crashed with `ERR_MODULE_NOT_FOUND` when run directly — `@questlog/server`/`@questlog/shared` are consumed as workspace TypeScript source with no build step of their own, and `tsc` never rewrites their bare-specifier imports into something Node can resolve. `apps/mcp`'s build now bundles via `esbuild` instead, which resolves both packages straight from source. See `IMPLEMENTATION_NOTES.md` § T-019 for the full investigation.
+
 ### Added — T-018
 
 - **New `list_campaigns` MCP tool**: read-only, no-input tool returning every active campaign's `id`, `name`, `description`, `theme`, `gameSystem`, and `status`. Every other MCP tool requires a `campaignId`, but nothing over MCP could previously discover one — a DM connecting a fresh MCP client had no way to find their campaign's id without leaving the conversation. Mirrors the existing `list_entities` tool's pattern; delegates straight to the existing `campaignService.list(db)`, no new business logic.
