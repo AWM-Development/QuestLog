@@ -4,10 +4,6 @@ Milestone ref: M-MCP (`Docs/MILESTONES_V1_MCP.md`) — v1 test-readiness;
 the last mile between "milestone checkboxes done" and "Alex can connect a
 real MCP client and use it"
 
-Blocked on: T-018 — must be merged into `develop` first. The setup doc's
-"find your campaign id" step should point at the `list_campaigns` tool
-rather than documenting a psql workaround that T-018 immediately obsoletes.
-
 Branch: feat/m-mcp/t-019-mcp-client-setup-glue
 
 Context files (load ONLY these):
