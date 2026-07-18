@@ -1,8 +1,13 @@
 {
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
+		// Not "./dist" like other packages: "pnpm build" produces the real
+		// runnable dist/main.js via esbuild (scripts/build.mjs) — tsc -b's own
+		// composite-project emit (used only by "pnpm typecheck") must not share
+		// that directory, or a typecheck run after a build silently clobbers
+		// the bundled artifact with tsc's unbundled, non-runnable output.
 		"composite": true,
-		"outDir": "./dist",
+		"outDir": "./.typecheck-out",
 		"rootDir": "./src",
 		"lib": ["ES2022"],
 		"paths": {

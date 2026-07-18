@@ -22,7 +22,15 @@ export default defineConfig({
 		globals: true,
 		sequence: { concurrent: false },
 		globalSetup: ["../server/src/db/global-setup.ts"],
-		exclude: [...configDefaults.exclude, "**/*.e2e.test.ts"],
+		// ".typecheck-out" isn't excluded by configDefaults (only "dist" is) —
+		// without this, vitest's default include pattern (which matches .js as
+		// well as .ts) picks up tsc -b's compiled test output there too, and
+		// every test in src/ runs a second time against the compiled copy.
+		exclude: [
+			...configDefaults.exclude,
+			"**/*.e2e.test.ts",
+			"**/.typecheck-out/**",
+		],
 		env: {
 			DATABASE_URL:
 				"postgresql://questlog:questlog@localhost:5433/questlog_test",
