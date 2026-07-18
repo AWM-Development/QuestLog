@@ -14,7 +14,7 @@ await build({
 	bundle: true,
 	platform: "node",
 	format: "esm",
-	target: "node22",
+	target: "node20",
 	external: [
 		"@modelcontextprotocol/sdk",
 		"@modelcontextprotocol/sdk/*",
