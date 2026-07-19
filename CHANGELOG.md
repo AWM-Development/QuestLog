@@ -10,6 +10,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Changed — T-026
+
+- **`apps/mcp`'s test suite now runs against its own isolated database (`questlog_test_mcp`)** instead of sharing `apps/server`'s `questlog_test`: `turbo test` runs both packages' suites as separate concurrent processes with no ordering between them, so an unscoped mutation in one could previously hit a live FK reference from a row the other suite had just committed (see `IMPLEMENTATION_NOTES.md` § T-018). CI and the remote sandbox's session-start hook now provision and migrate `questlog_test_mcp` alongside the existing databases.
+- **`list_campaigns`'s "empty" test now asserts a literal empty array** from a genuinely empty `campaigns` table, replacing the archived-campaign-exclusion substitute T-018 added as a workaround for the shared-database race.
+
 ### Added — T-019
 
 - **`apps/mcp/README.md`**: the full setup path for connecting a real MCP client (Claude Desktop or otherwise) to QuestLog — prerequisites, bootstrap, build, the Claude Desktop `mcpServers` config snippet, and a "first conversation" walkthrough (`list_campaigns` → `query_lore`).

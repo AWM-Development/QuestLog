@@ -95,7 +95,11 @@ fi
 # Extension creation is left to `db:migrate` (apps/server/src/db/migrate.ts
 # runs `CREATE EXTENSION IF NOT EXISTS` before applying migrations), so each
 # database only needs an existence check plus one migrate call here.
-for dbname in questlog questlog_test; do
+# questlog_test_mcp is apps/mcp's own isolated test DB (T-026) — turbo runs
+# apps/mcp's and apps/server's test suites as separate concurrent processes
+# with no ordering between them, so they can no longer safely share one
+# physical database.
+for dbname in questlog questlog_test questlog_test_mcp; do
   db_exists=$(sudo -u postgres psql -p "$PGPORT" -tAc "SELECT 1 FROM pg_database WHERE datname='${dbname}'")
   if [ "$db_exists" != "1" ]; then
     sudo -u postgres psql -p "$PGPORT" -c "CREATE DATABASE ${dbname} OWNER ${DB_USER}"
