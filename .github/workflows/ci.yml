@@ -69,6 +69,18 @@ jobs:
       - name: Run database migrations
         run: pnpm --filter @questlog/server db:migrate
 
+      # ── Provision apps/mcp's isolated test database ─────────────────────
+      # The Postgres service container only auto-creates the one database
+      # named in POSTGRES_DB (questlog_test). apps/mcp gets its own
+      # questlog_test_mcp (T-026) so its and apps/server's concurrent test
+      # suites can never collide on the same physical database.
+      - name: Create and migrate apps/mcp's test database
+        env:
+          DATABASE_URL: postgresql://questlog:questlog@localhost:5433/questlog_test_mcp
+        run: |
+          PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog_test -c "CREATE DATABASE questlog_test_mcp"
+          pnpm --filter @questlog/server db:migrate
+
       # ── Full test suite ───────────────────────────────────────────────────
       # Unit + integration only (real DB, mocked external APIs). The real-API
       # e2e tier (*.e2e.test.ts) is deliberately excluded from this gate — see

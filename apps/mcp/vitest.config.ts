@@ -32,8 +32,13 @@ export default defineConfig({
 			"**/.typecheck-out/**",
 		],
 		env: {
+			// Isolated from apps/server's questlog_test: turbo runs both suites
+			// as separate concurrent processes against the same physical DB
+			// with no ordering between them, which made an unscoped mutation
+			// (e.g. a literal-empty-table assertion) unsafe here. See
+			// Docs/IMPLEMENTATION_NOTES.md § T-018 / T-026.
 			DATABASE_URL:
-				"postgresql://questlog:questlog@localhost:5433/questlog_test",
+				"postgresql://questlog:questlog@localhost:5433/questlog_test_mcp",
 		},
 	},
 });
