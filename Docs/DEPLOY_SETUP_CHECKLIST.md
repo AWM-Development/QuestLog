@@ -16,6 +16,7 @@ Resolved decisions this checklist assumes (see `Docs/DEPLOY_READINESS.md` §2 fo
 
 ## 2. Fly.io (compute)
 
+- [ ] **First, outside Fly entirely:** run `docker build -f apps/server/Dockerfile .` from the repo root and confirm it succeeds. This sandbox's Docker Hub image pulls are policy-blocked (`Docs/IMPLEMENTATION_NOTES.md` § T-024), so the Dockerfile itself was never built end-to-end — only its bundled contents (`dist/main.js`, `dist/db/migrate.js`) were verified directly. Do this before `fly launch` below, since `flyctl deploy` builds the same Dockerfile and a failure there is easier to debug locally first.
 - [ ] Create a Fly.io account / confirm Alex's existing one, add a payment method.
 - [ ] `fly launch` (or `fly apps create`) twice, once per environment, using the generated configs as the starting point:
   - `flyctl launch -c fly.dev.toml --name questlog-dev --no-deploy` (review/adjust `primary_region` in `fly.dev.toml` — currently a placeholder, "iad")
