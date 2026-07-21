@@ -10,6 +10,15 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Fixed — T-027
+
+- **`apps/mcp`'s real-API e2e suite no longer shares a database with `apps/server`'s**: `pnpm turbo test:e2e` runs both packages' e2e suites concurrently with no ordering between them, and `apps/mcp/vitest.e2e.config.ts` was still pointed at `apps/server`'s `questlog_test` — the identical race T-026 fixed for the default test tier, still live in the e2e tier. Repointed at its own `questlog_test_mcp`, with the matching provisioning step added to `e2e-release-check.yml`.
+
+### Changed — T-027
+
+- **Collapsed the hand-typed local Postgres connection string out of TypeScript config/helper files**: `postgresql://questlog:questlog@localhost:5433/<dbname>` was duplicated across both packages' vitest configs, `test-helpers.ts`, `migrate.ts`, `global-setup.ts`, and `drizzle.config.ts`. All now build it from one shared `apps/server/src/db/test-db-url.ts` (`testDbUrl(dbname)`) so the host/port/credentials only need to change in one place.
+- **Documented the test-DB isolation model as a deliberate design, not oversight**: new `IMPLEMENTATION_NOTES.md` entry explaining why `turbo.json` has no `dependsOn` between packages' test tasks (isolation comes from separate physical databases, not execution ordering) and why per-package test isolation is truncate-once-per-run + manual `campaignId` scoping rather than transaction-per-test rollback. Also documents `apps/mcp`'s cross-app `globalSetup` import from `apps/server` as intentional, matching its established service-import pattern, not a boundary violation.
+
 ### Changed — T-026
 
 - **`apps/mcp`'s test suite now runs against its own isolated database (`questlog_test_mcp`)** instead of sharing `apps/server`'s `questlog_test`: `turbo test` runs both packages' suites as separate concurrent processes with no ordering between them, so an unscoped mutation in one could previously hit a live FK reference from a row the other suite had just committed (see `IMPLEMENTATION_NOTES.md` § T-018). CI and the remote sandbox's session-start hook now provision and migrate `questlog_test_mcp` alongside the existing databases.
