@@ -73,7 +73,11 @@ jobs:
       # The Postgres service container only auto-creates the one database
       # named in POSTGRES_DB (questlog_test). apps/mcp gets its own
       # questlog_test_mcp (T-026) so its and apps/server's concurrent test
-      # suites can never collide on the same physical database.
+      # suites can never collide on the same physical database. The set of
+      # provisioned test databases is independently listed in three places —
+      # here, e2e-release-check.yml, and .claude/hooks/session-start.sh's
+      # `for dbname in ...` loop — nothing ties them together, so adding a
+      # fourth database in the future means updating all three by hand.
       - name: Create and migrate apps/mcp's test database
         env:
           DATABASE_URL: postgresql://questlog:questlog@localhost:5433/questlog_test_mcp
