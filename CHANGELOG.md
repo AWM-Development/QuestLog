@@ -10,6 +10,17 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-024
+
+- **`apps/server` can now be built into a standalone, deployable artifact**: `apps/server/scripts/build.mjs` bundles `src/main.ts` and `src/db/migrate.ts` with esbuild (following `apps/mcp`'s T-019 precedent), producing `dist/main.js` and `dist/db/migrate.js` that run under plain `node` without `tsx` or workspace path resolution. `apps/server/Dockerfile` packages this into a container image; `.dockerignore` scopes the build context.
+- **Generated (not yet applied) deploy configuration for two Fly.io environments**: `fly.dev.toml` and `fly.prod.toml` (Dockerfile-based, explicit `release_command` migration step, `/health` check), and `deploy/env.dev.example` / `deploy/env.prod.example` documenting every env var each environment needs — real values are never committed, only names and structure. Prod auto-deploy on push to `main` uses Fly's own GitHub integration (connected directly in Fly's dashboard), not a custom GitHub Actions workflow — see `Docs/DEPLOY_SETUP_CHECKLIST.md` §3.
+- **`Docs/DEPLOY_SETUP_CHECKLIST.md`**: the manual sequence only Alex can run — Neon project/branch creation, Fly app creation, secrets, first deploy, GitHub Actions token — cross-referencing every automated artifact above by file path. Nothing under M-MCP.5 is actually live yet; this ticket produces configuration only, per its own scope.
+
+### Changed — T-024
+
+- **`pgvector/pgvector` Docker image pinned to `0.8.5-pg16`** (`docker-compose.yml`, `.github/workflows/ci.yml`, `.github/workflows/e2e-release-check.yml`), replacing the rolling `pg16` tag — carries forward T-023's finding that the previously-installed `0.6.0` predates `hnsw.iterative_scan` (added in `0.8.0`, relevant to T-016's campaign-filtered ANN recall cliff).
+- **`dotenv` moved from `apps/server`'s `devDependencies` to `dependencies`**: needed in the production image now that `apps/server` has a real bundled/deployed runtime (previously only ever run via `tsx`, which doesn't distinguish dev/prod dependencies).
+
 ### Fixed — T-027
 
 - **`apps/mcp`'s real-API e2e suite no longer shares a database with `apps/server`'s**: `pnpm turbo test:e2e` runs both packages' e2e suites concurrently with no ordering between them, and `apps/mcp/vitest.e2e.config.ts` was still pointed at `apps/server`'s `questlog_test` — the identical race T-026 fixed for the default test tier, still live in the e2e tier. Repointed at its own `questlog_test_mcp`, with the matching provisioning step added to `e2e-release-check.yml`.

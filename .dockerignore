@@ -1,0 +1,44 @@
+# Build context is the repo root (see apps/server/Dockerfile) — keep this in
+# sync with .gitignore's intent, plus repo-specific dirs a Docker build never
+# needs (git history, docs, the web app and its own build output).
+
+# Dependencies — reinstalled fresh in the deps/prod-deps stages
+node_modules/
+**/node_modules/
+
+# Build outputs — regenerated in the build stage
+dist/
+**/dist/
+.typecheck-out/
+*.tsbuildinfo
+.turbo/
+.vite/
+
+# Environment — secrets are injected via the hosting platform, never baked in
+.env
+.env.local
+.env.*.local
+
+# VCS
+.git/
+.github/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs / coverage
+*.log
+npm-debug.log*
+coverage/
+
+# Not needed to build/run apps/server
+Docs/
+e2e/
+apps/web/
+README.md
+CHANGELOG.md
