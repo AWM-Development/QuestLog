@@ -8,7 +8,7 @@
  * Silently skips if the database doesn't exist (e.g. unit-test-only runs).
  */
 import postgres, { type Sql } from "postgres";
-import { testDbUrl } from "./test-db-url.js";
+import { assertLocalDatabaseUrl, testDbUrl } from "./test-db-url.js";
 
 export const TABLES_IN_DELETE_ORDER = [
 	"messages",
@@ -50,6 +50,7 @@ export async function truncateAllTables(sql: Pick<Sql, "unsafe">) {
 export async function setup() {
 	const connectionString =
 		process.env.DATABASE_URL ?? testDbUrl("questlog_test");
+	assertLocalDatabaseUrl(connectionString);
 	const client = postgres(connectionString, { max: 1 });
 
 	try {

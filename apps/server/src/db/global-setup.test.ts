@@ -1,8 +1,23 @@
-import { afterAll, describe, expect, it } from "vitest";
-import { truncateAllTables } from "./global-setup.js";
+import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
+import { setup, truncateAllTables } from "./global-setup.js";
 import { createTestDb } from "./test-helpers.js";
 
 class RollbackForTest extends Error {}
+
+describe("setup", () => {
+	afterEach(() => {
+		vi.unstubAllEnvs();
+	});
+
+	it("refuses a prod-shaped DATABASE_URL (hosted Neon branch) instead of truncating tables against it", async () => {
+		vi.stubEnv(
+			"DATABASE_URL",
+			"postgresql://user:secretpw@ep-cool-glade-12345.us-east-2.aws.neon.tech/questlog?sslmode=require",
+		);
+
+		await expect(setup()).rejects.toThrow(/non-local database host/);
+	});
+});
 
 describe("global-setup", () => {
 	const { client, close } = createTestDb();

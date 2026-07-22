@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-025
+
+- **Test/dev database tooling now refuses to run against a real hosted database**: `assertLocalDatabaseUrl()` (`apps/server/src/db/test-db-url.ts`) guards `createTestDb()` and the global test-setup table-truncation step, throwing a clear, password-redacted error if `DATABASE_URL` doesn't resolve to `localhost`/`127.0.0.1` — defense-in-depth against ever pointing an automated test run at a real Neon dev or prod branch. Confirmed separately, by inspecting this repo's actual CI/sandbox configuration, that no automated path currently holds a real database credential to misuse in the first place (`Docs/IMPLEMENTATION_NOTES.md` § T-025).
+
 ### Added — T-024
 
 - **`apps/server` can now be built into a standalone, deployable artifact**: `apps/server/scripts/build.mjs` bundles `src/main.ts` and `src/db/migrate.ts` with esbuild (following `apps/mcp`'s T-019 precedent), producing `dist/main.js` and `dist/db/migrate.js` that run under plain `node` without `tsx` or workspace path resolution. `apps/server/Dockerfile` packages this into a container image; `.dockerignore` scopes the build context.

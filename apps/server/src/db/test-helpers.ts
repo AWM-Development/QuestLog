@@ -15,7 +15,7 @@ import {
 	sources,
 	writeRequests,
 } from "./schema/index.js";
-import { testDbUrl } from "./test-db-url.js";
+import { assertLocalDatabaseUrl, testDbUrl } from "./test-db-url.js";
 
 /**
  * Build a unit vector along a single axis.
@@ -45,6 +45,7 @@ export function basisVector(axis: number, dims = 1024): number[] {
 export function createTestDb(options?: { max?: number }) {
 	const connectionString =
 		process.env.DATABASE_URL ?? testDbUrl("questlog_test");
+	assertLocalDatabaseUrl(connectionString);
 	const client = postgres(connectionString, {
 		max: options?.max ?? 1,
 		idle_timeout: 10,

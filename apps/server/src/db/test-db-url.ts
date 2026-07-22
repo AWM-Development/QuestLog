@@ -14,3 +14,24 @@ const PASSWORD = "questlog";
 export function testDbUrl(dbname: string): string {
 	return `postgresql://${USER}:${PASSWORD}@${HOST}:${PORT}/${dbname}`;
 }
+
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1"]);
+
+/**
+ * Guards test/dev-only connection paths (`test-helpers.ts`'s `createTestDb()`,
+ * `global-setup.ts`'s table-truncating `setup()`) against ever running
+ * against a real hosted database. Both are automated, unattended entrypoints
+ * (run by the nightly ticket executor and CI on every test run) that must
+ * only ever touch the local Postgres this repo's tooling provisions — never
+ * a real Neon dev or prod branch, which `truncateAllTables` would otherwise
+ * silently wipe. Not used by `db/index.ts` or `migrate.ts`, which legitimately
+ * need to reach a real hosted database when actually deployed.
+ */
+export function assertLocalDatabaseUrl(connectionString: string): void {
+	const { hostname } = new URL(connectionString);
+	if (!LOCAL_HOSTNAMES.has(hostname)) {
+		throw new Error(
+			`Refusing to connect to non-local database host "${hostname}" — test/dev-only tooling must only ever target localhost or 127.0.0.1.`,
+		);
+	}
+}
