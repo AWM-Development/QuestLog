@@ -10,8 +10,9 @@
 # set via `fly secrets set DATABASE_URL=...` against this app, never here.
 
 app = "questlog-dev"
-# Alex: pick a real region at `fly launch` time (see checklist) — "iad"
-# (Ashburn, VA) is a placeholder, Fly's common default, not a hard decision.
+# "iad" (Ashburn, VA) is the deliberate choice, not a placeholder: the Neon
+# project (Docs/DEPLOY_SETUP_CHECKLIST.md §1) landed in us-east-2 (Ohio),
+# and iad is Fly's nearest low-latency US-east region to it.
 primary_region = "iad"
 
 [build]

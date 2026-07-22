@@ -19,8 +19,8 @@ Resolved decisions this checklist assumes (see `Docs/DEPLOY_READINESS.md` §2 fo
 - [ ] **First, outside Fly entirely:** run `docker build -f apps/server/Dockerfile .` from the repo root and confirm it succeeds. This sandbox's Docker Hub image pulls are policy-blocked (`Docs/IMPLEMENTATION_NOTES.md` § T-024), so the Dockerfile itself was never built end-to-end — only its bundled contents (`dist/main.js`, `dist/db/migrate.js`) were verified directly. Do this before `fly launch` below, since `flyctl deploy` builds the same Dockerfile and a failure there is easier to debug locally first.
 - [ ] Create a Fly.io account / confirm Alex's existing one, add a payment method.
 - [ ] `fly launch` (or `fly apps create`) twice, once per environment, using the generated configs as the starting point:
-  - `flyctl launch -c fly.dev.toml --name questlog-dev --no-deploy` (review/adjust `primary_region` in `fly.dev.toml` — currently a placeholder, "iad")
-  - `flyctl launch -c fly.prod.toml --name questlog-prod --no-deploy` (same for `fly.prod.toml`; keep both regions in sync unless there's a specific reason to diverge)
+  - `flyctl launch -c fly.dev.toml --name questlog-dev --no-deploy` (`primary_region = "iad"` is a deliberate choice — nearest Fly region to the Neon project's us-east-2 location, not a placeholder)
+  - `flyctl launch -c fly.prod.toml --name questlog-prod --no-deploy` (same region, kept in sync with `fly.dev.toml`)
 - [ ] `fly secrets set` on **each** app using the values gathered in step 1 and Alex's own API keys — names come from `deploy/env.dev.example` / `deploy/env.prod.example` (never commit the filled-in values):
   ```
   fly secrets set -c fly.dev.toml DATABASE_URL=<dev Neon connection string> ANTHROPIC_API_KEY=<key> VOYAGE_API_KEY=<key>
