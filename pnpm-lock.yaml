@@ -78,6 +78,9 @@ importers:
       '@trpc/server':
         specifier: ^11.0.0
         version: 11.13.4(typescript@5.9.3)
+      dotenv:
+        specifier: ^17.3.1
+        version: 17.3.1
       drizzle-orm:
         specifier: ^0.45.1
         version: 0.45.1(postgres@3.4.8)
@@ -109,9 +112,6 @@ importers:
       '@types/pdf-parse':
         specifier: ^1.1.5
         version: 1.1.5
-      dotenv:
-        specifier: ^17.3.1
-        version: 17.3.1
       drizzle-kit:
         specifier: ^0.31.9
         version: 0.31.9
