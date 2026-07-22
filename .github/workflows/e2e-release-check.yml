@@ -70,5 +70,16 @@ jobs:
       - name: Run database migrations
         run: pnpm --filter @questlog/server db:migrate
 
+      # ── Provision apps/mcp's isolated e2e test database ──────────────────
+      # Mirrors ci.yml's step; closes the e2e-tier version of T-026's race.
+      # DB list also duplicated in ci.yml and session-start.sh — update all
+      # three. Why: IMPLEMENTATION_NOTES.md § T-027.
+      - name: Create and migrate apps/mcp's e2e test database
+        env:
+          DATABASE_URL: postgresql://questlog:questlog@localhost:5433/questlog_test_mcp
+        run: |
+          PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog_test -c "CREATE DATABASE questlog_test_mcp"
+          pnpm --filter @questlog/server db:migrate
+
       - name: Real-API e2e tests
         run: pnpm turbo test:e2e
