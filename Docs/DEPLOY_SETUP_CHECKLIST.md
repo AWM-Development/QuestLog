@@ -11,9 +11,9 @@ Resolved decisions this checklist assumes (see `Docs/DEPLOY_READINESS.md` §2 fo
 - [x] Create a new Neon project under Alex's existing org (`Docs/DEPLOY_READINESS.md` §2.1 — Alex already has a Neon account, this is a new project, not a new signup). Done — project `QuestLog` (`long-feather-38463397`), created 2026-07-22, org `Alex` (`org-tiny-bread-20248230`).
 - [x] In the new project's root branch, run `CREATE EXTENSION IF NOT EXISTS vector; CREATE EXTENSION IF NOT EXISTS pg_trgm;` (or confirm they're pre-enabled — §2.1 states both are available on every plan/PG version, but confirm directly against the real project rather than assuming). Re-verify the installed `pgvector` version is ≥ `0.8.0` at this step (§2.1 flagged this as not independently confirmed in the audit). Confirmed directly against the real project (via Neon MCP `run_sql`, not assumed): `vector 0.8.0` and `pg_trgm 1.6` both present — meets the ≥0.8.0 requirement.
 - [x] Create a child branch off the root branch for dev (Neon's branching UI/CLI — child branches bill only their delta from root, §2.3). Root branch = prod, child branch = dev. Done — root branch `main` (`br-quiet-lake-ajhvskkd`, primary/default = prod) has child branch `dev` (`br-raspy-mouse-ajz204yu`).
-- [ ] Copy both branches' connection strings — needed for step 3 below. Double-check which is which before setting secrets (§2.4's "irreplaceable campaign lore" framing — a swapped connection string would point dev traffic at prod data or vice versa). Not done from this session deliberately — real credentials shouldn't be pasted into a chat/session log; pull both directly from the Neon console (Connection Details) when you reach the `fly secrets set` step below.
+- [x] Copy both branches' connection strings — done directly from the Neon console (Connection Details), never pasted into a chat/session log, matching the plan below. Verified correct (not swapped) indirectly: each app's migration ran against its own branch and `campaign.create`/`campaign.list` round-trips on `questlog-dev` and `questlog-prod` stayed isolated from each other (see `Docs/tickets/reports/T-025-executor-dev-only-guardrails-prod-clean-start.md` addendum).
 
-  Note: neither branch has a `questlog` database or any application tables yet (`get_database_tables` returns empty on `main`) — this is expected, not a gap. Schema is created by migrations (`release_command: node .../migrate.js`) at first deploy (§2 below), not at project-creation time, so there's nothing to seed or verify clean yet.
+  Note: at project-creation time neither branch had a `questlog` database or any application tables (`get_database_tables` returned empty on `main`) — expected, not a gap. Schema is created by migrations (`release_command: node dist/db/migrate.js` — path fixed by [PR #73](https://github.com/AWM-Development/QuestLog/pull/73), see that PR for the `apps/server/` doubling bug found on first real deploy) at first deploy (§2 below), which has now happened on both branches — both have the full application schema.
 - [ ] **Deferred, but must happen before real campaign data goes in:** upgrade the prod Neon project from Free to the Launch plan, for its 7-day point-in-time-restore window and automated backup schedule (`Docs/DEPLOY_READINESS.md` §2.4 — Free's 6-hour/1GB-capped PITR window is thin for a bursty usage pattern where a bad write might go unnoticed for days). Not needed to complete the rest of this checklist — flagged here so it isn't silently forgotten. A same-project plan-tier change, not a migration.
 
 ## 2. Fly.io (compute)
@@ -26,20 +26,21 @@ Resolved decisions this checklist assumes (see `Docs/DEPLOY_READINESS.md` §2 fo
 
   Note: `flyctl launch` rewrites both `fly.*.toml` files from scratch (re-quotes values, strips comments) — the explanatory comments in both files were restored by hand afterward; the underlying config values are unchanged.
 
-**Deliberately deferred until this branch's code is merged `develop` → `main`** (see `Docs/IMPLEMENTATION_NOTES.md` § T-024 addendum): setting real secrets and the first actual deploy of either app. Both apps exist and are configured but sitting idle — there's nothing to build from yet on `main`, and Fly's GitHub integration (§3) builds from `main`. Resume here once that merge has happened:
+**Was deferred until this branch's code merged `develop` → `main`** — that merge happened, and both first deploys are now done:
 
-- [ ] `fly secrets set` on **each** app using the values gathered in step 1 and Alex's own API keys — names come from `deploy/env.dev.example` / `deploy/env.prod.example` (never commit the filled-in values):
+- [x] `fly secrets set` on **each** app using the values gathered in step 1 and Alex's own API keys — names come from `deploy/env.dev.example` / `deploy/env.prod.example` (never committed):
   ```
   fly secrets set -c fly.dev.toml DATABASE_URL=<dev Neon connection string> ANTHROPIC_API_KEY=<key> VOYAGE_API_KEY=<key>
   fly secrets set -c fly.prod.toml DATABASE_URL=<prod Neon connection string> ANTHROPIC_API_KEY=<key> VOYAGE_API_KEY=<key> CORS_ORIGIN=<real frontend origin>
   ```
-- [ ] First deploy of **dev**, run manually (dev is never connected to GitHub auto-deploy — only prod is, §3 below):
+  Set via the Fly dashboard's "Add Secrets" UI rather than the CLI — same effect.
+- [x] First deploy of **dev**, run manually (dev is never connected to GitHub auto-deploy — only prod is, §3 below):
   ```
   flyctl deploy -c fly.dev.toml
   ```
-  This builds `apps/server/Dockerfile` (repo root as build context) and runs the `release_command` (`node apps/server/dist/db/migrate.js`) against the dev Neon branch before routing traffic.
-- [ ] Verify: `curl https://questlog-dev.fly.dev/health` returns `{"status":"ok"}` (the endpoint already exists — `apps/server/src/server.ts`'s `GET /health`, unchanged by this ticket).
-- [ ] First deploy of **prod** — run `flyctl deploy -c fly.prod.toml` manually once to confirm it works end-to-end. Verify `curl https://questlog-prod.fly.dev/health` afterward.
+  This builds `apps/server/Dockerfile` (repo root as build context) and runs the `release_command` (`node dist/db/migrate.js`) against the dev Neon branch before routing traffic. First attempt hit the `apps/server/` path-doubling bug fixed by PR #73 — retried clean after the fix.
+- [x] Verify: `curl https://questlog-dev.fly.dev/health` returns `{"status":"ok"}` — confirmed. Went further than the checklist's own bar: a full `campaign.create` → `campaign.list` → delete round-trip against the real dev Neon branch confirmed the DB connection, schema, and pgvector/pg_trgm extensions all actually work, not just that the process boots.
+- [x] First deploy of **prod** — ran `flyctl deploy -c fly.prod.toml` manually once (from a `main` checkout, after `develop` → `main` merge) to confirm it works end-to-end. `curl https://questlog-prod.fly.dev/health` returned `{"status":"ok"}`. Same create/list/delete round-trip run against prod confirmed a genuinely clean start (the test campaign was the only row present) and closes T-025's previously-blocked item 2 — see that ticket's report.
 
 ## 3. Prod auto-deploy (Fly's native GitHub integration)
 
