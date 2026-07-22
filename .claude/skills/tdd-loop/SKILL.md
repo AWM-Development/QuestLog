@@ -28,3 +28,4 @@ The implementation procedure for every ticket. QuestLog's CLAUDE.md rule is abso
 - Full ticket exit condition met — not just "tests exist," but the specific behavioral check(s) named in the ticket pass.
 - `pnpm lint`, `pnpm typecheck`, `pnpm test` all clean — paste the actual output, don't summarize it.
 - No skipped/only tests, no `any`/`@ts-ignore` without a comment justifying why.
+- **One DRY pass across the whole diff, not just each checkpoint's local refactor step.** Step 3's refactor only cleans up duplication within the checkpoint you're on — it won't catch the same pattern (a fixture literal, a resolve-then-guard pair, a helper) getting reintroduced in a different file two checkpoints later. Before finishing, grep the ticket's changed files for anything copy-pasted across more than one of them and consolidate.

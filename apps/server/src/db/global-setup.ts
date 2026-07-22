@@ -8,7 +8,7 @@
  * Silently skips if the database doesn't exist (e.g. unit-test-only runs).
  */
 import postgres, { type Sql } from "postgres";
-import { testDbUrl } from "./test-db-url.js";
+import { resolveLocalTestDbUrl } from "./test-db-url.js";
 
 export const TABLES_IN_DELETE_ORDER = [
 	"messages",
@@ -48,8 +48,7 @@ export async function truncateAllTables(sql: Pick<Sql, "unsafe">) {
 // Vitest invokes globalSetup files with a TestProject argument this function
 // doesn't use — it always owns and closes its own connection.
 export async function setup() {
-	const connectionString =
-		process.env.DATABASE_URL ?? testDbUrl("questlog_test");
+	const connectionString = resolveLocalTestDbUrl();
 	const client = postgres(connectionString, { max: 1 });
 
 	try {
