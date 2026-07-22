@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { assertLocalDatabaseUrl, testDbUrl } from "./test-db-url.js";
+import {
+	FAKE_HOSTED_DB_URL,
+	assertLocalDatabaseUrl,
+	testDbUrl,
+} from "./test-db-url.js";
 
 describe("testDbUrl", () => {
 	it("builds a local Postgres connection string for the given database name", () => {
@@ -31,18 +35,14 @@ describe("assertLocalDatabaseUrl", () => {
 	});
 
 	it("refuses a prod-shaped connection string (hosted Neon branch)", () => {
-		expect(() =>
-			assertLocalDatabaseUrl(
-				"postgresql://user:secretpw@ep-cool-glade-12345.us-east-2.aws.neon.tech/questlog?sslmode=require",
-			),
-		).toThrow(/non-local database host/);
+		expect(() => assertLocalDatabaseUrl(FAKE_HOSTED_DB_URL)).toThrow(
+			/non-local database host/,
+		);
 	});
 
 	it("never leaks the password of a refused connection string in the thrown error", () => {
 		try {
-			assertLocalDatabaseUrl(
-				"postgresql://user:secretpw@ep-cool-glade-12345.us-east-2.aws.neon.tech/questlog?sslmode=require",
-			);
+			assertLocalDatabaseUrl(FAKE_HOSTED_DB_URL);
 			throw new Error("expected assertLocalDatabaseUrl to throw");
 		} catch (error) {
 			expect((error as Error).message).not.toContain("secretpw");

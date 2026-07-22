@@ -35,3 +35,20 @@ export function assertLocalDatabaseUrl(connectionString: string): void {
 		);
 	}
 }
+
+/**
+ * Resolves and guards `DATABASE_URL` for the two automated entrypoints that
+ * mutate the local test database (`createTestDb()`, `global-setup.ts`'s
+ * `setup()`) in one place, so a future entrypoint can't resolve the URL
+ * while forgetting to call {@link assertLocalDatabaseUrl}.
+ */
+export function resolveLocalTestDbUrl(): string {
+	const connectionString =
+		process.env.DATABASE_URL ?? testDbUrl("questlog_test");
+	assertLocalDatabaseUrl(connectionString);
+	return connectionString;
+}
+
+/** Test fixture: syntactically valid, fake hosted-Neon connection string used across this module's callers' tests to exercise the reject path. */
+export const FAKE_HOSTED_DB_URL =
+	"postgresql://user:secretpw@ep-cool-glade-12345.us-east-2.aws.neon.tech/questlog?sslmode=require";

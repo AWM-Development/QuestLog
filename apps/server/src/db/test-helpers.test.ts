@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { FAKE_HOSTED_DB_URL } from "./test-db-url.js";
 import { createTestDb } from "./test-helpers.js";
 
 describe("createTestDb", () => {
@@ -7,10 +8,7 @@ describe("createTestDb", () => {
 	});
 
 	it("refuses a prod-shaped DATABASE_URL (hosted Neon branch) instead of connecting", () => {
-		vi.stubEnv(
-			"DATABASE_URL",
-			"postgresql://user:secretpw@ep-cool-glade-12345.us-east-2.aws.neon.tech/questlog?sslmode=require",
-		);
+		vi.stubEnv("DATABASE_URL", FAKE_HOSTED_DB_URL);
 
 		expect(() => createTestDb()).toThrow(/non-local database host/);
 	});
