@@ -28,7 +28,7 @@ primary_region = 'iad'
   # Explicit, separate migration step — never on server boot (multiple
   # concurrently-starting machines would race to apply the same migration).
   # Fly runs this once, before routing traffic to the new release.
-  release_command = 'node apps/server/dist/db/migrate.js'
+  release_command = 'node dist/db/migrate.js'
 
 [env]
   PORT = '3000'
