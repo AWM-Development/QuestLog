@@ -1,4 +1,5 @@
 import { defineConfig } from "vitest/config";
+import { testDbUrl } from "./src/db/test-db-url.js";
 
 /**
  * Real-external-API test tier — separate from the default `vitest.config.ts`.
@@ -13,8 +14,7 @@ export default defineConfig({
 		globalSetup: ["./src/db/global-setup.ts"],
 		include: ["**/*.e2e.test.ts"],
 		env: {
-			DATABASE_URL:
-				"postgresql://questlog:questlog@localhost:5433/questlog_test",
+			DATABASE_URL: testDbUrl("questlog_test"),
 		},
 	},
 });

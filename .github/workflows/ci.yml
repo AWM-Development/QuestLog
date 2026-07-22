@@ -70,10 +70,9 @@ jobs:
         run: pnpm --filter @questlog/server db:migrate
 
       # ── Provision apps/mcp's isolated test database ─────────────────────
-      # The Postgres service container only auto-creates the one database
-      # named in POSTGRES_DB (questlog_test). apps/mcp gets its own
-      # questlog_test_mcp (T-026) so its and apps/server's concurrent test
-      # suites can never collide on the same physical database.
+      # questlog_test_mcp isolates apps/mcp's suite from apps/server's
+      # (T-026). DB list also duplicated in e2e-release-check.yml and
+      # session-start.sh — update all three. Why: IMPLEMENTATION_NOTES.md § T-027.
       - name: Create and migrate apps/mcp's test database
         env:
           DATABASE_URL: postgresql://questlog:questlog@localhost:5433/questlog_test_mcp
