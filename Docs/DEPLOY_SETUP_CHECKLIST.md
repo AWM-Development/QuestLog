@@ -26,18 +26,21 @@ Resolved decisions this checklist assumes (see `Docs/DEPLOY_READINESS.md` §2 fo
   fly secrets set -c fly.dev.toml DATABASE_URL=<dev Neon connection string> ANTHROPIC_API_KEY=<key> VOYAGE_API_KEY=<key>
   fly secrets set -c fly.prod.toml DATABASE_URL=<prod Neon connection string> ANTHROPIC_API_KEY=<key> VOYAGE_API_KEY=<key> CORS_ORIGIN=<real frontend origin>
   ```
-- [ ] First deploy of **dev**, run manually (dev is never deployed by CI — only prod is, via `.github/workflows/deploy.yml`):
+- [ ] First deploy of **dev**, run manually (dev is never connected to GitHub auto-deploy — only prod is, §3 below):
   ```
   flyctl deploy -c fly.dev.toml
   ```
   This builds `apps/server/Dockerfile` (repo root as build context) and runs the `release_command` (`node apps/server/dist/db/migrate.js`) against the dev Neon branch before routing traffic.
 - [ ] Verify: `curl https://questlog-dev.fly.dev/health` returns `{"status":"ok"}` (the endpoint already exists — `apps/server/src/server.ts`'s `GET /health`, unchanged by this ticket).
-- [ ] First deploy of **prod** — either run `flyctl deploy -c fly.prod.toml` manually once to confirm it works end-to-end, or merge `develop` into `main` and let `.github/workflows/deploy.yml` do it. Either way, verify `curl https://questlog-prod.fly.dev/health` afterward.
+- [ ] First deploy of **prod** — run `flyctl deploy -c fly.prod.toml` manually once to confirm it works end-to-end. Verify `curl https://questlog-prod.fly.dev/health` afterward.
 
-## 3. GitHub Actions (prod auto-deploy)
+## 3. Prod auto-deploy (Fly's native GitHub integration)
 
-- [ ] Add repository secret `FLY_API_TOKEN` (`fly tokens create deploy` or equivalent scoped token) — this is what activates `.github/workflows/deploy.yml`; the workflow is already committed but inert without it.
-- [ ] Confirm the workflow fires correctly on the next `develop` → `main` merge (or trigger a no-op merge to test it once the above steps are done).
+**Decided 2026-07-21:** prod auto-deploy uses Fly's own GitHub integration (Alex connected it directly in Fly's dashboard), not a custom GitHub Actions workflow — one fewer secret to manage, and no risk of two deploy mechanisms racing each other on the same push. `.github/workflows/deploy.yml` was removed for this reason.
+
+- [ ] In the Fly dashboard, on **`questlog-prod` only** (never `questlog-dev` — dev stays manual-deploy-only, per this repo's branch model), open the app's GitHub settings and connect it to this repo's **`main`** branch specifically, not `develop`.
+- [ ] Confirm the connected app is configured to build via `fly.prod.toml` (which points at `apps/server/Dockerfile` and carries the `release_command` migration step) — Fly's GitHub integration deploys through the app's own `fly.toml`, so as long as `questlog-prod` was created from `fly.prod.toml` (step 2 above), this should already be correct; just double-check in the dashboard before relying on it.
+- [ ] Trigger a real `develop` → `main` merge (or Fly's "redeploy" button) once the above is confirmed, and verify it actually builds + runs the migration `release_command`, not just a bare `fly deploy` default.
 
 ## 4. DNS (only if a custom domain is wanted)
 
