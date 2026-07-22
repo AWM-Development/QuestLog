@@ -9,7 +9,8 @@ QuestLog is a single-user AI campaign manager for tabletop RPG DMs. v1's primary
 - **TDD, no exceptions.** Red → Green → Refactor. Write a failing test before implementation code.
 - **Thin routers → services → Drizzle.** Routers validate (Zod) and delegate; business logic lives in services.
 - **Zod at every boundary.** All tRPC input is validated. `packages/shared` is the single source of truth for cross-app types.
-- **DRY.** Reuse existing services/components before writing new ones.
+- **DRY, no sprawl.** Reuse existing services/components before writing new ones. Watch for the same pattern (a resolve-then-guard pair, a repeated literal/fixture, a near-identical helper) reappearing across files over the course of one ticket — generated code tends to reinstantiate logic at each new call site instead of consolidating it. Extract on the second occurrence, not the fifth.
+- **Comments: WHY only, once.** Write a comment only for a non-obvious WHY (hidden constraint, workaround, tradeoff) — never restate WHAT. If the same rationale applies at multiple call sites, write it once in `Docs/IMPLEMENTATION_NOTES.md` and leave a one-line pointer at each site, not a duplicated paragraph.
 - **Never claim done without showing output.** Paste actual lint/typecheck/test output, not a description of it.
 - **Squash-merge, short-lived branches.** One ticket, one branch, one PR.
 

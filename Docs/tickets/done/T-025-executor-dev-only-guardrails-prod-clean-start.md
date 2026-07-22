@@ -2,8 +2,6 @@
 
 Milestone ref: M-MCP.5 (`Docs/MILESTONES_V1_MCP.md`)
 
-Blocked on: T-024 — must be merged into develop first
-
 Branch: feat/m-mcp/t-025-executor-dev-only-guardrails-prod-clean-start
 
 Context files (load ONLY these):

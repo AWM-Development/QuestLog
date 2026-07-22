@@ -5,11 +5,12 @@
 	"type": "module",
 	"scripts": {
 		"dev": "tsx --env-file=../../.env src/main.ts",
-		"build": "tsc",
+		"build": "node scripts/build.mjs",
 		"test": "vitest run",
 		"test:e2e": "vitest run --config vitest.e2e.config.ts",
 		"typecheck": "tsc -b",
-		"lint": "biome check ."
+		"lint": "biome check .",
+		"smoke": "tsx scripts/smoke.ts"
 	},
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.29.0",
@@ -22,6 +23,7 @@
 		"@types/node": "^22.13.10",
 		"dotenv": "^17.3.1",
 		"drizzle-orm": "^0.45.1",
+		"esbuild": "^0.28.1",
 		"form-data": "^4.0.5",
 		"postgres": "^3.4.8",
 		"tsx": "^4.19.3",

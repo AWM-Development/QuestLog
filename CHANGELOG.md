@@ -10,6 +10,48 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-025
+
+- **Test/dev database tooling now refuses to run against a real hosted database**: `assertLocalDatabaseUrl()` (`apps/server/src/db/test-db-url.ts`) guards `createTestDb()` and the global test-setup table-truncation step, throwing a clear, password-redacted error if `DATABASE_URL` doesn't resolve to `localhost`/`127.0.0.1` — defense-in-depth against ever pointing an automated test run at a real Neon dev or prod branch. Confirmed separately, by inspecting this repo's actual CI/sandbox configuration, that no automated path currently holds a real database credential to misuse in the first place (`Docs/IMPLEMENTATION_NOTES.md` § T-025).
+
+### Added — T-024
+
+- **`apps/server` can now be built into a standalone, deployable artifact**: `apps/server/scripts/build.mjs` bundles `src/main.ts` and `src/db/migrate.ts` with esbuild (following `apps/mcp`'s T-019 precedent), producing `dist/main.js` and `dist/db/migrate.js` that run under plain `node` without `tsx` or workspace path resolution. `apps/server/Dockerfile` packages this into a container image; `.dockerignore` scopes the build context.
+- **Generated (not yet applied) deploy configuration for two Fly.io environments**: `fly.dev.toml` and `fly.prod.toml` (Dockerfile-based, explicit `release_command` migration step, `/health` check), and `deploy/env.dev.example` / `deploy/env.prod.example` documenting every env var each environment needs — real values are never committed, only names and structure. Prod auto-deploy on push to `main` uses Fly's own GitHub integration (connected directly in Fly's dashboard), not a custom GitHub Actions workflow — see `Docs/DEPLOY_SETUP_CHECKLIST.md` §3.
+- **`Docs/DEPLOY_SETUP_CHECKLIST.md`**: the manual sequence only Alex can run — Neon project/branch creation, Fly app creation, secrets, first deploy, GitHub Actions token — cross-referencing every automated artifact above by file path. Nothing under M-MCP.5 is actually live yet; this ticket produces configuration only, per its own scope.
+
+### Changed — T-024
+
+- **`pgvector/pgvector` Docker image pinned to `0.8.5-pg16`** (`docker-compose.yml`, `.github/workflows/ci.yml`, `.github/workflows/e2e-release-check.yml`), replacing the rolling `pg16` tag — carries forward T-023's finding that the previously-installed `0.6.0` predates `hnsw.iterative_scan` (added in `0.8.0`, relevant to T-016's campaign-filtered ANN recall cliff).
+- **`dotenv` moved from `apps/server`'s `devDependencies` to `dependencies`**: needed in the production image now that `apps/server` has a real bundled/deployed runtime (previously only ever run via `tsx`, which doesn't distinguish dev/prod dependencies).
+
+### Fixed — T-027
+
+- **`apps/mcp`'s real-API e2e suite no longer shares a database with `apps/server`'s**: `pnpm turbo test:e2e` runs both packages' e2e suites concurrently with no ordering between them, and `apps/mcp/vitest.e2e.config.ts` was still pointed at `apps/server`'s `questlog_test` — the identical race T-026 fixed for the default test tier, still live in the e2e tier. Repointed at its own `questlog_test_mcp`, with the matching provisioning step added to `e2e-release-check.yml`.
+
+### Changed — T-027
+
+- **Collapsed the hand-typed local Postgres connection string out of TypeScript config/helper files**: `postgresql://questlog:questlog@localhost:5433/<dbname>` was duplicated across both packages' vitest configs, `test-helpers.ts`, `migrate.ts`, `global-setup.ts`, and `drizzle.config.ts`. All now build it from one shared `apps/server/src/db/test-db-url.ts` (`testDbUrl(dbname)`) so the host/port/credentials only need to change in one place.
+- **Documented the test-DB isolation model as a deliberate design, not oversight**: new `IMPLEMENTATION_NOTES.md` entry explaining why `turbo.json` has no `dependsOn` between packages' test tasks (isolation comes from separate physical databases, not execution ordering) and why per-package test isolation is truncate-once-per-run + manual `campaignId` scoping rather than transaction-per-test rollback. Also documents `apps/mcp`'s cross-app `globalSetup` import from `apps/server` as intentional, matching its established service-import pattern, not a boundary violation.
+
+### Changed — T-026
+
+- **`apps/mcp`'s test suite now runs against its own isolated database (`questlog_test_mcp`)** instead of sharing `apps/server`'s `questlog_test`: `turbo test` runs both packages' suites as separate concurrent processes with no ordering between them, so an unscoped mutation in one could previously hit a live FK reference from a row the other suite had just committed (see `IMPLEMENTATION_NOTES.md` § T-018). CI and the remote sandbox's session-start hook now provision and migrate `questlog_test_mcp` alongside the existing databases.
+- **`list_campaigns`'s "empty" test now asserts a literal empty array** from a genuinely empty `campaigns` table, replacing the archived-campaign-exclusion substitute T-018 added as a workaround for the shared-database race.
+
+### Added — T-019
+
+- **`apps/mcp/README.md`**: the full setup path for connecting a real MCP client (Claude Desktop or otherwise) to QuestLog — prerequisites, bootstrap, build, the Claude Desktop `mcpServers` config snippet, and a "first conversation" walkthrough (`list_campaigns` → `query_lore`).
+- **`pnpm --filter @questlog/mcp smoke`**: a stdio smoke test that spawns the *built* `dist/main.js` the same way a real MCP client would, performs the MCP initialize handshake, and asserts all 7 tools are present — machine-checkable proof the documented setup actually boots, distinct from the existing in-process test suite.
+
+### Fixed — T-019
+
+- **`apps/mcp`'s built `dist/main.js` now actually runs under plain `node`**: previously `pnpm --filter @questlog/mcp build` (plain `tsc`) produced a `dist/main.js` that immediately crashed with `ERR_MODULE_NOT_FOUND` when run directly — `@questlog/server`/`@questlog/shared` are consumed as workspace TypeScript source with no build step of their own, and `tsc` never rewrites their bare-specifier imports into something Node can resolve. `apps/mcp`'s build now bundles via `esbuild` instead, which resolves both packages straight from source. See `IMPLEMENTATION_NOTES.md` § T-019 for the full investigation.
+
+### Added — T-018
+
+- **New `list_campaigns` MCP tool**: read-only, no-input tool returning every active campaign's `id`, `name`, `description`, `theme`, `gameSystem`, and `status`. Every other MCP tool requires a `campaignId`, but nothing over MCP could previously discover one — a DM connecting a fresh MCP client had no way to find their campaign's id without leaving the conversation. Mirrors the existing `list_entities` tool's pattern; delegates straight to the existing `campaignService.list(db)`, no new business logic.
+
 ### Added — T-016
 
 - **`chunks.embedding` cosine search has an ANN index available**: added `chunks_embedding_hnsw_idx` (`hnsw`, `vector_cosine_ops`) so `search.service.ts`'s `<=>` query is no longer forced into an exact brute-force scan of every campaign's chunks. `hnsw` chosen over `ivfflat` — no training-data-at-build-time requirement, better fit for a table that grows incrementally rather than via bulk load. **Caveat (see `IMPLEMENTATION_NOTES.md` for full evidence):** the installed pgvector (`0.6.0`) predates iterative index scan (added in `0.8.0`), so once a campaign is a small-enough fraction of the whole `chunks` table that the planner prefers this index over the existing `campaign_id` bitmap scan, a filtered query can return far fewer rows than its `LIMIT` — reproduced directly, not theoretical. Flagged for Alex as a decision item, not silently shipped.

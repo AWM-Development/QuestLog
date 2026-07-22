@@ -1,6 +1,7 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import {
+	campaigns,
 	chunks,
 	entities,
 	sessionEntities,
@@ -294,6 +295,65 @@ describe("list_entities tool", () => {
 		const payload = JSON.parse(content[0]?.text ?? "{}");
 		expect(payload.entities).toHaveLength(1);
 		expect(payload.entities[0].name).toBe("Mira Duskwood");
+	});
+});
+
+describe("list_campaigns tool", () => {
+	let campaignId: string;
+
+	afterEach(async () => {
+		if (campaignId) {
+			await db.delete(campaigns).where(eq(campaigns.id, campaignId));
+		}
+	});
+
+	it("returns the seeded campaign with the specified fields", async () => {
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+			description: "A frontier town beset by ash storms.",
+			gameSystem: "D&D 5e",
+		});
+		campaignId = campaign.id;
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "list_campaigns",
+			arguments: {},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		const found = payload.campaigns.find(
+			(c: { id: string }) => c.id === campaignId,
+		);
+		expect(found).toMatchObject({
+			id: campaignId,
+			name: "Ashfall Primer Campaign",
+			description: "A frontier town beset by ash storms.",
+			theme: "fantasy",
+			gameSystem: "D&D 5e",
+			status: "active",
+		});
+	});
+
+	it("returns a well-formed empty list from a genuinely empty campaigns table", async () => {
+		// apps/mcp now runs against its own questlog_test_mcp database (T-026),
+		// isolated from apps/server's questlog_test — so unlike the old
+		// archived-exclusion substitute this used to be, asserting a literal
+		// zero-row table is safe: no other concurrently-running suite can ever
+		// hold a live reference into this database.
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "list_campaigns",
+			arguments: {},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.campaigns).toEqual([]);
 	});
 });
 

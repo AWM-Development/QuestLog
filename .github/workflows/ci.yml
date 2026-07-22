@@ -14,7 +14,7 @@ jobs:
 
     services:
       postgres:
-        image: pgvector/pgvector:pg16
+        image: pgvector/pgvector:0.8.5-pg16
         env:
           POSTGRES_USER: questlog
           POSTGRES_PASSWORD: questlog
@@ -68,6 +68,17 @@ jobs:
       # to the local service, no secrets required).
       - name: Run database migrations
         run: pnpm --filter @questlog/server db:migrate
+
+      # ── Provision apps/mcp's isolated test database ─────────────────────
+      # questlog_test_mcp isolates apps/mcp's suite from apps/server's
+      # (T-026). DB list also duplicated in e2e-release-check.yml and
+      # session-start.sh — update all three. Why: IMPLEMENTATION_NOTES.md § T-027.
+      - name: Create and migrate apps/mcp's test database
+        env:
+          DATABASE_URL: postgresql://questlog:questlog@localhost:5433/questlog_test_mcp
+        run: |
+          PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog_test -c "CREATE DATABASE questlog_test_mcp"
+          pnpm --filter @questlog/server db:migrate
 
       # ── Full test suite ───────────────────────────────────────────────────
       # Unit + integration only (real DB, mocked external APIs). The real-API

@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
+import { testDbUrl } from "../server/src/db/test-db-url.js";
 
 /**
  * Real-external-API test tier — separate from the default `vitest.config.ts`.
@@ -21,11 +22,19 @@ export default defineConfig({
 	test: {
 		globals: true,
 		sequence: { concurrent: false },
+		// Relative path required, not the @questlog/server alias above —
+		// Vitest's globalSetup loader bypasses Vite's resolver. Cross-app
+		// import is intentional. Why: Docs/IMPLEMENTATION_NOTES.md § T-027.
 		globalSetup: ["../server/src/db/global-setup.ts"],
 		include: ["**/*.e2e.test.ts"],
 		env: {
-			DATABASE_URL:
-				"postgresql://questlog:questlog@localhost:5433/questlog_test",
+			// Own database (questlog_test_mcp), not apps/server's questlog_test:
+			// turbo runs both packages' e2e suites concurrently with no
+			// `dependsOn` between them (same as the default `test` task, see
+			// Docs/IMPLEMENTATION_NOTES.md § T-018 / T-026), so sharing one
+			// physical database here would reopen the identical race T-026
+			// already fixed for the default tier.
+			DATABASE_URL: testDbUrl("questlog_test_mcp"),
 		},
 	},
 });

@@ -1,0 +1,55 @@
+# Builds and runs apps/server for deployment (Fly.io — see Docs/DEPLOY_READINESS.md
+# §2.1 and Docs/DEPLOY_SETUP_CHECKLIST.md). Not used for local dev (`pnpm dev`
+# / docker-compose.yml is the local Postgres-only setup) — this image packages
+# the Node process only.
+#
+# Build context MUST be the repo root (pnpm workspace), not apps/server/:
+#   docker build -f apps/server/Dockerfile .
+# fly.dev.toml / fly.prod.toml already point `[build] dockerfile` at this file
+# with the implicit repo-root context, so `flyctl deploy -c fly.<env>.toml`
+# from the repo root does the right thing without extra flags.
+#
+# Every stage keeps WORKDIR at /repo (the pnpm workspace root) so pnpm's
+# symlinked node_modules layout (root node_modules/.pnpm store + per-package
+# node_modules symlinks) stays valid when copied between stages — moving to a
+# different absolute path would break the symlinks.
+
+FROM node:20-slim AS base
+RUN corepack enable && corepack prepare pnpm@9.15.5 --activate
+WORKDIR /repo
+
+# ---- deps: full workspace install (dev + prod) needed to bundle -----------
+FROM base AS deps
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY apps/server/package.json apps/server/package.json
+COPY apps/mcp/package.json apps/mcp/package.json
+COPY packages/shared/package.json packages/shared/package.json
+RUN pnpm install --frozen-lockfile
+
+# ---- build: bundle apps/server into dist/main.js + dist/db/migrate.js -----
+FROM deps AS build
+COPY . .
+RUN pnpm --filter @questlog/server build
+
+# ---- prod-deps: apps/server's production dependencies only, standalone ---
+FROM base AS prod-deps
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY apps/server/package.json apps/server/package.json
+COPY packages/shared/package.json packages/shared/package.json
+RUN pnpm install --prod --frozen-lockfile --filter @questlog/server...
+
+# ---- runtime ----------------------------------------------------------------
+FROM node:20-slim AS runtime
+ENV NODE_ENV=production
+WORKDIR /repo
+COPY --from=prod-deps /repo/node_modules ./node_modules
+COPY --from=prod-deps /repo/apps/server/node_modules ./apps/server/node_modules
+COPY --from=build /repo/apps/server/dist ./apps/server/dist
+# migrate.ts's `migrationsFolder: "./src/db/migrations"` is a runtime fs path
+# resolved against process.cwd(), not the bundled script's own location —
+# the SQL files themselves are never bundled, so they're copied separately.
+COPY --from=build /repo/apps/server/src/db/migrations ./apps/server/src/db/migrations
+
+WORKDIR /repo/apps/server
+EXPOSE 3000
+CMD ["node", "dist/main.js"]

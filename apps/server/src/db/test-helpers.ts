@@ -15,6 +15,7 @@ import {
 	sources,
 	writeRequests,
 } from "./schema/index.js";
+import { resolveLocalTestDbUrl } from "./test-db-url.js";
 
 /**
  * Build a unit vector along a single axis.
@@ -42,9 +43,7 @@ export function basisVector(axis: number, dims = 1024): number[] {
  * Call close() in afterAll to release the connection.
  */
 export function createTestDb(options?: { max?: number }) {
-	const connectionString =
-		process.env.DATABASE_URL ??
-		"postgresql://questlog:questlog@localhost:5433/questlog_test";
+	const connectionString = resolveLocalTestDbUrl();
 	const client = postgres(connectionString, {
 		max: options?.max ?? 1,
 		idle_timeout: 10,

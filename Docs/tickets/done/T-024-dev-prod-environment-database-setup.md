@@ -2,8 +2,6 @@
 
 Milestone ref: M-MCP.5 (`Docs/MILESTONES_V1_MCP.md`)
 
-Blocked on: T-023 — must be merged into develop first
-
 Branch: feat/m-mcp/t-024-dev-prod-environment-database-setup
 
 Context files (load ONLY these):

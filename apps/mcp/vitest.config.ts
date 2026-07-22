@@ -1,5 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { configDefaults, defineConfig } from "vitest/config";
+import { testDbUrl } from "../server/src/db/test-db-url.js";
 
 /**
  * Default test tier: unit + integration (real DB, mocked external APIs).
@@ -21,11 +22,26 @@ export default defineConfig({
 	test: {
 		globals: true,
 		sequence: { concurrent: false },
+		// Relative path required, not the @questlog/server alias above —
+		// Vitest's globalSetup loader bypasses Vite's resolver. Cross-app
+		// import is intentional. Why: Docs/IMPLEMENTATION_NOTES.md § T-027.
 		globalSetup: ["../server/src/db/global-setup.ts"],
-		exclude: [...configDefaults.exclude, "**/*.e2e.test.ts"],
+		// ".typecheck-out" isn't excluded by configDefaults (only "dist" is) —
+		// without this, vitest's default include pattern (which matches .js as
+		// well as .ts) picks up tsc -b's compiled test output there too, and
+		// every test in src/ runs a second time against the compiled copy.
+		exclude: [
+			...configDefaults.exclude,
+			"**/*.e2e.test.ts",
+			"**/.typecheck-out/**",
+		],
 		env: {
-			DATABASE_URL:
-				"postgresql://questlog:questlog@localhost:5433/questlog_test",
+			// Isolated from apps/server's questlog_test: turbo runs both suites
+			// as separate concurrent processes against the same physical DB
+			// with no ordering between them, which made an unscoped mutation
+			// (e.g. a literal-empty-table assertion) unsafe here. See
+			// Docs/IMPLEMENTATION_NOTES.md § T-018 / T-026.
+			DATABASE_URL: testDbUrl("questlog_test_mcp"),
 		},
 	},
 });
