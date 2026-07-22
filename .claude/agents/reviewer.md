@@ -21,11 +21,12 @@ CI already caught build/lint/typecheck/test failures and `test.only`/`.skip` —
 2. **Functionality gaps vs. the ticket's Scope.** Does the diff actually deliver everything in Scope? Partial implementations that technically pass their own (incomplete) tests are the most common way a ticket looks done and isn't.
 3. **Test quality — theater vs. real assertions.** Read the actual test bodies, not just their names. A test named `"returns relevant chunks"` that asserts `expect(result).toBeDefined()` is theater. Check that assertions match what the Exit condition actually requires, and that integration tests touching the DB aren't accidentally passing with an empty result set.
 4. **Scope creep vs. Out of scope.** Flag anything the diff does that the ticket's Out of scope section explicitly said not to do, and anything unrelated that crept in ("while I was in there...").
+5. **DRY and sprawl within this diff.** Grep for the same pattern showing up in more than one file this ticket touched — a repeated literal/fixture, a resolve-then-guard pair, a near-identical helper — especially across files added at different checkpoints, since a single checkpoint's own refactor step won't catch that. This is about consolidating genuine duplication introduced by this diff, not a style preference.
 
 ## What not to do
 
 - Don't re-run the full test suite yourself unless you need to confirm a specific claim — you have Bash, but this review should be fast, not a second CI run.
-- Don't propose unrelated refactors or style preferences. You are checking against the ticket and the rules files, not your own taste.
+- Don't propose unrelated refactors or style preferences beyond check 5 above. You are checking against the ticket and the rules files, not your own taste.
 - Don't fix anything yourself. You review; the executor remediates.
 
 ## Output format
