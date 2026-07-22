@@ -16,11 +16,16 @@ Resolved decisions this checklist assumes (see `Docs/DEPLOY_READINESS.md` §2 fo
 
 ## 2. Fly.io (compute)
 
-- [ ] **First, outside Fly entirely:** run `docker build -f apps/server/Dockerfile .` from the repo root and confirm it succeeds. This sandbox's Docker Hub image pulls are policy-blocked (`Docs/IMPLEMENTATION_NOTES.md` § T-024), so the Dockerfile itself was never built end-to-end — only its bundled contents (`dist/main.js`, `dist/db/migrate.js`) were verified directly. Do this before `fly launch` below, since `flyctl deploy` builds the same Dockerfile and a failure there is easier to debug locally first.
-- [ ] Create a Fly.io account / confirm Alex's existing one, add a payment method.
-- [ ] `fly launch` (or `fly apps create`) twice, once per environment, using the generated configs as the starting point:
+- [x] **First, outside Fly entirely:** run `docker build -f apps/server/Dockerfile .` from the repo root and confirm it succeeds. Done 2026-07-21 — 23/23 build steps succeeded, including both `pnpm install --frozen-lockfile` stages (confirms the lockfile fix from earlier in this ticket works inside the container build too, not just CI).
+- [x] Create a Fly.io account / confirm Alex's existing one, add a payment method. Done.
+- [x] `fly launch` (or `fly apps create`) twice, once per environment, using the generated configs as the starting point. Done 2026-07-21 — both apps created with `--no-deploy` (not deployed yet, deliberately: this code isn't on `main` yet, see the note below):
   - `flyctl launch -c fly.dev.toml --name questlog-dev --no-deploy` (`primary_region = "iad"` is a deliberate choice — nearest Fly region to the Neon project's us-east-2 location, not a placeholder)
   - `flyctl launch -c fly.prod.toml --name questlog-prod --no-deploy` (same region, kept in sync with `fly.dev.toml`)
+
+  Note: `flyctl launch` rewrites both `fly.*.toml` files from scratch (re-quotes values, strips comments) — the explanatory comments in both files were restored by hand afterward; the underlying config values are unchanged.
+
+**Deliberately deferred until this branch's code is merged `develop` → `main`** (see `Docs/IMPLEMENTATION_NOTES.md` § T-024 addendum): setting real secrets and the first actual deploy of either app. Both apps exist and are configured but sitting idle — there's nothing to build from yet on `main`, and Fly's GitHub integration (§3) builds from `main`. Resume here once that merge has happened:
+
 - [ ] `fly secrets set` on **each** app using the values gathered in step 1 and Alex's own API keys — names come from `deploy/env.dev.example` / `deploy/env.prod.example` (never commit the filled-in values):
   ```
   fly secrets set -c fly.dev.toml DATABASE_URL=<dev Neon connection string> ANTHROPIC_API_KEY=<key> VOYAGE_API_KEY=<key>
