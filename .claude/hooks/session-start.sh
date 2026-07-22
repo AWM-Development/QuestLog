@@ -95,12 +95,9 @@ fi
 # Extension creation is left to `db:migrate` (apps/server/src/db/migrate.ts
 # runs `CREATE EXTENSION IF NOT EXISTS` before applying migrations), so each
 # database only needs an existence check plus one migrate call here.
-# questlog_test_mcp is apps/mcp's own isolated test DB (T-026) — turbo runs
-# apps/mcp's and apps/server's test suites as separate concurrent processes
-# with no ordering between them, so they can no longer safely share one
-# physical database. This list is also independently duplicated in ci.yml
-# and e2e-release-check.yml — nothing ties the three together, so a fourth
-# database means updating all three by hand.
+# Isolated per-package test DBs (T-026/T-027). List also duplicated in
+# ci.yml and e2e-release-check.yml — update all three. Why:
+# Docs/IMPLEMENTATION_NOTES.md § T-027.
 for dbname in questlog questlog_test questlog_test_mcp; do
   db_exists=$(sudo -u postgres psql -p "$PGPORT" -tAc "SELECT 1 FROM pg_database WHERE datname='${dbname}'")
   if [ "$db_exists" != "1" ]; then

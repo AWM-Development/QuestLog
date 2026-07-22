@@ -71,15 +71,9 @@ jobs:
         run: pnpm --filter @questlog/server db:migrate
 
       # ── Provision apps/mcp's isolated e2e test database ──────────────────
-      # Mirrors ci.yml's "Create and migrate apps/mcp's test database" step
-      # (T-026): apps/mcp's e2e suite gets its own questlog_test_mcp so it
-      # can never collide with apps/server's concurrently-running e2e suite
-      # on the same physical database (T-027 closes this gap for the e2e
-      # tier — T-026 only isolated the default test tier). The set of
-      # provisioned test databases is independently listed in three places —
-      # here, ci.yml, and .claude/hooks/session-start.sh's `for dbname in
-      # ...` loop — nothing ties them together, so adding a fourth database
-      # in the future means updating all three by hand.
+      # Mirrors ci.yml's step; closes the e2e-tier version of T-026's race.
+      # DB list also duplicated in ci.yml and session-start.sh — update all
+      # three. Why: IMPLEMENTATION_NOTES.md § T-027.
       - name: Create and migrate apps/mcp's e2e test database
         env:
           DATABASE_URL: postgresql://questlog:questlog@localhost:5433/questlog_test_mcp

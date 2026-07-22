@@ -22,17 +22,9 @@ export default defineConfig({
 	test: {
 		globals: true,
 		sequence: { concurrent: false },
-		// Relative path is required, not a leftover inconsistency with the
-		// `@questlog/server` alias used below: Vitest's global-setup loader
-		// bypasses Vite's resolver entirely, so swapping this for the alias
-		// throws ERR_MODULE_NOT_FOUND (confirmed empirically, 2026-07-20).
-		// Reaching into apps/server here is intentional, not a boundary
-		// violation — apps/mcp already imports apps/server's services
-		// directly everywhere else (.claude/rules/mcp.md's "sibling app, not
-		// a rewrite" design) via the same first-class path alias; moving
-		// global-setup.ts to packages/shared would move the coupling to
-		// apps/server's schema, not remove it, since packages/shared is
-		// types/constants/validators only (CLAUDE.md).
+		// Relative path required, not the @questlog/server alias above —
+		// Vitest's globalSetup loader bypasses Vite's resolver. Cross-app
+		// import is intentional. Why: Docs/IMPLEMENTATION_NOTES.md § T-027.
 		globalSetup: ["../server/src/db/global-setup.ts"],
 		include: ["**/*.e2e.test.ts"],
 		env: {
