@@ -1,5 +1,5 @@
-import type { Database } from "@questlog/server/db/index.js";
-import type { FetchFn } from "@questlog/server/services/voyage.client.js";
+import type { Database } from "../../db/index.js";
+import type { FetchFn } from "../../services/voyage.client.js";
 
 export interface ToolDeps {
 	db: Database;

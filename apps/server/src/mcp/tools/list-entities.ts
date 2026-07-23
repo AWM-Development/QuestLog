@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { entityService } from "@questlog/server/services/entity.service.js";
 import { ListEntitiesInput } from "@questlog/shared";
+import { entityService } from "../../services/entity.service.js";
 import { withToolErrors } from "./errors.js";
 import type { ToolDeps } from "./types.js";
 

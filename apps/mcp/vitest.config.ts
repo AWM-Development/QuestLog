@@ -22,6 +22,11 @@ export default defineConfig({
 	test: {
 		globals: true,
 		sequence: { concurrent: false },
+		// T-028 relocated apps/mcp's only default-tier suite (server.test.ts)
+		// into apps/server — apps/mcp is now a thin stdio wrapper covered by
+		// its e2e tier and scripts/smoke.ts, so the default tier legitimately
+		// has zero test files.
+		passWithNoTests: true,
 		// Relative path required, not the @questlog/server alias above —
 		// Vitest's globalSetup loader bypasses Vite's resolver. Cross-app
 		// import is intentional. Why: Docs/IMPLEMENTATION_NOTES.md § T-027.

@@ -30,7 +30,7 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 
 ### Tasks
 
-- [ ] **M-REMOTE.1 — Relocate the MCP tool-registration layer into `apps/server`** (T-028)
+- [x] **M-REMOTE.1 — Relocate the MCP tool-registration layer into `apps/server`** (T-028)
   `apps/mcp`'s `tsconfig.json` has a real TypeScript project reference to `apps/server` (`references: [..., {path: "../../apps/server"}]`). `apps/server` mounting the same tools over HTTP by importing from `apps/mcp` would create a circular project reference — `tsc -b` refuses to build that. The tool-registration layer (all 7 `apps/mcp/src/tools/*.ts` files, `types.ts`, and the `createMcpServer` factory) needs to live somewhere both the stdio entrypoint and the new HTTP transport can import without a cycle. Since every tool already imports `@questlog/server`'s services directly, `apps/server` is the natural, non-circular home.
   Exit: `apps/mcp/src/main.ts` still boots identically over stdio, now importing `createMcpServer` from `@questlog/server`; nothing about tool behavior changes.
 

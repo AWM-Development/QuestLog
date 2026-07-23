@@ -1,11 +1,11 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { chunkText } from "@questlog/server/services/chunking.service.js";
+import { LogSessionInput } from "@questlog/shared";
+import { chunkText } from "../../services/chunking.service.js";
 import {
 	entityService,
 	extractExcerpt,
-} from "@questlog/server/services/entity.service.js";
-import { writeRequestService } from "@questlog/server/services/write-request.service.js";
-import { LogSessionInput } from "@questlog/shared";
+} from "../../services/entity.service.js";
+import { writeRequestService } from "../../services/write-request.service.js";
 import { withToolErrors } from "./errors.js";
 import type { ToolDeps } from "./types.js";
 

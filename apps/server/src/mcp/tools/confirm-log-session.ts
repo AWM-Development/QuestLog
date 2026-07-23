@@ -1,11 +1,11 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { chunkText } from "@questlog/server/services/chunking.service.js";
-import { embedChunks } from "@questlog/server/services/embedding.service.js";
-import { entityService } from "@questlog/server/services/entity.service.js";
-import type { EntitySpan } from "@questlog/server/services/entity.service.js";
-import { sessionService } from "@questlog/server/services/session.service.js";
-import { writeRequestService } from "@questlog/server/services/write-request.service.js";
 import { ConfirmLogSessionInput } from "@questlog/shared";
+import { chunkText } from "../../services/chunking.service.js";
+import { embedChunks } from "../../services/embedding.service.js";
+import { entityService } from "../../services/entity.service.js";
+import type { EntitySpan } from "../../services/entity.service.js";
+import { sessionService } from "../../services/session.service.js";
+import { writeRequestService } from "../../services/write-request.service.js";
 import { withToolErrors } from "./errors.js";
 import type { ToolDeps } from "./types.js";
 

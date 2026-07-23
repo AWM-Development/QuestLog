@@ -11,6 +11,7 @@ import { readFileSync } from "node:fs";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { createTestDb } from "@questlog/server/db/test-helpers.js";
+import { createMcpServer } from "@questlog/server/mcp/server.js";
 import { buildApp } from "@questlog/server/server.js";
 import { campaignService } from "@questlog/server/services/campaign.service.js";
 import { sourceService } from "@questlog/server/services/source.service.js";
@@ -19,7 +20,6 @@ import dotenv from "dotenv";
 import { sql } from "drizzle-orm";
 import FormData from "form-data";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createMcpServer } from "./server.js";
 
 dotenv.config({ path: "../../.env" });
 
