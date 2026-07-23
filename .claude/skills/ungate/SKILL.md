@@ -5,7 +5,7 @@ description: Resolve the earliest open gate-stub in Docs/tickets/gated/ — an i
 
 # Ungate
 
-Resolves exactly one gate-stub: the earliest `G-###` under `Docs/tickets/gated/`. This is an interactive-session skill, run on Fable/Opus with Alex present — never picked up by the sonnet nightly executor, same model split `TICKET_SPEC.md` draws between planning and execution — because the whole point is that a 🎨/🧠 decision needs Alex, not an agent guessing. Where `ticket-writer` turns a resolved milestone task into tickets, `/ungate` turns an *unresolved* gate into a resolved one, then does the same ticket-drafting `ticket-writer` would have done at the time, now that the decision exists.
+Resolves exactly one gate-stub: the earliest `G-###` under `Docs/tickets/gated/`. This is an interactive-session skill, run with Alex present — never picked up by the automated nightly executor, since the whole point is that a 🎨/🧠 decision needs Alex, not an agent guessing. Sonnet is fine for this by default, same as everything else; switch to a heavier model yourself if a specific gate's decision warrants it. Where `ticket-writer` turns a resolved milestone task into tickets, `/ungate` turns an *unresolved* gate into a resolved one, then does the same ticket-drafting `ticket-writer` would have done at the time, now that the decision exists.
 
 ## Inputs you need before starting
 
