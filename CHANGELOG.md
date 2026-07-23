@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Fixed — T-041
+
+- **`.claude/hooks/session-start.sh`'s develop-sync step no longer clobbers a branch's own committed-but-unmerged changes**: the guard used to check only `git status --porcelain` (uncommitted diffs) before overwriting `.claude/commands`/`.claude/skills` with `origin/develop`'s copy, so a file this branch had already committed — but not yet merged into `develop` — got silently reverted to develop's stale version on the next session resume. Now compares each candidate file against the branch's merge-base with `origin/develop` (`git diff --quiet "$merge_base" -- "$file"`) and only syncs files identical to that merge-base copy, so an untouched file still syncs but a committed-or-uncommitted local edit never does (`Docs/IMPLEMENTATION_NOTES.md` § T-041).
+
 ### Added — T-025
 
 - **Test/dev database tooling now refuses to run against a real hosted database**: `assertLocalDatabaseUrl()` (`apps/server/src/db/test-db-url.ts`) guards `createTestDb()` and the global test-setup table-truncation step, throwing a clear, password-redacted error if `DATABASE_URL` doesn't resolve to `localhost`/`127.0.0.1` — defense-in-depth against ever pointing an automated test run at a real Neon dev or prod branch. Confirmed separately, by inspecting this repo's actual CI/sandbox configuration, that no automated path currently holds a real database credential to misuse in the first place (`Docs/IMPLEMENTATION_NOTES.md` § T-025).
