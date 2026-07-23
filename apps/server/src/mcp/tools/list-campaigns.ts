@@ -1,5 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { campaignService } from "@questlog/server/services/campaign.service.js";
+import { campaignService } from "../../services/campaign.service.js";
 import { withToolErrors } from "./errors.js";
 import type { ToolDeps } from "./types.js";
 

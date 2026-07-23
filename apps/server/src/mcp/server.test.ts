@@ -1,22 +1,5 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
-import {
-	campaigns,
-	chunks,
-	entities,
-	sessionEntities,
-	sessions,
-	sources,
-} from "@questlog/server/db/schema/index.js";
-import {
-	basisVector,
-	createTestDb,
-	deleteCampaignTree,
-} from "@questlog/server/db/test-helpers.js";
-import { campaignService } from "@questlog/server/services/campaign.service.js";
-import { entityService } from "@questlog/server/services/entity.service.js";
-import { sessionService } from "@questlog/server/services/session.service.js";
-import type { FetchFn } from "@questlog/server/services/voyage.client.js";
 import { eq, sql } from "drizzle-orm";
 import {
 	afterAll,
@@ -27,6 +10,23 @@ import {
 	it,
 	vi,
 } from "vitest";
+import {
+	campaigns,
+	chunks,
+	entities,
+	sessionEntities,
+	sessions,
+	sources,
+} from "../db/schema/index.js";
+import {
+	basisVector,
+	createTestDb,
+	deleteCampaignTree,
+} from "../db/test-helpers.js";
+import { campaignService } from "../services/campaign.service.js";
+import { entityService } from "../services/entity.service.js";
+import { sessionService } from "../services/session.service.js";
+import type { FetchFn } from "../services/voyage.client.js";
 import { createMcpServer } from "./server.js";
 
 const { db, close } = createTestDb();
@@ -339,11 +339,11 @@ describe("list_campaigns tool", () => {
 	});
 
 	it("returns a well-formed empty list from a genuinely empty campaigns table", async () => {
-		// apps/mcp now runs against its own questlog_test_mcp database (T-026),
-		// isolated from apps/server's questlog_test — so unlike the old
-		// archived-exclusion substitute this used to be, asserting a literal
-		// zero-row table is safe: no other concurrently-running suite can ever
-		// hold a live reference into this database.
+		// T-028 relocated this suite into apps/server, sharing questlog_test with
+		// every other apps/server test file — safe because every one of those
+		// wraps its campaign rows in BEGIN/ROLLBACK or deleteCampaignTree
+		// (.claude/rules/backend.md "Test DB pattern"), so none leaves a row
+		// behind for this assertion to trip over.
 		const client = await connectedClient(createMockFetch(basisVector(0)));
 		const result = await client.callTool({
 			name: "list_campaigns",

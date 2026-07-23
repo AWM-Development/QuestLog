@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { briefService } from "@questlog/server/services/brief.service.js";
 import { PrepBriefInput } from "@questlog/shared";
+import { briefService } from "../../services/brief.service.js";
 import { withToolErrors } from "./errors.js";
 import type { ToolDeps } from "./types.js";
 

@@ -1,9 +1,9 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { QueryLoreInput } from "@questlog/shared";
 import {
 	CONTEXT_CONFIG,
 	contextService,
-} from "@questlog/server/services/context.service.js";
-import { QueryLoreInput } from "@questlog/shared";
+} from "../../services/context.service.js";
 import { withToolErrors } from "./errors.js";
 import type { ToolDeps } from "./types.js";
 

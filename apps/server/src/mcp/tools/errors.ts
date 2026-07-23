@@ -1,5 +1,5 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { NotFoundError } from "@questlog/server/lib/errors.js";
+import { NotFoundError } from "../../lib/errors.js";
 
 /**
  * Wraps a tool handler so a thrown `NotFoundError` becomes the structured
