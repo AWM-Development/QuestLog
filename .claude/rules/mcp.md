@@ -25,15 +25,17 @@ Wrap any handler whose underlying service can throw a typed error (e.g. `NotFoun
 
 Straightforward call-through: validate input, call the service, return. No write-back concerns.
 
-## `log_session` — preview/confirm/audit is mandatory, not optional
+## Write tools — preview/confirm/audit applies to mutations of existing data, not additive-only writes
 
-`log_session` writes to `sessions`, links entities, chunks + embeds content into pgvector, and runs a consolidation step separating *episodic memory* (the append-only session log itself) from *mutable entity state* (updates to existing entity records). Because this is the only write path exposed over MCP, it follows a strict three-step pattern:
+The trigger for preview/confirm is **mutating a record that already exists** (updating, appending to, or deleting something), not "this tool performs a write" in general. This is transport-independent — the same rule applies whether the tool is reached locally over stdio or remotely over the M-REMOTE.3 HTTP transport. A tool that only ever inserts a brand-new row (a new source, a new entity, a new standalone note) is a direct write: no preview/confirm pair, no token round-trip. See G-001 (`Docs/tickets/gated/resolved/G-001-write-tool-preview-confirm-scope.md`) for the full resolution rationale.
+
+`log_session` is the motivating example, not the boundary of the rule: it writes to `sessions`, links entities, chunks + embeds content into pgvector, and runs a consolidation step that appends to *existing* entity records — genuine mutation of prior state. Because of that, it follows a strict three-step pattern:
 
 1. **Preview** — given proposed session content, return what *would* be written (new/updated entities, the session record, any consolidation changes) without persisting anything.
 2. **Confirm** — a separate call, given the previewed change-set (or its id), performs the actual writes inside a transaction.
 3. **Audit** — every confirmed write is attributable: which session produced it, what changed, when. Don't silently mutate entity state without a traceable link back to the session that caused it.
 
-Never persist a write from a single call. If a ticket's exit condition doesn't distinguish preview from confirm, that's a spec gap — flag it rather than collapsing the two steps for convenience.
+Never persist a mutating write from a single call. If a ticket's exit condition doesn't distinguish preview from confirm for a tool that mutates existing data, that's a spec gap — flag it rather than collapsing the two steps for convenience. A tool that's genuinely additive-only doesn't need this pattern at all; don't add a preview/confirm pair to a create-only tool just to match `log_session`'s shape.
 
 ## Error shape
 
