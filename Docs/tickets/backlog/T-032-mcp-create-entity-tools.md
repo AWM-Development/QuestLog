@@ -4,8 +4,6 @@ Milestone ref: M-REMOTE.5 (`Docs/MILESTONES_V1_1_MCP.md`)
 
 Blocked on: T-028 — must be merged into develop first
 
-Gated on: G-001 — must be resolved via /ungate first (does preview/confirm apply to every write tool, or only ones mutating existing data — see Scope's preview/confirm exemption note, which was drafted assuming the narrower reading before this gate existed)
-
 Branch: feat/m-remote/t-032-mcp-create-entity-tools
 
 Context files (load ONLY these):
@@ -16,7 +14,7 @@ Context files (load ONLY these):
   - apps/server/src/services/entity.service.ts (`create` and `appendToDescription` — both already exist; there is no general field-update method, see Scope below)
   - packages/shared/src/validators/entity.ts (`EntityCreateInput` — reuse this exact Zod schema, don't redefine it)
   - packages/shared/src/constants/index.ts (`ENTITY_TYPES`)
-  - .claude/rules/mcp.md
+  - .claude/rules/mcp.md (preview/confirm applies to mutations of existing data, not additive-only writes — resolved by G-001; both tools this ticket adds are additive-only, so they're exempt)
 
 Mockup: none
 
@@ -35,14 +33,14 @@ Scope:
      type, description?})` using the existing `EntityCreateInput` Zod
      schema from `packages/shared` directly as the tool's `inputSchema` (do
      not redefine an equivalent shape). Direct write, no preview/confirm —
-     same reasoning as T-031's `ingest_text`: this only ever creates a new
-     row, never mutates existing data.
+     per G-001's resolution (`.claude/rules/mcp.md`), this only ever
+     creates a new row, never mutates existing data.
   2. `append_entity_note` — wraps `entityService.appendToDescription(db,
      entityId, note)`, letting a DM add context to an existing entity
      mid-conversation ("Lyra mentioned she used to serve under Baron
      Voss") without going through a full `log_session` write. Also direct
-     write — appending is additive, not destructive, matching the same
-     preview/confirm exemption reasoning.
+     write, same G-001 reasoning: appending a new note is additive, not a
+     mutation of the entity's prior content.
 
 Out of scope:
   - No entity delete or archive tool.

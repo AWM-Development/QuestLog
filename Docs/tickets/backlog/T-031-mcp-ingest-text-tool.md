@@ -4,8 +4,6 @@ Milestone ref: M-REMOTE.4 (`Docs/MILESTONES_V1_1_MCP.md`)
 
 Blocked on: T-028 — must be merged into develop first
 
-Gated on: G-001 — must be resolved via /ungate first (does preview/confirm apply to every write tool, or only ones mutating existing data — see Scope's "Why this is a direct write" note, which was drafted assuming the narrower reading before this gate existed)
-
 Branch: feat/m-remote/t-031-mcp-ingest-text-tool
 
 Context files (load ONLY these):
@@ -17,7 +15,7 @@ Context files (load ONLY these):
   - apps/server/src/services/import.service.ts (`processSource` — the pipeline this tool must actually trigger, unlike the existing `source.importText` tRPC mutation)
   - apps/server/src/routers/source.ts (`importText` mutation — the existing but non-auto-processing path this tool improves on)
   - apps/server/src/server.ts (`autoProcessUploads` — the fire-and-forget pattern to mirror, since embedding can take longer than a single tool-call round trip should block on)
-  - .claude/rules/mcp.md (preview/confirm is mandatory only for `log_session`, per that file — confirm this reasoning still holds before treating ingest_text as exempt)
+  - .claude/rules/mcp.md (preview/confirm applies to mutations of existing data, not additive-only writes — resolved by G-001; ingest_text is additive-only, so it's exempt)
 
 Mockup: none
 
@@ -35,15 +33,13 @@ Scope:
   tool call on embedding completing).
 
   **Why this is a direct write, not preview/confirm like `log_session`:**
-  `.claude/rules/mcp.md` says preview/confirm is mandatory for `log_session`
-  specifically because it also does entity-consolidation writes to
-  *existing* entity records — a destructive-adjacent operation on data that
-  already exists. `ingest_text` only ever creates a brand-new `sources` row
-  plus new `chunks` rows; it never mutates or deletes anything that existed
-  before the call. If this reasoning turns out to be wrong on closer
-  reading of `mcp.md`, treat that as a real finding — flag it in the
-  report and fall back to preview/confirm rather than silently overriding
-  the rule.
+  Per G-001's resolution (`.claude/rules/mcp.md`), preview/confirm applies
+  to tools that mutate *existing* records — `log_session` needs it because
+  its entity-consolidation step appends to entity records that already
+  exist. `ingest_text` only ever creates a brand-new `sources` row plus new
+  `chunks` rows; it never mutates or deletes anything that existed before
+  the call, so it's a direct write, confirmed decision, not a fallback
+  pending review.
 
   Also add a way to check on ingestion status after the fact: either a
   second small tool (`get_source_status`) or extend an existing read tool

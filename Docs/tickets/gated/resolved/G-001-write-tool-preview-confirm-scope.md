@@ -46,3 +46,28 @@ Notes: Both T-031 and T-032 currently ship with the narrow reading baked
   `log_session`/`confirm_log_session`'s shape — a meaningfully bigger
   ticket each, and `/ungate` should redraft them rather than patch the
   existing scope in place.
+
+## Resolution (2026-07-22)
+
+Decided with Alex: **narrow reading** — preview/confirm/audit applies to
+tools that mutate *existing* records (update, append-to, or delete
+something already there), not to "any tool that performs a write" in
+general. A tool that only ever inserts a brand-new row with nothing prior
+to overwrite (`ingest_text`'s new `sources`/`chunks` rows, `create_entity`'s
+new entity row, `append_entity_note`'s new note content) is a direct write,
+no preview/confirm pair needed. `log_session` needs the pattern specifically
+because its entity-consolidation step appends to entity records that
+already exist — that's the risk being mitigated, not "this is a write."
+
+Also decided: this does **not** change once these tools are reachable
+remotely over the M-REMOTE.3 HTTP transport rather than only locally over
+stdio. The preview/confirm trigger is the operation's effect on existing
+data, not the transport it arrives over — no transport-conditional logic.
+
+`.claude/rules/mcp.md` rewritten to record this as the general rule (with
+`log_session` framed as the motivating example, not the rule's boundary),
+rather than narrowly describing only `log_session`. `T-031` and `T-032`
+had their `Gated on: G-001` line dropped and their preview/confirm-exemption
+notes firmed up from hedge language to a confirmed decision — both remain
+in `backlog/` on their unresolved `Blocked on: T-028` (T-028 is still in
+`queue/`, not yet merged). Pointer added to `Docs/IMPLEMENTATION_NOTES.md`.
