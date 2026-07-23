@@ -17,18 +17,30 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
 
+# --- develop-sync guard: begin (extracted verbatim by the T-041 repro
+#     harness — keep this block self-contained and don't rename the
+#     markers without updating the repro script that greps for them) ---
 # A remote session's working tree can start from a snapshot that predates a
 # slash command or skill being added to develop (e.g. cut from main, or from
 # an older point on develop), which leaves it undiscoverable until something
 # happens to fetch/checkout develop mid-session. Sync just these two
 # tooling directories from origin/develop so they're present from the first
-# turn, without switching the session's actual branch. Skip if either path
-# already has local changes, so we never clobber in-progress edits to a
-# command/skill file itself.
-if [ -z "$(git status --porcelain -- .claude/commands .claude/skills 2>/dev/null)" ]; then
-  git fetch origin develop --quiet 2>/dev/null \
-    && git checkout origin/develop -- .claude/commands .claude/skills 2>/dev/null || true
+# turn, without switching the session's actual branch. Per-file, not
+# per-directory: working-tree cleanliness alone doesn't catch a file this
+# branch has already committed but not yet merged, so each candidate file
+# is checked against the branch's merge-base with origin/develop instead —
+# only a file identical to that merge-base copy (i.e. untouched by this
+# branch, committed or not) gets overwritten with develop's latest.
+# See Docs/IMPLEMENTATION_NOTES.md § T-041.
+git fetch origin develop --quiet 2>/dev/null || true
+merge_base="$(git merge-base HEAD origin/develop 2>/dev/null || true)"
+if [ -n "$merge_base" ]; then
+  while IFS= read -r -d '' file; do
+    git diff --quiet "$merge_base" -- "$file" 2>/dev/null \
+      && { git checkout origin/develop -- "$file" 2>/dev/null || true; }
+  done < <(git ls-tree -r -z --name-only "$merge_base" -- .claude/commands .claude/skills 2>/dev/null)
 fi
+# --- develop-sync guard: end ---
 
 # Derive credentials/port from the project's own DATABASE_URL rather than
 # hardcoding a fourth copy alongside docker-compose.yml/.env.example/CI.
