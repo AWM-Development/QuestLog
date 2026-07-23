@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Changed — T-028
+
+- **The MCP tool-registration layer now lives in `apps/server`, not `apps/mcp`**: all 7 MCP tools (`query_lore`, `prep_brief`, `list_campaigns`, `list_entities`, `get_entity`, `log_session`, `confirm_log_session`), their shared `ToolDeps`/`withToolErrors` helpers, and the `createMcpServer` factory moved to `apps/server/src/mcp/`. `apps/mcp` is now a thin stdio-only wrapper importing `createMcpServer` from `@questlog/server/mcp/server.js`. Purely structural — no tool name, description, input schema, or response/error shape changed. This unblocks a later ticket mounting the same tool set over an HTTP transport directly on `apps/server`, which would otherwise require a circular TypeScript project reference (`Docs/IMPLEMENTATION_NOTES.md` § T-028).
+
 ### Fixed — T-041
 
 - **`.claude/hooks/session-start.sh`'s develop-sync step no longer clobbers a branch's own committed-but-unmerged changes**: the guard used to check only `git status --porcelain` (uncommitted diffs) before overwriting `.claude/commands`/`.claude/skills` with `origin/develop`'s copy, so a file this branch had already committed — but not yet merged into `develop` — got silently reverted to develop's stale version on the next session resume. Now compares each candidate file against the branch's merge-base with `origin/develop` (`git diff --quiet "$merge_base" -- "$file"`) and only syncs files identical to that merge-base copy, so an untouched file still syncs but a committed-or-uncommitted local edit never does (`Docs/IMPLEMENTATION_NOTES.md` § T-041).
