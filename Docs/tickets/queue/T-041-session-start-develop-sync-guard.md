@@ -1,10 +1,10 @@
-# T-028 — Fix session-start.sh's develop-sync guard clobbering committed-but-unmerged changes
+# T-041 — Fix session-start.sh's develop-sync guard clobbering committed-but-unmerged changes
 
 Milestone ref: M-MCP.5 (`Docs/MILESTONES_V1_MCP.md`) — pipeline tooling fix,
 found during PR #77's work; not itself a milestone task (same precedent as
 T-025/T-027)
 
-Branch: feat/m-mcp/t-028-session-start-develop-sync-guard
+Branch: feat/m-mcp/t-041-session-start-develop-sync-guard
 
 Context files (load ONLY these):
   - .claude/hooks/session-start.sh (lines 20-31, the develop-sync block —
