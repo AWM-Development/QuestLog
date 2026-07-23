@@ -1,3 +1,13 @@
+import {
+	chunks,
+	messages as messagesTable,
+	sources,
+} from "@questlog/core/db/schema/index.js";
+import {
+	basisVector,
+	createTestDb,
+	deleteCampaignTree,
+} from "@questlog/core/db/test-helpers.js";
 import { sql } from "drizzle-orm";
 import {
 	afterAll,
@@ -9,16 +19,6 @@ import {
 	it,
 	vi,
 } from "vitest";
-import {
-	chunks,
-	messages as messagesTable,
-	sources,
-} from "../db/schema/index.js";
-import {
-	basisVector,
-	createTestDb,
-	deleteCampaignTree,
-} from "../db/test-helpers.js";
 import { buildApp } from "../server.js";
 
 const { mockCreate, mockStream, MockAPIError } = vi.hoisted(() => {
@@ -104,7 +104,7 @@ function parseSSE(body: string): Array<{ event: string; data: string }> {
 	return events;
 }
 
-vi.mock("../services/voyage.client.js", () => {
+vi.mock("@questlog/core/services/voyage.client.js", () => {
 	const vec = new Array(1024).fill(0);
 	vec[0] = 1;
 	return {

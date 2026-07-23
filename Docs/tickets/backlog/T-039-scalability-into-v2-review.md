@@ -22,8 +22,8 @@ would defeat the point):
   - Docs/MILESTONES_V1_MCP.md's "Deferred to v2" table (the actual scope this review is checking readiness against)
   - Docs/PRD.md (full read — v2's intended feature set, not just the v1-relevant sections already loaded in prior tickets)
   - Docs/DEPLOY_READINESS.md (the infrastructure decisions already made and their stated tradeoffs — Neon Free tier, single-region, etc.)
-  - apps/server/src/mcp/** (the remote-MCP architecture this review is assessing)
-  - apps/server/src/services/context.service.ts, apps/server/src/services/embedding.service.ts (the two most compute/cost-sensitive paths at scale)
+  - packages/mcp/src/** (the remote-MCP architecture this review is assessing)
+  - packages/core/src/services/context.service.ts, packages/core/src/services/embedding.service.ts (the two most compute/cost-sensitive paths at scale)
   - Docs/tickets/reports/*.md (decision log)
 
 Mockup: none

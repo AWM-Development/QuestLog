@@ -3,9 +3,9 @@
  * Run via: pnpm run process-imports
  */
 import "dotenv/config";
-import { db } from "./db/index.js";
-import { importService } from "./services/import.service.js";
-import { createLocalFilesystemStorage } from "./services/storage.service.js";
+import { db } from "@questlog/core/db/index.js";
+import { importService } from "@questlog/core/services/import.service.js";
+import { createLocalFilesystemStorage } from "@questlog/core/services/storage.service.js";
 
 const storage = createLocalFilesystemStorage({
 	basePath: process.env.UPLOAD_PATH ?? "uploads",

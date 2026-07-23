@@ -1,5 +1,5 @@
+import { sourceService } from "@questlog/core/services/source.service.js";
 import { z } from "zod";
-import { sourceService } from "../services/source.service.js";
 import { procedure, router, withErrorHandling } from "../trpc.js";
 
 const newFileSchema = z.object({

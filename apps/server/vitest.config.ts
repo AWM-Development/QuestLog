@@ -1,5 +1,5 @@
 import { configDefaults, defineConfig } from "vitest/config";
-import { testDbUrl } from "./src/db/test-db-url.js";
+import { testDbUrl } from "../../packages/core/src/db/test-db-url.js";
 
 /**
  * Default test tier: unit + integration (real DB, mocked external APIs).
@@ -11,7 +11,13 @@ export default defineConfig({
 	test: {
 		globals: true,
 		sequence: { concurrent: false },
-		globalSetup: ["./src/db/global-setup.ts"],
+		// Relative path required, not a @questlog/core import — Vitest's
+		// globalSetup loader bypasses Vite's resolver. Cross-package import is
+		// intentional; also ordered ahead of this task by turbo.json's
+		// "test": { "dependsOn": ["^test"] } (added by T-042), so packages/core's
+		// own test run truncates+leaves the tables in the state this run
+		// expects. Why: Docs/IMPLEMENTATION_NOTES.md § T-027 / T-042.
+		globalSetup: ["../../packages/core/src/db/global-setup.ts"],
 		exclude: [...configDefaults.exclude, "**/*.e2e.test.ts"],
 		env: {
 			DATABASE_URL: testDbUrl("questlog_test"),

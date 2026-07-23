@@ -6,10 +6,10 @@ Branch: feat/m-remote/t-029-mcp-oauth-authorization-shim
 
 Context files (load ONLY these):
   - apps/server/src/server.ts (where routes are registered — the pattern to follow)
-  - apps/server/src/db/schema/index.ts (existing schema conventions to match for the new tables)
-  - apps/server/src/db/migrations/ (existing migration file naming/shape to follow — read 1-2 recent ones)
-  - apps/server/src/services/ (pick one existing service, e.g. campaign.service.ts, as the service-layer pattern to follow for the new oauth service)
-  - apps/server/src/lib/errors.ts (typed error conventions)
+  - packages/core/src/db/schema/index.ts (existing schema conventions to match for the new tables)
+  - packages/core/src/db/migrations/ (existing migration file naming/shape to follow — read 1-2 recent ones)
+  - packages/core/src/services/ (pick one existing service, e.g. campaign.service.ts, as the service-layer pattern to follow for the new oauth service)
+  - packages/core/src/lib/errors.ts (typed error conventions)
   - https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization (the spec this shim implements a minimal subset of — Authorization Server Metadata, Dynamic Client Registration, the /authorize and /token flow, PKCE requirements)
   - .env.example (where the new shared-secret env var gets documented)
 

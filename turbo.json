@@ -9,7 +9,9 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
-    "test": {},
+    "test": {
+      "dependsOn": ["^test"]
+    },
     "test:e2e": {
       "cache": false,
       "passThroughEnv": ["ANTHROPIC_API_KEY", "VOYAGE_API_KEY"]

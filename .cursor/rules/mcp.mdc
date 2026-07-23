@@ -1,6 +1,6 @@
 ---
 description: MCP server conventions for apps/mcp (thin tool adapters, preview/confirm/audit write-back)
-globs: apps/mcp/**
+globs: apps/mcp-stdio/**,packages/mcp/**
 alwaysApply: false
 ---
 

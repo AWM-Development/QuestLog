@@ -8,7 +8,7 @@ Branch: feat/m-audit/t-038-security-review-remote-mcp-surface
 
 Context files (load ONLY these — this ticket's whole point is a security
 review, so read broadly within this list rather than narrowly):
-  - apps/server/src/mcp/**  (the OAuth shim, the transport mount, every tool — the entire new attack surface this milestone adds)
+  - packages/mcp/src/**, packages/core/src/services/mcp-oauth.service.ts  (the OAuth shim, the transport mount, every tool — the entire new attack surface this milestone adds)
   - apps/server/src/server.ts (the existing REST upload endpoint, which has had zero authentication since it was built and now sits on the same public Fly app as the new authenticated MCP surface — is that inconsistency itself a finding?)
   - .github/workflows/smoke-test-dev.yml, .github/workflows/smoke-test-prod.yml (the new `DEV_DATABASE_URL`/`PROD_DATABASE_URL` GitHub Actions secrets these introduce — real credentials in a new automated path)
   - Docs/tickets/reports/T-025-executor-dev-only-guardrails-prod-clean-start.md (the existing guarantee — "no automated path has real Neon credentials" — that T-036/T-037 knowingly created a new, deliberate exception to; confirm that exception is as narrowly scoped as intended)
