@@ -4,6 +4,8 @@ Milestone ref: M-REMOTE.4 (`Docs/MILESTONES_V1_1_MCP.md`)
 
 Blocked on: T-028 — must be merged into develop first
 
+Gated on: G-001 — must be resolved via /ungate first (does preview/confirm apply to every write tool, or only ones mutating existing data — see Scope's "Why this is a direct write" note, which was drafted assuming the narrower reading before this gate existed)
+
 Branch: feat/m-remote/t-031-mcp-ingest-text-tool
 
 Context files (load ONLY these):

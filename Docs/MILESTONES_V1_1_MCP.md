@@ -17,6 +17,9 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 - **CI/CD scope:** the existing fast, local-Postgres, ephemeral-per-run PR-gate test suite stays exactly as it is (it truncates all tables every run — pointing it at a real branch would destroy real dev data). A **separate**, additive post-merge smoke-test workflow covers verification against real infrastructure instead.
 - **Audit scope:** covers both technical architecture/security rigor and outside-reviewer presentation quality ("portfolio ready" — both, per Alex).
 
+**Open gates** (found during a process audit against `Docs/tickets/GATE_SPEC.md`, after that mechanism landed on `develop` mid-milestone):
+- **`G-001`** (`Docs/tickets/gated/G-001-write-tool-preview-confirm-scope.md`) — whether `.claude/rules/mcp.md`'s preview/confirm/audit requirement applies to every MCP write tool or only ones mutating existing data. Blocks M-REMOTE.4 and M-REMOTE.5. Resolve via `/ungate`.
+
 ---
 
 ## Milestone M-REMOTE: The Remote MCP Server — 🎯 PRIMARY v1.1 MILESTONE
@@ -39,12 +42,12 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   New route (e.g. `POST /mcp`) using `StreamableHTTPServerTransport`, protected by M-REMOTE.2's bearer-token validation, serving the tool set from M-REMOTE.1's relocated factory.
   Exit: an MCP client can complete the full handshake (discover → authorize → connect → `tools/list`) against a running `apps/server` instance and see all 7 existing tools.
 
-- [ ] **M-REMOTE.4 — `ingest_text` MCP tool** (T-031)
-  Paste a document's text directly into a chat and have it chunked + embedded — the missing piece for "upload a campaign document" without leaving Claude. Wraps the existing `sourceService.createFromText` path, but actually triggers `importService.processSource` (unlike the current `source.importText` tRPC mutation, which only creates a `pending` row).
+- [ ] **M-REMOTE.4 — `ingest_text` MCP tool** (T-031, `Gated on: G-001`)
+  Paste a document's text directly into a chat and have it chunked + embedded — the missing piece for "upload a campaign document" without leaving Claude. Wraps the existing `sourceService.createFromText` path, but actually triggers `importService.processSource` (unlike the current `source.importText` tRPC mutation, which only creates a `pending` row). **Gated on G-001**: whether this can be a direct write or needs `log_session`-style preview/confirm — see `Docs/tickets/gated/G-001-write-tool-preview-confirm-scope.md`.
   Exit: calling the tool with real text produces a `done`-status source whose content is retrievable via `query_lore`.
 
-- [ ] **M-REMOTE.5 — `create_entity` / entity-update MCP tools** (T-032)
-  Author NPCs, locations, factions, items, and arcs directly from a session instead of only being able to look them up.
+- [ ] **M-REMOTE.5 — `create_entity` / entity-update MCP tools** (T-032, `Gated on: G-001`)
+  Author NPCs, locations, factions, items, and arcs directly from a session instead of only being able to look them up. **Gated on G-001**, same question as M-REMOTE.4.
   Exit: an entity created via the tool is immediately visible to `get_entity`/`list_entities`.
 
 - [ ] **M-REMOTE.6 — Onboarding surface** (T-033)
@@ -93,4 +96,4 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 
 ### Ordering constraint
 
-M-REMOTE.1 → (M-REMOTE.2, M-REMOTE.4, M-REMOTE.5, M-REMOTE.6 in any order, all after M-REMOTE.1) → M-REMOTE.3 (needs both M-REMOTE.1 and M-REMOTE.2) → M-REMOTE.7 (needs everything else in M-REMOTE). M-CICD.2 → M-CICD.3 (reuses its script). M-AUDIT.2 waits on the M-REMOTE and M-CICD code tickets it reviews; M-AUDIT.1/3/4 are interactive and pulled in by Alex when the rest of v1.1 is far enough along, not auto-promoted.
+M-REMOTE.2 (T-029) has no code dependency on M-REMOTE.1 — it's standalone OAuth-server plumbing that never touches the relocated tool factory — so it can ship in parallel with, or even before, M-REMOTE.1. Everything else in M-REMOTE that isn't M-REMOTE.2 does depend on M-REMOTE.1: M-REMOTE.1 → (M-REMOTE.4, M-REMOTE.5, M-REMOTE.6 in any order) → M-REMOTE.3 (needs both M-REMOTE.1 and M-REMOTE.2) → M-REMOTE.7 (needs everything else in M-REMOTE). M-REMOTE.4 and M-REMOTE.5 additionally wait on `G-001` (`Docs/tickets/gated/G-001-write-tool-preview-confirm-scope.md`) resolving via `/ungate`, independent of the merge-dependency chain. M-CICD.2 → M-CICD.3 (reuses its script). M-AUDIT.2 waits on the M-REMOTE and M-CICD code tickets it reviews; M-AUDIT.1/3/4 are interactive and pulled in by Alex when the rest of v1.1 is far enough along, not auto-promoted.
