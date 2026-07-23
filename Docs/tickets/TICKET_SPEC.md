@@ -1,8 +1,8 @@
 # Ticket Spec
 
 **Location:** `Docs/tickets/TICKET_SPEC.md`
-**Last Updated:** 2026-07-07
-**Purpose:** The exact, complete format for every ticket file. `.claude/skills/ticket-writer/SKILL.md` produces tickets in this shape; the nightly executor and the reviewer subagent both assume it.
+**Last Updated:** 2026-07-23
+**Purpose:** The exact, complete format for every ticket file. `.claude/skills/ticket-writer/SKILL.md` produces tickets in this shape; the nightly executor and the reviewer subagent both assume it. See `Docs/tickets/GATE_SPEC.md` for the companion format used by design/strategy gate-stubs, which feed this pipeline via a ticket's `Gated on:` field.
 
 Every ticket lives at `Docs/tickets/T-###-slug.md` (`###` sequential, zero-padded, never reused across `backlog/`, `queue/`, `in-progress/`, `done/`, `blocked/`, `archive/`) and contains exactly these fields, in this order:
 
@@ -12,6 +12,8 @@ Every ticket lives at `Docs/tickets/T-###-slug.md` (`###` sequential, zero-padde
 Milestone ref: <Docs/MILESTONES_V1_MCP.md section, e.g. "M-MCP.1">
 
 Blocked on: <ticket id(s)> — must be merged into develop first  # backlog/ only, omit otherwise
+
+Gated on: <gate-id, e.g. G-004> — must be resolved via /ungate first  # backlog/ only, omit otherwise; a ticket may carry both this and Blocked on: at once
 
 Branch: feat/<milestone-group>/t-###-<slug>
 
@@ -49,6 +51,16 @@ Definition of done includes: checkbox flipped in MILESTONES_V1_MCP.md,
   `Docs/tickets/done/` — dropping the line as part of that promotion. You
   never need to promote one by hand unless you want it to jump the queue
   before the executor's next run.
+- **Gated on** only appears on tickets living in `backlog/`, and names a
+  gate-stub id (`G-###`, see `GATE_SPEC.md`) instead of a ticket id — the
+  ticket is blocked on a design/strategy decision, not a merge. This is
+  **deliberately not symmetric** with `Blocked on:`: the executor's
+  auto-promotion never clears it. Only `/ungate`
+  (`.claude/skills/ungate/SKILL.md`), resolving the named gate-stub with
+  Alex, drops this line and promotes the ticket. A ticket can carry both
+  fields at once (blocked on a merge *and* a decision); it only reaches
+  `queue/` once both are cleared. See `GATE_SPEC.md`'s "Keeping tickets and
+  gates in sync" for why this asymmetry is load-bearing, not incidental.
 - **Context files** is the ticket's entire token budget for "what to read besides the ticket itself." If a file isn't listed, the executor shouldn't need it — if it turns out it does, that's a signal the ticket was scoped too tightly and worth noting in the report, not silently working around.
 - **Branch** is always cut from `develop`, never `main` — `main` is the deployed branch and is never a ticket's base or target. The ticket's PR merges back into `develop`; `develop` → `main` is a separate, manual release step Alex performs when there's something to deploy. Format: `feat/<milestone-group>/t-###-<slug>` — `<milestone-group>` is the milestone family lowercased (e.g. `m-mcp` for any `M-MCP.*` ticket, dropping the numeric suffix — multiple milestones share one group), and the ticket id is prepended to the slug (e.g. `feat/m-mcp/t-002-write-preview-confirm-audit-plumbing`) so a branch or PR can be traced back to its ticket without opening it. See "Branch naming" below for how this fits with ticket-creation branches.
 - **Mockup** replaces a 🎨 gate. A ticket that names a mockup path is not visually gated — the mockup is the answer. A ticket with `Mockup: none` has no visual component at all (most M-MCP tickets, since the milestone has no UI).
@@ -91,10 +103,16 @@ blocked ticket, below.
 executor yet — most commonly because their Context files or Scope depend on
 code from a predecessor ticket whose PR hasn't been merged into `develop`
 yet (the queue is numeric-order-only; it has no way to express "wait for
-X"). The executor's pre-flight (`EXECUTOR_ROUTINE.md` Step 1) checks
+X"), or because they carry a `Gated on:` field waiting on a design/strategy
+decision (see `GATE_SPEC.md`) — a different kind of "not ready" that the
+executor's auto-promotion must never treat the same as a merge dependency.
+The executor's pre-flight (`EXECUTOR_ROUTINE.md` Step 1) checks
 `backlog/` at the start of every run and auto-promotes (`git mv` into
 `queue/`, dropping the `Blocked on:` line) any ticket whose named
-prerequisite(s) have all merged into `develop`; a still-blocked ticket is
+prerequisite(s) have all merged into `develop` **and which carries no
+`Gated on:` line** — a ticket gated on an unresolved decision stays in
+`backlog/` regardless of its `Blocked on:` state, and is only promoted by
+`/ungate`. A still-blocked ticket is
 left untouched and re-checked on the next run. The executor never executes
 directly out of `backlog/` — promotion to `queue/` always happens first, so
 a ticket is never picked up before its dependency has actually landed.

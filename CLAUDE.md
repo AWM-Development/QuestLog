@@ -36,4 +36,4 @@ pnpm test           # Vitest, all packages (needs Postgres on :5433, migrated)
 - `main` is the deployed branch — never push to it, never target it. Ticket branches cut from `develop`, PR back into `develop`. Never merge a PR yourself.
 - Never modify files under `Docs/mockups/`.
 - Obey the ticket's iteration cap. On cap, follow the Blocked Protocol (`Docs/tickets/BLOCKED_TEMPLATE.md`) and stop.
-- A ticket referencing a mockup is not visually gated — the mockup is the answer. A 🧠 strategy gate has no answer available to you — skip it, log it in the report, continue to the next ticket.
+- A ticket referencing a mockup is not visually gated — the mockup is the answer. A 🧠 strategy gate has no answer available to you — skip it, file it as a gate-stub in `Docs/tickets/gated/` (`Docs/tickets/GATE_SPEC.md`), note it in the report, continue to the next ticket. `/ungate` is the only way a gate gets resolved — never resolve one yourself.
