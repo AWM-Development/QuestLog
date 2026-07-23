@@ -1,9 +1,9 @@
 # Executor Routine
 
 **Location:** `Docs/tickets/EXECUTOR_ROUTINE.md`
-**Last Updated:** 2026-07-07
+**Last Updated:** 2026-07-23
 **Purpose:** The exact prompt configured in the nightly scheduled agent. Kept here, version-controlled, so changes to the nightly loop are diffable and reviewable like everything else in the pipeline — the scheduler config is a copy of this file, not a separate source of truth. If you edit the routine, edit here first, then update the scheduler config to match.
-**Assumes:** `Docs/tickets/TICKET_SPEC.md` (ticket format), `Docs/tickets/BLOCKED_TEMPLATE.md` / `REPORT_TEMPLATE.md` (protocols), `.claude/agents/reviewer.md` (review step), `.claude/skills/tdd-loop/SKILL.md` (implementation loop), and the branch model documented in `Docs/IMPLEMENTATION_NOTES.md` (`main` deployed, `develop` integration).
+**Assumes:** `Docs/tickets/TICKET_SPEC.md` (ticket format), `Docs/tickets/GATE_SPEC.md` (gate-stub format, `Gated on:` field), `Docs/tickets/BLOCKED_TEMPLATE.md` / `REPORT_TEMPLATE.md` (protocols), `.claude/agents/reviewer.md` (review step), `.claude/skills/tdd-loop/SKILL.md` (implementation loop), and the branch model documented in `Docs/IMPLEMENTATION_NOTES.md` (`main` deployed, `develop` integration).
 
 ---
 
@@ -25,7 +25,11 @@ git checkout -B develop origin/develop
 This is safe because the sandbox is a fresh, disposable workspace — there is nothing on the starting branch worth preserving. Only after this succeeds, proceed to Step 1.
 
 ## Step 1: Pre-flight (cheapest possible check — do this before reading anything else)
-First, promote unblocked backlog tickets: list `Docs/tickets/backlog/*.md`. For each one, read its `Blocked on:` line and check whether every ticket id it names has a matching file under `Docs/tickets/done/` (glob `Docs/tickets/done/T-###-*.md` — a match means that ticket's PR has merged into `develop`, since a ticket file only lands in `done/` on `develop` once its own PR merges). If every named id is cleared, promote it: `git mv` the file into `Docs/tickets/queue/`, delete its `Blocked on:` line, commit (`chore: promote T-### from backlog — <blocking ticket(s)> merged`). If any named id isn't yet in `done/`, leave that ticket in `backlog/` untouched and move on to the next one — do not stop at the first still-blocked ticket. `backlog/` tickets are never picked up for execution directly, only ever promoted to `queue/` first.
+First, promote unblocked backlog tickets: list `Docs/tickets/backlog/*.md`. For each one:
+- If it has a `Gated on: G-###` line, **never promote it, regardless of its `Blocked on:` state.** That field only clears via `/ungate` (`.claude/skills/ungate/SKILL.md`, `Docs/tickets/GATE_SPEC.md`) — the executor never touches it. As a cheap sanity check, confirm `Docs/tickets/gated/G-###-*.md` still exists: if it doesn't (the gate was resolved and moved to `gated/resolved/` but this ticket's line was never cleared — a sync bug, not a green light), note it (`T-### flagged — Gated on: G-### not found in gated/, may be stale`) and leave the ticket untouched; do not promote it yourself. Move on to the next candidate either way.
+- Otherwise, read its `Blocked on:` line and check whether every ticket id it names has a matching file under `Docs/tickets/done/` (glob `Docs/tickets/done/T-###-*.md` — a match means that ticket's PR has merged into `develop`, since a ticket file only lands in `done/` on `develop` once its own PR merges). If every named id is cleared, promote it: `git mv` the file into `Docs/tickets/queue/`, delete its `Blocked on:` line, commit (`chore: promote T-### from backlog — <blocking ticket(s)> merged`). If any named id isn't yet in `done/`, leave that ticket in `backlog/` untouched and move on to the next one — do not stop at the first still-blocked ticket.
+
+`backlog/` tickets are never picked up for execution directly, only ever promoted to `queue/` first.
 
 Then build the candidate list: `Docs/tickets/in-progress/*.md`, then `Docs/tickets/queue/*.md` in numeric order (including anything just promoted above). If both are empty: output `NO_TICKET_QUEUED. Exiting.` and stop. Do not read CLAUDE.md, rules, or any other file.
 
@@ -50,7 +54,7 @@ If the loop exhausts every candidate without a pick (case 1) or a resume (case 4
 - Read exactly the files listed in the ticket's `Context files:` field. Nothing else, unless you discover mid-ticket that something is missing — if so, note that as a scoping gap in the eventual report rather than silently pulling in extra files.
 - `.claude/rules/*.md` load automatically by path glob as you touch matching files — you don't need to seek them out manually.
 - If `Mockup:` names a path, read it (read-only — never edit anything under `Docs/mockups/`). If it's `none`, there's no visual component.
-- If the ticket has an unresolved 🧠 strategy gate anywhere in its scope, STOP on that specific item, log it, and continue with whatever in the ticket doesn't depend on it. A 🎨/mockup reference is never a gate — proceed.
+- If the ticket has an unresolved 🧠 strategy gate anywhere in its scope, STOP on that specific item and continue with whatever in the ticket doesn't depend on it. Don't just log it in the eventual report — file it as a gate-stub now: check whether `Docs/tickets/gated/*.md` already has one for this exact question (filed during ticket-writing); if not, create `Docs/tickets/gated/G-###-slug.md` per `Docs/tickets/GATE_SPEC.md` (next unused `G-###`), naming this ticket's id and branch in `Blocks:`/`Notes:`, and commit it (`chore: file G-### — gate surfaced during T-###`). This is what makes the gap visible to `/ungate` instead of only living inside this ticket's morning report. A 🎨/mockup reference is never a gate — proceed.
 
 ## Step 4: Implement — TDD, per `.claude/skills/tdd-loop/SKILL.md`
 For each unit of work in the ticket's Scope:

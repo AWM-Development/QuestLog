@@ -5,20 +5,25 @@ description: Extract a milestone (or a slice of one) from Docs/MILESTONES_V1_MCP
 
 # Ticket Writer
 
-Turns one milestone task from `Docs/MILESTONES_V1_MCP.md` into one or more ticket files in `Docs/tickets/queue/` (or `Docs/tickets/backlog/` for tickets that depend on an unmerged predecessor — see step 6), following `Docs/tickets/TICKET_SPEC.md` exactly. This is an interactive-session skill — it runs with Alex present, right after a planning conversation has resolved any 🎨/🧠 gates for the milestone in question.
+Turns one milestone task from `Docs/MILESTONES_V1_MCP.md` into one or more ticket files in `Docs/tickets/queue/` (or `Docs/tickets/backlog/` for tickets that depend on an unmerged predecessor — see step 7 — or on an unresolved gate — see step 3), following `Docs/tickets/TICKET_SPEC.md` exactly. This is an interactive-session skill — it runs with Alex present, right after a planning conversation that resolves whatever 🎨/🧠 gates it can for the milestone in question. A gate that *isn't* resolved in this session no longer stalls the whole run — see step 3.
 
 ## Inputs you need before starting
 
 1. The milestone task (e.g. "M-MCP.1") from `Docs/MILESTONES_V1_MCP.md` — read it now if not already in context.
 2. The relevant PRD section it references.
-3. If the task is 🎨-gated: a mockup must already exist at `Docs/mockups/<view>/` (index.html + screenshot.png + NOTES.md) or have just been created this session. If it's 🧠-gated: the strategy decision must have already been made in this conversation. **Do not invent either — if missing, stop and ask.**
+3. If the task is 🎨-gated: ideally a mockup already exists at `Docs/mockups/<view>/` (index.html + screenshot.png + NOTES.md), or gets created this session. If it's 🧠-gated: ideally the strategy decision gets made in this conversation. **Never invent either.** If a gate can't be resolved right now (Alex isn't ready to decide, or the mockup needs more work than this session has room for), don't stop the whole run — file it per step 3 and keep going with whatever else the milestone doesn't need it for.
 
 ## Procedure
 
 0. Make sure the session is on a ticket-creation branch, not whatever it started on: `tickets/<milestone-slug>` (e.g. `tickets/m-mcp.1`, or `tickets/m-mcp.2-4` for a session extracting several milestones), cut from `develop`. This is docs-only work, so it's PR'd into `develop` like everything else — the distinct `tickets/` prefix (vs. `feat/`) is what lets a PR list show planning PRs apart from implementation PRs at a glance. See `TICKET_SPEC.md`'s "Branch naming" section.
 1. Read the milestone task in full. Read the codebase (relevant routers/services/schema) to understand what already exists — the ticket names exact files, so you need to know which ones are real.
 2. Decide whether the task is one ticket or several. **Sizing rule: one ticket = one verifiable unit for a single ~5-hour session with headroom for review and testing.** Rule of thumb: if the description needs more than ~10 acceptance checks to be verifiable, split it. Prefer splitting along natural seams (e.g. "write path" vs "embed+consolidate" vs "preview/confirm plumbing" for `log_session`), not arbitrary halves.
-3. For each ticket, fill out every field in `Docs/tickets/TICKET_SPEC.md` exactly:
+3. **For each resulting ticket-shaped slice, check whether its 🎨/🧠 gate (if any) is actually resolved.** If yes (or `Mockup: none` / no strategy question applies), proceed to step 4. If the gate is unresolved:
+   - File a gate-stub at `Docs/tickets/gated/G-###-slug.md` per `Docs/tickets/GATE_SPEC.md` (`###` is the next unused number in `gated/`'s own sequence — separate from `T-###`), naming this milestone task in `Blocks:`.
+   - If the slice's Scope and Exit condition are *already* knowable even though the decision isn't made (e.g. "build an OCR ingestion ticket" is clear, only *which* OCR approach isn't), draft the ticket anyway per step 4, land it in `Docs/tickets/backlog/` with a `Gated on: G-###` line (`TICKET_SPEC.md` field notes), and reference it back from the gate-stub's `Blocks:`.
+   - If Scope can't honestly be written yet (the decision changes what's being built, not just how), don't draft a ticket at all — the gate-stub's `Blocks:` reference to the milestone task is enough. `/ungate` drafts the real ticket once the decision lands.
+   - Either way, do not stop the session over this — move on to the next slice.
+4. For each ticket you're drafting now (gate-free, or gated-but-scoped per step 3), fill out every field in `Docs/tickets/TICKET_SPEC.md` exactly:
    - **Branch** — `feat/<milestone-group>/t-###-<slug>` (ticket id prepended to the slug — see `TICKET_SPEC.md`'s "Branch naming" section). Not the same as this session's own `tickets/*` branch.
    - **Context files** — an explicit list (file paths, PRD `§` references), never "read the whole PRD" or "read the whole service."
    - **Mockup** — the exact `Docs/mockups/<view>/` path, or `none`.
@@ -26,14 +31,14 @@ Turns one milestone task from `Docs/MILESTONES_V1_MCP.md` into one or more ticke
    - **Scope / Out of scope** — scope is concrete and buildable; out-of-scope is the anti-gold-plating fence — name the adjacent things the executor might be tempted to also fix, and tell it not to.
    - **Exit condition** — machine-checkable: tests green + typecheck/lint clean, plus at least one concrete behavioral check (e.g. "search endpoint returns ≥1 relevant chunk for query X against seeded fixture Y" — a real assertion, not "works correctly").
    - **Iteration cap** — 3 distinct approaches on any single failure, then Blocked Protocol. Lower it for small/well-understood tickets if appropriate; never raise it above 3 without asking.
-4. Never invent scope beyond what the milestone task describes. If implementing the task well requires something the milestone doesn't mention (e.g. a new shared type), that's fine to include in scope — but don't add unrelated improvements, refactors, or "while I'm here" work.
-5. Name the file `Docs/tickets/T-###-slug.md` — `###` is the next unused number across `backlog/`, `queue/`, `in-progress/`, `done/`, `blocked/`, and `archive/` (zero-padded, sequential, never reused).
-6. If a ticket's Context files or Scope depend on a file/service that only exists once an earlier, not-yet-merged ticket lands (e.g. ticket B in a split chain needs a service ticket A creates), write it to `Docs/tickets/backlog/` instead of `queue/`, with a `Blocked on: <ticket id(s)> — must be merged into develop first` line directly under `Milestone ref:` (see `TICKET_SPEC.md`'s field notes). The nightly executor auto-promotes it to `queue/` on the first run after every named prerequisite has merged into `develop` — no manual step needed, though you can promote it yourself sooner if you want it to jump ahead of that check. Everything else goes straight to `Docs/tickets/queue/`. Do not move anything to `in-progress/` either way — that transition belongs to the nightly executor picking up the ticket.
-7. Report back: ticket id(s), one-line scope each, whether each landed in `queue/` or `backlog/` (and why, for any `backlog/` ticket), and confirmation that the milestone task's checkbox in `MILESTONES_V1_MCP.md` still reflects reality (unchecked, since the ticket hasn't shipped).
+5. Never invent scope beyond what the milestone task describes. If implementing the task well requires something the milestone doesn't mention (e.g. a new shared type), that's fine to include in scope — but don't add unrelated improvements, refactors, or "while I'm here" work.
+6. Name the file `Docs/tickets/T-###-slug.md` — `###` is the next unused number across `backlog/`, `queue/`, `in-progress/`, `done/`, `blocked/`, and `archive/` (zero-padded, sequential, never reused).
+7. If a ticket's Context files or Scope depend on a file/service that only exists once an earlier, not-yet-merged ticket lands (e.g. ticket B in a split chain needs a service ticket A creates), write it to `Docs/tickets/backlog/` instead of `queue/`, with a `Blocked on: <ticket id(s)> — must be merged into develop first` line directly under `Milestone ref:` (see `TICKET_SPEC.md`'s field notes). The nightly executor auto-promotes it to `queue/` on the first run after every named prerequisite has merged into `develop` — no manual step needed, though you can promote it yourself sooner if you want it to jump ahead of that check. Everything else goes straight to `Docs/tickets/queue/`. Do not move anything to `in-progress/` either way — that transition belongs to the nightly executor picking up the ticket.
+8. Report back: ticket id(s) drafted, one-line scope each, whether each landed in `queue/` or `backlog/` (and why, for any `backlog/` ticket — including a `Gated on:` reason); any milestone slice deferred to a gate-stub instead of a ticket, with its `G-###` id; and confirmation that the milestone task's checkbox in `MILESTONES_V1_MCP.md` still reflects reality (unchecked, since nothing here has shipped).
 
 ## What this skill does not do
 
 - Does not implement anything.
-- Does not decide 🎨/🧠 gates itself — those must already be resolved.
-- Does not touch `Docs/mockups/` beyond reading it.
+- Does not decide 🎨/🧠 gates itself — it either captures an already-made decision, or defers an unmade one to a gate-stub for `/ungate` to resolve later. It never invents one.
+- Does not touch `Docs/mockups/` beyond reading it (or creating a mockup this same session, if Alex resolves a 🎨 gate live).
 - Does not write tickets against anything in the "Deferred to v2" section of `MILESTONES_V1_MCP.md`.
