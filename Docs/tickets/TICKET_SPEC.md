@@ -117,6 +117,25 @@ left untouched and re-checked on the next run. The executor never executes
 directly out of `backlog/` — promotion to `queue/` always happens first, so
 a ticket is never picked up before its dependency has actually landed.
 
+### A third "not ready" that isn't a field at all
+
+`Blocked on:` and `Gated on:` are both machine-checkable fields the executor's
+pre-flight parses. A separate pattern exists for tickets that are inherently
+interactive — planning-shaped work a ticket file can still usefully describe,
+but that should never be picked up by the autonomous executor at all, gate or
+no gate (see `Docs/tickets/backlog/T-017-architecture-pattern-audit.md` for a
+worked example: an architecture audit that needs Alex's own institutional
+judgment throughout, not a single yes/no decision). These tickets carry
+neither field — instead a freeform banner (`**⚠️ NOT ELIGIBLE FOR AUTONOMOUS
+NIGHTLY EXECUTION.**`) and prose describing their own trigger condition. This
+works today only because the executor's pre-flight never scans `backlog/` for
+anything except `Blocked on:`/`Gated on:` — a ticket with neither field simply
+never gets touched by auto-promotion, by construction, and stays parked until
+Alex moves it by hand. Don't add a `Blocked on:` or `Gated on:` field to a
+ticket like this expecting it to suppress auto-promotion further; it already
+can't be auto-promoted, and doing so would misrepresent what it's actually
+waiting on.
+
 ### Why `develop`'s ticket directories can lag reality
 
 `develop` is PR-only, same as `main` — nothing lands there outside a merge.
