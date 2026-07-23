@@ -35,9 +35,11 @@ verbatim. If FAIL and a remediation pass was made, show before/after.>
 
 ## Anything Alex must decide
 
-<Any 🧠-gated checkpoint skipped this ticket, any scope judgment call made
-that a stricter reading of "out of scope" might disagree with, any
-follow-up ticket this work implies. "None" is a valid, common answer.>
+<Any 🧠-gated checkpoint skipped this ticket — cite the `G-###` gate-stub
+filed for it (`Docs/tickets/GATE_SPEC.md`), not just a prose description —
+any scope judgment call made that a stricter reading of "out of scope"
+might disagree with, any follow-up ticket this work implies. "None" is a
+valid, common answer.>
 ```
 
 ## Notes
