@@ -1,5 +1,16 @@
 # T-017 — Architecture & pattern audit: drift, dead code, and best-practicing across M-MCP
 
+**Amended 2026-07-22 (M-AUDIT.1, `Docs/MILESTONES_V1_1_MCP.md`):** scope extended
+to also cover the v1.1 additions (the M-REMOTE remote-MCP work and the
+M-CICD post-merge smoke-test workflows) once those ship, rather than filing
+a duplicate audit ticket. **Updated trigger condition:** pull this into an
+interactive session once *both* the original M-MCP hardening backlog
+(T-013–016, already `done/`) *and* v1.1's M-REMOTE + M-CICD code tickets
+(T-028–033, T-035–037) are in `done/` — check for anything newer that's
+spawned since before starting, same as the original trigger note below.
+Everything below this line is the ticket as originally scoped; treat "M-MCP"
+references as "M-MCP and M-REMOTE/M-CICD" throughout.
+
 **⚠️ NOT ELIGIBLE FOR AUTONOMOUS NIGHTLY EXECUTION.** Run this as an
 interactive planning session with Alex, on Fable/Opus (per `TICKET_SPEC.md`:
 "Planning and ticket-writing happen on Fable/Opus; execution never does" —
