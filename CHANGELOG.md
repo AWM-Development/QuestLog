@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Changed — T-043
+
+- **The local test-database name list is no longer hand-copied in three places**: `scripts/test-db-names.sh` is now the single source of truth for `questlog`/`questlog_test`/`questlog_test_mcp`, sourced by `ci.yml`, `e2e-release-check.yml`, and `.claude/hooks/session-start.sh` (see `Docs/IMPLEMENTATION_NOTES.md` § T-027).
+
 ### Changed — T-042
 
 - **The domain layer and MCP tool-registration layer now live in their own packages, not inside `apps/server`**: `apps/server/src/{db,services,lib}` moved wholesale to `packages/core` (`@questlog/core`), and `apps/server/src/mcp` (the tool-registration layer T-028 relocated there) moved to `packages/mcp` (`@questlog/mcp`). `apps/mcp` renamed to `apps/mcp-stdio` (`@questlog/mcp-stdio`) — freed up by the `@questlog/mcp` package name — and is now honestly just a thin stdio-transport binary wiring `packages/mcp`'s tools to a real client, not where the MCP logic itself lives. `apps/server` keeps `routers/`, `server.ts`, `trpc.ts`, `main.ts`, and `process-imports.ts`, importing the moved code from `@questlog/core/...`. Purely structural — no tool name, description, input schema, service behavior, or response/error shape changed. This is what actually lets `apps/server` mount an HTTP transport for the same tool set (a later M-REMOTE ticket) without the circular TypeScript project reference that made T-028's `apps/server`-nested layout only a stopgap (`Docs/IMPLEMENTATION_NOTES.md` § T-042).

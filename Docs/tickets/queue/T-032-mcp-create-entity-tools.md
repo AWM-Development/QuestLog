@@ -2,8 +2,6 @@
 
 Milestone ref: M-REMOTE.5 (`Docs/MILESTONES_V1_1_MCP.md`)
 
-Blocked on: T-028 — must be merged into develop first
-
 Branch: feat/m-remote/t-032-mcp-create-entity-tools
 
 Context files (load ONLY these):
