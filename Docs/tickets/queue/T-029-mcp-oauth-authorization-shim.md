@@ -63,7 +63,7 @@ Scope:
   random tokens (not JWTs — no need for the added complexity at this
   scale), generated with `node:crypto`'s `randomBytes`.
 
-  Business logic lives in a new `apps/server/src/services/mcp-oauth.service.ts`
+  Business logic lives in a new `packages/core/src/services/mcp-oauth.service.ts`
   (register client, create authorization code, exchange code for tokens,
   refresh, validate an access token) — routes stay thin, per
   `.claude/rules/backend.md`'s router→service convention (there's no

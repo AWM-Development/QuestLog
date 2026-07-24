@@ -66,7 +66,7 @@ Exit condition (machine-checkable):
     a well-formed metadata document naming the correct authorization
     server URL
   - a scripted MCP client (using `@modelcontextprotocol/sdk`'s own client,
-    same pattern as `apps/mcp/scripts/smoke.ts`) can complete the full
+    same pattern as `apps/mcp-stdio/scripts/smoke.ts`) can complete the full
     remote discover → authorize → token → connect → `tools/list` sequence
     against a locally-running `apps/server` instance — paste the script's
     output showing all 7 tools returned

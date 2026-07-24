@@ -2,7 +2,7 @@
 
 **Purpose:** every step here requires Alex directly — an account, a payment method, a real secret value, or a first-time manual run. Nothing on this list is done automatically by this ticket, the nightly executor, or CI. Each step cross-references the automated artifact (by file path) it depends on or activates, so this reads as one sequence with `Docs/DEPLOY_READINESS.md`'s resolved decisions, not a disconnected TODO list.
 
-Resolved decisions this checklist assumes (see `Docs/DEPLOY_READINESS.md` §2 for the full reasoning): **database — Neon** (one project, root branch = prod, a child branch = dev); **compute — Fly.io**, one app per environment (`questlog-dev`, `questlog-prod`), running `apps/server` only (`apps/mcp` stays local-only per §0 — stdio transport, no hosting needed); **secrets — Fly's own secret store**; **backups — Neon Free for now, upgrade to Launch before real campaign data**; **maintenance — Alex, manually, occasionally**.
+Resolved decisions this checklist assumes (see `Docs/DEPLOY_READINESS.md` §2 for the full reasoning): **database — Neon** (one project, root branch = prod, a child branch = dev); **compute — Fly.io**, one app per environment (`questlog-dev`, `questlog-prod`), running `apps/server` only (`apps/mcp-stdio` stays local-only per §0 — stdio transport, no hosting needed); **secrets — Fly's own secret store**; **backups — Neon Free for now, upgrade to Launch before real campaign data**; **maintenance — Alex, manually, occasionally**.
 
 ---
 
@@ -54,6 +54,6 @@ Resolved decisions this checklist assumes (see `Docs/DEPLOY_READINESS.md` §2 fo
 
 - [ ] Not required — Fly.io's `*.fly.dev` subdomains work out of the box for both apps. Skip unless Alex specifically wants `questlog.example.com`-style custom domains, in which case: add a CNAME/A record per Fly's custom-domain docs, then update `CORS_ORIGIN` in prod's secrets and `deploy/env.prod.example`'s placeholder to match.
 
-## 5. Local `apps/mcp` client — unaffected by any of the above
+## 5. Local `apps/mcp-stdio` client — unaffected by any of the above
 
-- [ ] Nothing to do here. Per `Docs/DEPLOY_READINESS.md` §0/§2.2, `apps/mcp` stays stdio-only, spawned locally by Claude Desktop, pointed at whichever `DATABASE_URL`/API keys Alex puts in its own config (`apps/mcp/README.md`) — unaffected by the Fly/Neon setup above unless Alex chooses to point his local MCP client at the hosted dev or prod database instead of his local docker-compose Postgres, which is an existing, already-documented config choice, not a new one this ticket introduces.
+- [ ] Nothing to do here. Per `Docs/DEPLOY_READINESS.md` §0/§2.2, `apps/mcp-stdio` stays stdio-only, spawned locally by Claude Desktop, pointed at whichever `DATABASE_URL`/API keys Alex puts in its own config (`apps/mcp-stdio/README.md`) — unaffected by the Fly/Neon setup above unless Alex chooses to point his local MCP client at the hosted dev or prod database instead of his local docker-compose Postgres, which is an existing, already-documented config choice, not a new one this ticket introduces.

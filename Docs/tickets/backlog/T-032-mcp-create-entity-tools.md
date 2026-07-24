@@ -57,7 +57,7 @@ Out of scope:
 
 Exit condition (machine-checkable):
   - all tests green, typecheck clean, lint clean — pasted output, not a summary
-  - new suite in `apps/server/src/mcp/server.test.ts` (or a new file
+  - new suite in `packages/mcp/src/server.test.ts` (or a new file
     following the same pattern): `create_entity` produces a row
     immediately visible via `get_entity`/`list_entities`; invalid `type`
     (not in `ENTITY_TYPES`) is rejected by the Zod schema before it

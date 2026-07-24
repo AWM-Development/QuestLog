@@ -63,7 +63,7 @@ Out of scope:
 
 Exit condition (machine-checkable):
   - all tests green, typecheck clean, lint clean — pasted output, not a summary
-  - new suite in `apps/server/src/mcp/server.test.ts` (or a new file
+  - new suite in `packages/mcp/src/server.test.ts` (or a new file
     following the same pattern): calling `ingest_text` with real content
     against a seeded test campaign produces a source that reaches `status:
     "done"` (poll or await the same way `search.e2e.test.ts` does for the
