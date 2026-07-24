@@ -2,7 +2,6 @@
 
 Milestone ref: M-REMOTE.6 (`Docs/MILESTONES_V1_1_MCP.md`)
 
-
 Branch: feat/m-remote/t-033-mcp-onboarding-surface
 
 Context files (load ONLY these):

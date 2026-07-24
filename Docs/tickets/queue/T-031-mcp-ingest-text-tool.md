@@ -2,7 +2,6 @@
 
 Milestone ref: M-REMOTE.4 (`Docs/MILESTONES_V1_1_MCP.md`)
 
-
 Branch: feat/m-remote/t-031-mcp-ingest-text-tool
 
 Context files (load ONLY these):
