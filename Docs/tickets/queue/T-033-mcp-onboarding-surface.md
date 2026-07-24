@@ -5,9 +5,9 @@ Milestone ref: M-REMOTE.6 (`Docs/MILESTONES_V1_1_MCP.md`)
 Branch: feat/m-remote/t-033-mcp-onboarding-surface
 
 Context files (load ONLY these):
-  - apps/server/src/mcp/server.ts (the `createMcpServer` factory — where the `McpServer` constructor is called)
-  - apps/server/src/mcp/tools/list-campaigns.ts (simplest existing tool, closest pattern for `help`'s no-input shape)
-  - apps/mcp/README.md (the "First conversation" section — the existing human-facing walkthrough this tool surfaces a condensed version of, in the model's own voice rather than a human reading a README)
+  - packages/mcp/src/server.ts (the `createMcpServer` factory — where the `McpServer` constructor is called)
+  - packages/mcp/src/tools/list-campaigns.ts (simplest existing tool, closest pattern for `help`'s no-input shape)
+  - apps/mcp-stdio/README.md (the "First conversation" section — the existing human-facing walkthrough this tool surfaces a condensed version of, in the model's own voice rather than a human reading a README)
   - `@modelcontextprotocol/sdk`'s `McpServer` constructor types (inspect `node_modules/@modelcontextprotocol/sdk/dist/**/mcp.d.ts` directly — confirm whether `instructions` is a constructor option or set some other way; do not assume the exact API shape without checking)
   - .claude/rules/mcp.md
 

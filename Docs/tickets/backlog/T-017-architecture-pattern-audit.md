@@ -55,8 +55,8 @@ should read broadly):
   - Docs/IMPLEMENTATION_NOTES.md
   - .claude/rules/*.md
   - CLAUDE.md
-  - apps/mcp/src/**, apps/server/src/services/**, apps/server/src/routers/**,
-    apps/server/src/db/schema/**
+  - apps/mcp-stdio/src/**, packages/mcp/src/**, packages/core/src/services/**,
+    apps/server/src/routers/**, packages/core/src/db/schema/**
   - packages/shared/src/**
 
 Mockup: none

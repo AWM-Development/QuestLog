@@ -7,10 +7,10 @@ Blocked on: T-028, T-029 — must both be merged into develop first
 Branch: feat/m-remote/t-030-mount-streamable-http-mcp-transport
 
 Context files (load ONLY these):
-  - apps/server/src/mcp/server.ts (the `createMcpServer` factory, relocated by T-028)
-  - apps/server/src/services/mcp-oauth.service.ts (token validation, built by T-029)
+  - packages/mcp/src/server.ts (the `createMcpServer` factory, relocated by T-028, then to packages/mcp by T-042)
+  - packages/core/src/services/mcp-oauth.service.ts (token validation, built by T-029)
   - apps/server/src/server.ts (where the new route gets registered)
-  - apps/mcp/src/main.ts (the stdio transport wiring — same `createMcpServer` call, different transport class)
+  - apps/mcp-stdio/src/main.ts (the stdio transport wiring — same `createMcpServer` call, different transport class)
   - https://modelcontextprotocol.io/specification/2025-06-18/basic/transports (Streamable HTTP transport requirements)
   - https://modelcontextprotocol.io/specification/2025-06-18/basic/authorization#authorization-server-location (the `WWW-Authenticate` header + Protected Resource Metadata requirement this ticket implements the resource-server half of)
   - @modelcontextprotocol/sdk's `StreamableHTTPServerTransport` (its own package source — inspect via `node_modules/@modelcontextprotocol/sdk` once installed by T-028, no external fetch needed)
@@ -66,7 +66,7 @@ Exit condition (machine-checkable):
     a well-formed metadata document naming the correct authorization
     server URL
   - a scripted MCP client (using `@modelcontextprotocol/sdk`'s own client,
-    same pattern as `apps/mcp/scripts/smoke.ts`) can complete the full
+    same pattern as `apps/mcp-stdio/scripts/smoke.ts`) can complete the full
     remote discover → authorize → token → connect → `tools/list` sequence
     against a locally-running `apps/server` instance — paste the script's
     output showing all 7 tools returned

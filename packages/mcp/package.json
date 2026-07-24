@@ -1,0 +1,30 @@
+{
+	"name": "@questlog/mcp",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"main": "./src/index.ts",
+	"types": "./src/index.ts",
+	"exports": {
+		".": "./src/index.ts",
+		"./*": "./src/*"
+	},
+	"scripts": {
+		"test": "vitest run",
+		"typecheck": "tsc -b",
+		"lint": "biome check ."
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.29.0",
+		"@questlog/core": "workspace:*",
+		"@questlog/shared": "workspace:*",
+		"drizzle-orm": "^0.45.1"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"@types/node": "^22.13.10",
+		"postgres": "^3.4.8",
+		"typescript": "^5.8.2",
+		"vitest": "^3.0.9"
+	}
+}

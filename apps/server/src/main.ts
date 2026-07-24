@@ -1,4 +1,4 @@
-import { db } from "./db/index.js";
+import { db } from "@questlog/core/db/index.js";
 import { buildApp } from "./server.js";
 
 const app = buildApp({ db, autoProcessUploads: true });

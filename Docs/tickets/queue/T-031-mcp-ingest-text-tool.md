@@ -5,12 +5,12 @@ Milestone ref: M-REMOTE.4 (`Docs/MILESTONES_V1_1_MCP.md`)
 Branch: feat/m-remote/t-031-mcp-ingest-text-tool
 
 Context files (load ONLY these):
-  - apps/server/src/mcp/tools/log-session.ts (closest existing write-tool pattern, though log_session uses preview/confirm — read this to understand why, then see Scope below for why ingest_text does not)
-  - apps/server/src/mcp/tools/query-lore.ts (the read-tool pattern to mirror for response shape)
-  - apps/server/src/mcp/tools/types.ts (`ToolDeps`)
-  - apps/server/src/mcp/server.ts (one-line registration)
-  - apps/server/src/services/source.service.ts (`createFromText` — already exists)
-  - apps/server/src/services/import.service.ts (`processSource` — the pipeline this tool must actually trigger, unlike the existing `source.importText` tRPC mutation)
+  - packages/mcp/src/tools/log-session.ts (closest existing write-tool pattern, though log_session uses preview/confirm — read this to understand why, then see Scope below for why ingest_text does not)
+  - packages/mcp/src/tools/query-lore.ts (the read-tool pattern to mirror for response shape)
+  - packages/mcp/src/tools/types.ts (`ToolDeps`)
+  - packages/mcp/src/server.ts (one-line registration)
+  - packages/core/src/services/source.service.ts (`createFromText` — already exists)
+  - packages/core/src/services/import.service.ts (`processSource` — the pipeline this tool must actually trigger, unlike the existing `source.importText` tRPC mutation)
   - apps/server/src/routers/source.ts (`importText` mutation — the existing but non-auto-processing path this tool improves on)
   - apps/server/src/server.ts (`autoProcessUploads` — the fire-and-forget pattern to mirror, since embedding can take longer than a single tool-call round trip should block on)
   - .claude/rules/mcp.md (preview/confirm applies to mutations of existing data, not additive-only writes — resolved by G-001; ingest_text is additive-only, so it's exempt)
@@ -61,7 +61,7 @@ Out of scope:
 
 Exit condition (machine-checkable):
   - all tests green, typecheck clean, lint clean — pasted output, not a summary
-  - new suite in `apps/server/src/mcp/server.test.ts` (or a new file
+  - new suite in `packages/mcp/src/server.test.ts` (or a new file
     following the same pattern): calling `ingest_text` with real content
     against a seeded test campaign produces a source that reaches `status:
     "done"` (poll or await the same way `search.e2e.test.ts` does for the

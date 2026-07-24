@@ -5,11 +5,11 @@ Milestone ref: M-REMOTE.5 (`Docs/MILESTONES_V1_1_MCP.md`)
 Branch: feat/m-remote/t-032-mcp-create-entity-tools
 
 Context files (load ONLY these):
-  - apps/server/src/mcp/tools/get-entity.ts (read-tool pattern to mirror for response shape)
-  - apps/server/src/mcp/tools/list-campaigns.ts (a tool with no confirm step — closest analog for a simple direct-write tool)
-  - apps/server/src/mcp/tools/types.ts (`ToolDeps`)
-  - apps/server/src/mcp/server.ts (two-line registration)
-  - apps/server/src/services/entity.service.ts (`create` and `appendToDescription` — both already exist; there is no general field-update method, see Scope below)
+  - packages/mcp/src/tools/get-entity.ts (read-tool pattern to mirror for response shape)
+  - packages/mcp/src/tools/list-campaigns.ts (a tool with no confirm step — closest analog for a simple direct-write tool)
+  - packages/mcp/src/tools/types.ts (`ToolDeps`)
+  - packages/mcp/src/server.ts (two-line registration)
+  - packages/core/src/services/entity.service.ts (`create` and `appendToDescription` — both already exist; there is no general field-update method, see Scope below)
   - packages/shared/src/validators/entity.ts (`EntityCreateInput` — reuse this exact Zod schema, don't redefine it)
   - packages/shared/src/constants/index.ts (`ENTITY_TYPES`)
   - .claude/rules/mcp.md (preview/confirm applies to mutations of existing data, not additive-only writes — resolved by G-001; both tools this ticket adds are additive-only, so they're exempt)
@@ -55,7 +55,7 @@ Out of scope:
 
 Exit condition (machine-checkable):
   - all tests green, typecheck clean, lint clean — pasted output, not a summary
-  - new suite in `apps/server/src/mcp/server.test.ts` (or a new file
+  - new suite in `packages/mcp/src/server.test.ts` (or a new file
     following the same pattern): `create_entity` produces a row
     immediately visible via `get_entity`/`list_entities`; invalid `type`
     (not in `ENTITY_TYPES`) is rejected by the Zod schema before it

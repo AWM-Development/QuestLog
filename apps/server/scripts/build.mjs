@@ -1,6 +1,6 @@
 import { build } from "esbuild";
 
-// See apps/mcp/scripts/build.mjs for the precedent this mirrors: `tsc`
+// See apps/mcp-stdio/scripts/build.mjs for the precedent this mirrors: `tsc`
 // alone (the previous "build" script) never resolves @questlog/shared's
 // bare-specifier import to anything plain `node` can load, since that
 // package ships raw TypeScript with no dist/ (Docs/IMPLEMENTATION_NOTES.md
@@ -14,7 +14,10 @@ import { build } from "esbuild";
 // "Dynamic require of 'fs' is not supported" at run time). It's listed as
 // a real dependency (not dev-only) for exactly this reason.
 await build({
-	entryPoints: ["src/main.ts", "src/db/migrate.ts"],
+	entryPoints: [
+		{ in: "src/main.ts", out: "main" },
+		{ in: "../../packages/core/src/db/migrate.ts", out: "db/migrate" },
+	],
 	outdir: "dist",
 	bundle: true,
 	platform: "node",

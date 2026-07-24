@@ -1,3 +1,4 @@
+import { sessionService } from "@questlog/core/services/session.service.js";
 import {
 	SessionCreateInput,
 	SessionFinalizeInput,
@@ -5,7 +6,6 @@ import {
 	SessionUpdateInput,
 } from "@questlog/shared";
 import { z } from "zod";
-import { sessionService } from "../services/session.service.js";
 import { procedure, router, withErrorHandling } from "../trpc.js";
 
 export const sessionRouter = router({

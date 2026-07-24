@@ -1,5 +1,5 @@
+import { searchService } from "@questlog/core/services/search.service.js";
 import { SearchSourcesInput } from "@questlog/shared";
-import { searchService } from "../services/search.service.js";
 import { procedure, router, withErrorHandling } from "../trpc.js";
 
 export const searchRouter = router({

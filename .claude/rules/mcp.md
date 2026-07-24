@@ -1,13 +1,14 @@
 ---
 paths:
-  - "apps/mcp/**"
+  - "apps/mcp-stdio/**"
+  - "packages/mcp/**"
 ---
 
 <!-- Mirrored to .cursor/rules/mcp.mdc — edit here first, then copy the body (not frontmatter) over. Do not edit the .mdc directly. -->
 
-# MCP server conventions (`apps/mcp`)
+# MCP server conventions (`packages/mcp`, `apps/mcp-stdio`)
 
-`apps/mcp` is a sibling app, not a rewrite: it imports and calls existing `apps/server` services directly (context assembly, search, entity, session services) rather than re-implementing business logic or going through HTTP/tRPC. Add a new service method if a tool needs one the server doesn't expose yet — don't inline query/business logic into a tool handler.
+`packages/mcp` is a sibling package, not a rewrite: it imports and calls existing `packages/core` services directly (context assembly, search, entity, session services) rather than re-implementing business logic or going through HTTP/tRPC. Add a new service method if a tool needs one `packages/core` doesn't expose yet — don't inline query/business logic into a tool handler. `apps/mcp-stdio` is the thin stdio-transport binary that wires `packages/mcp`'s `createMcpServer` up to a real client.
 
 ## Tool definition shape
 
@@ -15,11 +16,11 @@ Each tool is a thin adapter: Zod-validate the MCP input, call the service, shape
 
 ## File organization
 
-One file per tool under `apps/mcp/src/tools/`, each exporting a `register<ToolName>(server, deps)` function that calls `server.registerTool(...)` with the tool's name, description, and `inputSchema`. `apps/mcp/src/server.ts` only constructs the `McpServer` and calls each `register*` function — adding a tool is one new file under `tools/` plus one line in `server.ts`, never a new inline block there.
+One file per tool under `packages/mcp/src/tools/`, each exporting a `register<ToolName>(server, deps)` function that calls `server.registerTool(...)` with the tool's name, description, and `inputSchema`. `packages/mcp/src/server.ts` only constructs the `McpServer` and calls each `register*` function — adding a tool is one new file under `tools/` plus one line in `server.ts`, never a new inline block there.
 
-Shared dependencies (`db`, `fetchFn`, etc.) are typed once as `ToolDeps` in `apps/mcp/src/tools/types.ts` and destructured per tool file — don't redeclare the shape per file.
+Shared dependencies (`db`, `fetchFn`, etc.) are typed once as `ToolDeps` in `packages/mcp/src/tools/types.ts` and destructured per tool file — don't redeclare the shape per file.
 
-Wrap any handler whose underlying service can throw a typed error (e.g. `NotFoundError`) in `withToolErrors` (`apps/mcp/src/tools/errors.ts`) rather than hand-rolling a `try/catch`. It's safe to apply even to handlers that don't currently throw — it's a no-op that keeps every tool file the same shape and costs nothing if that changes later.
+Wrap any handler whose underlying service can throw a typed error (e.g. `NotFoundError`) in `withToolErrors` (`packages/mcp/src/tools/errors.ts`) rather than hand-rolling a `try/catch`. It's safe to apply even to handlers that don't currently throw — it's a no-op that keeps every tool file the same shape and costs nothing if that changes later.
 
 ## Read tools (`query_lore`, `get_entity`, `list_entities`, `prep_brief`)
 
@@ -39,4 +40,4 @@ Never persist a mutating write from a single call. If a ticket's exit condition 
 
 ## Error shape
 
-Tool errors return a structured result the MCP client can render (not a thrown exception that kills the connection): at minimum `{ error: { code, message } }`. Reuse the typed errors from `apps/server/src/lib/errors.ts` where the underlying service already throws one — map them the same way `withErrorHandling` does for tRPC, don't invent a parallel error taxonomy.
+Tool errors return a structured result the MCP client can render (not a thrown exception that kills the connection): at minimum `{ error: { code, message } }`. Reuse the typed errors from `packages/core/src/lib/errors.ts` where the underlying service already throws one — map them the same way `withErrorHandling` does for tRPC, don't invent a parallel error taxonomy.
