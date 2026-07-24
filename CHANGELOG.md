@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — G-002
+
+- **Milestone tasks now carry a `(T-###)`/`(Gated on: G-###)` tag recording their ticketing state**: `ticket-writer` and `/ungate` write this tag onto a milestone task's own line the moment a ticket is drafted or a gate is filed/resolved, so a scan of the milestone doc alone shows what's ticketed, what's gated, and what's neither — see `Docs/tickets/TICKET_SPEC.md`'s new "Milestone-doc annotations" section. `ticket-writer` also gained a "what's next" mode: invoked with no milestone named, it scans the active milestone doc for the first task that's neither done nor ticketed and proposes it, instead of requiring a slice to be named up front. Also resolved `Docs/tickets/gated/G-002` (milestone-doc sprawl): `MILESTONES_PT1.md`/`PT2.md`'s still-relevant v2 detail will be consolidated into a new `Docs/MILESTONES_V2.md` (T-044), and every stale cross-reference to them fixed (T-045) — see `Docs/IMPLEMENTATION_NOTES.md` § G-002.
+
 ### Changed — T-043
 
 - **The local test-database name list is no longer hand-copied in three places**: `scripts/test-db-names.sh` is now the single source of truth for `questlog`/`questlog_test`/`questlog_test_mcp`, sourced by `ci.yml`, `e2e-release-check.yml`, and `.claude/hooks/session-start.sh` (see `Docs/IMPLEMENTATION_NOTES.md` § T-027).
