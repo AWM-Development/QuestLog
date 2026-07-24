@@ -19,7 +19,7 @@ Branch: feat/m-remote/t-034-deploy-connect-claude-project
 Context files (load ONLY these):
   - Docs/DEPLOY_SETUP_CHECKLIST.md (the existing deploy checklist pattern to extend, not replace)
   - Docs/MILESTONES_V1_1_MCP.md (this ticket's own milestone task)
-  - apps/server/src/mcp/server.ts, apps/server/src/mcp/tools/*.ts (the full tool set being verified)
+  - packages/mcp/src/server.ts, packages/mcp/src/tools/*.ts (the full tool set being verified)
   - The v1 test plan table from the conversation that produced `Docs/MILESTONES_V1_1_MCP.md` (if not otherwise captured in a repo file by the time this runs, ask Alex for it rather than inventing a new one from scratch)
   - fly.dev.toml, fly.prod.toml
 

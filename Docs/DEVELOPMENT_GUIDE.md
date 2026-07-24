@@ -567,7 +567,7 @@ Since you're using Claude for implementation, keep these patterns in mind:
 The AI doesn't remember previous sessions. At minimum, provide:
 - This development guide
 - The relevant PRD section
-- The current file structure (`ls -R apps/server/src/`)
+- The current file structure (`ls -R apps/server/src/ packages/core/src/`)
 - Any relevant existing code (schemas, related services)
 
 ---

@@ -1,15 +1,16 @@
 ---
 paths:
   - "apps/server/**"
+  - "packages/core/**"
 ---
 
 <!-- Mirrored to .cursor/rules/backend.mdc — edit here first, then copy the body (not frontmatter) over. Do not edit the .mdc directly. -->
 
-# Backend conventions (`apps/server`)
+# Backend conventions (`apps/server`, `packages/core`)
 
 ## Router → Service → Drizzle
 
-Routers (`src/routers/*.ts`) are thin: validate input with a Zod schema (imported from `@questlog/shared` when the shape is cross-app, local otherwise), call one service method, return its result. No business logic in a router handler.
+Routers (`apps/server/src/routers/*.ts`) are thin: validate input with a Zod schema (imported from `@questlog/shared` when the shape is cross-app, local otherwise), call one service method, return its result. No business logic in a router handler.
 
 ```ts
 export const sessionRouter = router({
@@ -19,7 +20,7 @@ export const sessionRouter = router({
 });
 ```
 
-Services (`src/services/*.service.ts`) own business logic, receive the `Database` instance as their first argument (not imported as a module-level singleton — this is what makes `createTestDb()` swappable in tests), and throw typed errors (`lib/errors.ts`: `NotFoundError`, `ValidationError`, etc.) rather than returning null/undefined for failure. `withErrorHandling` in `trpc.ts` maps typed errors to tRPC error codes — add new mappings there, not ad hoc in a router.
+Services (`packages/core/src/services/*.service.ts`) own business logic, receive the `Database` instance as their first argument (not imported as a module-level singleton — this is what makes `createTestDb()` swappable in tests), and throw typed errors (`packages/core/src/lib/errors.ts`: `NotFoundError`, `ValidationError`, etc.) rather than returning null/undefined for failure. `withErrorHandling` in `apps/server/src/trpc.ts` maps typed errors to tRPC error codes — add new mappings there, not ad hoc in a router.
 
 ## Zod conventions
 
@@ -29,7 +30,7 @@ Every tRPC input has a Zod schema. Shapes shared with the frontend live in `pack
 
 Two isolation strategies, pick based on whether the code under test opens its own `db.transaction()`:
 
-- **Default:** wrap each test in `BEGIN`/`ROLLBACK` (`beforeEach`/`afterEach`), using `createTestDb()` from `src/db/test-helpers.ts`.
+- **Default:** wrap each test in `BEGIN`/`ROLLBACK` (`beforeEach`/`afterEach`), using `createTestDb()` from `packages/core/src/db/test-helpers.ts`.
 - **Code under test calls `db.transaction()` itself** (e.g. `conversation.service.ts` chat path): a nested raw `BEGIN` doesn't compose with Drizzle's transaction handling. Use `deleteCampaignTree()` (also in `test-helpers.ts`) for explicit FK-safe cleanup instead.
 
 The test DB (`questlog_test` on `:5433`) must be migrated before running tests — `global-setup.ts` only truncates, it does not run migrations. If a test fails with a missing-column error, run `db:migrate` against `questlog_test` first.

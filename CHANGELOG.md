@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Changed — T-042
+
+- **The domain layer and MCP tool-registration layer now live in their own packages, not inside `apps/server`**: `apps/server/src/{db,services,lib}` moved wholesale to `packages/core` (`@questlog/core`), and `apps/server/src/mcp` (the tool-registration layer T-028 relocated there) moved to `packages/mcp` (`@questlog/mcp`). `apps/mcp` renamed to `apps/mcp-stdio` (`@questlog/mcp-stdio`) — freed up by the `@questlog/mcp` package name — and is now honestly just a thin stdio-transport binary wiring `packages/mcp`'s tools to a real client, not where the MCP logic itself lives. `apps/server` keeps `routers/`, `server.ts`, `trpc.ts`, `main.ts`, and `process-imports.ts`, importing the moved code from `@questlog/core/...`. Purely structural — no tool name, description, input schema, service behavior, or response/error shape changed. This is what actually lets `apps/server` mount an HTTP transport for the same tool set (a later M-REMOTE ticket) without the circular TypeScript project reference that made T-028's `apps/server`-nested layout only a stopgap (`Docs/IMPLEMENTATION_NOTES.md` § T-042).
+
 ### Changed — T-028
 
 - **The MCP tool-registration layer now lives in `apps/server`, not `apps/mcp`**: all 7 MCP tools (`query_lore`, `prep_brief`, `list_campaigns`, `list_entities`, `get_entity`, `log_session`, `confirm_log_session`), their shared `ToolDeps`/`withToolErrors` helpers, and the `createMcpServer` factory moved to `apps/server/src/mcp/`. `apps/mcp` is now a thin stdio-only wrapper importing `createMcpServer` from `@questlog/server/mcp/server.js`. Purely structural — no tool name, description, input schema, or response/error shape changed. This unblocks a later ticket mounting the same tool set over an HTTP transport directly on `apps/server`, which would otherwise require a circular TypeScript project reference (`Docs/IMPLEMENTATION_NOTES.md` § T-028).

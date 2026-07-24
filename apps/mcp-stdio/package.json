@@ -1,0 +1,34 @@
+{
+	"name": "@questlog/mcp-stdio",
+	"version": "0.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "tsx --env-file=../../.env src/main.ts",
+		"build": "node scripts/build.mjs",
+		"test": "vitest run",
+		"test:e2e": "vitest run --config vitest.e2e.config.ts",
+		"typecheck": "tsc -b",
+		"lint": "biome check .",
+		"smoke": "tsx scripts/smoke.ts"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.29.0",
+		"@questlog/core": "workspace:*",
+		"@questlog/mcp": "workspace:*",
+		"@questlog/shared": "workspace:*",
+		"zod": "^3.24.2"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^1.9.4",
+		"@types/node": "^22.13.10",
+		"dotenv": "^17.3.1",
+		"drizzle-orm": "^0.45.1",
+		"esbuild": "^0.28.1",
+		"form-data": "^4.0.5",
+		"postgres": "^3.4.8",
+		"tsx": "^4.19.3",
+		"typescript": "^5.8.2",
+		"vitest": "^3.0.9"
+	}
+}

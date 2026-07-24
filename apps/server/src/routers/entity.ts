@@ -1,6 +1,6 @@
+import { entityService } from "@questlog/core/services/entity.service.js";
 import { EntityCreateInput, EntityDetectSpansInput } from "@questlog/shared";
 import { z } from "zod";
-import { entityService } from "../services/entity.service.js";
 import { procedure, router, withErrorHandling } from "../trpc.js";
 
 export const entityRouter = router({
