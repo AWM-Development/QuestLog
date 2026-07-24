@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-029
+
+- **`apps/server` now speaks OAuth 2.1 for the future remote MCP endpoint**: `GET /.well-known/oauth-authorization-server` (RFC 8414 metadata), `POST /register` (RFC 7591 Dynamic Client Registration, public clients only), `GET`/`POST /authorize` (a minimal passphrase-gated HTML form issuing PKCE-bound, single-use authorization codes), and `POST /token` (`authorization_code` and `refresh_token` grants, with refresh-token rotation). Scoped to a single fixed identity gated by a new `MCP_ACCESS_PASSPHRASE` env var, not a real multi-user identity provider — see `Docs/IMPLEMENTATION_NOTES.md` § T-029 for why. New `mcp_oauth_clients`/`mcp_oauth_codes`/`mcp_oauth_tokens` tables store all bearer secrets (codes, access tokens, refresh tokens) as SHA-256 hashes, never raw. This ticket only builds the authorization-server half — mounting the protected MCP transport itself is a later ticket (M-REMOTE.3).
+
 ### Changed — T-043
 
 - **The local test-database name list is no longer hand-copied in three places**: `scripts/test-db-names.sh` is now the single source of truth for `questlog`/`questlog_test`/`questlog_test_mcp`, sourced by `ci.yml`, `e2e-release-check.yml`, and `.claude/hooks/session-start.sh` (see `Docs/IMPLEMENTATION_NOTES.md` § T-027).
