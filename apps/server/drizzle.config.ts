@@ -7,7 +7,8 @@ import { defineConfig } from "drizzle-kit";
 // use (IMPLEMENTATION_NOTES.md §"Defense-in-depth runtime guard") fails to
 // resolve here specifically. Inlined fallback, kept in sync with
 // `packages/core/src/db/test-db-url.ts`'s `testDbUrl("questlog")` output.
-const FALLBACK_DATABASE_URL = "postgresql://questlog:questlog@localhost:5433/questlog";
+const FALLBACK_DATABASE_URL =
+	"postgresql://questlog:questlog@localhost:5433/questlog";
 
 export default defineConfig({
 	schema: "../../packages/core/src/db/schema/tables.ts",
