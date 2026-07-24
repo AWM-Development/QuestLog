@@ -79,6 +79,19 @@ Two distinct branch kinds exist in this pipeline, and they're named differently 
 
 Both land in `develop` only — never `main`. A `git branch -a` scan is enough to tell ticket-planning PRs (`tickets/*`) apart from ticket-implementation PRs (`feat/*/t-###-*`) without reading any of them.
 
+## Milestone-doc annotations
+
+Every milestone task line (`Docs/MILESTONES_V1_MCP.md`, `MILESTONES_V1_1_MCP.md`, and any successor) carries a machine-readable tag recording its ticketing state, so a scan of the milestone doc alone — no cross-referencing `Docs/tickets/` needed — tells you what's been ticketed and what hasn't:
+
+- **Ticketed** — the moment a ticket is drafted for a task (`queue/` or `backlog/`, gated or not), append `(T-###)` to that task's line, or `(T-###, T-###)` if the task split into more than one ticket. `ticket-writer` and `/ungate` are both responsible for writing this the instant they create the file — it's part of drafting the ticket, not a separate cleanup pass.
+- **Gated, no ticket yet** — if a task's Scope can't honestly be written until a 🎨/🧠 decision lands (`GATE_SPEC.md`'s "Scope can't honestly be written yet" case), append `(Gated on: G-###)` instead. No ticket id exists yet, so this tag is the only signal a scan has that the task isn't simply unstarted.
+- **Gated, ticket already drafted** — if a ticket *was* drafted into `backlog/` carrying its own `Gated on:` field (`GATE_SPEC.md`'s "Scope is already knowable" case), append both: `(T-###, Gated on: G-###)`.
+- **Done** — the task's own `[ ]`/`[x]` checkbox, unchanged. A ticketed task can sit at `[ ]` for a long time before it ships — ticketed and done are independent axes.
+
+`/ungate` is responsible for updating this tag the moment a gate resolves: drafting the real ticket for a "no ticket yet" task replaces `(Gated on: G-###)` with `(T-###)`; promoting an already-drafted `backlog/` ticket out of its `Gated on:` state strips the `, Gated on: G-###` suffix, leaving just `(T-###)`. A milestone doc line still reading `Gated on:` for a gate that's already in `gated/resolved/` is a sync bug — the same category `GATE_SPEC.md`'s "Keeping tickets and gates in sync" section already treats a stale `Gated on:` ticket field as, just on the milestone doc instead of a ticket file.
+
+This tag is what lets `ticket-writer`'s "what's next" mode (see its own SKILL.md) scan a milestone doc directly for the next unticketed, ungated task, instead of requiring a human to name one.
+
 ## Lifecycle
 
 `Docs/tickets/backlog/` (optional) → `Docs/tickets/queue/` → (nightly executor picks up the oldest ticket that isn't already shipped or blocked — see below) → `Docs/tickets/in-progress/` → `Docs/tickets/done/` or `Docs/tickets/blocked/`. An empty `queue/` is the entire on/off switch for nightly spend — see `Docs/MILESTONES_V1_MCP.md`'s parent handoff for the pre-flight check that makes an empty night cost one cheap tool call.

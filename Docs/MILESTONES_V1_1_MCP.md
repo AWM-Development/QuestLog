@@ -17,8 +17,7 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 - **CI/CD scope:** the existing fast, local-Postgres, ephemeral-per-run PR-gate test suite stays exactly as it is (it truncates all tables every run — pointing it at a real branch would destroy real dev data). A **separate**, additive post-merge smoke-test workflow covers verification against real infrastructure instead.
 - **Audit scope:** covers both technical architecture/security rigor and outside-reviewer presentation quality ("portfolio ready" — both, per Alex).
 
-**Open gates** (found during a process audit against `Docs/tickets/GATE_SPEC.md`, after that mechanism landed on `develop` mid-milestone):
-- **`G-001`** (`Docs/tickets/gated/G-001-write-tool-preview-confirm-scope.md`) — whether `.claude/rules/mcp.md`'s preview/confirm/audit requirement applies to every MCP write tool or only ones mutating existing data. Blocks M-REMOTE.4 and M-REMOTE.5. Resolve via `/ungate`.
+**Open gates:** none currently. `G-001` (`Docs/tickets/gated/resolved/G-001-write-tool-preview-confirm-scope.md`) — whether `.claude/rules/mcp.md`'s preview/confirm/audit requirement applies to every MCP write tool or only ones mutating existing data, blocking M-REMOTE.4 and M-REMOTE.5 — was resolved via `/ungate` on 2026-07-22 (narrow reading: preview/confirm applies to mutations of existing data, not additive-only writes). Both tasks' `Gated on:` tags below are cleared accordingly.
 
 ---
 
@@ -42,12 +41,12 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   New route (e.g. `POST /mcp`) using `StreamableHTTPServerTransport`, protected by M-REMOTE.2's bearer-token validation, serving the tool set from M-REMOTE.1's relocated factory.
   Exit: an MCP client can complete the full handshake (discover → authorize → connect → `tools/list`) against a running `apps/server` instance and see all 7 existing tools.
 
-- [ ] **M-REMOTE.4 — `ingest_text` MCP tool** (T-031, `Gated on: G-001`)
-  Paste a document's text directly into a chat and have it chunked + embedded — the missing piece for "upload a campaign document" without leaving Claude. Wraps the existing `sourceService.createFromText` path, but actually triggers `importService.processSource` (unlike the current `source.importText` tRPC mutation, which only creates a `pending` row). **Gated on G-001**: whether this can be a direct write or needs `log_session`-style preview/confirm — see `Docs/tickets/gated/G-001-write-tool-preview-confirm-scope.md`.
+- [ ] **M-REMOTE.4 — `ingest_text` MCP tool** (T-031)
+  Paste a document's text directly into a chat and have it chunked + embedded — the missing piece for "upload a campaign document" without leaving Claude. Wraps the existing `sourceService.createFromText` path, but actually triggers `importService.processSource` (unlike the current `source.importText` tRPC mutation, which only creates a `pending` row). **Resolved via G-001** (narrow reading — direct write, no preview/confirm needed, since this only ever inserts new rows): see `Docs/tickets/gated/resolved/G-001-write-tool-preview-confirm-scope.md`.
   Exit: calling the tool with real text produces a `done`-status source whose content is retrievable via `query_lore`.
 
-- [ ] **M-REMOTE.5 — `create_entity` / entity-update MCP tools** (T-032, `Gated on: G-001`)
-  Author NPCs, locations, factions, items, and arcs directly from a session instead of only being able to look them up. **Gated on G-001**, same question as M-REMOTE.4.
+- [ ] **M-REMOTE.5 — `create_entity` / entity-update MCP tools** (T-032)
+  Author NPCs, locations, factions, items, and arcs directly from a session instead of only being able to look them up. **Resolved via G-001**, same reading as M-REMOTE.4.
   Exit: an entity created via the tool is immediately visible to `get_entity`/`list_entities`.
 
 - [ ] **M-REMOTE.6 — Onboarding surface** (T-033)
