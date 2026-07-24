@@ -20,7 +20,7 @@ Context files (load broadly):
   - README.md (root — the first thing an outside reviewer opens)
   - CLAUDE.md (accurate project description to draw from, not to copy verbatim — this file is written for an agent, not a portfolio reader)
   - Docs/PRD.md (product framing, for an accurate "what is this" summary)
-  - apps/mcp/README.md (the existing, already-good example of user-facing docs in this repo — matches the tone/thoroughness to aim for elsewhere)
+  - apps/mcp-stdio/README.md (the existing, already-good example of user-facing docs in this repo — matches the tone/thoroughness to aim for elsewhere)
   - Docs/MILESTONES_V1_MCP.md, Docs/MILESTONES_V1_1_MCP.md (accurate feature/status list)
 
 Mockup: none
@@ -33,12 +33,13 @@ Scope:
   1. **Root `README.md`** — does it exist, and does it accurately explain
      what QuestLog is (single-user AI campaign manager, MCP-first
      interface), how to run it locally, and how to connect a Claude
-     client to it (both the local-stdio path from `apps/mcp/README.md`
+     client to it (both the local-stdio path from `apps/mcp-stdio/README.md`
      and, once shipped, the remote Custom Connector path from M-REMOTE)?
      A reviewer skimming for 2 minutes should understand the project's
      shape without opening a second file.
   2. **Architecture overview** — a short doc or README section describing
-     the monorepo shape (`apps/server`, `apps/mcp`, `packages/shared`),
+     the monorepo shape (`apps/server`, `apps/mcp-stdio`, `packages/core`,
+     `packages/mcp`, `packages/shared`),
      the MCP-first pivot and why, and a one-paragraph explanation of the
      remote-MCP + OAuth shim design from M-REMOTE — enough for a reviewer
      to understand a real architectural decision was made deliberately,

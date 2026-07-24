@@ -10,7 +10,7 @@ alwaysApply: false
 
 ## Migration workflow — journal only, never `drizzle-kit push`
 
-CI applies migrations via `pnpm --filter @questlog/server db:migrate`, which only runs files listed in `apps/server/src/db/migrations/meta/_journal.json`. `drizzle-kit push` edits the live schema directly and bypasses the journal — mixing the two leaves SQL on disk that CI never applies (this has happened before: see `Docs/IMPLEMENTATION_NOTES.md §Database Migrations` for the incident).
+CI applies migrations via `pnpm --filter @questlog/server db:migrate`, which only runs files listed in `packages/core/src/db/migrations/meta/_journal.json`. `drizzle-kit push` edits the live schema directly and bypasses the journal — mixing the two leaves SQL on disk that CI never applies (this has happened before: see `Docs/IMPLEMENTATION_NOTES.md §Database Migrations` for the incident).
 
 **Rule:** every schema change (`src/db/schema/*.ts`) produces a journaled migration. If you ever run `push` against a dev DB, immediately run `drizzle-kit generate` and commit both the SQL file and the journal entry. CI's migration-guard job hard-fails a PR that changes `schema/` without a corresponding file in `migrations/`.
 

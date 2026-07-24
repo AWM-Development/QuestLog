@@ -1,5 +1,5 @@
+import { conversationService } from "@questlog/core/services/conversation.service.js";
 import { z } from "zod";
-import { conversationService } from "../services/conversation.service.js";
 import { procedure, router, withErrorHandling } from "../trpc.js";
 import { conversationChatInputSchema } from "./conversation.schemas.js";
 

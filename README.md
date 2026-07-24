@@ -13,12 +13,15 @@ QuestLog is a TypeScript monorepo managed with **pnpm workspaces** + **Turborepo
 ```
 questlog/
 ├── apps/
-│   ├── web/      → React + Vite frontend (chat UI, library, ingestion)
-│   └── server/   → Fastify + tRPC backend (ingestion pipeline, agent loop, DB)
+│   ├── web/         → React + Vite frontend (chat UI, library, ingestion)
+│   ├── server/      → Fastify + tRPC backend (ingestion pipeline, agent loop)
+│   └── mcp-stdio/   → MCP server, stdio transport (v1's primary interface)
 ├── packages/
-│   └── shared/   → Shared types, Zod validators, tRPC contracts
-├── e2e/          → Playwright end-to-end tests
-└── Docs/         → PRD, milestones, design system, implementation notes
+│   ├── core/        → Domain layer: DB, services, shared backend lib
+│   ├── mcp/         → MCP tool definitions (query_lore, log_session, etc.)
+│   └── shared/      → Shared types, Zod validators, tRPC contracts
+├── e2e/             → Playwright end-to-end tests
+└── Docs/            → PRD, milestones, design system, implementation notes
 ```
 
 **Stack at a glance**

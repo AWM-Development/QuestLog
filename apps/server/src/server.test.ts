@@ -1,5 +1,5 @@
+import { createTestDb } from "@questlog/core/db/test-helpers.js";
 import { afterAll, describe, expect, it } from "vitest";
-import { createTestDb } from "./db/test-helpers.js";
 import { buildApp } from "./server.js";
 
 const { db, close } = createTestDb();

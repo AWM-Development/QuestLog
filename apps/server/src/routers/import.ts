@@ -1,9 +1,9 @@
+import { sourceService } from "@questlog/core/services/source.service.js";
 import {
 	GetSourceInput,
 	ListSourcesInput,
 	UploadSourceInput,
 } from "@questlog/shared";
-import { sourceService } from "../services/source.service.js";
 import { procedure, router, withErrorHandling } from "../trpc.js";
 
 export const importRouter = router({

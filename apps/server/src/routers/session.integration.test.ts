@@ -1,3 +1,4 @@
+import { createTestDb } from "@questlog/core/db/test-helpers.js";
 import { sql } from "drizzle-orm";
 import {
 	afterAll,
@@ -8,7 +9,6 @@ import {
 	expect,
 	it,
 } from "vitest";
-import { createTestDb } from "../db/test-helpers.js";
 import { buildApp } from "../server.js";
 
 const { db, close } = createTestDb();
