@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+	boolean,
 	customType,
 	index,
 	integer,
@@ -287,5 +288,57 @@ export const writeRequests = pgTable(
 	},
 	(table) => [
 		index("write_requests_campaign_id_idx").using("btree", table.campaignId),
+	],
+);
+
+// Single fixed-identity OAuth 2.1 shim for the remote MCP endpoint (M-REMOTE.2)
+// — Dynamic Client Registration, not a real multi-tenant IdP. Clients are
+// public (PKCE, no client_secret), so client_id is a public identifier, not
+// a secret. The bearer-secret columns (code, access_token, refresh_token)
+// store a SHA-256 hash of the opaque random value handed to the caller,
+// never the raw value, so a DB leak alone doesn't yield usable credentials.
+export const mcpOauthClients = pgTable("mcp_oauth_clients", {
+	clientId: text("client_id").primaryKey(),
+	redirectUri: text("redirect_uri").notNull(),
+	registeredAt: timestamp("registered_at", { withTimezone: true })
+		.defaultNow()
+		.notNull(),
+});
+
+export const mcpOauthCodes = pgTable(
+	"mcp_oauth_codes",
+	{
+		code: text("code").primaryKey(),
+		clientId: text("client_id")
+			.references(() => mcpOauthClients.clientId)
+			.notNull(),
+		codeChallenge: text("code_challenge").notNull(),
+		resource: text("resource").notNull(),
+		expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+		used: boolean("used").notNull().default(false),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+	},
+	(table) => [
+		index("mcp_oauth_codes_client_id_idx").using("btree", table.clientId),
+	],
+);
+
+export const mcpOauthTokens = pgTable(
+	"mcp_oauth_tokens",
+	{
+		accessToken: text("access_token").primaryKey(),
+		refreshToken: text("refresh_token").notNull().unique(),
+		clientId: text("client_id")
+			.references(() => mcpOauthClients.clientId)
+			.notNull(),
+		expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+	},
+	(table) => [
+		index("mcp_oauth_tokens_client_id_idx").using("btree", table.clientId),
 	],
 );
