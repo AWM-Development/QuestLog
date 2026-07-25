@@ -93,6 +93,31 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 - [ ] **M-AUDIT.4 — Portfolio polish pass** (T-040)
   README quality, an architecture overview, demo script/screenshots, "how to run this" clarity for someone who has never seen the repo. Interactive — "does this read well to an outside reviewer" is a judgment call, not something to automate blind.
 
+## Milestone M-OBS: Executor Observability & Efficiency Tracking
+
+**Goal:** instrument the nightly executor pipeline itself — real token usage, theoretical metered cost, wall-clock duration, and the executor's own qualitative account of why a run ran long or stayed tight — so the ticket-discipline this whole pipeline depends on can be measured and tuned instead of guessed at, and so this system reads as a genuine, data-backed case for lean automated AI code-gen rather than an assumed one.
+
+**Context:** No PRD section covers this — it's new scope discovered during a planning session auditing whether the "narrow ticket" discipline was actually working, once it became clear Anthropic exposes no per-run token-usage API on Alex's plan (not for Alex, not for the executor about itself). See the conversation this doc was drafted in for the full reasoning.
+
+### Tasks
+
+- [ ] **M-OBS.1 — Executor usage-capture hook** (T-046)
+  A Claude Code `Stop` hook that parses the run's own JSONL transcript (the only ground truth for token usage available on this account) and writes a per-run artifact — tokens, theoretical cost at current Sonnet 5 rates, duration, turn count — tagged by ticket id or `empty_run: true` for no-ticket-queued runs.
+  Exit: a simulated hook invocation against a fixture transcript produces the expected `*.usage.json` shape, including the empty-run case.
+
+- [ ] **M-OBS.2 — Efficiency-notes reporting convention** (T-047)
+  A required "Efficiency notes" section in `REPORT_TEMPLATE.md`/`BLOCKED_TEMPLATE.md` where the executor self-reports *why* a run ran long or tight (e.g. superfluous context, pre-existing code needing a fix before the real work could start) — the qualitative half T-046's objective data can't provide on its own.
+  Exit: both templates carry the new section; `EXECUTOR_ROUTINE.md` explicitly instructs writing it.
+
+- [ ] **M-OBS.3 — Persist usage/efficiency data to a queryable store** (Gated on: G-003)
+  Ingest T-046's per-run JSON artifacts (and T-047's notes) into a real, queryable store so trends can be computed over many runs instead of by hand. **Blocked on deciding where** — new tables in the existing `packages/core`/Neon schema, or a fully separate store — see `Docs/tickets/gated/G-003-observability-data-storage-location.md`.
+
+- [ ] **M-OBS.4 — API endpoint(s) serving usage/efficiency data** (Gated on: G-003)
+  Read path for whatever M-OBS.3 lands on — per-ticket and aggregate views (tokens, cost, duration, diff-size correlation, efficiency notes). Shape depends on G-003's resolution, same as M-OBS.3.
+
+- [ ] **M-OBS.5 — Observability dashboard UI** (Gated on: G-004)
+  A standalone dashboard (explicitly outside the v1 SourcesPage-only web surface — see `CLAUDE.md`) surfacing M-OBS.4's data: trends per ticket, cost, duration, diff-size correlation, and the qualitative efficiency notes. **Blocked on a design decision** — "designed with Claude design" was named as intent, not a concrete IA/visual answer — see `Docs/tickets/gated/G-004-observability-dashboard-design.md`.
+
 ### Ordering constraint
 
-M-REMOTE.2 (T-029) has no code dependency on M-REMOTE.1 — it's standalone OAuth-server plumbing that never touches the relocated tool factory — so it can ship in parallel with, or even before, M-REMOTE.1. Everything else in M-REMOTE that isn't M-REMOTE.2 does depend on M-REMOTE.1: M-REMOTE.1 → (M-REMOTE.4, M-REMOTE.5, M-REMOTE.6 in any order) → M-REMOTE.3 (needs both M-REMOTE.1 and M-REMOTE.2) → M-REMOTE.7 (needs everything else in M-REMOTE). M-REMOTE.4 and M-REMOTE.5 additionally wait on `G-001` (`Docs/tickets/gated/G-001-write-tool-preview-confirm-scope.md`) resolving via `/ungate`, independent of the merge-dependency chain. M-CICD.2 → M-CICD.3 (reuses its script). M-AUDIT.2 waits on the M-REMOTE and M-CICD code tickets it reviews; M-AUDIT.1/3/4 are interactive and pulled in by Alex when the rest of v1.1 is far enough along, not auto-promoted.
+M-REMOTE.2 (T-029) has no code dependency on M-REMOTE.1 — it's standalone OAuth-server plumbing that never touches the relocated tool factory — so it can ship in parallel with, or even before, M-REMOTE.1. Everything else in M-REMOTE that isn't M-REMOTE.2 does depend on M-REMOTE.1: M-REMOTE.1 → (M-REMOTE.4, M-REMOTE.5, M-REMOTE.6 in any order) → M-REMOTE.3 (needs both M-REMOTE.1 and M-REMOTE.2) → M-REMOTE.7 (needs everything else in M-REMOTE). M-REMOTE.4 and M-REMOTE.5 additionally wait on `G-001` (`Docs/tickets/gated/G-001-write-tool-preview-confirm-scope.md`) resolving via `/ungate`, independent of the merge-dependency chain. M-CICD.2 → M-CICD.3 (reuses its script). M-AUDIT.2 waits on the M-REMOTE and M-CICD code tickets it reviews; M-AUDIT.1/3/4 are interactive and pulled in by Alex when the rest of v1.1 is far enough along, not auto-promoted. M-OBS.1 and M-OBS.2 have no dependency on each other or on anything else in this doc and can ship immediately. M-OBS.3 and M-OBS.4 wait on `G-003` (`Docs/tickets/gated/G-003-observability-data-storage-location.md`); M-OBS.4 additionally depends on M-OBS.3's code once it ships. M-OBS.5 waits on `G-004` (`Docs/tickets/gated/G-004-observability-dashboard-design.md`) and on M-OBS.4's code once it exists.
