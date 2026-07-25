@@ -2,7 +2,7 @@
 
 **Purpose:** Non-obvious decisions and gotchas that aren't derivable from reading the code. Read at the start of every session. Add an entry when you make a non-obvious decision.
 
-**Last Updated:** 2026-07-18
+**Last Updated:** 2026-07-25
 
 ## Session notes (Milestone 4.1) — Main-area editor + dock model (revised)
 
@@ -874,3 +874,14 @@ This session's sandbox had `packages/core/`, `packages/mcp/`, and `apps/mcp-stdi
 
 ## G-002 — Milestone-doc sprawl (2026-07-24)
 Decided: consolidate `MILESTONES_PT1.md`/`PT2.md`'s still-relevant v2 detail into a new, current `Docs/MILESTONES_V2.md` (re-auditing each task against the post-pivot shape, not transcribing verbatim), then retire the PT files outright — v2 is deferred, not abandoned. Full rationale on `Docs/tickets/gated/resolved/G-002-milestone-docs-cleanup-and-ticketing-reference-audit.md`'s Resolution section; the work itself is T-044 (consolidation) and T-045 (fixing every stale cross-reference, blocked on T-044).
+
+## T-030 — Mount Streamable HTTP MCP transport on `apps/server` (2026-07-25)
+
+### The bearer preHandler hook must live inside a Fastify-encapsulated `app.register()`, not a global `app.addHook`
+`/mcp`'s bearer-token validation (`apps/server/src/routes/mcp-http.routes.ts`) is a `preHandler` hook, but adding it directly on the top-level `app` (the way `buildApp` registers everything else in `server.ts`) would gate every route in the app, including the unauthenticated `GET /.well-known/oauth-protected-resource` metadata endpoint that a client needs to fetch *before* it has a token. Fastify hooks only respect route scoping when added inside an `app.register(async (scope) => {...})` encapsulation context — a hook added on the outer `app` instance applies globally regardless of which routes are defined where. `registerMcpHttpRoutes` therefore registers the protected-resource metadata route directly on the outer `app`, then opens a nested `app.register(...)` scope containing only the `preHandler` hook and the `POST`/`GET`/`DELETE /mcp` routes — the encapsulation boundary, not a URL string comparison inside the hook, is what keeps the metadata route public.
+
+### Session-scoped transport `Map` has no eviction — an accepted tradeoff for a single-user server, not an oversight
+`StreamableHTTPServerTransport` in stateful mode (`sessionIdGenerator: () => randomUUID()`) needs the *same* transport instance reused across a session's requests — mirrors the SDK's own reference stateful example (`examples/server/simpleStreamableHttp.js`), adapted to Fastify's `request.raw`/`reply.raw`. Sessions are tracked in an in-memory `Map<sessionId, transport>`, removed only via `transport.onclose` (fired on an explicit `DELETE /mcp` from the client). A client that disconnects without sending `DELETE` leaks its entry for the life of the process. Acceptable for QuestLog's single-user, local-first model (CLAUDE.md) where a handful of long-lived sessions is the expected load, not something a multi-tenant deployment could reuse as-is — call this out explicitly if this transport code is ever adapted for more than one concurrent user.
+
+### `db.$client.end()` is required for any one-shot script that imports `@questlog/core/db/index.js`'s `db` singleton
+`apps/server/scripts/mcp-remote-smoke.ts` (a standalone script, not part of `pnpm test`) hung indefinitely after printing its final "PASS" line until `db.$client.end()` was added in a `finally` block alongside `app.close()`. The shared `db` export wraps a `postgres()` client that keeps its TCP socket open until explicitly ended — fine for a long-running server process (`main.ts` never needs to exit), but any one-shot script importing the same singleton needs to close it itself or the Node process never exits on its own.

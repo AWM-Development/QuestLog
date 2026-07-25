@@ -24,6 +24,7 @@ import {
 	conversationStreamBodySchema,
 	conversationStreamParamsSchema,
 } from "./routers/conversation.schemas.js";
+import { registerMcpHttpRoutes } from "./routes/mcp-http.routes.js";
 import { registerMcpOauthRoutes } from "./routes/mcp-oauth.routes.js";
 import { createContextFactory } from "./trpc.js";
 
@@ -105,6 +106,7 @@ export function buildApp({
 	app.register(formbody);
 
 	registerMcpOauthRoutes(app, { db, accessPassphrase });
+	registerMcpHttpRoutes(app, { db });
 
 	app.get("/health", async () => {
 		return { status: "ok" };

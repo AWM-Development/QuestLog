@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-030
+
+- **The MCP tool set is now reachable remotely, over HTTP**: `POST /mcp` on `apps/server` speaks the MCP Streamable HTTP transport (`@modelcontextprotocol/sdk`'s `StreamableHTTPServerTransport`), serving the same 7 tools (`query_lore`, `prep_brief`, `list_campaigns`, `list_entities`, `get_entity`, `log_session`, `confirm_log_session`) `apps/mcp-stdio` already serves locally over stdio. Every request to `/mcp` requires a valid bearer token from T-029's OAuth shim — a missing or invalid token gets a `401` with a `WWW-Authenticate` header pointing at the new `GET /.well-known/oauth-protected-resource` endpoint (RFC 9728 Protected Resource Metadata), so a compliant client can discover how to authenticate. A scripted MCP client can now complete the full remote handshake — discover, register, authorize, exchange for a token, connect, `tools/list` — against a locally-running `apps/server` instance (`apps/server/scripts/mcp-remote-smoke.ts`). Connecting a real Claude.ai Custom Connector to a deployed instance is a later ticket (M-REMOTE.7).
+
 ### Added — T-029
 
 - **`apps/server` now speaks OAuth 2.1 for the future remote MCP endpoint**: `GET /.well-known/oauth-authorization-server` (RFC 8414 metadata), `POST /register` (RFC 7591 Dynamic Client Registration, public clients only), `GET`/`POST /authorize` (a minimal passphrase-gated HTML form issuing PKCE-bound, single-use authorization codes), and `POST /token` (`authorization_code` and `refresh_token` grants, with refresh-token rotation). Scoped to a single fixed identity gated by a new `MCP_ACCESS_PASSPHRASE` env var, not a real multi-user identity provider — see `Docs/IMPLEMENTATION_NOTES.md` § T-029 for why. New `mcp_oauth_clients`/`mcp_oauth_codes`/`mcp_oauth_tokens` tables store all bearer secrets (codes, access tokens, refresh tokens) as SHA-256 hashes, never raw. This ticket only builds the authorization-server half — mounting the protected MCP transport itself is a later ticket (M-REMOTE.3).

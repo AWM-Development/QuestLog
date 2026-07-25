@@ -45,6 +45,13 @@ Scope:
      merge. Does that shared-process model hold up if v2's chat UI
      (currently deferred, not v1.1 scope) ever comes back into play, or
      does it need isolating first?
+     Concretely check T-030's `/mcp` session-transport `Map`
+     (`apps/server/src/routes/mcp-http.routes.ts`, `IMPLEMENTATION_NOTES.md`
+     § T-030): in-memory, no TTL/eviction, entries only cleared on a
+     client's explicit `DELETE /mcp`. Accepted there as a single-user
+     tradeoff — re-examine it here now that the review has the actual
+     usage pattern in front of it, and file a ticket (TTL-based eviction,
+     or whatever the finding calls for) if it no longer holds.
   3. **Single-region, single-instance assumptions** — `fly.dev.toml`/
      `fly.prod.toml` both pin one region, `min_machines_running = 1`. Is
      that a real constraint for v2's scope, or fine indefinitely for a
