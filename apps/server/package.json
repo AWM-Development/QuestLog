@@ -18,6 +18,7 @@
 	},
 	"dependencies": {
 		"@fastify/cors": "^11.2.0",
+		"@fastify/formbody": "^8.0.2",
 		"@fastify/multipart": "^9.0.0",
 		"@questlog/core": "workspace:*",
 		"@questlog/shared": "workspace:*",

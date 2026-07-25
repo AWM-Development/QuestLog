@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import cors from "@fastify/cors";
+import formbody from "@fastify/formbody";
 import multipart from "@fastify/multipart";
 import type { Database } from "@questlog/core/db/index.js";
 import { mapDomainError } from "@questlog/core/lib/errors.js";
@@ -23,6 +24,7 @@ import {
 	conversationStreamBodySchema,
 	conversationStreamParamsSchema,
 } from "./routers/conversation.schemas.js";
+import { registerMcpOauthRoutes } from "./routes/mcp-oauth.routes.js";
 import { createContextFactory } from "./trpc.js";
 
 /** MIME types accepted for upload, per PRD §4.1 */
@@ -61,6 +63,8 @@ export interface BuildAppOptions {
 	autoProcessUploads?: boolean;
 	/** Forwarded to `processSource` when `autoProcessUploads` is set (e.g. to inject a mock `fetchFn` in tests). */
 	autoProcessOptions?: ProcessOptions;
+	/** Shared passphrase gating the MCP OAuth shim's `/authorize` screen. Defaults to `MCP_ACCESS_PASSPHRASE`; unset in most existing tests, which never hit those routes. */
+	accessPassphrase?: string;
 }
 
 /** Postgres SQLSTATE from driver-wrapped errors (42P01 = undefined_table). */
@@ -77,12 +81,15 @@ export function buildApp({
 	storage: storageOption,
 	autoProcessUploads = false,
 	autoProcessOptions,
+	accessPassphrase: accessPassphraseOption,
 }: BuildAppOptions) {
 	const storage =
 		storageOption ??
 		createLocalFilesystemStorage({
 			basePath: process.env.UPLOAD_PATH ?? "uploads",
 		});
+	const accessPassphrase =
+		accessPassphraseOption ?? process.env.MCP_ACCESS_PASSPHRASE;
 	const app = Fastify();
 
 	app.register(cors, {
@@ -94,6 +101,10 @@ export function buildApp({
 			fileSize: 50 * 1024 * 1024, // 50 MB per PRD §4.1
 		},
 	});
+
+	app.register(formbody);
+
+	registerMcpOauthRoutes(app, { db, accessPassphrase });
 
 	app.get("/health", async () => {
 		return { status: "ok" };

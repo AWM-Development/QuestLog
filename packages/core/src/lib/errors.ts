@@ -39,6 +39,25 @@ export class LlmApiError extends Error {
 }
 
 /**
+ * OAuth 2.1 spec-shaped error (RFC 6749 §5.2: an `error` code from the
+ * spec's fixed vocabulary plus a human-readable `error_description`).
+ * Thrown by mcp-oauth.service and mapped directly to the OAuth REST routes'
+ * JSON error body — deliberately not funneled through `mapDomainError`,
+ * which is shaped for tRPC/SSE consumers, not OAuth clients.
+ */
+export class OAuthError extends Error {
+	public readonly oauthErrorCode: string;
+	public readonly status: number;
+
+	constructor(oauthErrorCode: string, message: string, status = 400) {
+		super(message);
+		this.name = "OAuthError";
+		this.oauthErrorCode = oauthErrorCode;
+		this.status = status;
+	}
+}
+
+/**
  * Maps a domain error to an HTTP status code and message.
  * Used by both the tRPC `withErrorHandling` wrapper and the SSE streaming endpoint
  * so error classification lives in one place.
