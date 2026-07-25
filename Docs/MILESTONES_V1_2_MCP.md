@@ -18,7 +18,7 @@ This milestone builds the actual instrumentation instead of continuing to guess:
 
 ## Milestone M-OBS: Executor Observability & Efficiency Tracking — 🎯 PRIMARY v1.2 MILESTONE
 
-**Goal:** instrument the nightly executor pipeline itself — real token usage, theoretical metered cost, wall-clock duration, and the executor's own qualitative account of why a run ran long or stayed tight — so the ticket-discipline this whole pipeline depends on can be measured and tuned instead of guessed at, and so this system reads as a genuine, data-backed case for lean automated AI code-gen rather than an assumed one.
+**Goal:** instrument the nightly executor pipeline itself — real token usage, theoretical metered cost, wall-clock duration, and the executor's own qualitative account of why a run ran long or stayed tight — so the ticket-discipline this whole pipeline depends on can be measured and tuned instead of guessed at, and so this system reads as a genuine, data-backed case for lean automated AI code-gen rather than an assumed one. The dashboard is explicitly a "one stop shop": trend metrics **and** a browsable log of each ticket's morning/blocked report, doubling as Alex's daily review surface for what the executor did the night before.
 
 **Context:** No PRD section covers this — it's new scope discovered during the planning session described above. See that conversation for the full reasoning, including why every Anthropic-side API for this data was ruled out first.
 
@@ -32,14 +32,14 @@ This milestone builds the actual instrumentation instead of continuing to guess:
   A required "Efficiency notes" section in `REPORT_TEMPLATE.md`/`BLOCKED_TEMPLATE.md` where the executor self-reports *why* a run ran long or tight (e.g. superfluous context, pre-existing code needing a fix before the real work could start) — the qualitative half T-046's objective data can't provide on its own.
   Exit: both templates carry the new section; `EXECUTOR_ROUTINE.md` explicitly instructs writing it.
 
-- [ ] **M-OBS.3 — Persist usage/efficiency data to a queryable store** (Gated on: G-003)
-  Ingest T-046's per-run JSON artifacts (and T-047's notes) into a real, queryable store so trends can be computed over many runs instead of by hand. **Blocked on deciding where** — new tables in the existing `packages/core`/Neon schema, or a fully separate store — see `Docs/tickets/gated/G-003-observability-data-storage-location.md`.
+- [ ] **M-OBS.3 — Persist usage/efficiency/report data to a queryable store** (Gated on: G-003)
+  Ingest T-046's per-run JSON artifacts, T-047's efficiency notes, **and each ticket's morning/blocked report content** (outcome, what shipped, test evidence, reviewer verdict, "anything Alex must decide") into a real, queryable store — including reviewer-verdict/remediation-pass as structured fields, cache-read ratio, cost-per-changed-line, and blocked-outcome data as a first-class case. **Blocked on deciding where** — new tables in the existing `packages/core`/Neon schema, or a fully separate store — see `Docs/tickets/gated/G-003-observability-data-storage-location.md` (which also carries the full expanded field list).
 
-- [ ] **M-OBS.4 — API endpoint(s) serving usage/efficiency data** (Gated on: G-003)
-  Read path for whatever M-OBS.3 lands on — per-ticket and aggregate views (tokens, cost, duration, diff-size correlation, efficiency notes). Shape depends on G-003's resolution, same as M-OBS.3.
+- [ ] **M-OBS.4 — API endpoint(s) serving usage/efficiency/report data** (Gated on: G-003)
+  Read path for whatever M-OBS.3 lands on — per-ticket and aggregate views (tokens, cost, duration, diff-size correlation, efficiency notes), plus a log/feed endpoint serving report content for browsing. Includes syncing PR diff stats (files/lines changed) automatically by ticket id rather than requiring a manual `gh pr list` pull. Shape depends on G-003's resolution, same as M-OBS.3.
 
 - [ ] **M-OBS.5 — Observability dashboard UI** (Gated on: G-004)
-  A standalone dashboard (explicitly outside the v1 SourcesPage-only web surface — see `CLAUDE.md`) surfacing M-OBS.4's data: trends per ticket, cost, duration, diff-size correlation, and the qualitative efficiency notes. **Blocked on a design decision** — "designed with Claude design" was named as intent, not a concrete IA/visual answer — see `Docs/tickets/gated/G-004-observability-dashboard-design.md`.
+  A standalone dashboard (explicitly outside the v1 SourcesPage-only web surface — see `CLAUDE.md`) surfacing M-OBS.4's data across two surfaces: a trends view (cost, tokens, duration, diff-size correlation, cache-read ratio) and a log view (browsable per-ticket report feed — the "logging center" half). **Blocked on a design decision** — "designed with Claude design" was named as intent, not a concrete IA/visual answer — see `Docs/tickets/gated/G-004-observability-dashboard-design.md`, which now also carries the full mockup brief.
 
 ---
 
