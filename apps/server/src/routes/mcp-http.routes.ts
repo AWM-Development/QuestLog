@@ -46,6 +46,20 @@ async function requireBearerToken(
 	}
 }
 
+/** Resolves the transport for an established session, or sends 400 if the session id is missing/unknown. */
+function requireSession(
+	request: FastifyRequest,
+	reply: FastifyReply,
+	transports: Map<string, StreamableHTTPServerTransport>,
+) {
+	const sessionId = request.headers[SESSION_ID_HEADER] as string | undefined;
+	const transport = sessionId ? transports.get(sessionId) : undefined;
+	if (!transport) {
+		reply.status(400).send("Invalid or missing session ID");
+	}
+	return transport;
+}
+
 export interface McpHttpRouteOptions {
 	db: Database;
 }
@@ -121,26 +135,14 @@ export function registerMcpHttpRoutes(
 		});
 
 		scope.get(MCP_PATH, async (request, reply) => {
-			const sessionId = request.headers[SESSION_ID_HEADER] as
-				| string
-				| undefined;
-			const transport = sessionId ? transports.get(sessionId) : undefined;
-			if (!transport) {
-				reply.status(400).send("Invalid or missing session ID");
-				return;
-			}
+			const transport = requireSession(request, reply, transports);
+			if (!transport) return;
 			await transport.handleRequest(request.raw, reply.raw);
 		});
 
 		scope.delete(MCP_PATH, async (request, reply) => {
-			const sessionId = request.headers[SESSION_ID_HEADER] as
-				| string
-				| undefined;
-			const transport = sessionId ? transports.get(sessionId) : undefined;
-			if (!transport) {
-				reply.status(400).send("Invalid or missing session ID");
-				return;
-			}
+			const transport = requireSession(request, reply, transports);
+			if (!transport) return;
 			await transport.handleRequest(request.raw, reply.raw);
 		});
 	});
