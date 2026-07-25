@@ -37,7 +37,7 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   Protected Resource Metadata, Authorization Server Metadata, Dynamic Client Registration, an auto-approving `/authorize`, and a `/token` endpoint, scoped to one identity gated by a shared secret Alex controls. Satisfies Claude.ai's Custom Connector handshake without building real multi-user auth.
   Exit: a client following the MCP Authorization spec's discovery flow against this shim ends up with a valid bearer token; an invalid/missing shared secret is rejected.
 
-- [ ] **M-REMOTE.3 — Mount Streamable HTTP MCP transport on `apps/server`** (T-030)
+- [x] **M-REMOTE.3 — Mount Streamable HTTP MCP transport on `apps/server`** (T-030)
   New route (e.g. `POST /mcp`) using `StreamableHTTPServerTransport`, protected by M-REMOTE.2's bearer-token validation, serving the tool set from M-REMOTE.1's relocated factory.
   Exit: an MCP client can complete the full handshake (discover → authorize → connect → `tools/list`) against a running `apps/server` instance and see all 7 existing tools.
 
