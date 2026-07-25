@@ -26,4 +26,9 @@ export {
 	GetEntityInput,
 	ListEntitiesInput,
 } from "./entity.js";
-export { PrepBriefInput, QueryLoreInput } from "./mcp.js";
+export {
+	GetSourceStatusInput,
+	IngestTextInput,
+	PrepBriefInput,
+	QueryLoreInput,
+} from "./mcp.js";

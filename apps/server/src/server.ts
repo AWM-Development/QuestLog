@@ -106,7 +106,7 @@ export function buildApp({
 	app.register(formbody);
 
 	registerMcpOauthRoutes(app, { db, accessPassphrase });
-	registerMcpHttpRoutes(app, { db });
+	registerMcpHttpRoutes(app, { db, storage });
 
 	app.get("/health", async () => {
 		return { status: "ok" };
