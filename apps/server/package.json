@@ -14,13 +14,16 @@
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "tsx ../../packages/core/src/db/migrate.ts",
 		"db:push": "drizzle-kit push",
-		"db:studio": "drizzle-kit studio"
+		"db:studio": "drizzle-kit studio",
+		"smoke:mcp-remote": "tsx --env-file=../../.env scripts/mcp-remote-smoke.ts"
 	},
 	"dependencies": {
 		"@fastify/cors": "^11.2.0",
 		"@fastify/formbody": "^8.0.2",
 		"@fastify/multipart": "^9.0.0",
+		"@modelcontextprotocol/sdk": "^1.29.0",
 		"@questlog/core": "workspace:*",
+		"@questlog/mcp": "workspace:*",
 		"@questlog/shared": "workspace:*",
 		"@trpc/server": "^11.0.0",
 		"dotenv": "^17.3.1",

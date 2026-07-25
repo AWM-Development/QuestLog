@@ -75,9 +75,15 @@ importers:
       '@fastify/multipart':
         specifier: ^9.0.0
         version: 9.4.0
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.29.0
+        version: 1.29.0(zod@3.25.76)
       '@questlog/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@questlog/mcp':
+        specifier: workspace:*
+        version: link:../../packages/mcp
       '@questlog/shared':
         specifier: workspace:*
         version: link:../../packages/shared
