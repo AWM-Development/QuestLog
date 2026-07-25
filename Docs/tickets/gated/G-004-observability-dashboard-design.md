@@ -34,19 +34,23 @@ You're designing a standalone ops dashboard for the QuestLog project — **not**
 
 1. **Trends view** — the metrics half:
    - Time-series/chart of tokens (broken down: input/output/cache-write/cache-read) and theoretical cost per run, with an intro-vs-standard-pricing toggle or note (Sonnet 5 intro pricing expires 2026-08-31).
-   - Cache-read ratio as its own tracked line — the direct signal for whether the batched-reads efficiency fix (T-049) is working.
-   - Wall-clock duration and turn count per run.
-   - Diff-size correlation: cost/tokens plotted against (or normalized per) lines/files changed, so ticket-size differences don't distort the read.
+   - Cache read:write ratio as its own tracked line (cache-read tokens ÷ cache-creation tokens) — the direct signal for whether the batched-reads efficiency fix (T-049) is working.
+   - Wall-clock duration, total turn count, **and `turns_to_green`** (the turn where the TDD loop first went fully green, distinct from turns spent on review/remediation/report-writing) per run.
+   - Diff-size correlation: cost/tokens plotted against (or normalized per) lines/files changed, so ticket-size differences don't distort the read — and **cost per changed line** as its own derived metric.
+   - "Total system cost" per run (agent cost + reviewer-subagent cost + Alex's review-time cost, per `cost-model.ts`) alongside raw agent-only cost, with the two visually distinguished so a reviewer doesn't mistake the assumption-inflated figure for the measured one. A **cost-vs-human-hour-equivalent** ratio, broken out by complexity tier (S/M/L) rather than blended into one number — this is the core "is this system actually cheaper than a human, and by how much per ticket size" comparison.
    - A toggle/filter to exclude `empty_run: true` records (no ticket picked up that night) — these are near-zero-cost and would otherwise skew nothing, but should be filterable, not silently baked in.
-   - Aggregate stats (avg/median cost per ticket, trend direction) alongside the raw series.
+   - **A visible flag/badge (not just a filter) on any run where `manually_inspected: true`** — e.g. a small "measurement overhead — Alex inspected this session mid-run" tag directly on the affected data point, so a reviewer scanning the trend line sees *why* a given run looks inflated rather than just excluding it silently. Filtering these out is a toggle; flagging them is not optional.
+   - Aggregate stats (avg/median cost per ticket, trend direction) alongside the raw series, broken out by complexity tier where it changes the read.
 
 2. **Log view** — the "logging center" half:
-   - Reverse-chronological feed, one row/card per ticket run: ticket id + title, outcome badge (shipped/blocked, reviewer verdict), one-line "what shipped" summary, cost/tokens for that run, and the efficiency notes excerpt.
-   - Each entry expands (or drills into its own route) to the full report content — what shipped, test evidence, exit-condition checks, reviewer's verbatim verdict, efficiency notes, "anything Alex must decide."
+   - Reverse-chronological feed, one row/card per ticket run: ticket id + title, complexity tier badge, outcome badge (shipped/blocked, reviewer verdict), one-line "what shipped" summary, cost/tokens for that run, and the efficiency notes excerpt.
+   - Each entry expands (or drills into its own route) to the full report content — what shipped, test evidence, exit-condition checks, reviewer's verbatim verdict, efficiency notes (including the retry log — cause-categorized retries, from T-047's amended scope), "anything Alex must decide."
    - Blocked tickets show distinctly (status-error styling) with their blocked-report content (what failed, attempts, the exact question asked) instead of the shipped shape.
+
+3. **Methodology / case-study section** — narrative, not metrics. A separate area (or a distinct entry type within the log view) for longer-form writeups Alex authors after a particularly instructive run — the kind of walkthrough that explains *why* a number moved, not just that it did (e.g. a cache-read-dominance teardown, or isolating which of T-048/T-049 actually reduced spend). This is explicitly portfolio content: freeform long-form text/markdown, not a chart. Design it as clearly distinct from the automated log entries above (a human wrote this, deliberately, after the fact) rather than blending it into the per-ticket feed.
 
 *Empty/loading/error states:* follow `DESIGN_SYSTEM.md` §8.2/8.3 patterns in spirit (inviting empty state, not barren) but without the mascot — a plain "no runs yet" message is fine for ops tooling.
 
-*Deliverable:* `Docs/mockups/observability-dashboard/index.html` (static, real token values, no framework needed) + `screenshot.png` + `NOTES.md` explaining the layout choice (one page vs. tabs) and any token/pattern reused vs. deliberately diverged from.
+*Deliverable:* `Docs/mockups/observability-dashboard/index.html` (static, real token values, no framework needed) + `screenshot.png` + `NOTES.md` explaining the layout choice (one page vs. tabs, and where the methodology section lives relative to the other two) and any token/pattern reused vs. deliberately diverged from.
 
 ---
