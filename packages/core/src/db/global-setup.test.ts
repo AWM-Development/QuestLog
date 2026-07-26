@@ -1,6 +1,7 @@
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
+import type { TestProject } from "vitest/node";
 import { setup, truncateAllTables } from "./global-setup.js";
-import { FAKE_HOSTED_DB_URL } from "./test-db-url.js";
+import { FAKE_HOSTED_DB_URL, testDbUrl } from "./test-db-url.js";
 import { createTestDb } from "./test-helpers.js";
 
 class RollbackForTest extends Error {}
@@ -14,6 +15,15 @@ describe("setup", () => {
 		vi.stubEnv("DATABASE_URL", FAKE_HOSTED_DB_URL);
 
 		await expect(setup()).rejects.toThrow(/non-local database host/);
+	});
+
+	it("resolves the target database from the TestProject's own config, not process.env — Vitest applies test.env to process.env after globalSetup runs, so relying on process.env here truncates the wrong database", async () => {
+		vi.stubEnv("DATABASE_URL", testDbUrl("questlog_test"));
+		const fakeProject = {
+			config: { env: { DATABASE_URL: FAKE_HOSTED_DB_URL } },
+		} as unknown as TestProject;
+
+		await expect(setup(fakeProject)).rejects.toThrow(/non-local database host/);
 	});
 });
 

@@ -41,10 +41,15 @@ export function assertLocalDatabaseUrl(connectionString: string): void {
  * mutate the local test database (`createTestDb()`, `global-setup.ts`'s
  * `setup()`) in one place, so a future entrypoint can't resolve the URL
  * while forgetting to call {@link assertLocalDatabaseUrl}.
+ *
+ * `explicitUrl` lets `global-setup.ts` pass Vitest's resolved `test.env`
+ * value directly — `process.env.DATABASE_URL` isn't populated yet when
+ * `globalSetup` runs (Vitest applies `test.env` to `process.env` afterward),
+ * so falling back to it there silently resolves to the wrong database.
  */
-export function resolveLocalTestDbUrl(): string {
+export function resolveLocalTestDbUrl(explicitUrl?: string): string {
 	const connectionString =
-		process.env.DATABASE_URL ?? testDbUrl("questlog_test");
+		explicitUrl ?? process.env.DATABASE_URL ?? testDbUrl("questlog_test");
 	assertLocalDatabaseUrl(connectionString);
 	return connectionString;
 }
