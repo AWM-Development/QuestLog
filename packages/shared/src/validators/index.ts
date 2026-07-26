@@ -21,6 +21,7 @@ export {
 export type { SourceSchemaType } from "./source.js";
 export { SearchSourcesInput } from "./search.js";
 export {
+	AppendEntityNoteInput,
 	EntityCreateInput,
 	EntityDetectSpansInput,
 	GetEntityInput,
