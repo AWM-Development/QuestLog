@@ -17,8 +17,11 @@ Context files (load ONLY these):
     roughly line 13)
   - Docs/milestones/MILESTONES_V2.md (created by T-044 — the new pointer
     target, already in its final location)
-  - Docs/MILESTONES_V1_MCP.md, Docs/MILESTONES_V1_1_MCP.md (the two files
-    this ticket moves)
+  - Docs/MILESTONES_V1_MCP.md, Docs/MILESTONES_V1_1_MCP.md,
+    Docs/MILESTONES_V1_2_MCP.md (the three files this ticket moves —
+    V1_2_MCP.md landed on `develop` 2026-07-26, after G-002's original
+    resolution, so it wasn't named there; added to this ticket's scope
+    for consistency, same treatment as the other two)
   - Docs/tickets/TICKET_SPEC.md, Docs/tickets/GATE_SPEC.md,
     Docs/tickets/EXECUTOR_ROUTINE.md, Docs/tickets/REPORT_TEMPLATE.md
     (pipeline meta-docs citing the old root paths)
@@ -35,36 +38,41 @@ Mockup: none
 Model: sonnet
 
 Scope:
-  1. `git mv Docs/MILESTONES_V1_MCP.md Docs/milestones/MILESTONES_V1_MCP.md`
-     and `git mv Docs/MILESTONES_V1_1_MCP.md Docs/milestones/MILESTONES_V1_1_MCP.md`
+  1. `git mv Docs/MILESTONES_V1_MCP.md Docs/milestones/MILESTONES_V1_MCP.md`,
+     `git mv Docs/MILESTONES_V1_1_MCP.md Docs/milestones/MILESTONES_V1_1_MCP.md`,
+     and `git mv Docs/MILESTONES_V1_2_MCP.md Docs/milestones/MILESTONES_V1_2_MCP.md`
      — preserve history, don't recreate the files.
   2. Root `README.md`'s SAAD section: update pillar 1 ("Docs before code...")
      and the "Where to look" list to stop citing `Docs/MILESTONES_PT1.md` /
      `MILESTONES_PT2.md` as the pre-broken-down milestone source, and to
      point at the new `Docs/milestones/MILESTONES_V1_MCP.md` /
-     `MILESTONES_V1_1_MCP.md` paths (not the old root paths) as the live
-     v1/v1.1 task source, and `Docs/milestones/MILESTONES_V2.md` as the
-     deferred v2 detail.
+     `MILESTONES_V1_1_MCP.md` / `MILESTONES_V1_2_MCP.md` paths (not the old
+     root paths) as the live v1/v1.1/v1.2 task source, and
+     `Docs/milestones/MILESTONES_V2.md` as the deferred v2 detail.
   3. `Docs/README.md`'s "Task Source" section: replace the PT1/PT2 entry
      with one describing `Docs/milestones/MILESTONES_V2.md` (deferred, not
      a live task source per its own header). Update the existing
-     `MILESTONES_V1_MCP.md` entry to its new path. Add the entry for
-     `Docs/milestones/MILESTONES_V1_1_MCP.md` — created 2026-07-22, never
-     added to this index (it's dated 2026-07-07, a full milestone doc
-     behind). Bump the file's own "Last Updated" date.
+     `MILESTONES_V1_MCP.md` entry to its new path. Add entries for
+     `Docs/milestones/MILESTONES_V1_1_MCP.md` (created 2026-07-22, never
+     added to this index — it's dated 2026-07-07, a full milestone doc
+     behind) and `Docs/milestones/MILESTONES_V1_2_MCP.md` (created
+     2026-07-25, merged 2026-07-26, also never indexed here). Bump the
+     file's own "Last Updated" date.
   4. `Docs/README.md`'s "Historical" section: update the `milestones/`
      entry — it's no longer the retired per-milestone PLAN/REPORT/DESIGN_SPEC
      workflow's empty placeholder; it's now the live milestone-docs
      directory, so this entry moves out of "Historical" into whichever
      section already covers `MILESTONES_V1_MCP.md` etc. Leave the
      `milestones-archive/` entry as-is — still accurate, still historical.
-  5. `CLAUDE.md`'s task-source line ("Never pull work from
-     MILESTONES_PT1.md/PT2.md — they're retained for detail only"):
-     rewrite to reflect that these files no longer exist, detail now lives
-     in `Docs/milestones/MILESTONES_V2.md`, v2 remains ineligible for
-     ticket selection until Alex explicitly opens v2 planning, and update
-     the doc's references to `MILESTONES_V1_MCP.md`/`MILESTONES_V1_1_MCP.md`
-     to their new `Docs/milestones/` paths.
+  5. `CLAUDE.md`'s task-source line (currently naming
+     `Docs/MILESTONES_V1_MCP.md`, `MILESTONES_V1_1_MCP.md`, and
+     `MILESTONES_V1_2_MCP.md` as the task source, plus "Never pull work
+     from MILESTONES_PT1.md/PT2.md — they're retained for detail only"):
+     update all three live paths to their new `Docs/milestones/` location,
+     and rewrite the PT1/PT2 clause to reflect that those files no longer
+     exist, detail now lives in `Docs/milestones/MILESTONES_V2.md`, and v2
+     remains ineligible for ticket selection until Alex explicitly opens
+     v2 planning.
   6. `Docs/PRD.md`'s doc-map line pointing at PT1/PT2 for "full v2 task
      detail": repoint at `Docs/milestones/MILESTONES_V2.md`.
   7. Update every reference to the old root paths in the pipeline
@@ -79,8 +87,10 @@ Scope:
      `Docs/tickets/queue/`, `Docs/tickets/backlog/`,
      `Docs/tickets/in-progress/`, and any non-resolved file under
      `Docs/tickets/gated/`) whose "Milestone ref" or body text cites the
-     old root paths — `git grep -l "Docs/MILESTONES_V1_MCP.md\|Docs/MILESTONES_V1_1_MCP.md"`
-     across those four directories and fix each match. This is a
+     old root paths — `git grep -l "Docs/MILESTONES_V1_MCP.md\|Docs/MILESTONES_V1_1_MCP.md\|Docs/MILESTONES_V1_2_MCP.md"`
+     across those four directories and fix each match. This includes
+     `G-003`/`G-004` (both cite `MILESTONES_V1_2_MCP.md`) and the M-OBS/
+     M-EFFICIENCY tickets in `queue/` (`T-046`–`T-051`). This is a
      mechanical path substitution, not a content review of those tickets.
   9. Delete the stray `Docs/.~lock.QuestLog_API_Cost_Model.xlsx#` file — a
      LibreOffice/Excel lock artifact, not a real doc.
@@ -102,10 +112,12 @@ Out of scope:
     touched here.
 
 Exit condition (machine-checkable):
-  - `Docs/milestones/MILESTONES_V1_MCP.md` and
-    `Docs/milestones/MILESTONES_V1_1_MCP.md` exist; `Docs/MILESTONES_V1_MCP.md`
-    and `Docs/MILESTONES_V1_1_MCP.md` (root) no longer exist
-  - `git grep -rln "Docs/MILESTONES_V1_MCP.md\|Docs/MILESTONES_V1_1_MCP.md\|Docs/MILESTONES_PT1\|Docs/MILESTONES_PT2"`
+  - `Docs/milestones/MILESTONES_V1_MCP.md`,
+    `Docs/milestones/MILESTONES_V1_1_MCP.md`, and
+    `Docs/milestones/MILESTONES_V1_2_MCP.md` all exist;
+    `Docs/MILESTONES_V1_MCP.md`, `Docs/MILESTONES_V1_1_MCP.md`, and
+    `Docs/MILESTONES_V1_2_MCP.md` (root) no longer exist
+  - `git grep -rln "Docs/MILESTONES_V1_MCP.md\|Docs/MILESTONES_V1_1_MCP.md\|Docs/MILESTONES_V1_2_MCP.md\|Docs/MILESTONES_PT1\|Docs/MILESTONES_PT2"`
     across the repo (excluding `.git`) returns matches only inside
     frozen/historical files (`CHANGELOG.md`, `AUDIT_*.md`,
     `Docs/tickets/gated/resolved/*`, `Docs/tickets/done/*`,
@@ -113,7 +125,8 @@ Exit condition (machine-checkable):
     matches to the old paths in any living/active doc or ticket
   - `Docs/README.md`'s file listing includes
     `Docs/milestones/MILESTONES_V1_MCP.md`,
-    `Docs/milestones/MILESTONES_V1_1_MCP.md`, and
+    `Docs/milestones/MILESTONES_V1_1_MCP.md`,
+    `Docs/milestones/MILESTONES_V1_2_MCP.md`, and
     `Docs/milestones/MILESTONES_V2.md`, and no longer describes
     `milestones/` as historical/empty
   - `Docs/.~lock.QuestLog_API_Cost_Model.xlsx#` no longer exists

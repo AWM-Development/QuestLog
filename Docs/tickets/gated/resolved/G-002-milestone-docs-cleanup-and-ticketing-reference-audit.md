@@ -104,3 +104,12 @@ include pipeline meta-docs (`TICKET_SPEC.md`, `GATE_SPEC.md`,
 (`rules/frontend.md`, `skills/ticket-writer/SKILL.md`), and every
 currently-active ticket file citing the old root path in its "Milestone
 ref" line.
+
+Also folded in: `Docs/MILESTONES_V1_2_MCP.md` (the M-OBS/M-EFFICIENCY
+milestone doc, merged into `develop` 2026-07-26 — after this gate's
+original resolution, so it wasn't named there) gets the same
+root-to-`Docs/milestones/` move and reference fix in `T-045`, for
+consistency with v1/v1.1/v2. This pulled `G-003`/`G-004`
+(`Docs/tickets/gated/`, both cite `MILESTONES_V1_2_MCP.md`) and the
+queued M-OBS/M-EFFICIENCY tickets (`T-046`–`T-051`) into `T-045`'s
+mechanical path-fix scope too.
