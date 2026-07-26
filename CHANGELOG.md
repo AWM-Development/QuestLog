@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Fixed — T-052
+
+- **`packages/mcp`'s test suite now truncates its own `questlog_test_mcp` database between runs, not `apps/server`'s `questlog_test`**: Vitest applies each package's `test.env` to `process.env` only *after* `globalSetup` runs, so `global-setup.ts`'s `setup()` — which read `process.env.DATABASE_URL` — always resolved the wrong database for any package whose `vitest.config.ts` pointed `test.env.DATABASE_URL` somewhere other than the default (`packages/mcp`'s case). `setup()` now accepts the `TestProject` Vitest passes to every `globalSetup` function and reads the already-resolved `test.env` value straight from `project.config.env` instead (`Docs/IMPLEMENTATION_NOTES.md` § T-031/T-052).
+
 ### Added — T-032
 
 - **DMs can now create entities and add notes to them directly from a session, not just look them up**: `create_entity` creates a new NPC, location, faction, item, or arc from a name, type, and optional description; `append_entity_note` adds a note to an existing entity's description without overwriting what's already there (e.g. "Lyra mentioned she used to serve under Baron Voss"). Both are direct writes with no preview/confirm step, per G-001's additive-only-writes exemption — creating a row or appending a note never mutates prior content. There's still no way to rename an entity, replace its description, or delete/archive one — that's unbuilt surface, not a bug.
