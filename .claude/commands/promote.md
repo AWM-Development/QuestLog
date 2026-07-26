@@ -3,7 +3,7 @@ description: Bump (or set) a queued/backlog ticket's Priority — defaults to on
 argument-hint: T-### [P0|P1|P2]
 ---
 
-Parse `$ARGUMENTS` as `<ticket-id> [target-tier]` (e.g. `T-050` or `T-050 P0`). If the ticket id is missing, ask Alex which ticket before doing anything else. The tier, if given, must be exactly `P0`, `P1`, or `P2` — anything else is a usage error, report it and stop.
+Parse `$ARGUMENTS` as `<ticket-id> [target-tier]` (e.g. `T-050`, `T-050 P0`, `T-050 0`). If the ticket id is missing, ask Alex which ticket before doing anything else. The tier, if given, is parsed leniently — normalize any reasonable shorthand (`0`, `p0`, `P0`, "priority 0", "highest") to the canonical `P0`/`P1`/`P2` before doing anything else; only treat it as a usage error if it genuinely doesn't map to one of the three tiers.
 
 This is an interactive-session command, run with Alex present — it does not run unattended and is never picked up by the nightly executor itself.
 
