@@ -25,6 +25,7 @@ This folder contains all project documentation and planning artifacts.
 ### Development
 - **DEVELOPMENT_GUIDE.md** — Coding conventions and patterns: project structure, tooling choices, branching strategy, TDD discipline, code patterns (tRPC, Drizzle, React), error handling, testing layers, and the completion checklist. Read this for "how we write code." For "how work gets picked up and shipped," see the Ticket Pipeline section below — `DEVELOPMENT_GUIDE.md` §3/§9/§10 cover only what's needed for interactive (non-ticket) sessions.
 - **IMPLEMENTATION_NOTES.md** — Running log of non-obvious implementation decisions, tooling gotchas, and known gaps, organized by area (Database, Frontend, Embedding, Context Assembly, etc.) with dated milestone-specific sections. Read the sections relevant to what you're touching; add an entry any time you make a decision that isn't obvious from the code.
+- **IMPLEMENTATION_NOTES_ARCHIVE.md** — Retired entries from `IMPLEMENTATION_NOTES.md`: moved here once their governing milestone shipped and the entry stopped being a live gotcha, or the surface it describes went v2-deferred. Historical record, not required reading. Populated and maintained by the `/archive-implementation-notes` command.
 - **STYLE_AUDIT.md** — Repeatable design-token compliance sweep procedure for `apps/web` (hardcoded colors/spacing/radius/shadows vs. token equivalents, copy-pasted style blocks). Invoke whenever a style/consistency audit is needed, ticket or interactive.
 
 ### Ticket Pipeline
