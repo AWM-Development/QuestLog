@@ -17,7 +17,9 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 - **CI/CD scope:** the existing fast, local-Postgres, ephemeral-per-run PR-gate test suite stays exactly as it is (it truncates all tables every run — pointing it at a real branch would destroy real dev data). A **separate**, additive post-merge smoke-test workflow covers verification against real infrastructure instead.
 - **Audit scope:** covers both technical architecture/security rigor and outside-reviewer presentation quality ("portfolio ready" — both, per Alex).
 
-**Open gates:** none currently. `G-001` (`Docs/tickets/gated/resolved/G-001-write-tool-preview-confirm-scope.md`) — whether `.claude/rules/mcp.md`'s preview/confirm/audit requirement applies to every MCP write tool or only ones mutating existing data, blocking M-REMOTE.4 and M-REMOTE.5 — was resolved via `/ungate` on 2026-07-22 (narrow reading: preview/confirm applies to mutations of existing data, not additive-only writes). Both tasks' `Gated on:` tags below are cleared accordingly.
+**Open gates:** `G-005` (`Docs/tickets/gated/G-005-agent-mcp-interaction-strategy.md`) — how a DM interacts with QuestLog through an MCP-connected Claude session end-to-end: attaching documents (not just pasted text), creating a new campaign by name/description rather than only picking an existing one, whether/how the agent should proactively re-check and narrate background ingestion progress, and the broader system-prompt/instructions strategy tying these together — blocking M-REMOTE.8. Filed 2026-07-26, raised by Alex during T-031's morning review.
+
+`G-001` (`Docs/tickets/gated/resolved/G-001-write-tool-preview-confirm-scope.md`) — whether `.claude/rules/mcp.md`'s preview/confirm/audit requirement applies to every MCP write tool or only ones mutating existing data, blocking M-REMOTE.4 and M-REMOTE.5 — was resolved via `/ungate` on 2026-07-22 (narrow reading: preview/confirm applies to mutations of existing data, not additive-only writes). Both tasks' `Gated on:` tags below are cleared accordingly.
 
 ---
 
@@ -55,6 +57,10 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 
 - [ ] **M-REMOTE.7 — Deploy + connect a real Claude Project + full remote test pass** (T-034)
   Deploy the above to dev, connect it as a real Claude.ai Custom Connector in an actual Project, re-run the v1 test plan (this session's table) against the remote transport end-to-end, then repeat for prod. **The Custom Connector setup itself is an Alex-only action** — it happens inside Alex's own Claude.ai account and cannot be scripted.
+
+- [ ] **M-REMOTE.8 — Agent-interaction strategy for MCP-hooked sessions** (Gated on: G-005)
+  Raised during T-031's (`ingest_text`) morning review: today a DM can paste text but not attach a document, can't create a new campaign from inside a chat at all, and there's no defined behavior for whether/how the agent should re-check and narrate `ingest_text`'s background processing. Bundles four related open questions — document/file attachment ingestion, campaign creation via natural language or a dedicated tool, background-processing polling/narration guidance, and the broader instructions/system-prompt strategy tying all of this together — into one decision, since they're all facets of "how does a DM actually work with QuestLog through Claude." See `G-005` for the full open question and options surfaced so far.
+  Exit: TBD — depends on `/ungate`'s resolution; likely drafts one or more follow-on tickets (e.g. a `create_campaign` tool, an attachment-ingestion path, expanded `instructions`/`help` content) rather than shipping as a single ticket itself.
 
 ---
 
