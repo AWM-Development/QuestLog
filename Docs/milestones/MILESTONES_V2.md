@@ -9,7 +9,20 @@
 
 `Docs/MILESTONES_V1_MCP.md`'s June 2026 MCP-first pivot deferred most of the original web-app milestone list to v2 without re-describing it — it just pointed at `MILESTONES_PT1.md`/`PT2.md` by milestone number and flagged that list as "due a full re-audit against the current v1 shape... not done here." This file does that re-audit: every deferred milestone number is reproduced here with its task detail intact, but corrected against the post-pivot codebase where PT1/PT2's original framing has since gone stale (an MCP-equivalent shipped, a referenced file moved, a component was renamed). **v2 is deferred, not abandoned** — nothing here is being thrown away, it is parked until Alex opens v2 planning.
 
-Milestones and tasks **not** listed here (1–3, 4.1, 4.2, 4.5, 9.3) either shipped already or — in 9.3's case — now ship as v1 scope (`M-MCP.5`, done) rather than v2. See `Docs/MILESTONES_V1_MCP.md`'s "Deferred to v2" table for the authoritative in/out line.
+Milestones and tasks **not** listed as v2 sections below (1–3, 4.1, 4.2, 4.5, 9.3) either shipped already or — in 9.3's case — now ship as v1 scope (`M-MCP.5`, done) rather than v2. See `Docs/MILESTONES_V1_MCP.md`'s "Deferred to v2" table for the authoritative in/out line, and the "Already shipped" section immediately below for what each of those completed milestones actually delivered.
+
+---
+
+## Already shipped (context only — not v2 scope, nothing here is picked up by any agent)
+
+These are the milestones PT1/PT2 originally listed that are **done**, kept here as a record of what exists so a v2 task above isn't mistaken for greenfield work when it should build on something already shipped. Full historical task-level detail lived in the now-deleted `MILESTONES_PT1.md`; this is a summary, not a restoration of that detail — for exact status and audit evidence see `Docs/MILESTONES_V1_MCP.md` and `Docs/AUDIT_2026-07.md`.
+
+- **Milestone 1 — Foundation** ✅ done. pnpm/Turborepo workspace, Postgres+pgvector via Docker, Drizzle schema/migrations, tRPC + campaign CRUD, frontend shell/routing, the entity-driven design-system token migration.
+- **Milestone 2 — Import & Knowledge Base** ⚠️ partial, but **not v2 scope** — 2.1 (upload/extraction), 2.2 (chunking/embedding, Voyage `voyage-4-lite`), and 2.3 (vector similarity search, verified end-to-end by `T-000`) are done. **2.4 (scanned document OCR support) remains open** but stays a live v1 task, not deferred here — it's not in `MILESTONES_V1_MCP.md`'s "Deferred to v2" table, and is gated 🧠 pending an OCR-approach strategy decision. See `Docs/MILESTONES_V1_MCP.md` for its current status, not this file.
+- **Milestone 3 — Agent Conversation** ✅ done (scope narrowed by the MCP pivot). Context assembly with hybrid vector+keyword search and a confidence score (`packages/core/src/services/context.service.ts`), Claude API integration and streaming (`packages/core/src/services/llm.service.ts`), the frozen web chat UI, and the doc-infrastructure/CI-enforcement tasks (3.3.5, 3.3.6). **Two pieces of this shipped work are directly relevant to v2 Milestones 11.1 and 11.2 below** — see the reconciliation notes in those sections; they are not greenfield tasks the way PT1/PT2 originally described them.
+- **Milestone 4.1/4.2 — Session CRUD/editor foundation, entity detection & linking** ✅ done. TipTap-based `SessionEditor`, debounced server-side autosave, pg_trgm entity matching, inline highlighting/quick-create (`EntityQuickCreatePopover.tsx`, `EntityHoverCard.tsx`, `EntityActionBar.tsx`). **Relevant to v2 Milestones 5.4 and 12.1** — see those sections.
+- **Milestone 4.5 — UI Component Library Refactor** ✅ done. Shared primitives now exist: `Button`/`IconButton`, `Input`/`FormField`, `Chip`/`Card`/`Alert`, `EntityAvatar`/`Modal` (`apps/web/src/components/`). **Any v2 web task building new UI (5.1, 6.x, 7.x, 13.1, 15.2, 16.2) should build on these primitives, not reinvent them** — flagged inline where most relevant.
+- **Milestone 9.3 — Deployment** ✅ done, but reclassified as v1 scope, not v2 — shipped as `M-MCP.5` (`questlog-dev`/`questlog-prod` on Fly.io + Neon). See `Docs/MILESTONES_V1_MCP.md`.
 
 ---
 
@@ -32,7 +45,12 @@ Milestones and tasks **not** listed here (1–3, 4.1, 4.2, 4.5, 9.3) either ship
 
 ## Milestone 5: Entities & Relationships
 
-**Current state (2026-07):** `packages/core/src/services/entity.service.ts` exists and is the shared backend the MCP tools (`get_entity`, `list_entities`, `create_entity`, `append_entity_note`, and v1.1's in-flight `update_entity`) already build on. There is no dedicated web entity page, relationship UI, or graph visualization — this milestone is genuinely unbuilt on the web side, not superseded by anything MCP-side.
+**Current state (2026-07):** `packages/core/src/services/entity.service.ts` exists and is the shared backend the MCP tools already build on. There is no dedicated web entity page, relationship UI, or graph visualization — that part of this milestone is genuinely unbuilt. **But the "CRUD" half of 5.1 is further along than PT1 assumed**, entirely via the MCP surface (v1.1, `Docs/MILESTONES_V1_1_MCP.md`):
+- `create_entity` and `append_entity_note` — done (M-REMOTE.5)
+- `update_entity` (rename, description replace, type change) — **in progress**, `T-056`/M-REMOTE.9
+- Entity delete/archive — **gated**, `G-006`/M-REMOTE.10, blocked on a soft-archive-vs-hard-delete product decision
+
+None of this is a web tRPC router or web UI — a DM can only do these things through an MCP-connected client today, not the web app. When 5.1 is picked up, re-check M-REMOTE.9/G-006's status first: if they've shipped, 5.1's "Entity tRPC router: full CRUD" work item shrinks to wrapping `entity.service.ts`'s already-complete method set in a router, not building new service methods from scratch.
 
 ### 5.1 — Entity CRUD & pages
 
@@ -40,8 +58,8 @@ Milestones and tasks **not** listed here (1–3, 4.1, 4.2, 4.5, 9.3) either ship
 - 🎨 Visual spec required
 - PRD ref: §4.5 Entity Types, Entity Page Structure
 - Work:
-  - Entity tRPC router: full CRUD, list with filtering by type, fuzzy search (reuse `entity.service.ts`'s existing methods — `create`, `appendToDescription`, and whatever `update_entity`/M-REMOTE.9 adds by the time this is picked up — rather than reimplementing)
-  - Entity page UI: summary, key facts, timeline, relationships, source references, DM notes
+  - Entity tRPC router: full CRUD, list with filtering by type, fuzzy search (reuse `entity.service.ts`'s existing methods — `create`, `appendToDescription`, and whatever `update_entity`/M-REMOTE.9 and the `G-006` archive/delete decision add by the time this is picked up — rather than reimplementing)
+  - Entity page UI: summary, key facts, timeline, relationships, source references, DM notes — build on the shared `Card`, `Chip`, and `EntityAvatar` primitives from Milestone 4.5 (shipped) rather than new one-off styling
   - Entity type-specific fields via JSONB schema
 - Tests: entity service tests, search accuracy tests, page rendering tests
 
@@ -105,6 +123,7 @@ Milestones and tasks **not** listed here (1–3, 4.1, 4.2, 4.5, 9.3) either ship
 - Branch: `feat/session-prep/secret-management`
 - 🎨 Visual spec required
 - PRD ref: §4.6 Visibility Levels, Agent Behavior with Secrets
+- **Checked 2026-07, confirmed unbuilt:** no visibility/secret field exists on the `entities` schema today, and `llm.service.ts`'s system prompt only instructs the agent to *flag* DM-only involvement (see Milestone 11.1) — there's no actual filtering by visibility level anywhere. This task is genuinely greenfield, not partially shipped.
 - Work:
   - Visibility field on entity facts and notes (player-known / DM-only / revealed)
   - Reveal workflow with timestamp and note
@@ -230,6 +249,7 @@ Milestones and tasks **not** listed here (1–3, 4.1, 4.2, 4.5, 9.3) either ship
 ### 9.2 — Performance & optimization
 
 - Branch: `feat/polish/performance`
+- **Checked 2026-07, confirmed unbuilt:** no `cache_control`/prompt-caching usage in `llm.service.ts`, no retry logic in the import/source services. Genuinely greenfield.
 - Work:
   - Prompt caching implementation for frequently used system prompts (web agent chat — MCP tool calls have their own, separately-tracked cost profile per `Docs/MILESTONES_V1_2_MCP.md`'s M-OBS/M-EFFICIENCY work, which is about the *executor's* token spend, not the product's — no overlap)
   - Database query optimization (check slow queries, add missing indexes)
@@ -279,6 +299,8 @@ Milestones and tasks **not** listed here (1–3, 4.1, 4.2, 4.5, 9.3) either ship
 ## Milestone 10: Observability & Ops
 
 **Goal:** Production-grade logging, error monitoring, feedback collection, and CI/CD hardening for the **web app and its own backend surfaces** (agent chat, session editor, sources UI). **Not to be confused with `Docs/MILESTONES_V1_2_MCP.md`'s M-OBS/M-EFFICIENCY milestones**, which instrument the nightly *ticket executor's* own token usage and are already in progress as v1.2 — a distinct concern from product-level observability, with no scope overlap. Some of this milestone's ground has already shifted since PT2 was written: v1 shipped its own CI (`.github/workflows/ci.yml`, referenced throughout `Docs/tickets/`) and Fly.io/Neon deployment (M-MCP.5), so 10.5's CI/CD items should be read as "harden what v1 already has," not "build CI/CD from scratch."
+
+**Checked 2026-07, confirmed unbuilt:** no Pino usage anywhere in `apps/server`/`packages/core` (16 remaining bare `console.log`/`console.error`/`console.warn` calls), no `llm_logs` table, no Sentry package in either app, no `feedback` table. All four of 10.1–10.4 are genuinely greenfield — nothing below is partially shipped.
 
 ### 10.1 — Structured logging with Pino
 
@@ -355,34 +377,33 @@ Milestones and tasks **not** listed here (1–3, 4.1, 4.2, 4.5, 9.3) either ship
 
 **Goal:** System prompt design that scopes the agent to campaign work, permits genre-appropriate content, and keeps responses grounded in actual campaign material. No extra moderation APIs — handled entirely in prompt design and RAG behavior. Applies to the web agent chat surface; the MCP tools (`query_lore`, `prep_brief`, etc.) have their own separate system-prompt/instructions question, currently open as `G-005` in `Docs/MILESTONES_V1_1_MCP.md` (M-REMOTE.8) — that gate is v1.1 scope, not this milestone, and should not be conflated with it.
 
+**Reconciled 2026-07 — both tasks below are substantially more done than PT1/PT2 described.** M3.2 (shipped) already built a real `buildSystemPrompt` function for the web chat path — `packages/core/src/services/llm.service.ts:59`, wired into `conversation.service.ts` via the `llmService` singleton — and M3.1 (shipped) already computes and threads through a confidence score. **Re-scope both tasks at pickup time to "close the specific gaps below," not "build from scratch."**
+
 ### 11.1 — System prompt design & documentation
 
 - Branch: `feat/agent/system-prompt`
-- Work:
-  - Create `apps/server/src/services/prompts/` directory
-  - Create `apps/server/src/services/prompts/system.ts` — exports a `buildSystemPrompt(campaign: CampaignContext): string` function
-  - System prompt must:
-    - Identify the agent as QuestLog, a campaign management assistant for tabletop RPG dungeon masters
-    - Include active campaign context: name, game system, description, session count
-    - Explicitly permit genre-appropriate content: fantasy violence, dark themes, morally complex characters, and romance as narrative elements consistent with published D&D/TTRPG material
-    - Instruct the agent NOT to fabricate entities that don't exist in the campaign unless explicitly asked to create something new
-    - Instruct the agent to cite sources (document name, session log, entity page) for factual claims about the campaign
-    - Instruct the agent to redirect clearly off-topic requests (unrelated to campaign or TTRPG topics) with a brief, friendly explanation: "I'm specialized for campaign work — for general questions you'll want a different tool"
-    - Instruct the agent to respect the DM-only / secret boundary (see Milestone 6.2)
-  - Create `apps/server/src/services/prompts/PROMPT_DESIGN.md` — plain-English documentation of every decision in the system prompt: what it permits, what it restricts, and why. This is the source of truth for future prompt edits.
-  - Wire `buildSystemPrompt` into the LLM service — replace any hardcoded or missing system prompt
-- Tests: unit tests for `buildSystemPrompt` — verify campaign context is included, verify key instruction phrases are present, verify output is a non-empty string
+- **What's already there** (`packages/core/src/services/llm.service.ts`'s `buildSystemPrompt`): identifies the agent as QuestLog, a campaign assistant for TTRPG DMs; includes campaign theme context (though not yet game system/description/session count, per PRD ref below); instructs against fabricating entities unless explicitly asked; instructs source citation; instructs flagging DM-only-secret involvement; folds in the confidence-based uncertainty instruction from 11.2.
+- **What's still missing:**
+  - No explicit genre-appropriate-content permission (fantasy violence, dark themes, romance as narrative elements) — the prompt is silent on this rather than either permitting or restricting it
+  - No explicit off-topic-redirect instruction ("I'm specialized for campaign work...")
+  - Campaign context is theme-only, not the fuller `name, game system, description, session count` PRD ref calls for
+  - No dedicated `PROMPT_DESIGN.md` documenting the prompt's decisions
+  - Function lives in `llm.service.ts`, not the `apps/server/src/services/prompts/` location PT1 originally specified — a real move, or just documenting the actual location, is a call for whoever picks this up
+- Work (revised scope):
+  - Add the missing genre-permission and off-topic-redirect instructions to the existing `buildSystemPrompt`
+  - Expand campaign context passed in beyond theme (name, game system, description, session count)
+  - Decide whether to relocate `buildSystemPrompt` into a dedicated `prompts/` module or document it in place — either way, write `PROMPT_DESIGN.md` next to wherever it ends up
+- Tests: unit tests for the new instruction phrases and expanded context fields; existing `llm.service.test.ts` coverage stays as regression protection
 
 ### 11.2 — RAG confidence gate
 
 - Branch: `feat/agent/rag-confidence-gate`
-- Work:
-  - In the context assembly service, compute a confidence score for each retrieval: average cosine similarity of top-k chunks
-  - Define threshold: if best chunk similarity < 0.35 (tune this with real data), the query has weak campaign grounding
-  - When confidence is low, prepend a note to the assembled context instructing the agent to acknowledge the gap: "The campaign knowledge base has little information on this topic. Say so clearly and offer to help create the content or answer from general TTRPG knowledge if appropriate."
-  - Surface this in the UI: low-confidence responses get a subtle indicator (e.g., a muted "limited campaign context" badge near the response) so the DM knows not to trust the answer as lore-accurate
-  - Add `confidence` field to the tRPC response for the agent chat endpoint
-- Tests: unit tests for confidence scoring logic, test low/high threshold boundary behavior, component test for confidence indicator rendering
+- **What's already there:** `context.service.ts` computes `confidence` as the average cosine similarity of selected chunks (0 when no chunks found); `llm.service.ts`'s `buildSystemPrompt` already includes the raw confidence value and an instruction to "acknowledge uncertainty and avoid presenting speculation as fact" when it's low — unconditionally, not threshold-gated; the tRPC agent-chat response already exposes `confidence` (`apps/server/src/server.ts:284`, asserted in `conversation.integration.test.ts`); `query_lore`'s MCP response also returns `confidence` to any MCP client.
+- **What's still missing:** a specific numeric threshold (PT1 suggested < 0.35) that changes the *instruction itself* below that line (today's guidance is the same regardless of how low confidence gets), and the frontend "limited campaign context" badge in the web chat UI.
+- Work (revised scope):
+  - Define and tune the low-confidence threshold; below it, swap in the stronger prepended note PT1 specified ("The campaign knowledge base has little information on this topic...") rather than relying on the always-on generic guidance alone
+  - Build the frontend confidence-indicator badge — the tRPC field it reads already exists, this is purely a web UI task now
+- Tests: unit tests for the new threshold boundary behavior (extending existing `context.service.test.ts` coverage), component test for the confidence indicator rendering
 
 ---
 
@@ -414,11 +435,12 @@ Milestones and tasks **not** listed here (1–3, 4.1, 4.2, 4.5, 9.3) either ship
 
 - Branch: `feat/polish/destructive-safety`
 - **Note 2026-07:** the MCP side of this question (should a write tool preview/confirm before mutating existing data) was separately resolved for v1.1 via `G-001` (`Docs/tickets/gated/resolved/G-001-write-tool-preview-confirm-scope.md`) — that resolution governs MCP tool behavior only and does not extend to the web UI's own destructive actions, which remain this task's unaddressed scope.
+- **Reconciled 2026-07:** Milestone 4.5 (shipped) already built `Modal.tsx` (`apps/web/src/components/overlays/Modal.tsx` — scrim, focus trap, Escape key, title). `ConfirmDialog` should be built as a thin wrapper around the existing `Modal`, not the raw `<dialog>`-from-`index.css` pattern PT1 originally specified before `Modal.tsx` existed.
 - Work:
   - Identify all destructive actions in the app: archive/delete campaign, delete conversation, delete entity, delete session log, remove source document, delete map annotation
   - For high-severity actions (campaign archive, entity delete, session log delete, source document delete): show a confirmation dialog — name the thing being deleted, warn about consequences ("This cannot be undone"), require explicit confirmation button click
   - For lower-severity actions (conversation delete, map annotation remove): show a toast with an Undo action, 5-second window before the action is committed to DB — optimistic UI delete, undo restores
-  - Create a reusable `ConfirmDialog` component (uses the existing `<dialog>` pattern from `index.css`)
+  - Create a reusable `ConfirmDialog` component wrapping the existing `Modal` (see reconciliation note above)
   - Create a reusable `useUndoableAction` hook: takes a delete function and a restore function, handles toast lifecycle and timing
   - Apply consistently — no destructive action in the app fires without one of these patterns
 - Tests: `ConfirmDialog` renders with correct message, confirm fires action, cancel does not; `useUndoableAction` — undo within window restores, undo after window does not
@@ -428,6 +450,8 @@ Milestones and tasks **not** listed here (1–3, 4.1, 4.2, 4.5, 9.3) either ship
 ## Milestone 14: Keyboard Shortcuts & Power User UX
 
 **Goal:** Keyboard navigation for power users who are mid-session and need to move fast without touching a mouse.
+
+**Checked 2026-07, confirmed unbuilt:** no keyboard-shortcut hook/library, no empty-state audit component anywhere in `apps/web/src`. Genuinely greenfield.
 
 ### 14.1 — Global keyboard shortcuts
 
@@ -462,6 +486,8 @@ Milestones and tasks **not** listed here (1–3, 4.1, 4.2, 4.5, 9.3) either ship
 ## Milestone 15: Onboarding & Contextual Help
 
 **Goal:** A guided first-run experience and persistent contextual help (info icons) that reduce confusion for new users without cluttering the UI for experienced ones.
+
+**Checked 2026-07, confirmed unbuilt on the web side** — no onboarding overlay, no `InfoPopover` component anywhere in `apps/web/src`. **Related but distinct:** v1.1's `M-REMOTE.6` (`Docs/MILESTONES_V1_1_MCP.md`, in progress) adds an onboarding surface for the *MCP* client — the server's `instructions` field plus a `help`/`get_started` tool — covering the same "guide a new user through the workflow" goal but for a Claude-connected session, not the web app. No shared code expected; don't conflate the two when this is picked up.
 
 ### 15.1 — First-run onboarding flow
 
@@ -562,6 +588,8 @@ Milestones and tasks **not** listed here (1–3, 4.1, 4.2, 4.5, 9.3) either ship
 ## Milestone 18: Data Export
 
 **Goal:** Allow users to export their campaign data in portable formats. Addresses lock-in concerns and is a meaningful reliability feature.
+
+**Checked 2026-07, confirmed unbuilt:** no export procedure on the campaign router or anywhere in `packages/core`/`apps/server`. Genuinely greenfield.
 
 ### 18.1 — Campaign data export
 
