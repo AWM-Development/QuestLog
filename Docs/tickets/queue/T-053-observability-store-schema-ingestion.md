@@ -2,6 +2,8 @@
 
 Milestone ref: M-OBS.3
 
+Priority: P1
+
 Branch: feat/m-obs/t-053-observability-store-schema-ingestion
 
 Context files (load ONLY these):

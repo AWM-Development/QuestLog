@@ -16,6 +16,8 @@ would need redoing.
 
 Milestone ref: M-AUDIT.4 (`Docs/MILESTONES_V1_1_MCP.md`)
 
+Priority: P2
+
 Context files (load broadly):
   - README.md (root — the first thing an outside reviewer opens)
   - CLAUDE.md (accurate project description to draw from, not to copy verbatim — this file is written for an agent, not a portfolio reader)

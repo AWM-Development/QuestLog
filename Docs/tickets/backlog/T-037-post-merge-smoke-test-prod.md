@@ -6,6 +6,8 @@ Alex-only.
 
 Milestone ref: M-CICD.3 (`Docs/MILESTONES_V1_1_MCP.md`)
 
+Priority: P1
+
 Blocked on: T-036 — must be merged into develop first
 
 Branch: feat/m-cicd/t-037-post-merge-smoke-test-prod

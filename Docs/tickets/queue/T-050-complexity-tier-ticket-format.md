@@ -2,6 +2,8 @@
 
 Milestone ref: M-OBS.6
 
+Priority: P1
+
 Branch: feat/m-obs/t-050-complexity-tier-ticket-format
 
 Context files (load ONLY these):

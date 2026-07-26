@@ -2,6 +2,8 @@
 
 Milestone ref: M-AUDIT.2 (`Docs/MILESTONES_V1_1_MCP.md`)
 
+Priority: P1
+
 Blocked on: T-030, T-031, T-032, T-033, T-037 — must all be merged into develop first
 
 Branch: feat/m-audit/t-038-security-review-remote-mcp-surface

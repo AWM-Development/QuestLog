@@ -11,6 +11,8 @@ Every ticket lives at `Docs/tickets/T-###-slug.md` (`###` sequential, zero-padde
 
 Milestone ref: <Docs/MILESTONES_V1_MCP.md section, e.g. "M-MCP.1">
 
+Priority: P0 | P1 | P2   # default P1 — see field notes
+
 Blocked on: <ticket id(s)> — must be merged into develop first  # backlog/ only, omit otherwise
 
 Gated on: <gate-id, e.g. G-004> — must be resolved via /ungate first  # backlog/ only, omit otherwise; a ticket may carry both this and Blocked on: at once
@@ -43,6 +45,7 @@ Definition of done includes: checkbox flipped in MILESTONES_V1_MCP.md,
 
 ## Field notes
 
+- **Priority** is a fixed 3-tier field (`P0`, `P1`, `P2`) present on every ticket, defaulting to `P1`. It orders selection *within* whatever's already eligible to run — it never overrides `Blocked on:`/`Gated on:`, which stay absolute gates underneath it (`EXECUTOR_ROUTINE.md` Step 1 sorts by tier first, then falls back to numeric `T-###` id as the tiebreak, preserving the pipeline's existing "oldest first, no cherry-picking" determinism within a tier). Alex sets the tier per ticket during the `ticket-writer` session at draft time — `ticket-writer` proposes `P1` as the default and Alex confirms or overrides before the ticket is filed; it is never inferred automatically. See `Docs/tickets/gated/resolved/G-010-ticket-prioritization-mechanism.md` for the full rationale.
 - **Blocked on** only appears on tickets living in `backlog/` (see Lifecycle
   below). It names the ticket id(s) whose PR must be merged into `develop`
   before this one is promoted to `queue/`. The nightly executor's pre-flight

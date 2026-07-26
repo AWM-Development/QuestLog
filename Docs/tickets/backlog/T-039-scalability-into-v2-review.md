@@ -17,6 +17,8 @@ starting.
 
 Milestone ref: M-AUDIT.3 (`Docs/MILESTONES_V1_1_MCP.md`)
 
+Priority: P2
+
 Context files (load broadly, same reasoning as T-017 — a narrower list
 would defeat the point):
   - Docs/MILESTONES_V1_MCP.md's "Deferred to v2" table (the actual scope this review is checking readiness against)

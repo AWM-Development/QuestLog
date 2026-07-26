@@ -9,6 +9,8 @@ connection string anywhere in this session's output.
 
 Milestone ref: M-CICD.2 (`Docs/MILESTONES_V1_1_MCP.md`)
 
+Priority: P1
+
 Branch: feat/m-cicd/t-036-post-merge-smoke-test-dev
 
 Context files (load ONLY these):

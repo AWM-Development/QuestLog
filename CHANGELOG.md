@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — G-010
+
+- **Tickets now carry a `Priority: P0 | P1 | P2` field** (default `P1`), set by Alex per ticket at `ticket-writer` draft time — backfilled onto all 21 existing `queue/`/`backlog/` tickets. The nightly executor's candidate-list build (`Docs/tickets/EXECUTOR_ROUTINE.md` Step 1) now sorts by tier first, numeric `T-###` id as the tiebreak; `Blocked on:`/`Gated on:` remain absolute gates evaluated before priority is ever considered. New commands: `/promote T-### [tier]` (bump a ticket's priority — defaults to one tier up, or set an explicit tier directly), `/promote-execute T-###` (promote to `P0` and immediately execute, subject to the same eligibility/dedup checks as a normal run), `/lineup` (read-only daily report: next 3 eligible tickets, open PRs awaiting review, full backlog snapshot), and `/command-help` (lists every pipeline command). New `Docs/tickets/COMMANDS.md` is the canonical quick-read index of all of them. See `Docs/tickets/gated/resolved/G-010-ticket-prioritization-mechanism.md` for the full rationale.
+
 ### Fixed — T-052
 
 - **`packages/mcp`'s test suite now truncates its own `questlog_test_mcp` database between runs, not `apps/server`'s `questlog_test`**: Vitest applies each package's `test.env` to `process.env` only *after* `globalSetup` runs, so `global-setup.ts`'s `setup()` — which read `process.env.DATABASE_URL` — always resolved the wrong database for any package whose `vitest.config.ts` pointed `test.env.DATABASE_URL` somewhere other than the default (`packages/mcp`'s case). `setup()` now accepts the `TestProject` Vitest passes to every `globalSetup` function and reads the already-resolved `test.env` value straight from `project.config.env` instead (`Docs/IMPLEMENTATION_NOTES.md` § T-031/T-052).

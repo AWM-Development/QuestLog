@@ -28,6 +28,7 @@ pnpm test           # Vitest, all packages (needs Postgres on :5433, migrated)
 
 - Conventions detail → `Docs/DEVELOPMENT_GUIDE.md`
 - Non-obvious gotchas → `Docs/IMPLEMENTATION_NOTES.md`
+- Pipeline commands quick reference → `Docs/tickets/COMMANDS.md` (or run `/command-help`)
 - Visual reference → `Docs/mockups/` + `Docs/DESIGN_SYSTEM.md`
 - Path-scoped patterns → `.claude/rules/` (loads automatically when matching files are touched)
 

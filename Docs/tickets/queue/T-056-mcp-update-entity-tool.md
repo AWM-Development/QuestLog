@@ -2,6 +2,8 @@
 
 Milestone ref: M-REMOTE.9 (`Docs/MILESTONES_V1_1_MCP.md`)
 
+Priority: P1
+
 Branch: feat/m-remote/t-056-mcp-update-entity-tool
 
 Context files (load ONLY these):

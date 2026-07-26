@@ -2,6 +2,8 @@
 
 Milestone ref: M-OBS.4
 
+Priority: P2
+
 Blocked on: T-053 — must be merged into develop first
 
 Branch: feat/m-obs/t-055-pr-diff-stat-sync
