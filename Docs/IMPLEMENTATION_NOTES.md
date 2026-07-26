@@ -647,6 +647,9 @@ Decided: consolidate `MILESTONES_PT1.md`/`PT2.md`'s still-relevant v2 detail int
 ## G-003 — Observability data storage location (2026-07-26)
 Decided: a separate Neon branch, own schema/migrations, in a new `packages/observability` package — not new tables in `packages/core`. Kept simple (still the same Neon project) but structured so the store could later be extracted for reuse across projects, if that ever becomes a real need. Full rationale on `Docs/tickets/gated/resolved/G-003-observability-data-storage-location.md`'s Resolution section; the work is T-053 (schema/package/ingestion), T-054 (read API), T-055 (PR diff-stat sync).
 
+## G-010 — Ticket prioritization mechanism (2026-07-26)
+Decided: a fixed 3-tier `Priority: P0 | P1 | P2` field on every ticket, defaulting to `P1`, set by Alex per ticket at `ticket-writer` draft time (not inferred automatically). `EXECUTOR_ROUTINE.md` Step 1 sorts its candidate list by tier first, numeric `T-###` id as tiebreak — `Blocked on:`/`Gated on:` stay absolute gates underneath, priority only orders within what's already eligible to run. Full rationale on `Docs/tickets/gated/resolved/G-010-ticket-prioritization-mechanism.md`'s Resolution section.
+
 ## T-030 — Mount Streamable HTTP MCP transport on `apps/server` (2026-07-25)
 
 ### The bearer preHandler hook must live inside a Fastify-encapsulated `app.register()`, not a global `app.addHook`
