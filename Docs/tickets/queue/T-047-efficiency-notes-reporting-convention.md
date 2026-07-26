@@ -2,6 +2,8 @@
 
 Milestone ref: M-OBS.2
 
+Priority: P1
+
 Branch: feat/m-obs/t-047-efficiency-notes-reporting-convention
 
 Context files (load ONLY these):

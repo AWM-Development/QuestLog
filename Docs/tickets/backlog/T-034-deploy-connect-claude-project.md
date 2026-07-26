@@ -12,6 +12,8 @@ infrastructure precondition, not invented).
 
 Milestone ref: M-REMOTE.7 (`Docs/MILESTONES_V1_1_MCP.md`)
 
+Priority: P1
+
 Blocked on: T-030, T-031, T-032, T-033 — must all be merged into develop first
 
 Branch: feat/m-remote/t-034-deploy-connect-claude-project

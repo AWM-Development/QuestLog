@@ -2,6 +2,8 @@
 
 Milestone ref: M-OBS.7
 
+Priority: P2
+
 Branch: feat/m-obs/t-051-cost-model-config
 
 Context files (load ONLY these):

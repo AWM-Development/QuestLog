@@ -2,6 +2,8 @@
 
 Milestone ref: M-EFFICIENCY.1
 
+Priority: P0
+
 Branch: feat/m-efficiency/t-048-filter-test-output-tdd-loop
 
 Context files (load ONLY these):

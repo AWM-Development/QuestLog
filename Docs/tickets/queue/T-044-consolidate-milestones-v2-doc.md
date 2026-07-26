@@ -3,6 +3,8 @@
 Milestone ref: N/A — process/docs ticket, not itself a milestone task (same
   precedent as T-009/T-026/T-027). Resolves `Docs/tickets/gated/resolved/G-002-milestone-docs-cleanup-and-ticketing-reference-audit.md`, **as amended 2026-07-26** (see that file's Addendum): the new file lands in `Docs/milestones/`, not `Docs/` root as G-002's original resolution said — `Docs/milestones/` is being repurposed as the live home for all milestone docs rather than deleted (T-045 moves `MILESTONES_V1_MCP.md`/`MILESTONES_V1_1_MCP.md` there too).
 
+Priority: P0
+
 Branch: feat/docs/t-044-consolidate-milestones-v2-doc
 
 Context files (load ONLY these):

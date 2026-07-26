@@ -3,6 +3,8 @@
 Milestone ref: N/A — process/docs ticket, not itself a milestone task (same
   precedent as T-009/T-026/T-027). Resolves `Docs/tickets/gated/resolved/G-002-milestone-docs-cleanup-and-ticketing-reference-audit.md`, **as amended 2026-07-26** (see that file's Addendum): `Docs/milestones/` is repurposed as the live home for every milestone doc, not deleted. Alex's reasoning: having `MILESTONES_*.md` scattered at `Docs/` root alongside unrelated docs (PRD, design system, audits) while a same-named, purpose-built `Docs/milestones/` directory sits empty was the actual sprawl — consolidating them there is cleaner than either leaving them at root or deleting the directory.
 
+Priority: P0
+
 Blocked on: T-044 — must be merged into develop first (needs
   `Docs/milestones/MILESTONES_V2.md` to exist, and `MILESTONES_PT1.md`/`PT2.md`
   to actually be gone, before this ticket's exit condition can be checked)

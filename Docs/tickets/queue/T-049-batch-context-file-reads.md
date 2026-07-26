@@ -2,6 +2,8 @@
 
 Milestone ref: M-EFFICIENCY.2
 
+Priority: P0
+
 Branch: feat/m-efficiency/t-049-batch-context-file-reads
 
 Context files (load ONLY these):

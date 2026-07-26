@@ -2,6 +2,8 @@
 
 Milestone ref: M-OBS.1
 
+Priority: P1
+
 Branch: feat/m-obs/t-046-executor-usage-capture-hook
 
 Context files (load ONLY these):

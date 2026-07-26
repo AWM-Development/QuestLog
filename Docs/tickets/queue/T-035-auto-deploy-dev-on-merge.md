@@ -8,6 +8,8 @@ to-do, do not attempt it.
 
 Milestone ref: M-CICD.1 (`Docs/MILESTONES_V1_1_MCP.md`)
 
+Priority: P1
+
 Branch: feat/m-cicd/t-035-auto-deploy-dev-on-merge
 
 Context files (load ONLY these):
