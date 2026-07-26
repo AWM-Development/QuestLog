@@ -1,7 +1,7 @@
-# T-044 — Consolidate `MILESTONES_PT1`/`PT2`'s v2 detail into a current `Docs/MILESTONES_V2.md`; retire the PT files
+# T-044 — Consolidate `MILESTONES_PT1`/`PT2`'s v2 detail into a current `Docs/milestones/MILESTONES_V2.md`; retire the PT files
 
 Milestone ref: N/A — process/docs ticket, not itself a milestone task (same
-  precedent as T-009/T-026/T-027). Resolves `Docs/tickets/gated/resolved/G-002-milestone-docs-cleanup-and-ticketing-reference-audit.md`.
+  precedent as T-009/T-026/T-027). Resolves `Docs/tickets/gated/resolved/G-002-milestone-docs-cleanup-and-ticketing-reference-audit.md`, **as amended 2026-07-26** (see that file's Addendum): the new file lands in `Docs/milestones/`, not `Docs/` root as G-002's original resolution said — `Docs/milestones/` is being repurposed as the live home for all milestone docs rather than deleted (T-045 moves `MILESTONES_V1_MCP.md`/`MILESTONES_V1_1_MCP.md` there too).
 
 Branch: feat/docs/t-044-consolidate-milestones-v2-doc
 
@@ -41,22 +41,30 @@ Scope:
   update the description to match current reality, not the 2026-04-era
   original.
 
-  Give `Docs/MILESTONES_V2.md` a header mirroring
-  `Docs/MILESTONES_V1_MCP.md`'s own (Location/Status/Supersedes lines).
-  Status should read as explicitly deferred/dormant — e.g. "v2 scope,
-  collected for after v1.1 ships — not eligible for `ticket-writer` or
-  nightly-executor selection until Alex explicitly opens v2 planning" —
-  so nothing downstream mistakes this for a live task source.
+  Give `Docs/milestones/MILESTONES_V2.md` a header mirroring
+  `Docs/MILESTONES_V1_MCP.md`'s own (Location/Status/Supersedes lines,
+  with `Location:` updated to the new path). Status should read as
+  explicitly deferred/dormant — e.g. "v2 scope, collected for after v1.1
+  ships — not eligible for `ticket-writer` or nightly-executor selection
+  until Alex explicitly opens v2 planning" — so nothing downstream
+  mistakes this for a live task source. `Docs/milestones/` already exists
+  (currently holding only a `.gitkeep`) — write the new file into it, no
+  directory creation needed.
 
   Once every listed milestone number has a corresponding, current section
-  in `Docs/MILESTONES_V2.md`, delete `Docs/MILESTONES_PT1.md` and
-  `Docs/MILESTONES_PT2.md`.
+  in `Docs/milestones/MILESTONES_V2.md`, delete `Docs/MILESTONES_PT1.md`
+  and `Docs/MILESTONES_PT2.md` (both still at `Docs/` root — this ticket
+  doesn't move them, it deletes them once their content is extracted).
 
 Out of scope:
-  - Updating any doc that cross-references PT1/PT2 or points at the new
-    file (root `README.md`, `Docs/README.md`, `CLAUDE.md`, `Docs/PRD.md`)
-    — that's T-045, blocked on this ticket's merge.
-  - `Docs/milestones/` or `Docs/milestones-archive/` — untouched here.
+  - Moving `Docs/MILESTONES_V1_MCP.md`/`MILESTONES_V1_1_MCP.md`/
+    `MILESTONES_V1_2_MCP.md` into `Docs/milestones/`, and updating every
+    cross-reference to any milestone doc's path (root `README.md`,
+    `Docs/README.md`, `CLAUDE.md`, `Docs/PRD.md`, the active ticket
+    pipeline, pipeline meta-docs) — all of that is T-045, blocked on this
+    ticket's merge. This ticket only needs `Docs/milestones/` to already
+    exist as a directory (it does).
+  - `Docs/milestones-archive/` — untouched here.
   - Any frozen/dated doc (`AUDIT_2026-07.md`, `AUDIT_2026-07-M4.md`,
     `CHANGELOG.md`'s existing entries) — per `Docs/README.md`'s dating
     convention, these are never corrected to match later reality.
@@ -65,11 +73,13 @@ Out of scope:
     planning.
 
 Exit condition (machine-checkable):
-  - `Docs/MILESTONES_V2.md` exists and contains a distinct, grep-findable
-    section for every milestone number in the old "Deferred to v2" table
-    (4.3, 5.1, 5.2, 5.3, 5.4, 6.1, 6.2, 6.3, 7.1, 7.2, 7.3, 8.1, 8.2, 8.3,
-    9.1, 9.2, 9.4, 9.5, 9.6, 10 through 19)
+  - `Docs/milestones/MILESTONES_V2.md` exists and contains a distinct,
+    grep-findable section for every milestone number in the old "Deferred
+    to v2" table (4.3, 5.1, 5.2, 5.3, 5.4, 6.1, 6.2, 6.3, 7.1, 7.2, 7.3,
+    8.1, 8.2, 8.3, 9.1, 9.2, 9.4, 9.5, 9.6, 10 through 19)
   - `Docs/MILESTONES_PT1.md` and `Docs/MILESTONES_PT2.md` no longer exist
+    at `Docs/` root (and were not created anywhere else — they're deleted,
+    not moved)
   - `git grep -l "MILESTONES_PT1\|MILESTONES_PT2"` returns matches only in
     frozen/historical files (`CHANGELOG.md`, `AUDIT_*.md`,
     `Docs/tickets/gated/resolved/*`, this ticket's own file/report) — no

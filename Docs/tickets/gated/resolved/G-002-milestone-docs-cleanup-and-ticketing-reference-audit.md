@@ -74,3 +74,42 @@ Not addressed here, flagged separately in the original gate-stub's Notes
 and left untouched: the stray `.claude/worktrees/heuristic-hermann-e69c56`
 git worktree carrying its own stale doc copies — a branch-hygiene question,
 not a docs-content one.
+
+## Addendum (2026-07-26)
+
+Raised by Alex during a later session (T-031's morning review, unrelated to
+this gate's original trigger): having every live `MILESTONES_*.md` sit at
+`Docs/` root alongside unrelated docs (PRD, design system, audits) while a
+same-named, purpose-built `Docs/milestones/` directory sat empty was itself
+sprawl — the original resolution's "remove the empty placeholder" call
+didn't consider repurposing it as the live docs' home, only evaluated it
+against the old, fully-superseded per-milestone PLAN/REPORT/DESIGN_SPEC
+workflow it was originally reserved for.
+
+Revised: `Docs/milestones/` is **not deleted**. It becomes the live home
+for every milestone doc — `MILESTONES_V1_MCP.md`, `MILESTONES_V1_1_MCP.md`,
+and the new `MILESTONES_V2.md` this gate's original resolution already
+called for. `Docs/milestones-archive/` is unaffected — it stays a
+separate, already-accurate historical directory.
+
+`T-044` and `T-045` were amended in place (not re-drafted) to target
+`Docs/milestones/` instead of `Docs/` root / instead of deleting the
+directory. `T-044` now writes `MILESTONES_V2.md` directly into
+`Docs/milestones/`; `T-045` now also moves `MILESTONES_V1_MCP.md` and
+`MILESTONES_V1_1_MCP.md` there (previously out of its scope) and fixes
+every living cross-reference across the repo, not just the four docs the
+original resolution named — the full list of affected files turned out to
+include pipeline meta-docs (`TICKET_SPEC.md`, `GATE_SPEC.md`,
+`EXECUTOR_ROUTINE.md`, `REPORT_TEMPLATE.md`), two `.claude/` files
+(`rules/frontend.md`, `skills/ticket-writer/SKILL.md`), and every
+currently-active ticket file citing the old root path in its "Milestone
+ref" line.
+
+Also folded in: `Docs/MILESTONES_V1_2_MCP.md` (the M-OBS/M-EFFICIENCY
+milestone doc, merged into `develop` 2026-07-26 — after this gate's
+original resolution, so it wasn't named there) gets the same
+root-to-`Docs/milestones/` move and reference fix in `T-045`, for
+consistency with v1/v1.1/v2. This pulled `G-003`/`G-004`
+(`Docs/tickets/gated/`, both cite `MILESTONES_V1_2_MCP.md`) and the
+queued M-OBS/M-EFFICIENCY tickets (`T-046`–`T-051`) into `T-045`'s
+mechanical path-fix scope too.
