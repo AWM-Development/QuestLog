@@ -8,6 +8,7 @@
  * Silently skips if the database doesn't exist (e.g. unit-test-only runs).
  */
 import postgres, { type Sql } from "postgres";
+import type { TestProject } from "vitest/node";
 import { resolveLocalTestDbUrl } from "./test-db-url.js";
 
 export const TABLES_IN_DELETE_ORDER = [
@@ -45,10 +46,16 @@ export async function truncateAllTables(sql: Pick<Sql, "unsafe">) {
 	}
 }
 
-// Vitest invokes globalSetup files with a TestProject argument this function
-// doesn't use — it always owns and closes its own connection.
-export async function setup() {
-	const connectionString = resolveLocalTestDbUrl();
+// `project` is undefined only when a test calls setup() directly (not via
+// Vitest's globalSetup mechanism); resolveLocalTestDbUrl() falls back to
+// process.env.DATABASE_URL in that case. When Vitest invokes this as
+// globalSetup, project.config.env reflects test.env immediately — reading
+// process.env instead would race Vitest applying test.env to it. Why:
+// Docs/IMPLEMENTATION_NOTES.md § T-031 / T-052.
+export async function setup(project?: TestProject) {
+	const connectionString = resolveLocalTestDbUrl(
+		project?.config.env.DATABASE_URL,
+	);
 	const client = postgres(connectionString, { max: 1 });
 
 	try {

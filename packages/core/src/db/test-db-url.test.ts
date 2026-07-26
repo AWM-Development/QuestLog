@@ -1,7 +1,8 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	FAKE_HOSTED_DB_URL,
 	assertLocalDatabaseUrl,
+	resolveLocalTestDbUrl,
 	testDbUrl,
 } from "./test-db-url.js";
 
@@ -47,5 +48,37 @@ describe("assertLocalDatabaseUrl", () => {
 		} catch (error) {
 			expect((error as Error).message).not.toContain("secretpw");
 		}
+	});
+});
+
+describe("resolveLocalTestDbUrl", () => {
+	afterEach(() => {
+		vi.unstubAllEnvs();
+	});
+
+	it("prefers an explicit URL over process.env.DATABASE_URL", () => {
+		vi.stubEnv("DATABASE_URL", testDbUrl("questlog_test"));
+
+		expect(resolveLocalTestDbUrl(testDbUrl("questlog_test_mcp"))).toBe(
+			testDbUrl("questlog_test_mcp"),
+		);
+	});
+
+	it("falls back to process.env.DATABASE_URL when no explicit URL is given", () => {
+		vi.stubEnv("DATABASE_URL", testDbUrl("questlog_test_mcp"));
+
+		expect(resolveLocalTestDbUrl()).toBe(testDbUrl("questlog_test_mcp"));
+	});
+
+	it("falls back to questlog_test when neither an explicit URL nor process.env.DATABASE_URL is set", () => {
+		vi.stubEnv("DATABASE_URL", undefined);
+
+		expect(resolveLocalTestDbUrl()).toBe(testDbUrl("questlog_test"));
+	});
+
+	it("still guards an explicit URL against a non-local host", () => {
+		expect(() => resolveLocalTestDbUrl(FAKE_HOSTED_DB_URL)).toThrow(
+			/non-local database host/,
+		);
 	});
 });
