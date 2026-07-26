@@ -35,6 +35,7 @@ The live process for getting work done. A nightly executor picks tickets off a q
 - **tickets/GATE_SPEC.md** — The gate-stub format for a 🎨/🧠 decision blocking pipeline work, resolved exclusively by `/ungate`.
 - **tickets/EXECUTOR_ROUTINE.md** — The exact prompt configured in the nightly scheduled agent, version-controlled here so changes are diffable. If you're asking "what does the overnight agent actually do," this is the literal answer, step by step.
 - **tickets/COMMANDS.md** — Quick-read index of every pipeline slash command (`/executor`, `/promote`, `/promote-execute`, `/lineup`, `/ungate`, etc.) with args and a one-line summary each. Run `/command-help` for the same list from inside a session.
+- **tickets/LINEUP_SAMPLE.md** — A worked example of `/lineup`'s report with mock tickets/PRs, for reviewing the output format without running the command.
 - **tickets/BLOCKED_TEMPLATE.md** / **tickets/REPORT_TEMPLATE.md** — The two possible session outputs: a blocked report (iteration cap hit, needs Alex's input) or a shipped morning report (PR description).
 - **tickets/backlog/**, **tickets/queue/**, **tickets/in-progress/**, **tickets/done/**, **tickets/blocked/**, **tickets/reports/**, **tickets/gated/** — The live ticket and gate state. `queue/` empty = nightly spend is off. `backlog/` holds tickets waiting on a named prerequisite (`Blocked on:` field) or an unresolved decision (`Gated on:` field) before auto-promoting to `queue/`.
 
