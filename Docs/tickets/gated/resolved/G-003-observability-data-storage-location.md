@@ -30,3 +30,16 @@ Notes: Raised explicitly by Alex during planning ("or if we want to separate out
   - PR diff stats (files/lines changed) ideally ingested automatically (e.g. a `gh`/GitHub API sync keyed by ticket id) rather than requiring a manual pull each time someone wants the diff-size correlation.
   - **From T-046's amended scope:** `turns_to_green` (distinct from total `turn_count`), `reviewer_subagent` cost/tokens as a separate sub-object (for "total system cost"), and `manually_inspected`/`human_message_count` (so sessions where Alex interrupted mid-run to ask for a cost breakdown, inflating the reported numbers, can be excluded from trend data rather than silently skewing it).
   - **From T-050/T-051 (ticket format + cost model, both ungated and shippable independent of this gate):** each report's `complexity_tier` (S/M/L) and `strategy_gate_flag`, plus the computed `total_system_cost` and `cost_vs_human_equivalent` figures — these are the fields that make every other number in this store interpretable relative to ticket size, and comparable to a human-engineer baseline.
+
+## Resolution (2026-07-26)
+
+Decided: **separate Neon branch, same Neon project.** New workspace package `packages/observability` holds its own Drizzle schema and migrations, its own `drizzle.config.ts` reading a new `OBSERVABILITY_DATABASE_URL` env var, and its own connection pool at query time — deliberately not merged into `packages/core/src/db/schema/tables.ts`.
+
+Rationale, from the planning conversation: Alex explicitly wants to keep the door open to eventually extracting this observability infrastructure for reuse across other projects — it's "infrastructure about the pipeline," not app data, and the portfolio-DX framing (a tabletop RPG app's schema visibly containing token-usage tables would look wrong to a reviewer) still applies. But building a fully separate Neon project (or a different technology entirely) right now would be over-engineering for a need that doesn't exist yet — a second project is a second billing/connection surface with no current second consumer. Splitting the *branch* while keeping the *project* is the middle path: real schema/migration independence today (no coupling to campaign-data migrations, a `git grep`-visible boundary between the two domains), while deferring the heavier separate-project/technology decision until there's an actual second consumer to design for.
+
+This unblocks M-OBS.3 and M-OBS.4, drafted as:
+  - **T-053** — `packages/observability` package scaffold, Drizzle schema (`ticket_runs`, `ticket_reports`) covering this gate's full expanded field list (including placeholder columns for T-050/T-051's fields and future diff-stat sync), and an ingestion function/CLI for T-046's `*.usage.json` artifacts plus report content.
+  - **T-054** — read-only tRPC endpoints over T-053's store (per-ticket, trends, log/feed views), blocked on T-053.
+  - **T-055** — PR diff-stat sync via `gh`, populating the diff-stat placeholder columns T-053 declares, blocked on T-053.
+
+M-OBS.5 (the dashboard UI) remains separately blocked on `G-004`, unaffected by this resolution beyond consuming whatever shape T-054 ships.

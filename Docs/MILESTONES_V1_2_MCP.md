@@ -12,7 +12,9 @@ This milestone builds the actual instrumentation instead of continuing to guess:
 
 **Resolved gates going into this milestone:** none — this milestone opens two (`G-003`, `G-004`), it doesn't inherit any resolved ones.
 
-**Open gates:** `G-003` (`Docs/tickets/gated/G-003-observability-data-storage-location.md`) — where usage/efficiency data is persisted long-term, blocking M-OBS.3 and M-OBS.4. `G-004` (`Docs/tickets/gated/G-004-observability-dashboard-design.md`) — the dashboard's visual design/IA, blocking M-OBS.5.
+**Resolved:** `G-003` (`Docs/tickets/gated/resolved/G-003-observability-data-storage-location.md`) — separate Neon branch, own schema/migrations, packaged (`packages/observability`) to be extractable later; not folded into `packages/core`. Ticketed as T-053/T-054/T-055.
+
+**Open gates:** `G-004` (`Docs/tickets/gated/G-004-observability-dashboard-design.md`) — the dashboard's visual design/IA, blocking M-OBS.5.
 
 ---
 
@@ -32,11 +34,11 @@ This milestone builds the actual instrumentation instead of continuing to guess:
   A required "Efficiency notes" section in `REPORT_TEMPLATE.md`/`BLOCKED_TEMPLATE.md` where the executor self-reports *why* a run ran long or tight (e.g. superfluous context, pre-existing code needing a fix before the real work could start) — the qualitative half T-046's objective data can't provide on its own.
   Exit: both templates carry the new section; `EXECUTOR_ROUTINE.md` explicitly instructs writing it.
 
-- [ ] **M-OBS.3 — Persist usage/efficiency/report data to a queryable store** (Gated on: G-003)
-  Ingest T-046's per-run JSON artifacts, T-047's efficiency notes, **and each ticket's morning/blocked report content** (outcome, what shipped, test evidence, reviewer verdict, "anything Alex must decide") into a real, queryable store — including reviewer-verdict/remediation-pass as structured fields, cache-read ratio, cost-per-changed-line, and blocked-outcome data as a first-class case. **Blocked on deciding where** — new tables in the existing `packages/core`/Neon schema, or a fully separate store — see `Docs/tickets/gated/G-003-observability-data-storage-location.md` (which also carries the full expanded field list).
+- [ ] **M-OBS.3 — Persist usage/efficiency/report data to a queryable store** (T-053)
+  Ingest T-046's per-run JSON artifacts, T-047's efficiency notes, **and each ticket's morning/blocked report content** (outcome, what shipped, test evidence, reviewer verdict, "anything Alex must decide") into a real, queryable store — including reviewer-verdict/remediation-pass as structured fields, cache-read ratio, cost-per-changed-line, and blocked-outcome data as a first-class case. Resolved via `G-003`: a separate Neon branch/schema in a new `packages/observability` package, not new tables in `packages/core`.
 
-- [ ] **M-OBS.4 — API endpoint(s) serving usage/efficiency/report data** (Gated on: G-003)
-  Read path for whatever M-OBS.3 lands on — per-ticket and aggregate views (tokens, cost, duration, diff-size correlation, efficiency notes), plus a log/feed endpoint serving report content for browsing. Includes syncing PR diff stats (files/lines changed) automatically by ticket id rather than requiring a manual `gh pr list` pull. Shape depends on G-003's resolution, same as M-OBS.3.
+- [ ] **M-OBS.4 — API endpoint(s) serving usage/efficiency/report data** (T-054, T-055)
+  Read path over M-OBS.3's store — per-ticket and aggregate views (tokens, cost, duration, diff-size correlation, efficiency notes), plus a log/feed endpoint serving report content for browsing (T-054), and syncing PR diff stats (files/lines changed) automatically by ticket id rather than requiring a manual `gh pr list` pull (T-055). Both blocked on T-053's schema landing first.
 
 - [ ] **M-OBS.5 — Observability dashboard UI** (Gated on: G-004)
   A standalone dashboard (explicitly outside the v1 SourcesPage-only web surface — see `CLAUDE.md`) surfacing M-OBS.4's data across three surfaces: a trends view (cost, tokens, duration, diff-size correlation, cache-read:write ratio, cost-vs-human-equivalent by tier), a log view (browsable per-ticket report feed — the "logging center" half), and a methodology/case-study section for longer-form writeups (e.g. a cache-read-dominance teardown) — portfolio narrative content, not a metric. **Blocked on a design decision** — "designed with Claude design" was named as intent, not a concrete IA/visual answer — see `Docs/tickets/gated/G-004-observability-dashboard-design.md`, which now also carries the full mockup brief.
