@@ -57,12 +57,13 @@ Scope:
   doesn't move them, it deletes them once their content is extracted).
 
 Out of scope:
-  - Moving `Docs/MILESTONES_V1_MCP.md`/`MILESTONES_V1_1_MCP.md` into
-    `Docs/milestones/`, and updating every cross-reference to any
-    milestone doc's path (root `README.md`, `Docs/README.md`, `CLAUDE.md`,
-    `Docs/PRD.md`, the active ticket pipeline, pipeline meta-docs) — all
-    of that is T-045, blocked on this ticket's merge. This ticket only
-    needs `Docs/milestones/` to already exist as a directory (it does).
+  - Moving `Docs/MILESTONES_V1_MCP.md`/`MILESTONES_V1_1_MCP.md`/
+    `MILESTONES_V1_2_MCP.md` into `Docs/milestones/`, and updating every
+    cross-reference to any milestone doc's path (root `README.md`,
+    `Docs/README.md`, `CLAUDE.md`, `Docs/PRD.md`, the active ticket
+    pipeline, pipeline meta-docs) — all of that is T-045, blocked on this
+    ticket's merge. This ticket only needs `Docs/milestones/` to already
+    exist as a directory (it does).
   - `Docs/milestones-archive/` — untouched here.
   - Any frozen/dated doc (`AUDIT_2026-07.md`, `AUDIT_2026-07-M4.md`,
     `CHANGELOG.md`'s existing entries) — per `Docs/README.md`'s dating
