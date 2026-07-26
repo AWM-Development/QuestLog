@@ -151,6 +151,51 @@ describe("sourceService", () => {
 		});
 	});
 
+	describe("getByIdForCampaign", () => {
+		it("returns the source when it belongs to the given campaign", async () => {
+			const created = await sourceService.create(db, {
+				campaignId,
+				name: "test.md",
+				type: "markdown",
+				sizeBytes: 500,
+				hash: "deadbeef",
+			});
+
+			const found = await sourceService.getByIdForCampaign(
+				db,
+				campaignId,
+				created.id,
+			);
+			expect(found.id).toBe(created.id);
+			expect(found.name).toBe("test.md");
+		});
+
+		it("throws NotFoundError for a source owned by a different campaign", async () => {
+			const otherCampaign = await campaignService.create(db, {
+				name: "Other Campaign",
+				theme: "sci-fi",
+			});
+			const created = await sourceService.create(db, {
+				campaignId: otherCampaign.id,
+				name: "theirs.txt",
+				type: "text",
+				sizeBytes: 10,
+				hash: "h1",
+			});
+
+			await expect(
+				sourceService.getByIdForCampaign(db, campaignId, created.id),
+			).rejects.toThrow(NotFoundError);
+		});
+
+		it("throws NotFoundError for non-existent id", async () => {
+			const fakeId = "00000000-0000-0000-0000-000000000000";
+			await expect(
+				sourceService.getByIdForCampaign(db, campaignId, fakeId),
+			).rejects.toThrow(NotFoundError);
+		});
+	});
+
 	describe("updateStatus", () => {
 		it("updates the status and returns the updated source", async () => {
 			const created = await sourceService.create(db, {

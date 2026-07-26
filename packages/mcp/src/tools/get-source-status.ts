@@ -1,5 +1,4 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { NotFoundError } from "@questlog/core/lib/errors.js";
 import { sourceService } from "@questlog/core/services/source.service.js";
 import { GetSourceStatusInput } from "@questlog/shared";
 import { withToolErrors } from "./errors.js";
@@ -14,10 +13,11 @@ export function registerGetSourceStatus(server: McpServer, { db }: ToolDeps) {
 			inputSchema: GetSourceStatusInput,
 		},
 		withToolErrors(async ({ campaignId, sourceId }) => {
-			const source = await sourceService.getById(db, sourceId);
-			if (source.campaignId !== campaignId) {
-				throw new NotFoundError("Source", sourceId);
-			}
+			const source = await sourceService.getByIdForCampaign(
+				db,
+				campaignId,
+				sourceId,
+			);
 
 			return {
 				content: [
