@@ -1,4 +1,4 @@
-# G-006 — Drop TypeScript composite project references in favor of `tsc --noEmit`
+# G-007 — Drop TypeScript composite project references in favor of `tsc --noEmit`
 
 Gate type: 🧠 strategy
 

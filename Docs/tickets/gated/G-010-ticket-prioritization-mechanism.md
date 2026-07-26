@@ -1,4 +1,4 @@
-# G-009 — Ticket prioritization mechanism
+# G-010 — Ticket prioritization mechanism
 
 Gate type: 🧠 strategy
 

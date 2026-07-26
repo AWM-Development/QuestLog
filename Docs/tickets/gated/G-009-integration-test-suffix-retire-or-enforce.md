@@ -1,8 +1,8 @@
-# G-008 — Retire or enforce the `.integration.test.ts` naming tier
+# G-009 — Retire or enforce the `.integration.test.ts` naming tier
 
 Gate type: 🧠 strategy
 
-Milestone ref: none — pipeline/tooling hygiene; surfaced by the same 2026-07-26 audit as G-006/G-007
+Milestone ref: none — pipeline/tooling hygiene; surfaced by the same 2026-07-26 audit as G-007/G-008
 
 Opened: 2026-07-26 — by Alex/agent during the same standalone test-infrastructure audit
 
@@ -16,4 +16,4 @@ Open question: No vitest config anywhere globs on `.integration.test.ts` specifi
 
 Blocks: none yet — resolution is either a mechanical rename pass (~13 files) or a small config/lint addition, plus a one-line correction to `.claude/rules/backend.md`'s "Test DB pattern" section, which currently doesn't mention the suffix distinction at all in either direction.
 
-Notes: Lowest-stakes of the three test-infra gates filed from this audit (G-006, G-007, this one) — bundled together because they surfaced in the same session and Alex may want to decide all three at once, but each `Blocks:` is self-contained and `/ungate` can resolve them independently in any order.
+Notes: Lowest-stakes of the three test-infra gates filed from this audit (G-007, G-008, this one) — bundled together because they surfaced in the same session and Alex may want to decide all three at once, but each `Blocks:` is self-contained and `/ungate` can resolve them independently in any order.

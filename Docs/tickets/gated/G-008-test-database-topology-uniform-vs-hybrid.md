@@ -1,8 +1,8 @@
-# G-007 — Test-database topology: uniform per-package physical DBs, or keep the shared-DB-plus-ordering hybrid?
+# G-008 — Test-database topology: uniform per-package physical DBs, or keep the shared-DB-plus-ordering hybrid?
 
 Gate type: 🧠 strategy
 
-Milestone ref: none — pipeline/tooling hygiene, same category as T-026/T-027/T-043/T-052; surfaced by the same 2026-07-26 audit as G-006
+Milestone ref: none — pipeline/tooling hygiene, same category as T-026/T-027/T-043/T-052; surfaced by the same 2026-07-26 audit as G-007
 
 Opened: 2026-07-26 — by Alex/agent during the same standalone test-infrastructure audit
 
