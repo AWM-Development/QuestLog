@@ -47,7 +47,7 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   Paste a document's text directly into a chat and have it chunked + embedded — the missing piece for "upload a campaign document" without leaving Claude. Wraps the existing `sourceService.createFromText` path, but actually triggers `importService.processSource` (unlike the current `source.importText` tRPC mutation, which only creates a `pending` row). **Resolved via G-001** (narrow reading — direct write, no preview/confirm needed, since this only ever inserts new rows): see `Docs/tickets/gated/resolved/G-001-write-tool-preview-confirm-scope.md`.
   Exit: calling the tool with real text produces a `done`-status source whose content is retrievable via `query_lore`.
 
-- [ ] **M-REMOTE.5 — `create_entity` / entity-update MCP tools** (T-032)
+- [x] **M-REMOTE.5 — `create_entity` / entity-update MCP tools** (T-032)
   Author NPCs, locations, factions, items, and arcs directly from a session instead of only being able to look them up. **Resolved via G-001**, same reading as M-REMOTE.4.
   Exit: an entity created via the tool is immediately visible to `get_entity`/`list_entities`.
 

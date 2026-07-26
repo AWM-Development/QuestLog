@@ -886,6 +886,14 @@ Decided: consolidate `MILESTONES_PT1.md`/`PT2.md`'s still-relevant v2 detail int
 ### `db.$client.end()` is required for any one-shot script that imports `@questlog/core/db/index.js`'s `db` singleton
 `apps/server/scripts/mcp-remote-smoke.ts` (a standalone script, not part of `pnpm test`) hung indefinitely after printing its final "PASS" line until `db.$client.end()` was added in a `finally` block alongside `app.close()`. The shared `db` export wraps a `postgres()` client that keeps its TCP socket open until explicitly ended — fine for a long-running server process (`main.ts` never needs to exit), but any one-shot script importing the same singleton needs to close it itself or the Node process never exits on its own.
 
+## T-032 — `create_entity` / `append_entity_note` MCP tools (2026-07-26)
+
+### New tool input schemas live in `packages/shared`, never `zod` imported directly into `packages/mcp/src/tools`
+`packages/mcp/package.json` has no direct `zod` dependency — every existing tool's `inputSchema` is sourced from `@questlog/shared` instead. `append_entity_note`'s input (`entityId`, `note`) has no other consumer, but rather than add a new dependency edge for one file, `AppendEntityNoteInput` was added to `packages/shared/src/validators/entity.ts` alongside `EntityCreateInput` and exported from the validators barrel — matching every prior tool's precedent even though this particular shape isn't actually shared with the frontend.
+
+### `apps/server/src/routes/mcp-http.routes.integration.test.ts` hard-codes the full tool list
+That file's `EXPECTED_TOOLS` array and its "tools/list returns all N tools" test name aren't scoped to any one ticket — they assert every registered MCP tool by exact name. Any ticket that registers a new tool (this one added `create_entity`/`append_entity_note`, bumping 7→9) needs to update both in the same PR or that integration test fails through no fault of its own logic. This file wasn't in T-032's `Context files:` list; flagged here so the next tool-adding ticket expects the same ripple.
+
 ## T-031 — `ingest_text` / `get_source_status` MCP tools (2026-07-25)
 
 ### `ToolDeps` needed a new required `storage` field — not just the two named tools' problem
@@ -896,3 +904,4 @@ Decided: consolidate `MILESTONES_PT1.md`/`PT2.md`'s still-relevant v2 detail int
 
 ### `packages/mcp`'s test DB (`questlog_test_mcp`) isn't reliably truncated between separate `pnpm test` invocations — a pre-existing gap, not introduced here
 A test that fails after creating a row but before its cleanup runs (hit once during this ticket's Red phase, before `ingest_text` existed) left a stray `campaigns` row in `questlog_test_mcp` that survived multiple subsequent `pnpm test` runs, corrupting an unrelated `list_campaigns` test's "genuinely empty table" assertion. `global-setup.ts`'s truncation runs once per Vitest invocation and is shared via a relative-path import (T-027's isolation model), but `packages/mcp/vitest.config.ts` points it at `questlog_test_mcp` via `test.env.DATABASE_URL` — and Vitest's `globalSetup` appears to run before `test.env` is applied, so `resolveLocalTestDbUrl()` falls back to `questlog_test` instead, truncating the wrong database. Worked around here by manually deleting the stray row and switching `T-031`'s own tests to `afterEach`-based cleanup instead of end-of-test inline deletes (so a mid-test failure still cleans up). Not fixed at the infrastructure level — out of scope for this ticket — but any future ticket touching `packages/mcp/src/server.test.ts` should know a crashed test run can leave stray rows that `global-setup` won't clear, and should verify cleanup runs in `afterEach`/`finally`, not as the last line of the test body.
+>>>>>>> origin/develop

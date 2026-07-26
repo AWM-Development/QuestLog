@@ -507,6 +507,151 @@ describe("get_entity tool", () => {
 	});
 });
 
+describe("create_entity tool", () => {
+	let campaignId: string;
+
+	beforeEach(async () => {
+		await db.execute(sql`BEGIN`);
+		vi.clearAllMocks();
+
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await db.execute(sql`ROLLBACK`);
+	});
+
+	it("creates a row immediately visible via get_entity and list_entities", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const createResult = await client.callTool({
+			name: "create_entity",
+			arguments: {
+				campaignId,
+				name: "Mira Duskwood",
+				type: "npc",
+				description: "A road warden.",
+			},
+		});
+
+		expect(createResult.isError).toBeFalsy();
+		const createContent = createResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const created = JSON.parse(createContent[0]?.text ?? "{}");
+		expect(created.id).toBeDefined();
+		expect(created.name).toBe("Mira Duskwood");
+
+		const getResult = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: created.id },
+		});
+		expect(getResult.isError).toBeFalsy();
+		const getContent = getResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const fetched = JSON.parse(getContent[0]?.text ?? "{}");
+		expect(fetched.id).toBe(created.id);
+		expect(fetched.description).toBe("A road warden.");
+
+		const listResult = await client.callTool({
+			name: "list_entities",
+			arguments: { campaignId },
+		});
+		expect(listResult.isError).toBeFalsy();
+		const listContent = listResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const listed = JSON.parse(listContent[0]?.text ?? "{}");
+		expect(listed.entities).toEqual(
+			expect.arrayContaining([expect.objectContaining({ id: created.id })]),
+		);
+	});
+
+	it("rejects an invalid type before it reaches the service", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "create_entity",
+			arguments: { campaignId, name: "Mira Duskwood", type: "wizard" },
+		});
+
+		expect(result.isError).toBe(true);
+
+		const rows = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.campaignId, campaignId));
+		expect(rows).toHaveLength(0);
+	});
+});
+
+describe("append_entity_note tool", () => {
+	let campaignId: string;
+
+	beforeEach(async () => {
+		await db.execute(sql`BEGIN`);
+		vi.clearAllMocks();
+
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await db.execute(sql`ROLLBACK`);
+	});
+
+	it("appends to an existing entity's description without overwriting prior content", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+			description: "A road warden.",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "append_entity_note",
+			arguments: {
+				entityId: entity.id,
+				note: "She used to serve under Baron Voss.",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.description).toBe(
+			"A road warden.\n\nShe used to serve under Baron Voss.",
+		);
+	});
+
+	it("returns a well-formed not-found error for a bogus entityId", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const unknownEntityId = "00000000-0000-0000-0000-000000000000";
+
+		const result = await client.callTool({
+			name: "append_entity_note",
+			arguments: { entityId: unknownEntityId, note: "Some note." },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+	});
+});
+
 describe("log_session + confirm_log_session tools", () => {
 	// confirm_log_session opens its own db.transaction() (via
 	// writeRequestService.confirm), which does not compose with a raw
