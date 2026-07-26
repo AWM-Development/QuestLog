@@ -43,7 +43,7 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   New route (e.g. `POST /mcp`) using `StreamableHTTPServerTransport`, protected by M-REMOTE.2's bearer-token validation, serving the tool set from M-REMOTE.1's relocated factory.
   Exit: an MCP client can complete the full handshake (discover → authorize → connect → `tools/list`) against a running `apps/server` instance and see all 7 existing tools.
 
-- [ ] **M-REMOTE.4 — `ingest_text` MCP tool** (T-031)
+- [x] **M-REMOTE.4 — `ingest_text` MCP tool** (T-031)
   Paste a document's text directly into a chat and have it chunked + embedded — the missing piece for "upload a campaign document" without leaving Claude. Wraps the existing `sourceService.createFromText` path, but actually triggers `importService.processSource` (unlike the current `source.importText` tRPC mutation, which only creates a `pending` row). **Resolved via G-001** (narrow reading — direct write, no preview/confirm needed, since this only ever inserts new rows): see `Docs/tickets/gated/resolved/G-001-write-tool-preview-confirm-scope.md`.
   Exit: calling the tool with real text produces a `done`-status source whose content is retrievable via `query_lore`.
 

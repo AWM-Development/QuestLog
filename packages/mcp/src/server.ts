@@ -1,6 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { registerConfirmLogSession } from "./tools/confirm-log-session.js";
 import { registerGetEntity } from "./tools/get-entity.js";
+import { registerGetSourceStatus } from "./tools/get-source-status.js";
+import { registerIngestText } from "./tools/ingest-text.js";
 import { registerListCampaigns } from "./tools/list-campaigns.js";
 import { registerListEntities } from "./tools/list-entities.js";
 import { registerLogSession } from "./tools/log-session.js";
@@ -20,6 +22,8 @@ export function createMcpServer(deps: CreateMcpServerOptions): McpServer {
 	registerGetEntity(server, deps);
 	registerLogSession(server, deps);
 	registerConfirmLogSession(server, deps);
+	registerIngestText(server, deps);
+	registerGetSourceStatus(server, deps);
 
 	return server;
 }

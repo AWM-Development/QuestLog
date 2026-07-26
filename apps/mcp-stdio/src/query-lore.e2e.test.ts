@@ -96,7 +96,7 @@ describe.skipIf(!process.env.VOYAGE_API_KEY)(
 			const finalStatus = await waitForStatus(source.id, "done");
 			expect(finalStatus).toBe("done");
 
-			const mcpServer = createMcpServer({ db });
+			const mcpServer = createMcpServer({ db, storage });
 			const client = new Client({ name: "test-client", version: "0.0.0" });
 			const [clientTransport, serverTransport] =
 				InMemoryTransport.createLinkedPair();

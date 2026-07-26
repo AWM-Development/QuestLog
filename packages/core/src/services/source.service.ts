@@ -74,6 +74,23 @@ export const sourceService = {
 		return first(rows);
 	},
 
+	/**
+	 * Get a single source by ID scoped to a campaign, throwing NotFoundError
+	 * if absent or owned by a different campaign — same shape as
+	 * entityService.getById, for callers taking untrusted external input
+	 * (e.g. an MCP tool) rather than an internally-sourced id.
+	 */
+	async getByIdForCampaign(db: Database, campaignId: string, id: string) {
+		const rows = await db
+			.select()
+			.from(sources)
+			.where(and(eq(sources.id, id), eq(sources.campaignId, campaignId)));
+		if (rows.length === 0) {
+			throw new NotFoundError("Source", id);
+		}
+		return first(rows);
+	},
+
 	/** Update source status, optionally merging metadata. */
 	async updateStatus(
 		db: Database,

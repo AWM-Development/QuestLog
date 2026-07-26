@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-031
+
+- **Seed a campaign's knowledge base straight from a chat, with `ingest_text`**: paste text or markdown directly into a Claude session and it's chunked + embedded into the campaign's knowledge base, the same pipeline the web app's file-upload flow uses — no REST upload endpoint needed. Returns immediately with the new source's id and `pending` status; processing continues in the background. A companion `get_source_status` tool checks progress afterward (`pending` → `extracting` → `chunking` → `embedding` → `done`/`error`). Both tools are additive-only direct writes with no preview/confirm step, per G-001's resolution.
+
 ### Added — T-030
 
 - **The MCP tool set is now reachable remotely, over HTTP**: `POST /mcp` on `apps/server` speaks the MCP Streamable HTTP transport (`@modelcontextprotocol/sdk`'s `StreamableHTTPServerTransport`), serving the same 7 tools (`query_lore`, `prep_brief`, `list_campaigns`, `list_entities`, `get_entity`, `log_session`, `confirm_log_session`) `apps/mcp-stdio` already serves locally over stdio. Every request to `/mcp` requires a valid bearer token from T-029's OAuth shim — a missing or invalid token gets a `401` with a `WWW-Authenticate` header pointing at the new `GET /.well-known/oauth-protected-resource` endpoint (RFC 9728 Protected Resource Metadata), so a compliant client can discover how to authenticate. A scripted MCP client can now complete the full remote handshake — discover, register, authorize, exchange for a token, connect, `tools/list` — against a locally-running `apps/server` instance (`apps/server/scripts/mcp-remote-smoke.ts`). Connecting a real Claude.ai Custom Connector to a deployed instance is a later ticket (M-REMOTE.7).

@@ -42,6 +42,8 @@ const EXPECTED_TOOLS = [
 	"get_entity",
 	"log_session",
 	"confirm_log_session",
+	"ingest_text",
+	"get_source_status",
 ];
 
 function resourceUrl() {
@@ -147,7 +149,7 @@ describe("mcp-http routes", () => {
 	});
 
 	describe("POST /mcp — with a valid bearer token", () => {
-		it("completes the initialize handshake and tools/list returns all 7 tools", async () => {
+		it("completes the initialize handshake and tools/list returns all 9 tools", async () => {
 			const accessToken = await getAccessToken();
 
 			const initResponse = await app.inject({
