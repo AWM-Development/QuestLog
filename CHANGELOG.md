@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-032
+
+- **DMs can now create entities and add notes to them directly from a session, not just look them up**: `create_entity` creates a new NPC, location, faction, item, or arc from a name, type, and optional description; `append_entity_note` adds a note to an existing entity's description without overwriting what's already there (e.g. "Lyra mentioned she used to serve under Baron Voss"). Both are direct writes with no preview/confirm step, per G-001's additive-only-writes exemption — creating a row or appending a note never mutates prior content. There's still no way to rename an entity, replace its description, or delete/archive one — that's unbuilt surface, not a bug.
+
 ### Added — T-031
 
 - **Seed a campaign's knowledge base straight from a chat, with `ingest_text`**: paste text or markdown directly into a Claude session and it's chunked + embedded into the campaign's knowledge base, the same pipeline the web app's file-upload flow uses — no REST upload endpoint needed. Returns immediately with the new source's id and `pending` status; processing continues in the background. A companion `get_source_status` tool checks progress afterward (`pending` → `extracting` → `chunking` → `embedding` → `done`/`error`). Both tools are additive-only direct writes with no preview/confirm step, per G-001's resolution.

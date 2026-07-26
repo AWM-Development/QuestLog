@@ -22,6 +22,12 @@ export const ListEntitiesInput = z.object({
 });
 export type ListEntitiesInput = z.infer<typeof ListEntitiesInput>;
 
+export const AppendEntityNoteInput = z.object({
+	entityId: z.string().uuid(),
+	note: z.string().min(1).max(2000),
+});
+export type AppendEntityNoteInput = z.infer<typeof AppendEntityNoteInput>;
+
 export const GetEntityInput = z
 	.object({
 		campaignId: z.string().uuid(),
