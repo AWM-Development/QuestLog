@@ -16,6 +16,8 @@ import {
 import { campaignService } from "@questlog/core/services/campaign.service.js";
 import { entityService } from "@questlog/core/services/entity.service.js";
 import { sessionService } from "@questlog/core/services/session.service.js";
+import { sourceService } from "@questlog/core/services/source.service.js";
+import { createMemoryStorage } from "@questlog/core/services/storage.service.js";
 import type { FetchFn } from "@questlog/core/services/voyage.client.js";
 import { eq, sql } from "drizzle-orm";
 import {
@@ -42,8 +44,20 @@ function createMockFetch(embedding: number[]): FetchFn {
 	})) as unknown as FetchFn;
 }
 
+function createFailingFetch(): FetchFn {
+	return vi.fn().mockImplementation(async () => ({
+		ok: false,
+		status: 500,
+		text: async () => "Voyage API error",
+	})) as unknown as FetchFn;
+}
+
 async function connectedClient(fetchFn: FetchFn) {
-	const server = createMcpServer({ db, fetchFn });
+	const server = createMcpServer({
+		db,
+		fetchFn,
+		storage: createMemoryStorage(),
+	});
 	const client = new Client({ name: "test-client", version: "0.0.0" });
 	const [clientTransport, serverTransport] =
 		InMemoryTransport.createLinkedPair();
@@ -52,6 +66,23 @@ async function connectedClient(fetchFn: FetchFn) {
 		server.connect(serverTransport),
 	]);
 	return client;
+}
+
+/** Mirrors `apps/server/src/search.e2e.test.ts`'s waitForStatus — polls until a source's fire-and-forget processing settles. */
+async function waitForStatus(
+	sourceId: string,
+	target: string,
+	timeoutMs = 5_000,
+): Promise<string> {
+	const start = Date.now();
+	let lastStatus = "";
+	while (Date.now() - start < timeoutMs) {
+		const source = await sourceService.getById(db, sourceId);
+		lastStatus = source.status;
+		if (lastStatus === target || lastStatus === "error") return lastStatus;
+		await new Promise((resolve) => setTimeout(resolve, 20));
+	}
+	return lastStatus;
 }
 
 describe("query_lore tool", () => {
@@ -961,5 +992,174 @@ describe("log_session + confirm_log_session tools", () => {
 		expect(unchangedEntity?.description).toBe(
 			"A ranger who knows the Old Road.",
 		);
+	});
+});
+
+describe("ingest_text + get_source_status tools", () => {
+	// processSource is triggered fire-and-forget (not awaited by the tool
+	// handler), same as autoProcessUploads in apps/server/src/server.ts — tests
+	// must poll rather than assume completion by the time callTool resolves.
+	let campaignId: string;
+	let otherCampaignId: string | undefined;
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+		otherCampaignId = undefined;
+
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, campaignId);
+		if (otherCampaignId) {
+			await db.delete(campaigns).where(eq(campaigns.id, otherCampaignId));
+		}
+	});
+
+	it("creates a pending source immediately and reaches done with a queryable chunk", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Ashfall Primer",
+				content: "Mira Duskwood patrols the Old Road near Ashfall Peak.",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.source.id).toBeDefined();
+		expect(payload.source.status).toBe("pending");
+
+		const finalStatus = await waitForStatus(payload.source.id, "done");
+		expect(finalStatus).toBe("done");
+
+		const queryResult = await client.callTool({
+			name: "query_lore",
+			arguments: { campaignId, query: "Who patrols the road?" },
+		});
+		expect(queryResult.isError).toBeFalsy();
+		const queryContent = queryResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const queryPayload = JSON.parse(queryContent[0]?.text ?? "{}");
+		expect(queryPayload.citations).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ sourceId: payload.source.id }),
+			]),
+		);
+	});
+
+	it("get_source_status reports pending then done for the same source", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const ingestResult = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Ashfall Primer",
+				content: "The party rests at the Ashfall inn.",
+			},
+		});
+		const ingestContent = ingestResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { source } = JSON.parse(ingestContent[0]?.text ?? "{}");
+
+		const statusResult = await client.callTool({
+			name: "get_source_status",
+			arguments: { campaignId, sourceId: source.id },
+		});
+		expect(statusResult.isError).toBeFalsy();
+		const statusContent = statusResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		expect(JSON.parse(statusContent[0]?.text ?? "{}").status).toBe("pending");
+
+		await waitForStatus(source.id, "done");
+
+		const doneResult = await client.callTool({
+			name: "get_source_status",
+			arguments: { campaignId, sourceId: source.id },
+		});
+		const doneContent = doneResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		expect(JSON.parse(doneContent[0]?.text ?? "{}").status).toBe("done");
+	});
+
+	it("get_source_status reports error with an errorReason when embedding fails", async () => {
+		const client = await connectedClient(createFailingFetch());
+
+		const ingestResult = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Broken Source",
+				content: "This will fail to embed.",
+			},
+		});
+		const ingestContent = ingestResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { source } = JSON.parse(ingestContent[0]?.text ?? "{}");
+
+		await waitForStatus(source.id, "done");
+
+		const statusResult = await client.callTool({
+			name: "get_source_status",
+			arguments: { campaignId, sourceId: source.id },
+		});
+		const statusPayload = JSON.parse(
+			(statusResult.content as Array<{ type: string; text: string }>)[0]
+				?.text ?? "{}",
+		);
+		expect(statusPayload.status).toBe("error");
+		expect(statusPayload.errorReason).toBeTruthy();
+	});
+
+	it("get_source_status returns a structured not-found error for a source outside the given campaign", async () => {
+		const otherCampaign = await campaignService.create(db, {
+			name: "Other Campaign",
+			theme: "fantasy",
+		});
+		otherCampaignId = otherCampaign.id;
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const ingestResult = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Ashfall Primer",
+				content: "Some content.",
+			},
+		});
+		const ingestContent = ingestResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { source } = JSON.parse(ingestContent[0]?.text ?? "{}");
+
+		const result = await client.callTool({
+			name: "get_source_status",
+			arguments: { campaignId: otherCampaign.id, sourceId: source.id },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
 	});
 });

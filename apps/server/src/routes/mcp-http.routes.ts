@@ -3,6 +3,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import type { Database } from "@questlog/core/db/index.js";
 import { mcpOauthService } from "@questlog/core/services/mcp-oauth.service.js";
+import type { StorageProvider } from "@questlog/core/services/storage.service.js";
 import { createMcpServer } from "@questlog/mcp/server.js";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { baseUrl } from "./mcp-oauth.view.js";
@@ -62,12 +63,13 @@ function requireSession(
 
 export interface McpHttpRouteOptions {
 	db: Database;
+	storage: StorageProvider;
 }
 
 /** Mounts the protected `/mcp` Streamable HTTP transport, gated by T-029's bearer-token validation. */
 export function registerMcpHttpRoutes(
 	app: FastifyInstance,
-	{ db }: McpHttpRouteOptions,
+	{ db, storage }: McpHttpRouteOptions,
 ) {
 	app.get("/.well-known/oauth-protected-resource", async (request) => {
 		return {
@@ -127,7 +129,7 @@ export function registerMcpHttpRoutes(
 				};
 				transport = created;
 
-				const server = createMcpServer({ db });
+				const server = createMcpServer({ db, storage });
 				await server.connect(transport);
 			}
 
