@@ -19,6 +19,8 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 
 **Open gates:** `G-005` (`Docs/tickets/gated/G-005-agent-mcp-interaction-strategy.md`) — how a DM interacts with QuestLog through an MCP-connected Claude session end-to-end: attaching documents (not just pasted text), creating a new campaign by name/description rather than only picking an existing one, whether/how the agent should proactively re-check and narrate background ingestion progress, and the broader system-prompt/instructions strategy tying these together — blocking M-REMOTE.8. Filed 2026-07-26, raised by Alex during T-031's morning review.
 
+`G-006` (`Docs/tickets/gated/G-006-entity-delete-archive-semantics.md`) — whether removing an entity should be a soft-archive (new `archived`/`status` column, mirroring `campaigns`) or a hard delete (mirroring `sources`), and whether references from `session_entities`/`entity_relationships` should cascade or block the removal — blocking M-REMOTE.10. Filed 2026-07-26, raised by Alex during T-032's morning review.
+
 `G-001` (`Docs/tickets/gated/resolved/G-001-write-tool-preview-confirm-scope.md`) — whether `.claude/rules/mcp.md`'s preview/confirm/audit requirement applies to every MCP write tool or only ones mutating existing data, blocking M-REMOTE.4 and M-REMOTE.5 — was resolved via `/ungate` on 2026-07-22 (narrow reading: preview/confirm applies to mutations of existing data, not additive-only writes). Both tasks' `Gated on:` tags below are cleared accordingly.
 
 ---
@@ -47,8 +49,8 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   Paste a document's text directly into a chat and have it chunked + embedded — the missing piece for "upload a campaign document" without leaving Claude. Wraps the existing `sourceService.createFromText` path, but actually triggers `importService.processSource` (unlike the current `source.importText` tRPC mutation, which only creates a `pending` row). **Resolved via G-001** (narrow reading — direct write, no preview/confirm needed, since this only ever inserts new rows): see `Docs/tickets/gated/resolved/G-001-write-tool-preview-confirm-scope.md`.
   Exit: calling the tool with real text produces a `done`-status source whose content is retrievable via `query_lore`.
 
-- [ ] **M-REMOTE.5 — `create_entity` / entity-update MCP tools** (T-032)
-  Author NPCs, locations, factions, items, and arcs directly from a session instead of only being able to look them up. **Resolved via G-001**, same reading as M-REMOTE.4.
+- [x] **M-REMOTE.5 — `create_entity` / `append_entity_note` MCP tools** (T-032)
+  Author NPCs, locations, factions, items, and arcs directly from a session instead of only being able to look them up. **Resolved via G-001**, same reading as M-REMOTE.4. Scoped down from the milestone's original title during ticketing — `entityService` had no general field-update method, so a rename/description-replace tool was split out rather than invented here; see M-REMOTE.9.
   Exit: an entity created via the tool is immediately visible to `get_entity`/`list_entities`.
 
 - [ ] **M-REMOTE.6 — Onboarding surface** (T-033)
@@ -61,6 +63,14 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 - [ ] **M-REMOTE.8 — Agent-interaction strategy for MCP-hooked sessions** (Gated on: G-005)
   Raised during T-031's (`ingest_text`) morning review: today a DM can paste text but not attach a document, can't create a new campaign from inside a chat at all, and there's no defined behavior for whether/how the agent should re-check and narrate `ingest_text`'s background processing. Bundles four related open questions — document/file attachment ingestion, campaign creation via natural language or a dedicated tool, background-processing polling/narration guidance, and the broader instructions/system-prompt strategy tying all of this together — into one decision, since they're all facets of "how does a DM actually work with QuestLog through Claude." See `G-005` for the full open question and options surfaced so far.
   Exit: TBD — depends on `/ungate`'s resolution; likely drafts one or more follow-on tickets (e.g. a `create_campaign` tool, an attachment-ingestion path, expanded `instructions`/`help` content) rather than shipping as a single ticket itself.
+
+- [ ] **M-REMOTE.9 — `update_entity` MCP tool** (T-056)
+  Raised during T-032's morning review: `entityService` has `create` and `appendToDescription` but no way to rename an entity, replace its description wholesale, or change its type — M-REMOTE.5 explicitly scoped this out rather than inventing a bigger update surface. Precedent already exists (`campaignService.update`, `conversationService.update`, `sessionService.update` all do generic partial-field updates); this mutates an *existing* row, so per G-001 it needs the `update_entity`/`confirm_update_entity` preview-confirm shape, not a direct write.
+  Exit: TBD — drafted via `ticket-writer` from this task.
+
+- [ ] **M-REMOTE.10 — Entity delete/archive MCP tool** (Gated on: G-006)
+  Raised during T-032's morning review, alongside M-REMOTE.9. Unlike the update case, this isn't just an implementation gap: the `entities` table has no `archived`/`status` column at all (unlike `campaigns`/`sources`, which do soft-delete), and `entities` is referenced by `session_entities`/`entity_relationships` with no `onDelete` behavior specified — so a real product decision is needed on soft-archive (schema migration) vs. hard delete, and cascade-delete vs. block-if-referenced, before scope can be written. See `G-006` for the open question.
+  Exit: TBD — depends on `/ungate`'s resolution.
 
 ---
 
