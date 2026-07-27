@@ -53,7 +53,7 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   Author NPCs, locations, factions, items, and arcs directly from a session instead of only being able to look them up. **Resolved via G-001**, same reading as M-REMOTE.4. Scoped down from the milestone's original title during ticketing — `entityService` had no general field-update method, so a rename/description-replace tool was split out rather than invented here; see M-REMOTE.9.
   Exit: an entity created via the tool is immediately visible to `get_entity`/`list_entities`.
 
-- [ ] **M-REMOTE.6 — Onboarding surface** (T-033)
+- [x] **M-REMOTE.6 — Onboarding surface** (T-033)
   The MCP server's `instructions` field (shown to the model at connection time) plus a dedicated `help`/`get_started` tool, covering the "upload a campaign, start tracking a session" workflow Alex asked for explicitly.
   Exit: a fresh client connection surfaces the workflow summary without the user having to ask; calling `help` returns it on demand.
 
