@@ -667,6 +667,17 @@ Decided: a fixed 3-tier `Priority: P0 | P1 | P2` field on every ticket, defaulti
 ### `db.$client.end()` is required for any one-shot script that imports `@questlog/core/db/index.js`'s `db` singleton
 `apps/server/scripts/mcp-remote-smoke.ts` (a standalone script, not part of `pnpm test`) hung indefinitely after printing its final "PASS" line until `db.$client.end()` was added in a `finally` block alongside `app.close()`. The shared `db` export wraps a `postgres()` client that keeps its TCP socket open until explicitly ended — fine for a long-running server process (`main.ts` never needs to exit), but any one-shot script importing the same singleton needs to close it itself or the Node process never exits on its own.
 
+## T-048 — `scripts/run-tests-quiet.sh` (2026-07-27)
+
+### Log directory is `tmp/test-logs/`, matched by the existing `*.log` glob in `.gitignore`
+No new `.gitignore` entry needed — `*.log` already covers any file under this directory regardless of name, so `lint.log`/`typecheck.log`/`test.log` never risk being committed. Chose a repo-local path (not `/tmp`) so a human re-running the script by hand finds the logs in the obvious place without knowing an env var.
+
+### Turbo's own log replay is non-deterministic across invocations — the exit condition's "byte-identical diff" is best-effort, not exact
+Two consecutive raw `pnpm test` runs against the same passing state can already differ from each other in per-package log line interleaving and turbo's self-reported `Time: Nms` footer — this is turbo's own concurrent-task output interleaving, not something `run-tests-quiet.sh`'s capture (a plain `>"$log_file" 2>&1` passthrough) introduces or could fix. Confirmed during T-048's review pass. Anyone using this script's log as "proof" of exit-condition parity should expect occasional line-order/timing noise, not a strict byte match.
+
+### Lint pass summary parses Biome's `Found N warning(s).` footer, not just its error count
+Biome's `check` exits 0 when every diagnostic is warn-severity (only errors fail the build), so a lint stage can print `lint: pass` while quietly carrying warnings the old raw-output behavior would have shown. The script now greps each package's captured lint log for `Found [0-9]+ warnings?` and sums across packages, same aggregation approach as the test pass-count. This repo's `biome.json` currently has no rules configured at `warn` severity (`"recommended": true` maps essentially everything to `error`), so `(0 warnings)` is the expected steady state — verified by temporarily scoping a single rule to `warn` via a `biome.json` `overrides` entry for one scratch file (reverted immediately after), which also confirmed Biome's real summary phrasing (`Found 1 warning.`) and exit-0 behavior for warn-only diagnostics.
+
 ## T-032 — `create_entity` / `append_entity_note` MCP tools (2026-07-26)
 
 ### New tool input schemas live in `packages/shared`, never `zod` imported directly into `packages/mcp/src/tools`

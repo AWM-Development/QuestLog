@@ -65,7 +65,7 @@ This milestone builds the actual instrumentation instead of continuing to guess:
 
 ### Tasks
 
-- [ ] **M-EFFICIENCY.1 — Filter test-command output in the TDD loop** (T-048)
+- [x] **M-EFFICIENCY.1 — Filter test-command output in the TDD loop** (T-048)
   `pnpm lint && pnpm typecheck && pnpm test` currently returns its full stdout to the model on every call, including the many intermediate passing runs a TDD loop produces before the ticket is actually done. A wrapper script captures full output to a log file always, but only prints a pass/fail summary line per stage to the tool result on success — full output still prints (and is still available in the log) on failure, where it's actually needed to fix something, and the log remains readable at report-writing time so `REPORT_TEMPLATE.md`'s "paste actual output, not a summary" requirement for the *final* passing run is unaffected.
   Exit: a script invocation with a passing test suite prints only a summary line and exits 0; one with a failing suite prints the full failure output for the failing stage(s) and exits non-zero; the full output is byte-identical between the log file and what the unwrapped commands would have printed.
 

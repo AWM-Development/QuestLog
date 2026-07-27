@@ -1,7 +1,7 @@
 # Executor Routine
 
 **Location:** `Docs/tickets/EXECUTOR_ROUTINE.md`
-**Last Updated:** 2026-07-23
+**Last Updated:** 2026-07-27
 **Purpose:** The exact prompt configured in the nightly scheduled agent. Kept here, version-controlled, so changes to the nightly loop are diffable and reviewable like everything else in the pipeline — the scheduler config is a copy of this file, not a separate source of truth. If you edit the routine, edit here first, then update the scheduler config to match.
 **Assumes:** `Docs/tickets/TICKET_SPEC.md` (ticket format), `Docs/tickets/GATE_SPEC.md` (gate-stub format, `Gated on:` field), `Docs/tickets/BLOCKED_TEMPLATE.md` / `REPORT_TEMPLATE.md` (protocols), `.claude/agents/reviewer.md` (review step), `.claude/skills/tdd-loop/SKILL.md` (implementation loop), and the branch model documented in `Docs/IMPLEMENTATION_NOTES.md` (`main` deployed, `develop` integration).
 
@@ -61,7 +61,7 @@ For each unit of work in the ticket's Scope:
 1. Red: write a failing test for the behavior. Confirm it fails for the right reason.
 2. Green: minimum code to pass.
 3. Refactor with tests green.
-4. Run `pnpm lint && pnpm typecheck && pnpm test`.
+4. Run `scripts/run-tests-quiet.sh` (same fail-fast lint → typecheck → test chain, but only prints per-stage summaries on success — full output for a failing stage only; logs persist under `tmp/test-logs/` for Step 7's pasted evidence).
 5. If a single blocking failure survives 3 distinct attempted approaches (the ticket's Iteration cap — check the ticket for a different number), STOP. Do not attempt a 4th. Go to Step 6 (Blocked).
 6. Commit with message `feat(T-###): <short description>` once green.
 
