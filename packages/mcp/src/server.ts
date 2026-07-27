@@ -1,5 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { ONBOARDING_INSTRUCTIONS } from "./onboarding-instructions.js";
+import { ONBOARDING_INSTRUCTIONS } from "./content/onboarding-instructions.js";
 import { registerAppendEntityNote } from "./tools/append-entity-note.js";
 import { registerConfirmLogSession } from "./tools/confirm-log-session.js";
 import { registerCreateEntity } from "./tools/create-entity.js";

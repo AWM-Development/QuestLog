@@ -1,5 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { ONBOARDING_INSTRUCTIONS } from "../onboarding-instructions.js";
+import { ONBOARDING_INSTRUCTIONS } from "../content/onboarding-instructions.js";
 import { withToolErrors } from "./errors.js";
 
 export function registerHelp(server: McpServer) {
