@@ -187,12 +187,10 @@ export function resolveTicketId(
 	return trimmed ? trimmed : null;
 }
 
-export function resolveArtifactPath(
-	ticketId: string | null,
-	sessionId: string,
-): string {
+/** Null means "don't write an artifact" — only sessions actively working a ticket (a non-null ticketId) get tracked; see Docs/IMPLEMENTATION_NOTES.md § T-046/G-011. */
+export function resolveArtifactPath(ticketId: string | null): string | null {
 	if (ticketId === null) {
-		return `Docs/tickets/cost-reports/empty-run-${sessionId}.usage.json`;
+		return null;
 	}
 	return `Docs/tickets/cost-reports/${ticketId}.usage.json`;
 }

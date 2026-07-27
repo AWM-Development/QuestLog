@@ -12,7 +12,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ### Added — T-033
 
-- **MCP onboarding surface**: the server now sets the MCP protocol's `instructions` field (surfaced by well-behaved clients, including Claude, at connection time without the user asking) to a short summary of QuestLog's workflow — start with `list_campaigns`, then `ingest_text`/`log_session` to bring in content, `create_entity`/`append_entity_note` to author directly, and the read tools to look things up. A new no-input `help` tool returns the identical text on demand, for clients that don't surface `instructions` or a mid-conversation refresher. Both draw from one shared constant (`packages/mcp/src/onboarding-instructions.ts`) so they can't drift apart.
+- **MCP onboarding surface**: the server now sets the MCP protocol's `instructions` field (surfaced by well-behaved clients, including Claude, at connection time without the user asking) to a short summary of QuestLog's workflow — start with `list_campaigns`, then `ingest_text`/`log_session` to bring in content, `create_entity`/`append_entity_note` to author directly, and the read tools to look things up. A new no-input `help` tool returns the identical text on demand, for clients that don't surface `instructions` or a mid-conversation refresher. Both draw from one shared constant (`packages/mcp/src/content/onboarding-instructions.ts`) so they can't drift apart.
+
+### Fixed — T-033
+
+- **Usage-capture hook no longer tracks non-ticket sessions**: the `Stop` hook fires on every turn of an interactive session, not just at session end, and was writing an `empty-run-<session_id>.usage.json` artifact for every one of them — pure noise for sessions with no ticket work to attribute (review, planning, one-off chat). `resolveArtifactPath`/`captureUsage` (`packages/core/src/observability/`) now write nothing at all when no `tmp/.active-ticket` marker is present, short-circuiting before the transcript is even read. Autonomous nightly runs and manual ticket-execution sessions are unaffected — both set that marker the same way, so both still get tracked.
 
 ### Fixed — T-062
 

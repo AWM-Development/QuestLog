@@ -21,7 +21,7 @@ export interface HookPayload {
 }
 
 export interface CaptureUsageDeps {
-	/** Resolves the ticket id this run processed, or null (empty run). Injected so tests never shell out to git. */
+	/** Resolves the ticket id this run processed, or null (no active ticket — nothing gets written). Injected so tests never shell out to git. */
 	resolveTicketId: () => string | null;
 }
 
@@ -47,19 +47,23 @@ function readSiblingSubagentTotals(transcriptPath: string): TokenTotals | null {
 	}, ZERO_TOTALS);
 }
 
-/** Thin wrapper: reads the transcript(s), delegates all computation to observability's pure functions, writes the artifact file. */
+/** Thin wrapper: reads the transcript(s), delegates all computation to observability's pure functions, writes the artifact file. No active ticket means no artifact — skips reading the transcript entirely rather than writing a session it's not tracking. */
 export function captureUsage(
 	payload: HookPayload,
 	projectDir: string,
 	deps: CaptureUsageDeps,
-): { artifactPath: string; artifact: UsageArtifact } {
+): { artifactPath: string | null; artifact: UsageArtifact | null } {
+	const ticketId = deps.resolveTicketId();
+	const relativePath = resolveArtifactPath(ticketId);
+	if (relativePath === null) {
+		return { artifactPath: null, artifact: null };
+	}
+
 	const mainJsonl = readFileSync(payload.transcript_path, "utf-8");
 	const mainSummary = summarizeUsage(mainJsonl);
 	const reviewerSubagentTotals = readSiblingSubagentTotals(
 		payload.transcript_path,
 	);
-
-	const ticketId = deps.resolveTicketId();
 
 	const artifact = buildUsageArtifact({
 		ticketId,
@@ -68,10 +72,7 @@ export function captureUsage(
 		reviewerSubagent: reviewerSubagentTotals,
 	});
 
-	const artifactPath = join(
-		projectDir,
-		resolveArtifactPath(ticketId, payload.session_id),
-	);
+	const artifactPath = join(projectDir, relativePath);
 	mkdirSync(dirname(artifactPath), { recursive: true });
 	writeFileSync(artifactPath, `${JSON.stringify(artifact, null, 2)}\n`);
 
