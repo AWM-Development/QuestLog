@@ -54,3 +54,69 @@ You're designing a standalone ops dashboard for the QuestLog project — **not**
 *Deliverable:* `Docs/mockups/observability-dashboard/index.html` (static, real token values, no framework needed) + `screenshot.png` + `NOTES.md` explaining the layout choice (one page vs. tabs, and where the methodology section lives relative to the other two) and any token/pattern reused vs. deliberately diverged from.
 
 ---
+
+## Resolution (2026-07-26)
+
+Resolved via `/ungate`, through an interactive, iterative review with Alex
+(three rounds — a first draft, then two feedback passes against a live
+Artifact preview, not a single mockup accepted as-is). Full reasoning for
+every decision below lives in `Docs/mockups/observability-dashboard/NOTES.md`;
+this section is the durable summary.
+
+**IA — separate routes, two of them, not tabs.** Trends (`index.html`)
+and Log (`log.html`) are separate static pages sharing one top-nav chrome.
+A third route, Methodology, existed in the first draft and was cut — see
+below.
+
+**Trends scope — both altitudes, but leaner than first drafted.** Holds
+both aggregate charts and a per-ticket drill-down table. Cut during
+review: the cache read:write ratio chart, the cost-vs-human-hour-
+equivalent comparison (no defined methodology yet), an intro-vs-standard-
+pricing toggle (present in this gate-stub's original brief text but never
+actually discussed with Alex — cut once surfaced), and the
+`manually_inspected` flag (invented without a real capture mechanism —
+neither T-046's hook nor T-053's schema has a field for it). Added to
+compensate: a per-tier (S/M/L) granularity row and a retry-count column.
+**Charting approach:** hand-rolled SVG/CSS in the mockup, but the real
+T-057 implementation will use `recharts` (Alex's call, matching
+`apps/web`'s React stack) rather than carrying the hand-rolled approach
+forward.
+
+**A real layout bug was caught and fixed mid-review**, not just a
+preference: the drill-down table's rows were each an independently laid-
+out nested `<table>`, so columns drifted out of alignment with the header
+as the browser window resized. Fixed with one shared CSS Grid template for
+header + rows. T-057's ticket carries this forward as an explicit
+exit-condition check (column alignment at multiple desktop widths), since
+the same mistake is easy to reintroduce with a naive per-row component in
+the real React implementation.
+
+**Responsive scope — desktop-only, but must hold across desktop widths.**
+No mobile breakpoint is designed or wanted (this is a tool Alex opens on
+a desktop each morning) — but unlike a first pass at this question might
+assume, "desktop-only" does not mean "fixed-width only": the layout must
+stay correctly aligned as a desktop window is resized, which is exactly
+what the layout-bug fix above addresses.
+
+**Methodology replaced with comments on Log entries**, not kept
+alongside a new feature. Alex's actual want, once the original mockup's
+tradeoff became concrete: comment directly on individual Log entries,
+including eventually agent-authored comments — not separate freestanding
+essays. Scoped down for v1: **Alex-authored comments only** (T-059's
+schema + write endpoint, T-058's UI). Agent-authored comments are
+explicitly deferred until there's real usage of manual commenting to
+inform the posting mechanism (same-session reviewer subagent vs. a
+separate on-demand pass) — not designed here, and not silently assumed
+into any of T-057/T-058/T-059's scope.
+
+Mockup delivered at `Docs/mockups/observability-dashboard/` (`index.html`,
+`log.html`, `shared.css`, `screenshot.png`, `NOTES.md`).
+
+Ticketed as:
+- **T-057** — Trends view. `Blocked on: T-054, T-055`.
+- **T-058** — Log view + comment-thread UI. `Blocked on: T-054, T-055, T-057, T-059`.
+- **T-059** — Comment schema + write endpoint (Alex-authored only). `Blocked on: T-053`.
+
+All three landed in `Docs/tickets/backlog/`. `M-OBS.5`'s line in
+`Docs/MILESTONES_V1_2_MCP.md` updated from `(Gated on: G-004)` to
+`(T-057, T-058, T-059)`.
