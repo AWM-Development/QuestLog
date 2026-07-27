@@ -11,6 +11,25 @@ set -euo pipefail
 
 cd "$CLAUDE_PROJECT_DIR"
 
+# Stash this session's transcript_path/session_id every time it starts, local or
+# remote — capture-usage needs it available synchronously at EXECUTOR_ROUTINE.md
+# Step 7, instead of only via the Stop hook firing after the PR is already open.
+# See Docs/IMPLEMENTATION_NOTES.md § T-046 and G-011's resolution for the rationale.
+HOOK_STDIN="$(cat)"
+mkdir -p "$CLAUDE_PROJECT_DIR/.claude"
+HOOK_STDIN="$HOOK_STDIN" node -e '
+  const fs = require("node:fs");
+  const payload = JSON.parse(process.env.HOOK_STDIN);
+  const stash = {
+    transcript_path: payload.transcript_path,
+    session_id: payload.session_id,
+  };
+  fs.writeFileSync(
+    process.env.CLAUDE_PROJECT_DIR + "/.claude/.session-context.json",
+    JSON.stringify(stash) + "\n",
+  );
+'
+
 pnpm install
 
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then

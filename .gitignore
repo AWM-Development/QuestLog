@@ -33,3 +33,7 @@ coverage/
 # Lock file artifacts
 .~lock.*
 
+# Executor session scratch state (session-start.sh / EXECUTOR_ROUTINE.md)
+.claude/.session-context.json
+.claude/.active-ticket
+
