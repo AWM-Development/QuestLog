@@ -21,7 +21,7 @@ This is an interactive-session command, run with Alex present, that then hands o
    - **No matching PR, no matching branch** — never touched. Clear to start fresh. Continue to step 7.
    - **Matching PR, open** — already shipped, awaiting review. Report `T-### skipped — PR already open on <branch>` and stop.
    - **Matching PR closed without merge, or a branch with no PR, and `Docs/tickets/blocked/T-###-slug.md` exists on it** — already hit its iteration cap. Report `T-### skipped — blocked, needs Alex to resolve first (see Docs/tickets/blocked/)` and stop.
-   - **Matching branch, no PR, not blocked** — a prior run was interrupted. Resume: check out that branch, pull latest, and proceed from `EXECUTOR_ROUTINE.md` Step 3 wherever its commit history left off.
+   - **Matching branch, no PR, not blocked** — a prior run was interrupted. Resume: check out that branch, pull latest, write the ticket id to `.claude/.active-ticket` (same as `EXECUTOR_ROUTINE.md` Step 1 case 4 — the marker doesn't survive across sessions, so a resumed session must re-write it), and proceed from `EXECUTOR_ROUTINE.md` Step 3 wherever its commit history left off.
 7. For a fresh pick, read `Docs/tickets/EXECUTOR_ROUTINE.md` in full and follow it starting at **Step 2** (Pick up the ticket) for this specific ticket. Steps 2 through 7 run exactly as written, unmodified — this command only replaces Step 1's candidate-list walk with the single named ticket, already validated eligible and deduped above.
 8. Once the run reaches Step 6 (Blocked) or Step 7 (Wrap up), report using that step's normal output shape (`Docs/tickets/BLOCKED_TEMPLATE.md` or `Docs/tickets/REPORT_TEMPLATE.md`) — no different from a nightly run's own report.
 

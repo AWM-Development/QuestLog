@@ -73,7 +73,9 @@ Invoke the `reviewer` subagent against the ticket file and the diff (`git diff d
 ## Step 6: Blocked (only if Step 4 or Step 5 hit the cap)
 - Fill out `Docs/tickets/BLOCKED_TEMPLATE.md` for this ticket: what failed, the distinct approaches attempted with evidence, your hypothesis, the exact question for Alex, and branch state.
 - `git mv` the ticket from `in-progress/` to `Docs/tickets/blocked/T-###-slug.md`, commit the ticket move and the blocked report together.
+- Invoke usage-capture directly, synchronously, same as Step 7: `cat .claude/.session-context.json | pnpm --filter @questlog/server run capture-usage`. A blocked run still burns real tokens and should have a cost record; include the resulting `Docs/tickets/cost-reports/T-###.usage.json` in the same commit as the blocked report.
 - Push the feature branch (for inspection) but do NOT open a PR. This is the single new-branch push described in Step 2; its fallback applies if rejected.
+- Delete `.claude/.active-ticket` — this session's ticket work is done (blocked, not shipped, but done), and the marker must not linger to misattribute a later, unrelated session's usage to this ticket.
 - Output the blocked report as your summary. Stop — do not proceed to Step 7.
 
 ## Step 7: Wrap up (shipped path only)
