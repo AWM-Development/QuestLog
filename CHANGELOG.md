@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Fixed — T-062
+
+- **Executor marker/stash files moved out of `.claude/` to `tmp/`**: T-061's `.claude/.active-ticket`/`.claude/.session-context.json` stalled every unattended nightly run — the harness gates any write under `.claude/` behind an interactive confirmation (it holds hooks/commands that execute with elevated trust), and there's no one present overnight to approve it. Both files now live at `tmp/.active-ticket`/`tmp/.session-context.json` instead — a plain scratch location (already used by T-048's test logs) with no such gate. Purely a path change: the marker/stash semantics, `resolveTicketId`'s signature, and `EXECUTOR_ROUTINE.md`'s Step 1/2/6/7 flow are all unchanged.
+
 ### Changed — T-049
 
 - **`EXECUTOR_ROUTINE.md` Step 3 now explicitly instructs single-turn, parallel context-file reads**: the nightly executor reads `CLAUDE.md` and every file in a ticket's `Context files:` field as parallel tool calls within one assistant turn instead of spreading them sequentially across turns — each extra turn re-sends the entire growing conversation, and the full file list is already known upfront from the ticket, so there's no reason to pay that cost. No change to which files get read or to Step 4's necessarily-sequential TDD loop.
