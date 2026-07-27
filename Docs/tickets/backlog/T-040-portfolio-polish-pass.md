@@ -14,7 +14,7 @@ ideally M-AUDIT.2/M-AUDIT.3's findings) has landed — a portfolio pass
 written against a repo that's about to change significantly under it
 would need redoing.
 
-Milestone ref: M-AUDIT.4 (`Docs/MILESTONES_V1_1_MCP.md`)
+Milestone ref: M-AUDIT.4 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
 Priority: P2
 
@@ -23,7 +23,7 @@ Context files (load broadly):
   - CLAUDE.md (accurate project description to draw from, not to copy verbatim — this file is written for an agent, not a portfolio reader)
   - Docs/PRD.md (product framing, for an accurate "what is this" summary)
   - apps/mcp-stdio/README.md (the existing, already-good example of user-facing docs in this repo — matches the tone/thoroughness to aim for elsewhere)
-  - Docs/MILESTONES_V1_MCP.md, Docs/MILESTONES_V1_1_MCP.md (accurate feature/status list)
+  - Docs/milestones/MILESTONES_V1_MCP.md, Docs/milestones/MILESTONES_V1_1_MCP.md (accurate feature/status list)
 
 Mockup: none
 
@@ -78,7 +78,7 @@ Exit condition (human-checkable):
 Iteration cap: not applicable (interactive/judgment-based)
 
 Definition of done includes: checkbox flip for M-AUDIT.4 in
-  `Docs/MILESTONES_V1_1_MCP.md`, no `CHANGELOG.md` entry required (this is
+  `Docs/milestones/MILESTONES_V1_1_MCP.md`, no `CHANGELOG.md` entry required (this is
   documentation/presentation, not shipped application behavior), morning-
   report-equivalent is a summary of what changed and what Alex still
   needs to record/decide (e.g. the demo recording itself).

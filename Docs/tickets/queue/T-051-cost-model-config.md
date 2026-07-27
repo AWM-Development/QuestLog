@@ -23,7 +23,7 @@ Scope: "Total system cost" isn't just agent token spend — it's agent cost, plu
 Out of scope:
   - No DB/API/UI wiring — this ticket only builds and unit-tests the config and the two pure functions so they're ready to be called once M-OBS.3/M-OBS.4 exist (gated on G-003). No per-ticket override mechanism for review time yet — that's a UI/data-entry concern for M-OBS.5.
   - No attempt to measure Alex's actual review time automatically — out of scope entirely; this is a manually-maintained assumption by design.
-  - No churn/revert-ratio computation — noted as a separately deferred idea in `MILESTONES_V1_2_MCP.md`, not part of this cost model.
+  - No churn/revert-ratio computation — noted as a separately deferred idea in `Docs/milestones/MILESTONES_V1_2_MCP.md`, not part of this cost model.
 
 Exit condition (machine-checkable):
   - all tests green, typecheck clean, lint clean
@@ -33,6 +33,6 @@ Exit condition (machine-checkable):
 
 Iteration cap: 2 distinct approaches on any single failure, then Blocked Protocol
 
-Definition of done includes: checkbox flipped in MILESTONES_V1_2_MCP.md,
+Definition of done includes: checkbox flipped in Docs/milestones/MILESTONES_V1_2_MCP.md,
   IMPLEMENTATION_NOTES.md updated if any non-obvious decision was made,
   a CHANGELOG.md entry under [Unreleased], morning report written.

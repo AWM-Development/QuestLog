@@ -11,7 +11,7 @@ Every gate-stub lives at `Docs/tickets/gated/G-###-slug.md` (`###` sequential, z
 
 Gate type: 🎨 design | 🧠 strategy
 
-Milestone ref: <Docs/MILESTONES_V1_MCP.md section>
+Milestone ref: <Docs/milestones/MILESTONES_V1_MCP.md section>
 
 Opened: <date> — <by Alex/agent during planning | filed by the executor mid-run on T-###>
 
@@ -32,7 +32,7 @@ Notes: <anything already surfaced — options considered, partial
 
 ## Field notes
 
-- **Gate type** — 🎨 means the resolution is a mockup (`Docs/mockups/<view>/`); 🧠 means the resolution is a written decision with rationale. Same taxonomy `CLAUDE.md`'s hard rules and `MILESTONES_V1_MCP.md` already use — a gate-stub doesn't invent a new gate concept, it just gives the existing one a durable home before it's resolved.
+- **Gate type** — 🎨 means the resolution is a mockup (`Docs/mockups/<view>/`); 🧠 means the resolution is a written decision with rationale. Same taxonomy `CLAUDE.md`'s hard rules and `Docs/milestones/MILESTONES_V1_MCP.md` already use — a gate-stub doesn't invent a new gate concept, it just gives the existing one a durable home before it's resolved.
 - **Opened** records provenance because gate-stubs have two distinct origins (see Lifecycle below) and `/ungate` needs to know which ticket, if any, is already mid-flight and waiting.
 - **Context files** is the same discipline as a ticket's — the whole point of deferring this to a dedicated `/ungate` session is that it gets Alex's full attention on just this decision, not a grab-bag of "whatever's related."
 - **Open question** must be a single, answerable question — same bar as `BLOCKED_TEMPLATE.md`'s "Exact question for Alex." "Should we support OCR?" is not answerable; "local Tesseract vs. hosted API, given a cost ceiling of $X/mo" is.

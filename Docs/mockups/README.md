@@ -24,7 +24,7 @@ Docs/mockups/<view>/
 
 - **Read-only to agents.** CI hard-fails (`mockup-guard` job in `.github/workflows/ci.yml`) any PR whose diff touches this directory. If an executor thinks a mockup needs to change, that's a question for the next planning session, not an edit.
 - **A ticket referencing a mockup is not visually gated.** Under the old CLAUDE.md, any 🎨-flagged task stopped implementation until Alex supplied visual direction. Under this pipeline, the mockup *is* that direction — supplied once, during planning, before the ticket exists. `TICKET_SPEC.md`'s `Mockup:` field points at the exact directory.
-- **🧠 strategy gates are a different thing and are NOT replaced by mockups.** A mockup answers "what should this look like." A 🧠 gate answers "what should this system do" — an architectural or product decision with no visual component. Those still require Alex; see `Docs/MILESTONES_V1_MCP.md` for currently-gated tasks (e.g. 2.4 OCR strategy).
+- **🧠 strategy gates are a different thing and are NOT replaced by mockups.** A mockup answers "what should this look like." A 🧠 gate answers "what should this system do" — an architectural or product decision with no visual component. Those still require Alex; see `Docs/milestones/MILESTONES_V1_MCP.md` for currently-gated tasks (e.g. 2.4 OCR strategy).
 
 ## Current state
 

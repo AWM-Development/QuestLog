@@ -15,13 +15,13 @@ the M-REMOTE and M-CICD tickets (T-028 through T-033, T-035 through
 T-037) are in `done/` — check for anything newer spawned since before
 starting.
 
-Milestone ref: M-AUDIT.3 (`Docs/MILESTONES_V1_1_MCP.md`)
+Milestone ref: M-AUDIT.3 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
 Priority: P2
 
 Context files (load broadly, same reasoning as T-017 — a narrower list
 would defeat the point):
-  - Docs/MILESTONES_V1_MCP.md's "Deferred to v2" table (the actual scope this review is checking readiness against)
+  - Docs/milestones/MILESTONES_V1_MCP.md's "Deferred to v2" table (the actual scope this review is checking readiness against)
   - Docs/PRD.md (full read — v2's intended feature set, not just the v1-relevant sections already loaded in prior tickets)
   - Docs/DEPLOY_READINESS.md (the infrastructure decisions already made and their stated tradeoffs — Neon Free tier, single-region, etc.)
   - packages/mcp/src/** (the remote-MCP architecture this review is assessing)
@@ -92,6 +92,6 @@ Exit condition (human-checkable):
 Iteration cap: not applicable (interactive session)
 
 Definition of done includes: checkbox flip for M-AUDIT.3 in
-  `Docs/MILESTONES_V1_1_MCP.md`, `IMPLEMENTATION_NOTES.md` updated per the
+  `Docs/milestones/MILESTONES_V1_1_MCP.md`, `IMPLEMENTATION_NOTES.md` updated per the
   report's findings, no `CHANGELOG.md` entry required, morning-report-
   equivalent is the review report itself.

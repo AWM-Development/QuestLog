@@ -2,7 +2,7 @@
 
 QuestLog is a single-user AI campaign manager for tabletop RPG DMs. v1's primary interface is an **MCP server** (`apps/mcp-stdio`, tools defined in `packages/mcp`) exposing lore query, entity lookup, session logging, and prep-brief tools over a Fastify + tRPC + Drizzle/pgvector backend (`apps/server`, `packages/core`, `packages/shared`). The only kept web surface is SourcesPage; everything else is v2.
 
-**The task source is [`Docs/MILESTONES_V1_MCP.md`](Docs/MILESTONES_V1_MCP.md) (v1, shipped) plus [`Docs/MILESTONES_V1_1_MCP.md`](Docs/MILESTONES_V1_1_MCP.md) (v1.1, in progress) plus [`Docs/MILESTONES_V1_2_MCP.md`](Docs/MILESTONES_V1_2_MCP.md) (v1.2, in progress — executor observability & efficiency).** Never pull work from `MILESTONES_PT1.md`/`PT2.md` — they're retained for detail only.
+**The task source is [`Docs/milestones/MILESTONES_V1_MCP.md`](Docs/milestones/MILESTONES_V1_MCP.md) (v1, shipped) plus [`Docs/milestones/MILESTONES_V1_1_MCP.md`](Docs/milestones/MILESTONES_V1_1_MCP.md) (v1.1, in progress) plus [`Docs/milestones/MILESTONES_V1_2_MCP.md`](Docs/milestones/MILESTONES_V1_2_MCP.md) (v1.2, in progress — executor observability & efficiency).** `MILESTONES_PT1.md`/`PT2.md` no longer exist — their v2 task detail was consolidated into [`Docs/milestones/MILESTONES_V2.md`](Docs/milestones/MILESTONES_V2.md), which stays ineligible for ticket selection until Alex explicitly opens v2 planning.
 
 ## Principles
 

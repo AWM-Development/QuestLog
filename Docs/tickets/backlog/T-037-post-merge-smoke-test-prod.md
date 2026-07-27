@@ -4,7 +4,7 @@
 nightly-eligible, adding the `PROD_DATABASE_URL` GitHub secret is
 Alex-only.
 
-Milestone ref: M-CICD.3 (`Docs/MILESTONES_V1_1_MCP.md`)
+Milestone ref: M-CICD.3 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
 Priority: P1
 
@@ -15,7 +15,7 @@ Branch: feat/m-cicd/t-037-post-merge-smoke-test-prod
 Context files (load ONLY these):
   - .github/workflows/smoke-test-dev.yml (T-036's workflow — this ticket reuses its verification script, parametrized by branch/environment, rather than duplicating it)
   - apps/server/src/server.ts (the `/health` endpoint)
-  - Docs/MILESTONES_V1_1_MCP.md (M-CICD.3's note on why this defaults to read-only)
+  - Docs/milestones/MILESTONES_V1_1_MCP.md (M-CICD.3's note on why this defaults to read-only)
 
 Mockup: none
 
@@ -61,7 +61,7 @@ Exit condition (machine-checkable):
 Iteration cap: 3 distinct approaches on any single failure, then Blocked Protocol
 
 Definition of done includes: checkbox flip for M-CICD.3 in
-  `Docs/MILESTONES_V1_1_MCP.md` is **not** applicable until Alex adds the
+  `Docs/milestones/MILESTONES_V1_1_MCP.md` is **not** applicable until Alex adds the
   `PROD_DATABASE_URL` secret and confirms a real workflow run succeeds.
   `IMPLEMENTATION_NOTES.md` updated with the new credential's existence
   and scope, a `CHANGELOG.md` entry under `[Unreleased]`, morning report
