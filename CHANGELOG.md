@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Changed — T-049
+
+- **`EXECUTOR_ROUTINE.md` Step 3 now explicitly instructs single-turn, parallel context-file reads**: the nightly executor reads `CLAUDE.md` and every file in a ticket's `Context files:` field as parallel tool calls within one assistant turn instead of spreading them sequentially across turns — each extra turn re-sends the entire growing conversation, and the full file list is already known upfront from the ticket, so there's no reason to pay that cost. No change to which files get read or to Step 4's necessarily-sequential TDD loop.
+
 ### Fixed — T-061
 
 - **Usage-capture artifact attribution and commit timing**: `capture-usage`'s ticket attribution used to guess (last 5 commit subjects, else newest file in `done/`/`blocked/`) instead of reading an explicit signal, and the artifact was only ever written by the `Stop` hook, which doesn't fire until after an autonomous run's wrap-up has already committed and opened the PR — so the artifact never made it into the PR, and any unrelated session's guess could silently overwrite a real ticket's cost record. `.claude/hooks/session-start.sh` now stashes each session's `transcript_path`/`session_id` to `.claude/.session-context.json` on every start; `Docs/tickets/EXECUTOR_ROUTINE.md` Step 2 (and Step 1's resume path) writes the ticket id it's actively working to `.claude/.active-ticket`; Step 7 invokes `capture-usage` directly and synchronously before its wrap-up commit, using that stash, then clears the marker. `resolveTicketId` (`packages/core/src/observability/usage-summary.ts`) now just reads the marker's contents — the commit-subject/mtime heuristic is gone entirely, so a session with no active ticket work correctly falls through to `empty_run: true` instead of attributing to whatever ticket was most recently touched.
