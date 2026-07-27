@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>QuestLog Pipeline Observatory — Trends</title>
+<link rel="stylesheet" href="shared.css">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin-bottom: var(--space-5);
+    flex-wrap: wrap;
+  }
+  .filter-bar .spacer { flex: 1; }
+
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-3);
+    margin-bottom: var(--space-3);
+  }
+  .stat-tile { background: var(--bg-elevated); border: 0.5px solid var(--border); border-radius: var(--r-md); padding: var(--space-3-5); }
+  .stat-tile .label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+  .stat-tile .value { font-family: var(--font-mono); font-size: 20px; font-weight: 500; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+  .stat-tile .value.accent { color: var(--accent); }
+  .stat-tile .delta { font-size: 11px; margin-top: 2px; }
+  .stat-tile .delta.down { color: var(--status-success); }
+  .stat-tile .delta.up { color: var(--status-error); }
+
+  .tier-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+  }
+  .tier-tile {
+    background: var(--bg-elevated);
+    border: 0.5px solid var(--border);
+    border-radius: var(--r-md);
+    padding: var(--space-3);
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .tier-tile .tag { font-size: 11px; padding: 3px 8px; }
+  .tier-tile .stats { display: flex; gap: var(--space-4); }
+  .tier-tile .stats .mini-label { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+  .tier-tile .stats .mini-value { font-family: var(--font-mono); font-size: 13px; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+
+  .chart-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: var(--space-4);
+    margin-bottom: var(--space-4);
+  }
+
+  /* --- Stacked token bar chart (pure CSS) --- */
+  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 170px; padding: var(--space-2) 0; }
+  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; position: relative; }
+  .bar-stack { width: 100%; max-width: 24px; display: flex; flex-direction: column-reverse; border-radius: 3px 3px 0 0; overflow: hidden; transition: height 0.25s ease; }
+  .bar-stack > div { transition: height 0.25s ease; }
+  .seg-input  { background: #2e4856; }
+  .seg-output { background: var(--accent); }
+  .seg-cwrite { background: #40d8a0; }
+  .seg-cread  { background: #c0a0ff; }
+  .bar-label { font-size: 9px; font-family: var(--font-mono); color: var(--text-muted); margin-top: 6px; }
+
+  .legend { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-3); font-size: 10px; color: var(--text-muted); }
+  .legend .swatch { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; vertical-align: middle; }
+
+  /* --- Cost vs diff size: real axes + gridlines + fit line --- */
+  .scatter-wrap { position: relative; }
+  svg.scatter-svg { width: 100%; height: 190px; overflow: visible; }
+  svg.scatter-svg .gridline { stroke: var(--border-subtle); stroke-width: 1; }
+  svg.scatter-svg .axis { stroke: var(--border); stroke-width: 1; }
+  svg.scatter-svg .fit-line { stroke: var(--text-dim); stroke-width: 1.5; stroke-dasharray: 4,3; }
+  svg.scatter-svg .axis-label { font-family: var(--font-mono); font-size: 9px; fill: var(--text-muted); }
+  svg.scatter-svg .dot { stroke: var(--bg-void); stroke-width: 1.5; cursor: pointer; }
+  svg.scatter-svg .dot.tier-s { fill: var(--status-info); }
+  svg.scatter-svg .dot.tier-m { fill: var(--status-warning); }
+  svg.scatter-svg .dot.tier-l { fill: var(--status-error); }
+
+  .toggle-note { font-size: 11px; color: var(--text-muted); margin-top: var(--space-2); }
+
+  /* Grid-based drill-down: header and every row share one column template,
+     so columns stay aligned at any desktop window width — a nested <table>
+     per row can't do this, since each nested table lays out independently. */
+  .dd-cols {
+    display: grid;
+    grid-template-columns: minmax(180px, 2.2fr) 64px minmax(70px, 0.9fr) minmax(85px, 1fr) minmax(85px, 1fr) minmax(95px, 1fr) minmax(70px, 0.9fr) 24px;
+    column-gap: var(--space-3);
+    align-items: center;
+  }
+  .dd-header { color: var(--text-muted); font-weight: 500; font-size: 11px; padding: var(--space-2) var(--space-3); border-bottom: 0.5px solid var(--border); }
+  .dd-row-summary { padding: var(--space-2) var(--space-3); font-size: 12px; border-bottom: 0.5px solid var(--border-subtle); }
+  .dd-row-summary:hover { background: rgba(208,228,240,0.02); }
+  .num { font-family: var(--font-mono); text-align: right; font-variant-numeric: tabular-nums; }
+
+  details.row-detail summary { cursor: pointer; list-style: none; }
+  details.row-detail summary::-webkit-details-marker { display: none; }
+  details.row-detail[open] .expand-body {
+    background: var(--bg-focal);
+    border-radius: var(--r-md);
+    padding: var(--space-3);
+    margin: var(--space-2) var(--space-3) var(--space-3);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .empty-row { color: var(--text-dim); font-style: italic; padding: var(--space-2) var(--space-3); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<header class="chrome-header">
+  <div class="chrome-title">
+    QuestLog Pipeline Observatory
+    <span class="sub">Trends · Log — one page each morning</span>
+  </div>
+  <nav class="chrome-nav">
+    <a href="index.html" class="active">Trends</a>
+    <a href="log.html">Log</a>
+  </nav>
+</header>
+
+<div class="page-body">
+
+  <div class="filter-bar">
+    <button class="btn-secondary on" data-range="30">Last 30 Runs</button>
+    <button class="btn-secondary" data-range="90">Last 90 Runs</button>
+    <button class="btn-secondary" data-range="all">All Time</button>
+    <div class="spacer"></div>
+    <button class="btn-secondary on" id="toggle-empty">Exclude Empty Runs</button>
+  </div>
+
+  <!-- Aggregate stat tiles -->
+  <div class="stat-row">
+    <div class="stat-tile">
+      <div class="label">Avg Cost / Ticket</div>
+      <div class="value accent" id="stat-avg-cost">$1.84</div>
+      <div class="delta down" id="stat-avg-cost-delta">↓ 12% vs. prior period</div>
+    </div>
+    <div class="stat-tile">
+      <div class="label">Median Cost / Ticket</div>
+      <div class="value" id="stat-median-cost">$1.42</div>
+      <div class="delta down" id="stat-median-cost-delta">↓ 8%</div>
+    </div>
+    <div class="stat-tile">
+      <div class="label">Avg Turns to Green</div>
+      <div class="value" id="stat-turns">5.2</div>
+      <div class="delta up" id="stat-turns-delta">↑ 0.4 turns</div>
+    </div>
+    <div class="stat-tile">
+      <div class="label">Total System Cost</div>
+      <div class="value accent" id="stat-total-cost">$412.60</div>
+      <div class="delta">agent + reviewer + review time</div>
+    </div>
+  </div>
+
+  <!-- Per-tier granularity -->
+  <div class="tier-row">
+    <div class="tier-tile">
+      <span class="tag tag-tier-s">S</span>
+      <div class="stats">
+        <div><div class="mini-label">Avg Cost</div><div class="mini-value">$0.71</div></div>
+        <div><div class="mini-label">Avg Tokens</div><div class="mini-value">58K</div></div>
+        <div><div class="mini-label">Runs</div><div class="mini-value">14</div></div>
+      </div>
+    </div>
+    <div class="tier-tile">
+      <span class="tag tag-tier-m">M</span>
+      <div class="stats">
+        <div><div class="mini-label">Avg Cost</div><div class="mini-value">$1.96</div></div>
+        <div><div class="mini-label">Avg Tokens</div><div class="mini-value">176K</div></div>
+        <div><div class="mini-label">Runs</div><div class="mini-value">9</div></div>
+      </div>
+    </div>
+    <div class="tier-tile">
+      <span class="tag tag-tier-l">L</span>
+      <div class="stats">
+        <div><div class="mini-label">Avg Cost</div><div class="mini-value">$4.58</div></div>
+        <div><div class="mini-label">Avg Tokens</div><div class="mini-value">298K</div></div>
+        <div><div class="mini-label">Runs</div><div class="mini-value">4</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <!-- Token breakdown over time -->
+    <div class="panel">
+      <div class="section-title">Tokens Per Run</div>
+      <div class="section-sub">Input / output / cache-write / cache-read, most recent runs</div>
+      <div class="bar-chart" id="token-chart">
+        <!-- populated by JS -->
+      </div>
+      <div class="legend">
+        <span><span class="swatch" style="background:#2e4856"></span>input</span>
+        <span><span class="swatch" style="background:var(--accent)"></span>output</span>
+        <span><span class="swatch" style="background:#40d8a0"></span>cache-write</span>
+        <span><span class="swatch" style="background:#c0a0ff"></span>cache-read</span>
+      </div>
+    </div>
+
+    <!-- Cost vs diff size -->
+    <div class="panel">
+      <div class="section-title">Cost vs. Diff Size</div>
+      <div class="section-sub">Cost per run against lines changed, colored by tier — dashed line is the fit</div>
+      <div class="scatter-wrap">
+        <svg class="scatter-svg" viewBox="0 0 300 190" preserveAspectRatio="none">
+          <!-- gridlines -->
+          <line class="gridline" x1="30" y1="10" x2="290" y2="10"/>
+          <line class="gridline" x1="30" y1="55" x2="290" y2="55"/>
+          <line class="gridline" x1="30" y1="100" x2="290" y2="100"/>
+          <line class="gridline" x1="30" y1="145" x2="290" y2="145"/>
+          <!-- axes -->
+          <line class="axis" x1="30" y1="10" x2="30" y2="160"/>
+          <line class="axis" x1="30" y1="160" x2="290" y2="160"/>
+          <!-- axis labels -->
+          <text class="axis-label" x="4" y="14">$5</text>
+          <text class="axis-label" x="4" y="104">$2.5</text>
+          <text class="axis-label" x="8" y="164">$0</text>
+          <text class="axis-label" x="30" y="178">0 lines</text>
+          <text class="axis-label" x="250" y="178">2,000 lines</text>
+          <!-- fit line -->
+          <line class="fit-line" x1="30" y1="150" x2="270" y2="20"/>
+          <!-- data points -->
+          <circle class="dot tier-s" cx="55" cy="148" r="5"/>
+          <circle class="dot tier-s" cx="70" cy="142" r="5"/>
+          <circle class="dot tier-s" cx="85" cy="150" r="5"/>
+          <circle class="dot tier-s" cx="95" cy="140" r="5"/>
+          <circle class="dot tier-m" cx="140" cy="105" r="5"/>
+          <circle class="dot tier-m" cx="160" cy="95" r="5"/>
+          <circle class="dot tier-m" cx="175" cy="112" r="5"/>
+          <circle class="dot tier-l" cx="235" cy="45" r="5"/>
+          <circle class="dot tier-l" cx="258" cy="25" r="5"/>
+        </svg>
+      </div>
+      <div class="legend">
+        <span><span class="swatch" style="background:var(--status-info)"></span>S</span>
+        <span><span class="swatch" style="background:var(--status-warning)"></span>M</span>
+        <span><span class="swatch" style="background:var(--status-error)"></span>L</span>
+        <span style="margin-left:auto">$0.31 / changed line (avg)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Per-ticket drill-down -->
+  <div class="panel">
+    <div class="section-title">Per-Ticket Drill-Down</div>
+    <div class="section-sub">Click a row to expand full metrics for that run</div>
+    <div class="dd-cols dd-header">
+      <div>Ticket</div><div>Tier</div><div class="num">Cost</div><div class="num">Tokens</div><div class="num">Duration</div><div class="num">Turns→Green</div><div class="num">Retries</div><div></div>
+    </div>
+    <div id="drilldown-body">
+      <!-- populated by JS -->
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ---- Fixture data: [id, title, tier, cost, tokens, duration, turnsToGreen, retries, verdict, retryDetail, emptyRun] ----
+  const RUNS = [
+    ["T-041", "Session-editor autosave polish", "s", 0.62, 48200, "4m 40s", 2, 0, "PASS", "none", false],
+    ["T-042", "Prep-brief cache invalidation", "s", 0.58, 44900, "4m 05s", 2, 0, "PASS", "none", false],
+    ["T-043", "Entity hover-card a11y fix", "m", 1.72, 158000, "12m 20s", 3, 1, "PASS", "1× mechanical_lint_typecheck", false],
+    ["T-044", "Consolidate v2 milestones", "m", 2.10, 184200, "18m 40s", 4, 1, "PASS", "1× mechanical_lint_typecheck — missing trailing newline", false],
+    ["T-052", "Reviewer-subagent wiring", "s", 0.68, 51900, "6m 05s", 2, 0, "PASS", "none", false],
+    ["T-048", "Filter test-command output", "m", 1.58, 132000, "10m 50s", 3, 0, "PASS", "none", false],
+    ["T-053", "Observability store schema", "l", 4.35, 286000, "38m 10s", 6, 2, "PASS", "2× genuine_bug_caught_by_test", false],
+    ["—", "No ticket picked up", "—", 0.00, 0, "0s", 0, 0, "—", "empty_run: true", true],
+  ];
+
+  const RANGE_MULT = { 30: 1, 90: 1.15, all: 1.3 };
+
+  function fmtCost(n) { return "$" + n.toFixed(2); }
+  function fmtTokens(n) { return n >= 1000 ? (n/1000).toFixed(1) + "K" : String(n); }
+
+  function renderTokenChart(mult, includeEmpty) {
+    const chart = document.getElementById("token-chart");
+    chart.innerHTML = "";
+    RUNS.filter(r => includeEmpty || !r[10]).forEach(r => {
+      const [id, , , , tokens] = r;
+      const total = Math.max(tokens * mult, 8000);
+      const h = Math.min(160, Math.round(total / 2200));
+      const cread = h * 0.55, cwrite = h * 0.15, out = h * 0.2, inp = h - cread - cwrite - out;
+      const col = document.createElement("div");
+      col.className = "bar-col";
+      col.innerHTML = `
+        <div class="bar-stack" style="height:${h}px">
+          <div class="seg-cread" style="height:${cread}px"></div>
+          <div class="seg-cwrite" style="height:${cwrite}px"></div>
+          <div class="seg-output" style="height:${out}px"></div>
+          <div class="seg-input" style="height:${inp}px"></div>
+        </div>
+        <div class="bar-label">${id}</div>`;
+      chart.appendChild(col);
+    });
+  }
+
+  function renderDrilldown(mult, includeEmpty) {
+    const body = document.getElementById("drilldown-body");
+    body.innerHTML = "";
+    RUNS.filter(r => includeEmpty || !r[10]).forEach(r => {
+      const [id, title, tier, cost, tokens, duration, turns, retries, verdict, retryDetail, isEmpty] = r;
+      if (isEmpty) {
+        const row = document.createElement("div");
+        row.className = "empty-row";
+        row.textContent = `${title} — filtered out by default (toggle "Exclude Empty Runs" off to include)`;
+        body.appendChild(row);
+        return;
+      }
+      const details = document.createElement("details");
+      details.className = "row-detail";
+      details.innerHTML = `
+        <summary>
+          <div class="dd-cols dd-row-summary">
+            <div><span class="mono">${id}</span> — ${title}</div>
+            <div><span class="tag tag-tier-${tier}">${tier.toUpperCase()}</span></div>
+            <div class="num">${fmtCost(cost * mult)}</div>
+            <div class="num">${fmtTokens(Math.round(tokens * mult))}</div>
+            <div class="num">${duration}</div>
+            <div class="num">${turns}</div>
+            <div class="num">${retries}</div>
+            <div style="text-align:right; color:var(--text-muted)">▾</div>
+          </div>
+        </summary>
+        <div class="expand-body">Reviewer verdict: ${verdict} · Retry log: ${retryDetail}</div>`;
+      body.appendChild(details);
+    });
+  }
+
+  let currentRange = "30";
+  let excludeEmpty = true;
+
+  function rerender() {
+    const mult = RANGE_MULT[currentRange];
+    renderTokenChart(mult, !excludeEmpty);
+    renderDrilldown(mult, !excludeEmpty);
+  }
+
+  document.querySelectorAll('[data-range]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-range]').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      currentRange = btn.dataset.range;
+      rerender();
+    });
+  });
+
+  document.getElementById('toggle-empty').addEventListener('click', function () {
+    excludeEmpty = !excludeEmpty;
+    this.classList.toggle('on', excludeEmpty);
+    rerender();
+  });
+
+  rerender();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>QuestLog Pipeline Observatory — Log</title>
+<link rel="stylesheet" href="shared.css">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  .log-filter { display: flex; gap: var(--space-2); margin-bottom: var(--space-5); }
+
+  .log-entry {
+    background: var(--bg-elevated);
+    border: 0.5px solid var(--border);
+    border-radius: var(--r-lg);
+    padding: var(--space-4);
+    margin-bottom: var(--space-3);
+  }
+  .log-entry.blocked {
+    border-color: rgba(220,96,96,0.35);
+    background: rgba(220,96,96,0.04);
+  }
+  .log-head { display: flex; align-items: center; gap: var(--space-2-5); margin-bottom: var(--space-1-5); flex-wrap: wrap; }
+  .log-head .ticket-id { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+  .log-head .title { font-family: var(--font-display); font-size: 15px; font-weight: 600; }
+  .log-head .spacer { flex: 1; }
+  .log-head .cost { font-family: var(--font-mono); font-size: 12px; color: var(--accent); }
+
+  .log-summary { font-size: 13px; color: var(--text-secondary); margin-bottom: var(--space-2); }
+  .log-notes { font-size: 12px; color: var(--text-muted); font-style: italic; padding-left: var(--space-3); border-left: 2px solid var(--border); }
+
+  details.log-expand summary { cursor: pointer; list-style: none; font-size: 11px; color: var(--text-muted); margin-top: var(--space-2); }
+  details.log-expand summary::-webkit-details-marker { display: none; }
+  details.log-expand summary:hover { color: var(--accent); }
+  details.log-expand .body {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 0.5px solid var(--border-subtle);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .body dl { display: grid; grid-template-columns: 140px 1fr; row-gap: var(--space-2); }
+  .body dt { color: var(--text-muted); font-size: 11px; }
+  .body dd { margin: 0; }
+  .body .retry-log { list-style: none; margin: 4px 0 0; padding: 0; }
+  .body .retry-log li { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); }
+
+  .exact-question {
+    background: var(--bg-focal);
+    border-left: 3px solid var(--status-error);
+    padding: var(--space-3);
+    border-radius: 0 var(--r-sm) var(--r-sm) 0;
+    margin-top: var(--space-2);
+    font-size: 12px;
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header class="chrome-header">
+  <div class="chrome-title">
+    QuestLog Pipeline Observatory
+    <span class="sub">Trends · Log — one page each morning</span>
+  </div>
+  <nav class="chrome-nav">
+    <a href="index.html">Trends</a>
+    <a href="log.html" class="active">Log</a>
+  </nav>
+</header>
+
+<div class="page-body">
+
+  <div class="log-filter">
+    <button class="btn-secondary on" data-filter="all">All Outcomes</button>
+    <button class="btn-secondary" data-filter="shipped">Shipped Only</button>
+    <button class="btn-secondary" data-filter="blocked">Blocked Only</button>
+  </div>
+
+  <!-- Shipped entry -->
+  <div class="log-entry" data-outcome="shipped">
+    <div class="log-head">
+      <span class="ticket-id">T-044</span>
+      <span class="title">Consolidate MILESTONES_PT1/PT2 v2 detail</span>
+      <span class="tag tag-tier-m">M</span>
+      <span class="badge badge-success">Shipped</span>
+      <span class="badge badge-success">Pass</span>
+      <span class="spacer"></span>
+      <span class="cost">$2.10 · 184.2K tok</span>
+    </div>
+    <div class="log-summary">Extracted every deferred-to-v2 milestone task from PT1/PT2 into a new <span class="mono">Docs/milestones/MILESTONES_V2.md</span>, matching V1_MCP's structure; retired both PT files.</div>
+    <div class="log-notes">"Straightforward extraction — the PT files were already well-organized, so this stayed close to estimate."</div>
+    <details class="log-expand">
+      <summary>▾ Full report</summary>
+      <div class="body">
+        <dl>
+          <dt>Test evidence</dt><dd class="mono">lint: pass · typecheck: pass · test: pass (312 passed)</dd>
+          <dt>Exit conditions</dt><dd>✓ all milestone-doc checkboxes migrated · ✓ PT1/PT2 removed · ✓ cross-refs updated</dd>
+          <dt>Reviewer verdict</dt><dd>Pass — "Clean 1:1 migration, no scope drift, checkbox state preserved."</dd>
+          <dt>Retry log</dt><dd><ul class="retry-log"><li>1× mechanical_lint_typecheck — missing trailing newline</li></ul></dd>
+          <dt>Alex must decide</dt><dd>Nothing — shipped clean.</dd>
+        </dl>
+      </div>
+    </details>
+    <div class="comments">
+      <div class="comment-list">
+        <div class="comment">
+          <span class="author-chip alex">Alex</span>
+          <div>
+            <div class="comment-body">Good catch retiring the PT files instead of just leaving them stale — exactly what I wanted here.</div>
+            <div class="comment-meta">2026-07-26 09:14</div>
+          </div>
+        </div>
+      </div>
+      <div class="comment-add">
+        <textarea placeholder="Add a comment…"></textarea>
+        <button class="btn-secondary">Add Comment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Shipped entry, small -->
+  <div class="log-entry" data-outcome="shipped">
+    <div class="log-head">
+      <span class="ticket-id">T-052</span>
+      <span class="title">Reviewer-subagent wiring in EXECUTOR_ROUTINE</span>
+      <span class="tag tag-tier-s">S</span>
+      <span class="badge badge-success">Shipped</span>
+      <span class="badge badge-success">Pass</span>
+      <span class="spacer"></span>
+      <span class="cost">$0.68 · 51.9K tok</span>
+    </div>
+    <div class="log-summary">Wired the fresh-context reviewer subagent into Step 5 of the executor routine, ahead of report-writing.</div>
+    <div class="log-notes">"Small, mechanical — no surprises."</div>
+    <details class="log-expand">
+      <summary>▾ Full report</summary>
+      <div class="body">
+        <dl>
+          <dt>Test evidence</dt><dd class="mono">lint: pass · typecheck: pass · test: pass (298 passed)</dd>
+          <dt>Exit conditions</dt><dd>✓ EXECUTOR_ROUTINE.md Step 5 calls reviewer agent with ticket path + diff</dd>
+          <dt>Reviewer verdict</dt><dd>Pass</dd>
+          <dt>Retry log</dt><dd>none</dd>
+          <dt>Alex must decide</dt><dd>Nothing.</dd>
+        </dl>
+      </div>
+    </details>
+    <div class="comments">
+      <div class="comment-list"></div>
+      <div class="comment-add">
+        <textarea placeholder="Add a comment…"></textarea>
+        <button class="btn-secondary">Add Comment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gate/planning entry, with an agent-authored comment -->
+  <div class="log-entry" data-outcome="shipped">
+    <div class="log-head">
+      <span class="ticket-id">G-010</span>
+      <span class="title">Ticket prioritization mechanism (gate resolution)</span>
+      <span class="tag tag-tier-l">L</span>
+      <span class="badge badge-success">Shipped</span>
+      <span class="badge badge-success">Pass</span>
+      <span class="spacer"></span>
+      <span class="cost">$4.92 · 312K tok</span>
+    </div>
+    <div class="log-summary">Resolved the priority-tier 🧠 gate with Alex; added the <span class="mono">Priority</span> field to TICKET_SPEC.md and updated selection logic across the pipeline docs.</div>
+    <div class="log-notes">"Ran long because Alex opened the session mid-run to double-check the field's interaction with Blocked on:/Gated on:."</div>
+    <details class="log-expand">
+      <summary>▾ Full report</summary>
+      <div class="body">
+        <dl>
+          <dt>Test evidence</dt><dd class="mono">n/a — docs-only change</dd>
+          <dt>Exit conditions</dt><dd>✓ TICKET_SPEC.md field added · ✓ EXECUTOR_ROUTINE.md Step 1 updated · ✓ COMMANDS.md /promote row added</dd>
+          <dt>Reviewer verdict</dt><dd>Pass — "Field discipline is consistent across every doc that references priority."</dd>
+          <dt>Retry log</dt><dd><ul class="retry-log"><li>2× genuine_bug_caught_by_test — stale cross-ref caught by grep-based exit check</li></ul></dd>
+          <dt>Alex must decide</dt><dd>Nothing — resolved live in-session.</dd>
+        </dl>
+      </div>
+    </details>
+    <div class="comments">
+      <div class="comment-list">
+        <div class="comment">
+          <span class="author-chip agent">Agent</span>
+          <div>
+            <div class="comment-body">Flagging for future runs: this ticket's duration/turn count is inflated by Alex inspecting mid-session — not representative of unattended cost. Worth excluding from any trend average until a "manually inspected" mechanism actually exists (see G-004 mockup review, 2026-07-26).</div>
+            <div class="comment-meta">posted by reviewer subagent · 2026-07-26 09:41</div>
+          </div>
+        </div>
+        <div class="comment">
+          <span class="author-chip alex">Alex</span>
+          <div>
+            <div class="comment-body">Agreed — don't want this run skewing the tier-L average until we actually build that.</div>
+            <div class="comment-meta">2026-07-26 10:02</div>
+          </div>
+        </div>
+      </div>
+      <div class="comment-add">
+        <textarea placeholder="Add a comment…"></textarea>
+        <button class="btn-secondary">Add Comment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Blocked entry -->
+  <div class="log-entry blocked" data-outcome="blocked">
+    <div class="log-head">
+      <span class="ticket-id">T-039</span>
+      <span class="title">Scalability-into-v2 architecture review</span>
+      <span class="tag tag-tier-l">L</span>
+      <span class="badge badge-error">Blocked</span>
+      <span class="spacer"></span>
+      <span class="cost">$1.15 · 62K tok</span>
+    </div>
+    <div class="log-summary">Picked up in error by an earlier executor build before the "NOT ELIGIBLE FOR AUTONOMOUS NIGHTLY EXECUTION" banner convention existed; stopped itself once it recognized the ticket needed Alex's own institutional judgment throughout, not a single yes/no call.</div>
+    <details class="log-expand" open>
+      <summary>▾ Full report</summary>
+      <div class="body">
+        <dl>
+          <dt>What was attempted</dt><dd>Began drafting a scalability comparison table across three candidate v2 architectures.</dd>
+          <dt>Why it stopped</dt><dd>Recognized mid-run that "which tradeoffs matter" requires Alex's product judgment, not a rubric.</dd>
+        </dl>
+        <div class="exact-question">
+          <strong>Exact question for Alex:</strong> Should this ticket be re-run as an interactive session (like T-017/T-039/T-040's current banner convention), or is there a narrower machine-checkable slice worth extracting first?
+        </div>
+      </div>
+    </details>
+    <div class="comments">
+      <div class="comment-list"></div>
+      <div class="comment-add">
+        <textarea placeholder="Add a comment…"></textarea>
+        <button class="btn-secondary">Add Comment</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty-state" style="margin-top: var(--space-6);">
+    <div class="headline">That's everything so far.</div>
+    <div class="sub">Older runs load further down as the pipeline accumulates history.</div>
+  </div>
+
+</div>
+
+<script>
+  document.querySelectorAll('[data-filter]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('on'));
+      btn.classList.add('on');
+      const filter = btn.dataset.filter;
+      document.querySelectorAll('.log-entry').forEach(entry => {
+        entry.classList.toggle('hidden', filter !== 'all' && entry.dataset.outcome !== filter);
+      });
+    });
+  });
+
+  document.querySelectorAll('.comment-add button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const wrap = btn.closest('.comment-add');
+      const textarea = wrap.querySelector('textarea');
+      if (!textarea.value.trim()) return;
+      const list = wrap.previousElementSibling;
+      const el = document.createElement('div');
+      el.className = 'comment';
+      const now = new Date().toISOString().slice(0, 16).replace('T', ' ');
+      el.innerHTML = `<span class="author-chip alex">Alex</span><div><div class="comment-body"></div><div class="comment-meta">${now}</div></div>`;
+      el.querySelector('.comment-body').textContent = textarea.value.trim();
+      list.appendChild(el);
+      textarea.value = '';
+    });
+  });
+</script>
+
+</body>
+</html>
