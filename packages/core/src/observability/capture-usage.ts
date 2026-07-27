@@ -78,9 +78,9 @@ export function captureUsage(
 	return { artifactPath, artifact };
 }
 
-/** Real (impure) ticket-id resolution: reads the explicit `.claude/.active-ticket` marker a session writes when it picks up ticket work (EXECUTOR_ROUTINE.md Step 2). No marker means no active ticket work — never a guess. */
+/** Real (impure) ticket-id resolution: reads the explicit `tmp/.active-ticket` marker a session writes when it picks up ticket work (EXECUTOR_ROUTINE.md Step 2). No marker means no active ticket work — never a guess. Lives under `tmp/`, not `.claude/` — see T-062. */
 export function resolveActiveTicketId(projectDir: string): string | null {
-	const markerPath = join(projectDir, ".claude", ".active-ticket");
+	const markerPath = join(projectDir, "tmp", ".active-ticket");
 	if (!existsSync(markerPath)) return null;
 	return resolveTicketId(readFileSync(markerPath, "utf-8"));
 }

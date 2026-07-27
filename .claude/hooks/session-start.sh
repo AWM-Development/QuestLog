@@ -15,8 +15,11 @@ cd "$CLAUDE_PROJECT_DIR"
 # remote — capture-usage needs it available synchronously at EXECUTOR_ROUTINE.md
 # Step 7, instead of only via the Stop hook firing after the PR is already open.
 # See Docs/IMPLEMENTATION_NOTES.md § T-046 and G-011's resolution for the rationale.
+# Lives under tmp/, not .claude/ — the harness treats any write under .claude/ as
+# touching a sensitive file and gates it behind an interactive confirmation, which
+# would stall this on every unattended nightly run (T-062).
 HOOK_STDIN="$(cat)"
-mkdir -p "$CLAUDE_PROJECT_DIR/.claude"
+mkdir -p "$CLAUDE_PROJECT_DIR/tmp"
 HOOK_STDIN="$HOOK_STDIN" node -e '
   const fs = require("node:fs");
   const payload = JSON.parse(process.env.HOOK_STDIN);
@@ -25,7 +28,7 @@ HOOK_STDIN="$HOOK_STDIN" node -e '
     session_id: payload.session_id,
   };
   fs.writeFileSync(
-    process.env.CLAUDE_PROJECT_DIR + "/.claude/.session-context.json",
+    process.env.CLAUDE_PROJECT_DIR + "/tmp/.session-context.json",
     JSON.stringify(stash) + "\n",
   );
 '
