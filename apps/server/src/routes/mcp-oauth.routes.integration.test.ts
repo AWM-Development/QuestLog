@@ -111,6 +111,28 @@ describe("mcp-oauth routes", () => {
 			);
 			expect(body.code_challenge_methods_supported).toEqual(["S256"]);
 		});
+
+		it("advertises https:// endpoints when reached via a TLS-terminating proxy's X-Forwarded-Proto header", async () => {
+			// Fly.io terminates TLS at its edge and forwards plain HTTP internally
+			// (fly.dev.toml's force_https only applies at the edge) — without
+			// Fastify's trustProxy honoring X-Forwarded-Proto, every discovery
+			// endpoint advertises http:// URLs a real client can't complete OAuth
+			// against. Surfaced by T-034's verify-mcp-remote.ts against the real
+			// questlog-dev deploy: POST /register got redirected (http -> https)
+			// and lost its JSON body, so client_id came back undefined.
+			const response = await app.inject({
+				method: "GET",
+				url: "/.well-known/oauth-authorization-server",
+				headers: { "x-forwarded-proto": "https" },
+			});
+
+			expect(response.statusCode).toBe(200);
+			const body = response.json();
+			expect(body.issuer).toMatch(/^https:\/\//);
+			expect(body.authorization_endpoint).toMatch(/^https:\/\//);
+			expect(body.registration_endpoint).toMatch(/^https:\/\//);
+			expect(body.token_endpoint).toMatch(/^https:\/\//);
+		});
 	});
 
 	describe("POST /register", () => {
