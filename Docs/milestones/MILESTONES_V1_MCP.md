@@ -1,8 +1,8 @@
 # QuestLog — v1 Milestones (MCP-First)
 
-**Location:** `Docs/MILESTONES_V1_MCP.md`
+**Location:** `Docs/milestones/MILESTONES_V1_MCP.md`
 **Status:** CANONICAL task source for v1. Agents select work from this file only.
-**Supersedes:** `MILESTONES_PT1.md` / `MILESTONES_PT2.md` for v1 sequencing (retained for task detail and v2 planning).
+**Supersedes:** `MILESTONES_PT1.md` / `MILESTONES_PT2.md` for v1 sequencing (both retired 2026-07-27, consolidated into `Docs/milestones/MILESTONES_V2.md`).
 **Statuses audited:** 2026-07 against commit `ce4eecd` — see `Docs/AUDIT_2026-07.md` for evidence.
 
 ## The v1 pivot (June 2026, "Shape C")
@@ -13,7 +13,7 @@ v1's primary interface is an **MCP server**, not the web app. A DM talks to thei
 
 ## Milestone 1: Foundation — ✅ COMPLETE
 
-All five tasks (scaffolding, DB schema & migrations, tRPC + campaign CRUD, frontend shell, design system) done and verified by the 2026-07 audit. No remaining work. Detail: `MILESTONES_PT1.md §Milestone 1`.
+All five tasks (scaffolding, DB schema & migrations, tRPC + campaign CRUD, frontend shell, design system) done and verified by the 2026-07 audit. No remaining work. Detail: retired `MILESTONES_PT1.md §Milestone 1` (consolidated into `Docs/milestones/MILESTONES_V2.md`).
 
 ## Milestone 2: Import & Knowledge Base — ⚠️ PARTIAL
 
@@ -22,7 +22,7 @@ All five tasks (scaffolding, DB schema & migrations, tRPC + campaign CRUD, front
 | 2.1 File upload & extraction | ✅ done | Upload-trigger gap closed by T-000, below |
 | 2.2 Chunking & embedding | ✅ done | voyage-4-lite, 1024-dim (docs previously said voyage-3) |
 | 2.3 Vector similarity search | ✅ **done — closed by Ticket Zero (T-000)** | Real end-to-end retrieval proven against a permanent fixture with the real Voyage API — see below |
-| 2.4 Scanned document support (OCR) | ⏸ open, 🧠 **strategy gate** | **Not eligible for nightly execution** until Alex decides the OCR approach in a planning session. Detail: `MILESTONES_PT1.md §2.4` |
+| 2.4 Scanned document support (OCR) | ⏸ open, 🧠 **strategy gate** | **Not eligible for nightly execution** until Alex decides the OCR approach in a planning session. Detail: retired `MILESTONES_PT1.md §2.4` (consolidated into `Docs/milestones/MILESTONES_V2.md`) |
 
 **2.3 verification = Ticket Zero (`T-000-verify-vector-search`), incl. the SourcesPage un-break — ✅ shipped (`feat/m-mcp/verify-vector-search`):**
 the upload endpoint previously never triggered import processing (`processPendingSources` ran only on server startup or via the manual worker), so uploads sat at `pending` forever while the UI polled. Fixed with an opt-in `autoProcessUploads` flag on `buildApp` (default `false`, so existing mocked tests are unaffected; `main.ts` enables it for the real server). `apps/server/src/test-fixtures/ashfall-primer.md` is the new permanent fixture; `search.e2e.test.ts` proves upload → extract → chunk → embed (real Voyage API) → search returns the semantically relevant, campaign-filtered chunk for distinct queries — a real, asserted discrimination between topics, not just "some result came back." Full detail: `Docs/tickets/reports/T-000-verify-vector-search.md`.
@@ -83,7 +83,7 @@ M-MCP.0 → M-MCP.1 → (M-MCP.2 anytime after 1) → M-MCP.3 → M-MCP.4 → M-
 
 ## Deferred to v2 — NOT eligible for any agent selection
 
-No ticket may be written against these, and no agent may select them, regardless of what `MILESTONES_PT1.md`/`PT2.md` says. Listed by number so there is no ambiguity:
+No ticket may be written against these, and no agent may select them, regardless of what the retired `MILESTONES_PT1.md`/`PT2.md` (consolidated into `Docs/milestones/MILESTONES_V2.md`) said. Listed by number so there is no ambiguity:
 
 | Milestone | What it is |
 |---|---|
@@ -93,7 +93,7 @@ No ticket may be written against these, and no agent may select them, regardless
 | 7.1–7.3 | At-the-table: map reference, combat tracker, quick lookup |
 | 8.1–8.3 | Theming, mascot (Ember), style profiles |
 | 9.1, 9.2, 9.4, 9.5, 9.6 | Web-app-only polish (responsive, perf, nav rail, real-campaign testing, TipTap link UI) |
-| 10–19 | Everything in `MILESTONES_PT2.md` (observability, agent safety UI, autosave resilience, destructive-action safety, shortcuts, onboarding, global search, import streaming, export, token guardrails) |
+| 10–19 | Everything in the retired `MILESTONES_PT2.md` (observability, agent safety UI, autosave resilience, destructive-action safety, shortcuts, onboarding, global search, import streaming, export, token guardrails) — consolidated into `Docs/milestones/MILESTONES_V2.md` |
 
 **Deployment note (2026-07):** the original `9.1–9.6` row bundled *deployment* together with web-app-only polish, written before the MCP-first pivot. Deploying the v1 product (MCP server + backend + DB) is not a v2-deferred concern — it now ships as **M-MCP.5** above, eligible for the normal ticket pipeline like any other v1 work. The remaining `9.x` items (responsive, perf, nav rail, real-campaign testing, TipTap link UI) are genuinely web-app-only and stay deferred. This whole table predates the pivot in more than this one place and is due a full re-audit against the current v1 shape — not done here, flagged for a future pass.
 

@@ -7,7 +7,7 @@
 **Related Docs:**
 - `Docs/README.md` — Overview of all project documentation
 - `Docs/PRD.md` — Product specification (reference for feature details)
-- `Docs/MILESTONES_V1_MCP.md` — Canonical v1 task breakdown
+- `Docs/milestones/MILESTONES_V1_MCP.md` — Canonical v1 task breakdown
 - `Docs/tickets/TICKET_SPEC.md` / `EXECUTOR_ROUTINE.md` — the ticket pipeline (supersedes the old copy-paste session template previously referenced here)
 
 **Last Updated:** 2026-07-07
@@ -484,7 +484,7 @@ Run through this before merging **every** feature branch. This is your self-revi
 - [ ] Run the full test suite one more time
 - [ ] Commit history is clean (squash fixup commits)
 - [ ] Update PRD.md if the implementation deviates from spec (spec stays in sync with reality)
-- [ ] Check off this task in MILESTONES_V1_MCP.md
+- [ ] Check off this task in Docs/milestones/MILESTONES_V1_MCP.md
 - [ ] Append an entry to IMPLEMENTATION_NOTES.md for any non-obvious decision made
 - [ ] Add a CHANGELOG.md entry under `[Unreleased]` summarising what shipped
 - [ ] If a new pattern was established, update DEVELOPMENT_GUIDE.md §5
@@ -596,7 +596,7 @@ The AI will flag both real issues and false positives. Common false positives in
 - **`.js` extensions in TypeScript imports** — Correct for ESM with `moduleResolution: "bundler"`. TypeScript resolves `.js` → `.ts` at compile time.
 - **Workspace package exports pointing to `./src/*.ts`** — Intentional for internal `workspace:*` packages. Vite and tsx consume raw TS source; no build step needed.
 - **Missing build scripts on `packages/shared`** — Same reason. Only add a build script if the package is published externally.
-- **Dependencies installed but unused** — May be scaffolding for the next task. Check MILESTONES_V1_MCP.md before removing.
+- **Dependencies installed but unused** — May be scaffolding for the next task. Check Docs/milestones/MILESTONES_V1_MCP.md before removing.
 
 ### Severity definitions
 
@@ -638,7 +638,7 @@ Good intentions drift. Automated gates do not. The CI workflow (`github/workflow
 These are not perfect enforcement — they are forcing functions that surface the most common forms of drift.
 
 **5. Closed feedback loop via mandatory doc updates.**
-Every unit of work ends with a fixed set of doc update obligations: check off the task in `MILESTONES_V1_MCP.md`, append to `IMPLEMENTATION_NOTES.md` if a non-obvious decision was made, add a `CHANGELOG.md` entry, update `PRD.md` if spec diverged, and update this guide's §5 if a new pattern was established. For ticket work these are fixed fields in every ticket's "Definition of done" (`Docs/tickets/TICKET_SPEC.md`) and enforced by `EXECUTOR_ROUTINE.md` Step 7; for interactive work they're the PR template checklist. Each reinforces the other.
+Every unit of work ends with a fixed set of doc update obligations: check off the task in `Docs/milestones/MILESTONES_V1_MCP.md`, append to `IMPLEMENTATION_NOTES.md` if a non-obvious decision was made, add a `CHANGELOG.md` entry, update `PRD.md` if spec diverged, and update this guide's §5 if a new pattern was established. For ticket work these are fixed fields in every ticket's "Definition of done" (`Docs/tickets/TICKET_SPEC.md`) and enforced by `EXECUTOR_ROUTINE.md` Step 7; for interactive work they're the PR template checklist. Each reinforces the other.
 
 ### The Single Encoding Point
 
@@ -648,7 +648,7 @@ Every AI coding session reads `CLAUDE.md` first. If the methodology evolves, upd
 
 ### Running the Audit
 
-Two prior audits are the concrete template for what a full doc/code audit looks like in this repo — evidence-cited verdicts (`done-and-verified` / `done-unchecked` / `partial` / `absent`), not a re-reading of checkboxes: `Docs/AUDIT_2026-07.md` (Milestones 1–3, build health, dead-weight inventory) and `Docs/AUDIT_2026-07-M4.md` (Milestone 4). Run a new one the same way when code vs. spec drift needs checking: state vs. code inventory per task, doc-freshness pass across `Docs/`, and infrastructure gaps (CLAUDE.md, PR template, CI, CHANGELOG, MILESTONES_V1_MCP.md consistency).
+Two prior audits are the concrete template for what a full doc/code audit looks like in this repo — evidence-cited verdicts (`done-and-verified` / `done-unchecked` / `partial` / `absent`), not a re-reading of checkboxes: `Docs/AUDIT_2026-07.md` (Milestones 1–3, build health, dead-weight inventory) and `Docs/AUDIT_2026-07-M4.md` (Milestone 4). Run a new one the same way when code vs. spec drift needs checking: state vs. code inventory per task, doc-freshness pass across `Docs/`, and infrastructure gaps (CLAUDE.md, PR template, CI, CHANGELOG, Docs/milestones/MILESTONES_V1_MCP.md consistency).
 
 ---
 

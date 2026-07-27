@@ -77,7 +77,7 @@ Invoke the `reviewer` subagent against the ticket file and the diff (`git diff d
 - Output the blocked report as your summary. Stop — do not proceed to Step 7.
 
 ## Step 7: Wrap up (shipped path only)
-- Flip the checkbox for this task in `Docs/MILESTONES_V1_MCP.md`.
+- Flip the checkbox for this task in `Docs/milestones/MILESTONES_V1_MCP.md`.
 - Update `Docs/IMPLEMENTATION_NOTES.md` if any non-obvious decision was made.
 - Add an entry to `CHANGELOG.md` under `[Unreleased]` (use the existing section headings — Added/Changed/Fixed — grouped by this ticket's id, e.g. `### Added — T-###`) describing what shipped, in user/developer-facing terms, not an internal diff summary.
 - Write `Docs/tickets/reports/T-###-slug.md` per `Docs/tickets/REPORT_TEMPLATE.md` — outcome, diff stats, pasted test evidence (not a summary), exit-condition-by-exit-condition check, the reviewer's verbatim verdict, anything Alex must decide.

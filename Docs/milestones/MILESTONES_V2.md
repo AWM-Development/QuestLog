@@ -2,27 +2,27 @@
 
 **Location:** `Docs/milestones/MILESTONES_V2.md`
 **Status:** v2 scope, collected for after v1.1 ships — not eligible for `ticket-writer` or nightly-executor selection until Alex explicitly opens v2 planning. No agent may select tasks from this file, and no ticket may reference it as a live source. Consult `CLAUDE.md` for the current task source.
-**Supersedes:** `Docs/MILESTONES_PT1.md` / `Docs/MILESTONES_PT2.md` (both deleted — see `Docs/tickets/gated/resolved/G-002-milestone-docs-cleanup-and-ticketing-reference-audit.md`). This file is the consolidated, re-audited replacement for the "Deferred to v2" milestone numbers those two files described; it is not a transcript of them.
+**Supersedes:** `MILESTONES_PT1.md` / `MILESTONES_PT2.md` (both deleted — see `Docs/tickets/gated/resolved/G-002-milestone-docs-cleanup-and-ticketing-reference-audit.md`). This file is the consolidated, re-audited replacement for the "Deferred to v2" milestone numbers those two files described; it is not a transcript of them.
 **Consolidated:** 2026-07-26, per `Docs/tickets/queue/T-044-consolidate-milestones-v2-doc.md` (now `Docs/tickets/done/`), executing `G-002`'s resolution.
 
 ## Why this file exists
 
-`Docs/MILESTONES_V1_MCP.md`'s June 2026 MCP-first pivot deferred most of the original web-app milestone list to v2 without re-describing it — it just pointed at `MILESTONES_PT1.md`/`PT2.md` by milestone number and flagged that list as "due a full re-audit against the current v1 shape... not done here." This file does that re-audit: every deferred milestone number is reproduced here with its task detail intact, but corrected against the post-pivot codebase where PT1/PT2's original framing has since gone stale (an MCP-equivalent shipped, a referenced file moved, a component was renamed). **v2 is deferred, not abandoned** — nothing here is being thrown away, it is parked until Alex opens v2 planning.
+`Docs/milestones/MILESTONES_V1_MCP.md`'s June 2026 MCP-first pivot deferred most of the original web-app milestone list to v2 without re-describing it — it just pointed at `MILESTONES_PT1.md`/`PT2.md` by milestone number and flagged that list as "due a full re-audit against the current v1 shape... not done here." This file does that re-audit: every deferred milestone number is reproduced here with its task detail intact, but corrected against the post-pivot codebase where PT1/PT2's original framing has since gone stale (an MCP-equivalent shipped, a referenced file moved, a component was renamed). **v2 is deferred, not abandoned** — nothing here is being thrown away, it is parked until Alex opens v2 planning.
 
-Milestones and tasks **not** listed as v2 sections below (1–3, 4.1, 4.2, 4.5, 9.3) either shipped already or — in 9.3's case — now ship as v1 scope (`M-MCP.5`, done) rather than v2. See `Docs/MILESTONES_V1_MCP.md`'s "Deferred to v2" table for the authoritative in/out line, and the "Already shipped" section immediately below for what each of those completed milestones actually delivered.
+Milestones and tasks **not** listed as v2 sections below (1–3, 4.1, 4.2, 4.5, 9.3) either shipped already or — in 9.3's case — now ship as v1 scope (`M-MCP.5`, done) rather than v2. See `Docs/milestones/MILESTONES_V1_MCP.md`'s "Deferred to v2" table for the authoritative in/out line, and the "Already shipped" section immediately below for what each of those completed milestones actually delivered.
 
 ---
 
 ## Already shipped (context only — not v2 scope, nothing here is picked up by any agent)
 
-These are the milestones PT1/PT2 originally listed that are **done**, kept here as a record of what exists so a v2 task above isn't mistaken for greenfield work when it should build on something already shipped. Full historical task-level detail lived in the now-deleted `MILESTONES_PT1.md`; this is a summary, not a restoration of that detail — for exact status and audit evidence see `Docs/MILESTONES_V1_MCP.md` and `Docs/AUDIT_2026-07.md`.
+These are the milestones PT1/PT2 originally listed that are **done**, kept here as a record of what exists so a v2 task above isn't mistaken for greenfield work when it should build on something already shipped. Full historical task-level detail lived in the now-deleted `MILESTONES_PT1.md`; this is a summary, not a restoration of that detail — for exact status and audit evidence see `Docs/milestones/MILESTONES_V1_MCP.md` and `Docs/AUDIT_2026-07.md`.
 
 - **Milestone 1 — Foundation** ✅ done. pnpm/Turborepo workspace, Postgres+pgvector via Docker, Drizzle schema/migrations, tRPC + campaign CRUD, frontend shell/routing, the entity-driven design-system token migration.
-- **Milestone 2 — Import & Knowledge Base** ⚠️ partial, but **not v2 scope** — 2.1 (upload/extraction), 2.2 (chunking/embedding, Voyage `voyage-4-lite`), and 2.3 (vector similarity search, verified end-to-end by `T-000`) are done. **2.4 (scanned document OCR support) remains open** but stays a live v1 task, not deferred here — it's not in `MILESTONES_V1_MCP.md`'s "Deferred to v2" table, and is gated 🧠 pending an OCR-approach strategy decision. See `Docs/MILESTONES_V1_MCP.md` for its current status, not this file.
+- **Milestone 2 — Import & Knowledge Base** ⚠️ partial, but **not v2 scope** — 2.1 (upload/extraction), 2.2 (chunking/embedding, Voyage `voyage-4-lite`), and 2.3 (vector similarity search, verified end-to-end by `T-000`) are done. **2.4 (scanned document OCR support) remains open** but stays a live v1 task, not deferred here — it's not in `MILESTONES_V1_MCP.md`'s "Deferred to v2" table, and is gated 🧠 pending an OCR-approach strategy decision. See `Docs/milestones/MILESTONES_V1_MCP.md` for its current status, not this file.
 - **Milestone 3 — Agent Conversation** ✅ done (scope narrowed by the MCP pivot). Context assembly with hybrid vector+keyword search and a confidence score (`packages/core/src/services/context.service.ts`), Claude API integration and streaming (`packages/core/src/services/llm.service.ts`), the frozen web chat UI, and the doc-infrastructure/CI-enforcement tasks (3.3.5, 3.3.6). **Two pieces of this shipped work are directly relevant to v2 Milestones 11.1 and 11.2 below** — see the reconciliation notes in those sections; they are not greenfield tasks the way PT1/PT2 originally described them.
 - **Milestone 4.1/4.2 — Session CRUD/editor foundation, entity detection & linking** ✅ done. TipTap-based `SessionEditor`, debounced server-side autosave, pg_trgm entity matching, inline highlighting/quick-create (`EntityQuickCreatePopover.tsx`, `EntityHoverCard.tsx`, `EntityActionBar.tsx`). **Relevant to v2 Milestones 5.4 and 12.1** — see those sections.
 - **Milestone 4.5 — UI Component Library Refactor** ✅ done. Shared primitives now exist: `Button`/`IconButton`, `Input`/`FormField`, `Chip`/`Card`/`Alert`, `EntityAvatar`/`Modal` (`apps/web/src/components/`). **Any v2 web task building new UI (5.1, 6.x, 7.x, 13.1, 15.2, 16.2) should build on these primitives, not reinvent them** — flagged inline where most relevant.
-- **Milestone 9.3 — Deployment** ✅ done, but reclassified as v1 scope, not v2 — shipped as `M-MCP.5` (`questlog-dev`/`questlog-prod` on Fly.io + Neon). See `Docs/MILESTONES_V1_MCP.md`.
+- **Milestone 9.3 — Deployment** ✅ done, but reclassified as v1 scope, not v2 — shipped as `M-MCP.5` (`questlog-dev`/`questlog-prod` on Fly.io + Neon). See `Docs/milestones/MILESTONES_V1_MCP.md`.
 
 ---
 
@@ -45,7 +45,7 @@ These are the milestones PT1/PT2 originally listed that are **done**, kept here 
 
 ## Milestone 5: Entities & Relationships
 
-**Current state (2026-07):** `packages/core/src/services/entity.service.ts` exists and is the shared backend the MCP tools already build on. There is no dedicated web entity page, relationship UI, or graph visualization — that part of this milestone is genuinely unbuilt. **But the "CRUD" half of 5.1 is further along than PT1 assumed**, entirely via the MCP surface (v1.1, `Docs/MILESTONES_V1_1_MCP.md`):
+**Current state (2026-07):** `packages/core/src/services/entity.service.ts` exists and is the shared backend the MCP tools already build on. There is no dedicated web entity page, relationship UI, or graph visualization — that part of this milestone is genuinely unbuilt. **But the "CRUD" half of 5.1 is further along than PT1 assumed**, entirely via the MCP surface (v1.1, `Docs/milestones/MILESTONES_V1_1_MCP.md`):
 - `create_entity` and `append_entity_note` — done (M-REMOTE.5)
 - `update_entity` (rename, description replace, type change) — **in progress**, `T-056`/M-REMOTE.9
 - Entity delete/archive — **gated**, `G-006`/M-REMOTE.10, blocked on a soft-archive-vs-hard-delete product decision
@@ -251,7 +251,7 @@ None of this is a web tRPC router or web UI — a DM can only do these things th
 - Branch: `feat/polish/performance`
 - **Checked 2026-07, confirmed unbuilt:** no `cache_control`/prompt-caching usage in `llm.service.ts`, no retry logic in the import/source services. Genuinely greenfield.
 - Work:
-  - Prompt caching implementation for frequently used system prompts (web agent chat — MCP tool calls have their own, separately-tracked cost profile per `Docs/MILESTONES_V1_2_MCP.md`'s M-OBS/M-EFFICIENCY work, which is about the *executor's* token spend, not the product's — no overlap)
+  - Prompt caching implementation for frequently used system prompts (web agent chat — MCP tool calls have their own, separately-tracked cost profile per `Docs/milestones/MILESTONES_V1_2_MCP.md`'s M-OBS/M-EFFICIENCY work, which is about the *executor's* token spend, not the product's — no overlap)
   - Database query optimization (check slow queries, add missing indexes)
   - Frontend bundle analysis and code splitting
   - Loading state polish: skeletons, progressive rendering
@@ -298,7 +298,7 @@ None of this is a web tRPC router or web UI — a DM can only do these things th
 
 ## Milestone 10: Observability & Ops
 
-**Goal:** Production-grade logging, error monitoring, feedback collection, and CI/CD hardening for the **web app and its own backend surfaces** (agent chat, session editor, sources UI). **Not to be confused with `Docs/MILESTONES_V1_2_MCP.md`'s M-OBS/M-EFFICIENCY milestones**, which instrument the nightly *ticket executor's* own token usage and are already in progress as v1.2 — a distinct concern from product-level observability, with no scope overlap. Some of this milestone's ground has already shifted since PT2 was written: v1 shipped its own CI (`.github/workflows/ci.yml`, referenced throughout `Docs/tickets/`) and Fly.io/Neon deployment (M-MCP.5), so 10.5's CI/CD items should be read as "harden what v1 already has," not "build CI/CD from scratch."
+**Goal:** Production-grade logging, error monitoring, feedback collection, and CI/CD hardening for the **web app and its own backend surfaces** (agent chat, session editor, sources UI). **Not to be confused with `Docs/milestones/MILESTONES_V1_2_MCP.md`'s M-OBS/M-EFFICIENCY milestones**, which instrument the nightly *ticket executor's* own token usage and are already in progress as v1.2 — a distinct concern from product-level observability, with no scope overlap. Some of this milestone's ground has already shifted since PT2 was written: v1 shipped its own CI (`.github/workflows/ci.yml`, referenced throughout `Docs/tickets/`) and Fly.io/Neon deployment (M-MCP.5), so 10.5's CI/CD items should be read as "harden what v1 already has," not "build CI/CD from scratch."
 
 **Checked 2026-07, confirmed unbuilt:** no Pino usage anywhere in `apps/server`/`packages/core` (16 remaining bare `console.log`/`console.error`/`console.warn` calls), no `llm_logs` table, no Sentry package in either app, no `feedback` table. All four of 10.1–10.4 are genuinely greenfield — nothing below is partially shipped.
 
@@ -357,7 +357,7 @@ None of this is a web tRPC router or web UI — a DM can only do these things th
 ### 10.5 — CI/CD hardening & GitHub ops
 
 - Branch: `chore/ci-hardening`
-- **Reconciled 2026-07:** v1 already shipped a working `.github/workflows/ci.yml` and Fly.io/Neon deployment (M-MCP.5) and v1.1 is actively adding post-merge smoke tests (`Docs/MILESTONES_V1_1_MCP.md`'s M-CICD.1–3). Re-scope this task at pickup time to whatever of the below M-CICD hasn't already covered, rather than re-doing shipped work.
+- **Reconciled 2026-07:** v1 already shipped a working `.github/workflows/ci.yml` and Fly.io/Neon deployment (M-MCP.5) and v1.1 is actively adding post-merge smoke tests (`Docs/milestones/MILESTONES_V1_1_MCP.md`'s M-CICD.1–3). Re-scope this task at pickup time to whatever of the below M-CICD hasn't already covered, rather than re-doing shipped work.
 - Work:
   - Staging environment: configure a second Fly.io/Railway app for staging branch — same Dockerfile, different env vars (`DATABASE_URL`, `SENTRY_ENVIRONMENT=staging`)
   - GitHub Actions — PR job: add a check that fails if any test file has `.only` or `.skip` left in
@@ -375,7 +375,7 @@ None of this is a web tRPC router or web UI — a DM can only do these things th
 
 ## Milestone 11: Agent Safety & Scope
 
-**Goal:** System prompt design that scopes the agent to campaign work, permits genre-appropriate content, and keeps responses grounded in actual campaign material. No extra moderation APIs — handled entirely in prompt design and RAG behavior. Applies to the web agent chat surface; the MCP tools (`query_lore`, `prep_brief`, etc.) have their own separate system-prompt/instructions question, currently open as `G-005` in `Docs/MILESTONES_V1_1_MCP.md` (M-REMOTE.8) — that gate is v1.1 scope, not this milestone, and should not be conflated with it.
+**Goal:** System prompt design that scopes the agent to campaign work, permits genre-appropriate content, and keeps responses grounded in actual campaign material. No extra moderation APIs — handled entirely in prompt design and RAG behavior. Applies to the web agent chat surface; the MCP tools (`query_lore`, `prep_brief`, etc.) have their own separate system-prompt/instructions question, currently open as `G-005` in `Docs/milestones/MILESTONES_V1_1_MCP.md` (M-REMOTE.8) — that gate is v1.1 scope, not this milestone, and should not be conflated with it.
 
 **Reconciled 2026-07 — both tasks below are substantially more done than PT1/PT2 described.** M3.2 (shipped) already built a real `buildSystemPrompt` function for the web chat path — `packages/core/src/services/llm.service.ts:59`, wired into `conversation.service.ts` via the `llmService` singleton — and M3.1 (shipped) already computes and threads through a confidence score. **Re-scope both tasks at pickup time to "close the specific gaps below," not "build from scratch."**
 
@@ -414,7 +414,7 @@ None of this is a web tRPC router or web UI — a DM can only do these things th
 ### 12.1 — Session log autosave & draft recovery
 
 - Branch: `feat/session/autosave`
-- **Reconciled 2026-07:** M4.1 (shipped) already added debounced server-side autosave to the session editor (`Docs/MILESTONES_PT1.md`'s original 4.1 entry, now folded into `Docs/MILESTONES_V1_MCP.md`). This task is specifically the **localStorage crash-recovery layer on top of that** — a client-side draft buffer for the window between keystrokes and the next successful server autosave, not a replacement for server persistence.
+- **Reconciled 2026-07:** M4.1 (shipped) already added debounced server-side autosave to the session editor (the retired `MILESTONES_PT1.md`'s original 4.1 entry, now folded into `Docs/milestones/MILESTONES_V1_MCP.md`). This task is specifically the **localStorage crash-recovery layer on top of that** — a client-side draft buffer for the window between keystrokes and the next successful server autosave, not a replacement for server persistence.
 - Work:
   - Autosave draft to localStorage keyed by `session-draft-{campaignId}` on every content change, debounced 2 seconds
   - On editor mount: check for existing draft key. If found, show a non-blocking banner: "You have unsaved notes from a previous session — [Restore] [Discard]"
@@ -487,7 +487,7 @@ None of this is a web tRPC router or web UI — a DM can only do these things th
 
 **Goal:** A guided first-run experience and persistent contextual help (info icons) that reduce confusion for new users without cluttering the UI for experienced ones.
 
-**Checked 2026-07, confirmed unbuilt on the web side** — no onboarding overlay, no `InfoPopover` component anywhere in `apps/web/src`. **Related but distinct:** v1.1's `M-REMOTE.6` (`Docs/MILESTONES_V1_1_MCP.md`, in progress) adds an onboarding surface for the *MCP* client — the server's `instructions` field plus a `help`/`get_started` tool — covering the same "guide a new user through the workflow" goal but for a Claude-connected session, not the web app. No shared code expected; don't conflate the two when this is picked up.
+**Checked 2026-07, confirmed unbuilt on the web side** — no onboarding overlay, no `InfoPopover` component anywhere in `apps/web/src`. **Related but distinct:** v1.1's `M-REMOTE.6` (`Docs/milestones/MILESTONES_V1_1_MCP.md`, in progress) adds an onboarding surface for the *MCP* client — the server's `instructions` field plus a `help`/`get_started` tool — covering the same "guide a new user through the workflow" goal but for a Claude-connected session, not the web app. No shared code expected; don't conflate the two when this is picked up.
 
 ### 15.1 — First-run onboarding flow
 
@@ -609,7 +609,7 @@ None of this is a web tRPC router or web UI — a DM can only do these things th
 
 **Goal:** Protect the user from unexpected API costs. Per-campaign and per-day token budget warnings with a configurable soft cap.
 
-**Note 2026-07:** this is a **product-facing** guardrail for the DM's own campaign API usage (depends on Milestone 10.2's `llm_logs` table). It is unrelated to `Docs/MILESTONES_V1_2_MCP.md`'s M-OBS.7 cost-model work, which computes the *nightly executor's* theoretical cost against Alex's fully-loaded rate — different data, different consumer, no shared code expected.
+**Note 2026-07:** this is a **product-facing** guardrail for the DM's own campaign API usage (depends on Milestone 10.2's `llm_logs` table). It is unrelated to `Docs/milestones/MILESTONES_V1_2_MCP.md`'s M-OBS.7 cost-model work, which computes the *nightly executor's* theoretical cost against Alex's fully-loaded rate — different data, different consumer, no shared code expected.
 
 ### 19.1 — Token budget warnings
 

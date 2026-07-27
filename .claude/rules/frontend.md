@@ -23,4 +23,4 @@ Each feature under `src/features/<name>/` owns its `components/`, `pages/`, `hoo
 
 ## v2-deferred surfaces stay as-is
 
-`features/agent-chat/` and `features/session-log/` (chat UI, TipTap editor, entity linking UI) are shipped but deferred to v2 per `Docs/MILESTONES_V1_MCP.md`. Keep their tests green if you touch shared code they depend on; do not add features to them.
+`features/agent-chat/` and `features/session-log/` (chat UI, TipTap editor, entity linking UI) are shipped but deferred to v2 per `Docs/milestones/MILESTONES_V1_MCP.md`. Keep their tests green if you touch shared code they depend on; do not add features to them.

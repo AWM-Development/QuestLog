@@ -1,6 +1,6 @@
 # T-056 — `update_entity` MCP tool (write, preview/confirm)
 
-Milestone ref: M-REMOTE.9 (`Docs/MILESTONES_V1_1_MCP.md`)
+Milestone ref: M-REMOTE.9 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
 Priority: P1
 
@@ -47,7 +47,7 @@ Out of scope:
     a separate open product decision (soft-archive vs. hard delete,
     cascade vs. block-if-referenced), not an extension of this ticket.
   - No relationship/graph tools (`entity_relationships` table) — v2-deferred
-    per `Docs/MILESTONES_V1_MCP.md`'s "Deferred to v2" table (5.1–5.4).
+    per `Docs/milestones/MILESTONES_V1_MCP.md`'s "Deferred to v2" table (5.1–5.4).
   - No batch/multi-entity update — one entity per call, same granularity
     as `create_entity`/`append_entity_note`.
   - No audit-trail UI or history of prior values — `writeRequestService`'s
@@ -77,6 +77,6 @@ Exit condition (machine-checkable):
 Iteration cap: 3 distinct approaches on any single failure, then Blocked Protocol
 
 Definition of done includes: checkbox flip for M-REMOTE.9 in
-  `Docs/MILESTONES_V1_1_MCP.md`, `IMPLEMENTATION_NOTES.md` updated if
+  `Docs/milestones/MILESTONES_V1_1_MCP.md`, `IMPLEMENTATION_NOTES.md` updated if
   any non-obvious decision was made, a `CHANGELOG.md` entry under
   `[Unreleased]`, morning report written.

@@ -43,7 +43,7 @@
 
 - [ ] `Docs/PRD.md` updated if behaviour changed or spec was wrong
 - [ ] `Docs/IMPLEMENTATION_NOTES.md` updated if a non-obvious decision was made
-- [ ] `Docs/MILESTONES_V1_MCP.md` task checked off
+- [ ] `Docs/milestones/MILESTONES_V1_MCP.md` task checked off
 - [ ] `CHANGELOG.md` entry added under `[Unreleased]`
 
 ## Migration Guard

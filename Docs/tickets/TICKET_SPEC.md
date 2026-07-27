@@ -9,7 +9,7 @@ Every ticket lives at `Docs/tickets/T-###-slug.md` (`###` sequential, zero-padde
 ```markdown
 # T-### — <title>
 
-Milestone ref: <Docs/MILESTONES_V1_MCP.md section, e.g. "M-MCP.1">
+Milestone ref: <Docs/milestones/MILESTONES_V1_MCP.md section, e.g. "M-MCP.1">
 
 Priority: P0 | P1 | P2   # default P1 — see field notes
 
@@ -38,7 +38,7 @@ Exit condition (machine-checkable):
 
 Iteration cap: 3 distinct approaches on any single failure, then Blocked Protocol
 
-Definition of done includes: checkbox flipped in MILESTONES_V1_MCP.md,
+Definition of done includes: checkbox flipped in Docs/milestones/MILESTONES_V1_MCP.md,
   IMPLEMENTATION_NOTES.md updated if any non-obvious decision was made,
   a CHANGELOG.md entry under [Unreleased], morning report written.
 ```
@@ -84,7 +84,7 @@ Both land in `develop` only — never `main`. A `git branch -a` scan is enough t
 
 ## Milestone-doc annotations
 
-Every milestone task line (`Docs/MILESTONES_V1_MCP.md`, `MILESTONES_V1_1_MCP.md`, and any successor) carries a machine-readable tag recording its ticketing state, so a scan of the milestone doc alone — no cross-referencing `Docs/tickets/` needed — tells you what's been ticketed and what hasn't:
+Every milestone task line (`Docs/milestones/MILESTONES_V1_MCP.md`, `Docs/milestones/MILESTONES_V1_1_MCP.md`, and any successor) carries a machine-readable tag recording its ticketing state, so a scan of the milestone doc alone — no cross-referencing `Docs/tickets/` needed — tells you what's been ticketed and what hasn't:
 
 - **Ticketed** — the moment a ticket is drafted for a task (`queue/` or `backlog/`, gated or not), append `(T-###)` to that task's line, or `(T-###, T-###)` if the task split into more than one ticket. `ticket-writer` and `/ungate` are both responsible for writing this the instant they create the file — it's part of drafting the ticket, not a separate cleanup pass.
 - **Gated, no ticket yet** — if a task's Scope can't honestly be written until a 🎨/🧠 decision lands (`GATE_SPEC.md`'s "Scope can't honestly be written yet" case), append `(Gated on: G-###)` instead. No ticket id exists yet, so this tag is the only signal a scan has that the task isn't simply unstarted.
@@ -97,7 +97,7 @@ This tag is what lets `ticket-writer`'s "what's next" mode (see its own SKILL.md
 
 ## Lifecycle
 
-`Docs/tickets/backlog/` (optional) → `Docs/tickets/queue/` → (nightly executor picks up the oldest ticket that isn't already shipped or blocked — see below) → `Docs/tickets/in-progress/` → `Docs/tickets/done/` or `Docs/tickets/blocked/`. An empty `queue/` is the entire on/off switch for nightly spend — see `Docs/MILESTONES_V1_MCP.md`'s parent handoff for the pre-flight check that makes an empty night cost one cheap tool call.
+`Docs/tickets/backlog/` (optional) → `Docs/tickets/queue/` → (nightly executor picks up the oldest ticket that isn't already shipped or blocked — see below) → `Docs/tickets/in-progress/` → `Docs/tickets/done/` or `Docs/tickets/blocked/`. An empty `queue/` is the entire on/off switch for nightly spend — see `Docs/milestones/MILESTONES_V1_MCP.md`'s parent handoff for the pre-flight check that makes an empty night cost one cheap tool call.
 
 `Docs/tickets/archive/` sits outside this pipeline entirely — it's not a
 pipeline state a ticket passes through, it's a manual park. A ticket lands
