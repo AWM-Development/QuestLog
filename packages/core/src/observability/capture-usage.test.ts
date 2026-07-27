@@ -93,8 +93,8 @@ describe("captureUsage", () => {
 	it("writes to Docs/tickets/cost-reports/T-XXX.usage.json when the active-ticket marker names T-XXX", () => {
 		const dir = mkdtempSync(join(tmpdir(), "questlog-capture-usage-"));
 		outDir = dir;
-		mkdirSync(join(dir, ".claude"), { recursive: true });
-		writeFileSync(join(dir, ".claude", ".active-ticket"), "T-061\n");
+		mkdirSync(join(dir, "tmp"), { recursive: true });
+		writeFileSync(join(dir, "tmp", ".active-ticket"), "T-061\n");
 
 		const { artifactPath, artifact } = captureUsage(
 			{
@@ -119,7 +119,7 @@ describe("captureUsage", () => {
 	it("produces empty_run: true with no marker, even when done/blocked files or commit history would point at a different ticket", () => {
 		const dir = mkdtempSync(join(tmpdir(), "questlog-capture-usage-"));
 		outDir = dir;
-		// No .claude/.active-ticket written — simulate a repo with unrelated
+		// No tmp/.active-ticket written — simulate a repo with unrelated
 		// done/blocked history that the old heuristic would have guessed from.
 		mkdirSync(join(dir, "Docs/tickets/done"), { recursive: true });
 		writeFileSync(
@@ -146,10 +146,10 @@ describe("captureUsage", () => {
 });
 
 describe("resolveActiveTicketId", () => {
-	it("returns the marker's trimmed contents when .claude/.active-ticket exists", () => {
+	it("returns the marker's trimmed contents when tmp/.active-ticket exists", () => {
 		const dir = mkdtempSync(join(tmpdir(), "questlog-active-ticket-"));
-		mkdirSync(join(dir, ".claude"), { recursive: true });
-		writeFileSync(join(dir, ".claude", ".active-ticket"), "T-061\n");
+		mkdirSync(join(dir, "tmp"), { recursive: true });
+		writeFileSync(join(dir, "tmp", ".active-ticket"), "T-061\n");
 
 		expect(resolveActiveTicketId(dir)).toBe("T-061");
 
