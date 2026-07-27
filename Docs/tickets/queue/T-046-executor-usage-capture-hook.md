@@ -2,7 +2,7 @@
 
 Milestone ref: M-OBS.1
 
-Priority: P1
+Priority: P0
 
 Branch: feat/m-obs/t-046-executor-usage-capture-hook
 
