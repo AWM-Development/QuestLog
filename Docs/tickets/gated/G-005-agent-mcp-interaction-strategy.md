@@ -48,12 +48,14 @@ Notes: Distinct from two things it could be confused with:
     pipeline. Question 1 above is upstream of that: whether a file can
     reach an MCP tool call at all, a transport/protocol question, not an
     extraction-quality one.
-  - **`MILESTONES_PT2.md` §11's "system prompt design"** — that was
+  - **`Docs/milestones/MILESTONES_V2.md` §11.1's "system prompt design"**
+    (formerly `MILESTONES_PT2.md` §11, retired) — that was
     scoped for the old in-house chat LLM service (`packages/core`'s
     `llm.service.ts` / `buildSystemPrompt`), a surface now v2-deferred
     post-MCP-pivot (`Docs/milestones/MILESTONES_V1_MCP.md`'s Milestone 3: "Chat UI ✅
-    shipped, now v2 surface"), and covered by CLAUDE.md's "never pull
-    work from MILESTONES_PT1.md/PT2.md" rule. Question 4 here is about
+    shipped, now v2 surface"), and covered by CLAUDE.md's rule that v2
+    detail (now in `Docs/milestones/MILESTONES_V2.md`) stays ineligible
+    for ticket selection until Alex explicitly opens v2 planning. Question 4 here is about
     how **Claude itself** behaves once connected via MCP — a v1-shaped,
     M-REMOTE-family concern, not the deferred feature. Do not resolve
     this gate by pulling PT2 §11's scope forward; it answers a different
