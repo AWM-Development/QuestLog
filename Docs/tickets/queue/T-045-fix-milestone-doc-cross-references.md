@@ -5,10 +5,6 @@ Milestone ref: N/A — process/docs ticket, not itself a milestone task (same
 
 Priority: P0
 
-Blocked on: T-044 — must be merged into develop first (needs
-  `Docs/milestones/MILESTONES_V2.md` to exist, and `MILESTONES_PT1.md`/`PT2.md`
-  to actually be gone, before this ticket's exit condition can be checked)
-
 Branch: feat/docs/t-045-fix-milestone-doc-cross-references
 
 Context files (load ONLY these):
