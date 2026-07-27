@@ -1,8 +1,15 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import {
+	existsSync,
+	mkdirSync,
+	mkdtempSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { captureUsage } from "./capture-usage.js";
+import { captureUsage, resolveActiveTicketId } from "./capture-usage.js";
 
 const FIXTURES = join(__dirname, "__fixtures__");
 
@@ -81,5 +88,79 @@ describe("captureUsage", () => {
 		expect(artifact.ticket_id).toBeNull();
 		expect(artifact.empty_run).toBe(true);
 		expect(artifact.reviewer_subagent).toBeNull();
+	});
+
+	it("writes to Docs/tickets/cost-reports/T-XXX.usage.json when the active-ticket marker names T-XXX", () => {
+		const dir = mkdtempSync(join(tmpdir(), "questlog-capture-usage-"));
+		outDir = dir;
+		mkdirSync(join(dir, ".claude"), { recursive: true });
+		writeFileSync(join(dir, ".claude", ".active-ticket"), "T-061\n");
+
+		const { artifactPath, artifact } = captureUsage(
+			{
+				transcript_path: join(
+					FIXTURES,
+					"session-no-ticket",
+					"transcript.jsonl",
+				),
+				session_id: "sess-marker",
+			},
+			dir,
+			{ resolveTicketId: () => resolveActiveTicketId(dir) },
+		);
+
+		expect(artifactPath).toBe(
+			join(dir, "Docs/tickets/cost-reports/T-061.usage.json"),
+		);
+		expect(artifact.ticket_id).toBe("T-061");
+		expect(artifact.empty_run).toBe(false);
+	});
+
+	it("produces empty_run: true with no marker, even when done/blocked files or commit history would point at a different ticket", () => {
+		const dir = mkdtempSync(join(tmpdir(), "questlog-capture-usage-"));
+		outDir = dir;
+		// No .claude/.active-ticket written — simulate a repo with unrelated
+		// done/blocked history that the old heuristic would have guessed from.
+		mkdirSync(join(dir, "Docs/tickets/done"), { recursive: true });
+		writeFileSync(
+			join(dir, "Docs/tickets/done", "T-999-unrelated.md"),
+			"# unrelated",
+		);
+
+		const { artifact } = captureUsage(
+			{
+				transcript_path: join(
+					FIXTURES,
+					"session-no-ticket",
+					"transcript.jsonl",
+				),
+				session_id: "sess-no-marker",
+			},
+			dir,
+			{ resolveTicketId: () => resolveActiveTicketId(dir) },
+		);
+
+		expect(artifact.ticket_id).toBeNull();
+		expect(artifact.empty_run).toBe(true);
+	});
+});
+
+describe("resolveActiveTicketId", () => {
+	it("returns the marker's trimmed contents when .claude/.active-ticket exists", () => {
+		const dir = mkdtempSync(join(tmpdir(), "questlog-active-ticket-"));
+		mkdirSync(join(dir, ".claude"), { recursive: true });
+		writeFileSync(join(dir, ".claude", ".active-ticket"), "T-061\n");
+
+		expect(resolveActiveTicketId(dir)).toBe("T-061");
+
+		rmSync(dir, { recursive: true, force: true });
+	});
+
+	it("returns null when the marker file is absent", () => {
+		const dir = mkdtempSync(join(tmpdir(), "questlog-active-ticket-"));
+
+		expect(resolveActiveTicketId(dir)).toBeNull();
+
+		rmSync(dir, { recursive: true, force: true });
 	});
 });
