@@ -2,7 +2,7 @@
 
 **Outcome:** shipped
 **Branch:** feat/docs/t-045-fix-milestone-doc-cross-references
-**Diff:** 44 files changed (41 modified, 3 renamed with edits), +117/-106 lines, plus deletion of the empty `Docs/milestones/.gitkeep`
+**Diff:** 42 files changed (3 renamed with edits), +174/-109 lines vs. `develop`
 
 ## What shipped
 
@@ -42,7 +42,15 @@ Note: the first `pnpm test` run failed 15 tests in `packages/core` (`relation "m
 
 ## Reviewer verdict
 
-Not run — see "Anything Alex must decide" below; this report is being written directly per the operator's explicit instruction to follow `EXECUTOR_ROUTINE.md` starting at Step 1, without a separate confirmation gate for Step 5 in this session.
+**PASS-WITH-NOTES.** Verbatim:
+
+> The core deliverable (file moves + repo-wide cross-reference fix) is complete and verifiably correct against the exit condition. The one finding (`Docs/tickets/gated/G-005-agent-mcp-interaction-strategy.md:51,56`) is a minor, isolated leftover inconsistency in a single file rather than a systemic gap, and doesn't affect the machine-checkable exit condition's literal grep pattern.
+>
+> **`Docs/tickets/gated/G-005-agent-mcp-interaction-strategy.md:16` vs. `:51` and `:56`.** Line 16 (Context files) was carefully rewritten ... But the same file's "Notes" section at line 51 still reads `- **\`MILESTONES_PT2.md\` §11's "system prompt design"** ...` with no retirement framing, and line 56 quotes `"never pull work from MILESTONES_PT1.md/PT2.md" rule` — a phrase that no longer exists in `CLAUDE.md` (this diff rewrote that exact clause at `CLAUDE.md:5`). ... worth a follow-up pass so a future reader of G-005 doesn't go looking for a `MILESTONES_PT2.md` that no longer exists.
+
+Also confirmed: exit condition holds, no double-prefixed paths or broken links, `.cursor/rules/frontend.mdc` mirror update judged correct (established convention, disclosed in CHANGELOG), no scope creep, no new duplication.
+
+The flagged G-005 inconsistency was fixed in a follow-up commit (`e496ddb`) before this ticket shipped — see diff.
 
 ## Anything Alex must decide
 
