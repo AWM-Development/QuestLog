@@ -1,9 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { ONBOARDING_INSTRUCTIONS } from "./onboarding-instructions.js";
 import { registerAppendEntityNote } from "./tools/append-entity-note.js";
 import { registerConfirmLogSession } from "./tools/confirm-log-session.js";
 import { registerCreateEntity } from "./tools/create-entity.js";
 import { registerGetEntity } from "./tools/get-entity.js";
 import { registerGetSourceStatus } from "./tools/get-source-status.js";
+import { registerHelp } from "./tools/help.js";
 import { registerIngestText } from "./tools/ingest-text.js";
 import { registerListCampaigns } from "./tools/list-campaigns.js";
 import { registerListEntities } from "./tools/list-entities.js";
@@ -15,7 +17,10 @@ import type { ToolDeps } from "./tools/types.js";
 export type CreateMcpServerOptions = ToolDeps;
 
 export function createMcpServer(deps: CreateMcpServerOptions): McpServer {
-	const server = new McpServer({ name: "questlog-mcp", version: "0.0.0" });
+	const server = new McpServer(
+		{ name: "questlog-mcp", version: "0.0.0" },
+		{ instructions: ONBOARDING_INSTRUCTIONS },
+	);
 
 	registerQueryLore(server, deps);
 	registerPrepBrief(server, deps);
@@ -28,6 +33,7 @@ export function createMcpServer(deps: CreateMcpServerOptions): McpServer {
 	registerConfirmLogSession(server, deps);
 	registerIngestText(server, deps);
 	registerGetSourceStatus(server, deps);
+	registerHelp(server);
 
 	return server;
 }

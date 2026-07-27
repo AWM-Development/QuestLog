@@ -392,6 +392,30 @@ describe("list_campaigns tool", () => {
 	});
 });
 
+describe("server instructions + help tool (T-033)", () => {
+	it("initialize response includes onboarding instructions mentioning list_campaigns, ingest_text, and session tracking", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const instructions = client.getInstructions();
+
+		expect(instructions).toBeTruthy();
+		expect(instructions).toContain("list_campaigns");
+		expect(instructions).toContain("ingest_text");
+		expect(instructions).toMatch(/session/i);
+	});
+
+	it("help tool returns the same onboarding text as the server instructions", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const instructions = client.getInstructions();
+
+		const result = await client.callTool({ name: "help", arguments: {} });
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		expect(content[0]?.text).toBe(instructions);
+	});
+});
+
 describe("get_entity tool", () => {
 	let campaignId: string;
 
