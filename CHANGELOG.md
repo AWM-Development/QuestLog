@@ -10,6 +10,16 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-034
+
+- **`apps/server/scripts/verify-mcp-remote.ts`**: exercises the full remote MCP flow — discover, register, authorize, token exchange, connect, `tools/list`, then every one of the 12 registered tools with minimal valid input — against a real deployed base URL, using its own throwaway campaign it creates and cleans up. Run it with `MCP_ACCESS_PASSPHRASE`/`DATABASE_URL` set in the environment: `pnpm --filter @questlog/server exec tsx scripts/verify-mcp-remote.ts https://questlog-dev.fly.dev`.
+
+### Fixed — T-034
+
+- **`questlog-dev` deploy was broken since T-042**: the release-command migration and the app itself failed to boot in production (`ERR_MODULE_NOT_FOUND` for `postgres`/`@anthropic-ai/sdk`/`mammoth`/`pdf-parse`) — T-042's package split had dropped all four from `apps/server/package.json`'s runtime dependencies. Restored, with a new regression test (`apps/server/scripts/build.deps.test.ts`) guarding it going forward.
+- **OAuth discovery advertised `http://` instead of `https://` behind Fly's proxy**: Fastify now trusts `X-Forwarded-Proto` (`trustProxy: true`), so `/.well-known/oauth-authorization-server` and related endpoints advertise the correct scheme — a real client's `POST /register` against the previously-wrong `http://` URL was silently losing its body to a redirect.
+- **`questlog-dev`'s MCP session store isn't multi-machine-safe**: scaled to a single machine — the in-memory session `Map` (`mcp-http.routes.ts`) has no cross-machine affinity or shared backing store, so a session's follow-up request could 404 with "Session not found" if load-balanced to a different machine than the one that created it. Documented in `Docs/IMPLEMENTATION_NOTES.md` § T-034 for whoever scales this app back up.
+
 ### Added — T-033
 
 - **MCP onboarding surface**: the server now sets the MCP protocol's `instructions` field (surfaced by well-behaved clients, including Claude, at connection time without the user asking) to a short summary of QuestLog's workflow — start with `list_campaigns`, then `ingest_text`/`log_session` to bring in content, `create_entity`/`append_entity_note` to author directly, and the read tools to look things up. A new no-input `help` tool returns the identical text on demand, for clients that don't surface `instructions` or a mid-conversation refresher. Both draw from one shared constant (`packages/mcp/src/content/onboarding-instructions.ts`) so they can't drift apart.
