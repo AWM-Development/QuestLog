@@ -13,9 +13,9 @@ import {
 	type TokenTotals,
 	addTokenTotals,
 	resolveArtifactPath,
+	resolveTicketId,
 	summarizeUsage,
 } from "./usage-summary.js";
-import { resolveTicketId } from "./usage-summary.js";
 
 export interface HookPayload {
 	transcript_path: string;
