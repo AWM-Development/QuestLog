@@ -42,6 +42,9 @@ describe("captureUsage", () => {
 		expect(artifactPath).toBe(
 			join(outDir, "Docs/tickets/cost-reports/T-046.usage.json"),
 		);
+		if (artifactPath === null || artifact === null) {
+			throw new Error("expected a ticket run to produce an artifact");
+		}
 		expect(existsSync(artifactPath)).toBe(true);
 
 		const written = JSON.parse(readFileSync(artifactPath, "utf-8"));
@@ -62,7 +65,7 @@ describe("captureUsage", () => {
 		);
 	});
 
-	it("produces an empty-run artifact instead of erroring when no ticket id resolves", () => {
+	it("writes nothing when no ticket id resolves — non-ticket sessions aren't tracked", () => {
 		outDir = mkdtempSync(join(tmpdir(), "questlog-capture-usage-"));
 
 		const { artifactPath, artifact } = captureUsage(
@@ -78,16 +81,9 @@ describe("captureUsage", () => {
 			{ resolveTicketId: () => null },
 		);
 
-		expect(artifactPath).toBe(
-			join(
-				outDir,
-				"Docs/tickets/cost-reports/empty-run-sess-no-ticket.usage.json",
-			),
-		);
-		expect(existsSync(artifactPath)).toBe(true);
-		expect(artifact.ticket_id).toBeNull();
-		expect(artifact.empty_run).toBe(true);
-		expect(artifact.reviewer_subagent).toBeNull();
+		expect(artifactPath).toBeNull();
+		expect(artifact).toBeNull();
+		expect(existsSync(join(outDir, "Docs"))).toBe(false);
 	});
 
 	it("writes to Docs/tickets/cost-reports/T-XXX.usage.json when the active-ticket marker names T-XXX", () => {
@@ -112,11 +108,14 @@ describe("captureUsage", () => {
 		expect(artifactPath).toBe(
 			join(dir, "Docs/tickets/cost-reports/T-061.usage.json"),
 		);
+		if (artifact === null) {
+			throw new Error("expected a ticket run to produce an artifact");
+		}
 		expect(artifact.ticket_id).toBe("T-061");
 		expect(artifact.empty_run).toBe(false);
 	});
 
-	it("produces empty_run: true with no marker, even when done/blocked files or commit history would point at a different ticket", () => {
+	it("writes nothing with no marker, even when done/blocked files or commit history would point at a different ticket", () => {
 		const dir = mkdtempSync(join(tmpdir(), "questlog-capture-usage-"));
 		outDir = dir;
 		// No tmp/.active-ticket written — simulate a repo with unrelated
@@ -127,7 +126,7 @@ describe("captureUsage", () => {
 			"# unrelated",
 		);
 
-		const { artifact } = captureUsage(
+		const { artifactPath, artifact } = captureUsage(
 			{
 				transcript_path: join(
 					FIXTURES,
@@ -140,8 +139,8 @@ describe("captureUsage", () => {
 			{ resolveTicketId: () => resolveActiveTicketId(dir) },
 		);
 
-		expect(artifact.ticket_id).toBeNull();
-		expect(artifact.empty_run).toBe(true);
+		expect(artifactPath).toBeNull();
+		expect(artifact).toBeNull();
 	});
 });
 
