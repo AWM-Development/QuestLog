@@ -26,7 +26,7 @@ Scope: A read-only tRPC router exposing T-053's observability store, following t
   - Log/feed view: paginated list of `ticket_reports` rows ordered newest-first, for a browsable "what did the executor do" feed.
   - New Zod validators in `packages/shared/src/validators/` for each endpoint's input and output shape.
   - The router connects to `packages/observability`'s own DB via its own explicit connection (not the existing campaign-data Drizzle client) — a second, separate connection pool, consistent with G-003's separate-store decision.
-  - Router is registered in `apps/server/src/routers/_app.ts` but is not surfaced in any UI yet — no dashboard consumes it until M-OBS.5, which is separately gated on G-004.
+  - Router is registered in `apps/server/src/routers/_app.ts` but is not surfaced in any UI yet — no dashboard consumes it until M-OBS.5 (T-057/T-058), which are blocked on this ticket merging first.
 
 Out of scope:
   - No PR diff-stat GitHub sync (T-055 — separately ticketed, also blocked on T-053).
