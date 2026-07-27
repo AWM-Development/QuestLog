@@ -675,6 +675,9 @@ No new `.gitignore` entry needed — `*.log` already covers any file under this 
 ### Turbo's own log replay is non-deterministic across invocations — the exit condition's "byte-identical diff" is best-effort, not exact
 Two consecutive raw `pnpm test` runs against the same passing state can already differ from each other in per-package log line interleaving and turbo's self-reported `Time: Nms` footer — this is turbo's own concurrent-task output interleaving, not something `run-tests-quiet.sh`'s capture (a plain `>"$log_file" 2>&1` passthrough) introduces or could fix. Confirmed during T-048's review pass. Anyone using this script's log as "proof" of exit-condition parity should expect occasional line-order/timing noise, not a strict byte match.
 
+### Lint pass summary parses Biome's `Found N warning(s).` footer, not just its error count
+Biome's `check` exits 0 when every diagnostic is warn-severity (only errors fail the build), so a lint stage can print `lint: pass` while quietly carrying warnings the old raw-output behavior would have shown. The script now greps each package's captured lint log for `Found [0-9]+ warnings?` and sums across packages, same aggregation approach as the test pass-count. This repo's `biome.json` currently has no rules configured at `warn` severity (`"recommended": true` maps essentially everything to `error`), so `(0 warnings)` is the expected steady state — verified by temporarily scoping a single rule to `warn` via a `biome.json` `overrides` entry for one scratch file (reverted immediately after), which also confirmed Biome's real summary phrasing (`Found 1 warning.`) and exit-0 behavior for warn-only diagnostics.
+
 ## T-032 — `create_entity` / `append_entity_note` MCP tools (2026-07-26)
 
 ### New tool input schemas live in `packages/shared`, never `zod` imported directly into `packages/mcp/src/tools`

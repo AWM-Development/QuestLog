@@ -7,7 +7,10 @@
 # flooding the executor's context (T-048). On failure, prints the failing
 # stage's full captured output so nothing is lost. Log files persist after
 # the run (Step 7 report-writing cats the test stage's log for pasted
-# evidence).
+# evidence). The lint summary also surfaces Biome's own warning count
+# (`Found N warnings.`) even on a passing run, since Biome's `check` exits 0
+# for warn-severity diagnostics — without this they'd be silently swallowed
+# by the pass-summary line instead of just the full output.
 set -uo pipefail
 
 LOG_DIR="${LOG_DIR:-tmp/test-logs}"
@@ -23,6 +26,10 @@ run_stage() {
       local total
       total=$(grep -oE 'Tests +[0-9]+ passed' "$log_file" | grep -oE '[0-9]+' | awk '{s+=$1} END {print s+0}')
       echo "$name: pass ($total passed)"
+    elif [ "$name" = "lint" ]; then
+      local warnings
+      warnings=$(grep -oE 'Found [0-9]+ warnings?' "$log_file" | grep -oE '[0-9]+' | awk '{s+=$1} END {print s+0}')
+      echo "$name: pass ($warnings warnings)"
     else
       echo "$name: pass"
     fi
