@@ -179,7 +179,7 @@ export function summarizeUsage(jsonl: string): UsageSummary {
 	};
 }
 
-/** Resolves the ticket id a session actively worked, from the `.claude/.active-ticket` marker's contents — trimmed, or null if absent/empty. */
+/** Resolves the ticket id a session actively worked, from the `tmp/.active-ticket` marker's contents — trimmed, or null if absent/empty. */
 export function resolveTicketId(
 	activeTicketMarker: string | null,
 ): string | null {
