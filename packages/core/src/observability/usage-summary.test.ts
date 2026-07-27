@@ -203,34 +203,18 @@ describe("addTokenTotals", () => {
 });
 
 describe("resolveTicketId", () => {
-	it("finds a ticket id in recent commit subjects first", () => {
-		const result = resolveTicketId({
-			recentCommitSubjects: [
-				"feat(T-046): add usage capture",
-				"chore: pick up T-046",
-			],
-			doneAndBlockedFiles: [{ name: "T-999-old.md", mtimeMs: 1 }],
-		});
-		expect(result).toBe("T-046");
+	it("returns the trimmed marker content when present and non-empty", () => {
+		expect(resolveTicketId("T-061\n")).toBe("T-061");
+		expect(resolveTicketId("  T-046  ")).toBe("T-046");
 	});
 
-	it("falls back to the newest done/blocked file when no commit subject matches", () => {
-		const result = resolveTicketId({
-			recentCommitSubjects: ["chore: unrelated tidy-up"],
-			doneAndBlockedFiles: [
-				{ name: "T-010-old.md", mtimeMs: 1 },
-				{ name: "T-020-newer.md", mtimeMs: 100 },
-			],
-		});
-		expect(result).toBe("T-020");
+	it("returns null when the marker is absent", () => {
+		expect(resolveTicketId(null)).toBeNull();
 	});
 
-	it("returns null when nothing resolves", () => {
-		const result = resolveTicketId({
-			recentCommitSubjects: ["chore: unrelated"],
-			doneAndBlockedFiles: [],
-		});
-		expect(result).toBeNull();
+	it("returns null when the marker is empty or whitespace-only", () => {
+		expect(resolveTicketId("")).toBeNull();
+		expect(resolveTicketId("   \n")).toBeNull();
 	});
 });
 

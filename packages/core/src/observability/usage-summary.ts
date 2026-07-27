@@ -179,22 +179,10 @@ export function summarizeUsage(jsonl: string): UsageSummary {
 	};
 }
 
-/** Given commit subjects (most recent first) and done/blocked files, resolves the ticket id a run processed, or null if none can be found. */
-export function resolveTicketId(deps: {
-	recentCommitSubjects: string[];
-	doneAndBlockedFiles: Array<{ name: string; mtimeMs: number }>;
-}): string | null {
-	const pattern = /T-\d{3,}/;
-	for (const subject of deps.recentCommitSubjects) {
-		const match = subject.match(pattern);
-		if (match) return match[0];
-	}
-	const [newest] = [...deps.doneAndBlockedFiles].sort(
-		(a, b) => b.mtimeMs - a.mtimeMs,
-	);
-	if (!newest) return null;
-	const match = newest.name.match(pattern);
-	return match ? match[0] : null;
+/** Resolves the ticket id a session actively worked, from the `.claude/.active-ticket` marker's contents — trimmed, or null if absent/empty. */
+export function resolveTicketId(activeTicketMarker: string | null): string | null {
+	const trimmed = activeTicketMarker?.trim();
+	return trimmed ? trimmed : null;
 }
 
 export function resolveArtifactPath(

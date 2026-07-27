@@ -1,10 +1,8 @@
-import { execSync } from "node:child_process";
 import {
 	existsSync,
 	mkdirSync,
 	readFileSync,
 	readdirSync,
-	statSync,
 	writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
@@ -80,34 +78,11 @@ export function captureUsage(
 	return { artifactPath, artifact };
 }
 
-/** Real (impure) ticket-id resolution: recent commit subjects, falling back to the newest done/blocked ticket file's mtime. */
-function resolveTicketIdFromRepo(projectDir: string): string | null {
-	let subjects: string[] = [];
-	try {
-		const log = execSync("git log -5 --format=%s", {
-			cwd: projectDir,
-			encoding: "utf-8",
-		});
-		subjects = log.split("\n").filter(Boolean);
-	} catch {
-		subjects = [];
-	}
-
-	const doneAndBlockedFiles = [
-		"Docs/tickets/done",
-		"Docs/tickets/blocked",
-	].flatMap((rel) => {
-		const dir = join(projectDir, rel);
-		if (!existsSync(dir)) return [];
-		return readdirSync(dir)
-			.filter((name) => name.endsWith(".md"))
-			.map((name) => ({ name, mtimeMs: statSync(join(dir, name)).mtimeMs }));
-	});
-
-	return resolveTicketId({
-		recentCommitSubjects: subjects,
-		doneAndBlockedFiles,
-	});
+/** Real (impure) ticket-id resolution: reads the explicit `.claude/.active-ticket` marker a session writes when it picks up ticket work (EXECUTOR_ROUTINE.md Step 2). No marker means no active ticket work — never a guess. */
+export function resolveActiveTicketId(projectDir: string): string | null {
+	const markerPath = join(projectDir, ".claude", ".active-ticket");
+	if (!existsSync(markerPath)) return null;
+	return resolveTicketId(readFileSync(markerPath, "utf-8"));
 }
 
 // Entry point: reads the Stop hook's stdin JSON payload and writes the usage artifact.
@@ -116,6 +91,6 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 	const stdin = readFileSync(0, "utf-8");
 	const payload = JSON.parse(stdin) as HookPayload;
 	captureUsage(payload, projectDir, {
-		resolveTicketId: () => resolveTicketIdFromRepo(projectDir),
+		resolveTicketId: () => resolveActiveTicketId(projectDir),
 	});
 }
