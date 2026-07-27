@@ -10,7 +10,7 @@ genuinely-absent-precondition items (see T-025's report for the precedent
 — "verify prod starts clean" was honestly reported as blocked on an
 infrastructure precondition, not invented).
 
-Milestone ref: M-REMOTE.7 (`Docs/MILESTONES_V1_1_MCP.md`)
+Milestone ref: M-REMOTE.7 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
 Priority: P1
 
@@ -20,9 +20,9 @@ Branch: feat/m-remote/t-034-deploy-connect-claude-project
 
 Context files (load ONLY these):
   - Docs/DEPLOY_SETUP_CHECKLIST.md (the existing deploy checklist pattern to extend, not replace)
-  - Docs/MILESTONES_V1_1_MCP.md (this ticket's own milestone task)
+  - Docs/milestones/MILESTONES_V1_1_MCP.md (this ticket's own milestone task)
   - packages/mcp/src/server.ts, packages/mcp/src/tools/*.ts (the full tool set being verified)
-  - The v1 test plan table from the conversation that produced `Docs/MILESTONES_V1_1_MCP.md` (if not otherwise captured in a repo file by the time this runs, ask Alex for it rather than inventing a new one from scratch)
+  - The v1 test plan table from the conversation that produced `Docs/milestones/MILESTONES_V1_1_MCP.md` (if not otherwise captured in a repo file by the time this runs, ask Alex for it rather than inventing a new one from scratch)
   - fly.dev.toml, fly.prod.toml
 
 Mockup: none
@@ -80,7 +80,7 @@ Exit condition (machine-checkable):
 Iteration cap: 3 distinct approaches on any single failure, then Blocked Protocol
 
 Definition of done includes: checkbox flip for M-REMOTE.7 in
-  `Docs/MILESTONES_V1_1_MCP.md` is **not** applicable until Alex confirms
+  `Docs/milestones/MILESTONES_V1_1_MCP.md` is **not** applicable until Alex confirms
   the real Claude.ai connection works end-to-end — same pattern as
   M-MCP.5's own checkbox not flipping until Alex confirmed prod was live.
   `IMPLEMENTATION_NOTES.md` updated if any non-obvious decision was made,

@@ -2,7 +2,7 @@
 
 Gate type: 🧠 strategy
 
-Milestone ref: M-REMOTE.8 (`Docs/MILESTONES_V1_1_MCP.md`)
+Milestone ref: M-REMOTE.8 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
 Opened: 2026-07-26 — filed by agent during T-031's (`ingest_text`) morning
 review, raised by Alex
@@ -13,7 +13,7 @@ Context files (load ONLY these):
   - apps/web/src/features/campaigns/components/modals/CampaignCreateModal.tsx (the only existing campaign-creation UX, web-app-only today — the fields/flow a `create_campaign` tool would need to mirror or simplify)
   - Docs/tickets/queue/T-033-mcp-onboarding-surface.md (queued, ungated — the `instructions`/`help` tool this gate's resolution either extends or leaves alone)
   - .claude/rules/mcp.md (write-tool conventions any new tool this gate spawns must follow)
-  - Docs/MILESTONES_PT2.md §11 (the old in-house-chat "system prompt design" — v2-deferred, NOT what this gate is about; read only to confirm the distinction, not to pull scope from it)
+  - Docs/milestones/MILESTONES_V2.md §11.1 "System prompt design & documentation" (formerly `MILESTONES_PT2.md §11`, retired — the old in-house-chat "system prompt design" — v2-deferred, NOT what this gate is about; read only to confirm the distinction, not to pull scope from it)
 
 Open question: How should a DM actually work with QuestLog end-to-end
   through an MCP-connected Claude session, covering four coupled
@@ -42,18 +42,20 @@ Open question: How should a DM actually work with QuestLog end-to-end
 Blocks: M-REMOTE.8
 
 Notes: Distinct from two things it could be confused with:
-  - **Milestone 2's OCR gate** (`MILESTONES_V1_MCP.md` §2.4, "Scanned
+  - **Milestone 2's OCR gate** (`Docs/milestones/MILESTONES_V1_MCP.md` §2.4, "Scanned
     document support") — that's about extracting text from
     already-uploaded scanned images/PDFs inside the existing web-upload
     pipeline. Question 1 above is upstream of that: whether a file can
     reach an MCP tool call at all, a transport/protocol question, not an
     extraction-quality one.
-  - **`MILESTONES_PT2.md` §11's "system prompt design"** — that was
+  - **`Docs/milestones/MILESTONES_V2.md` §11.1's "system prompt design"**
+    (formerly `MILESTONES_PT2.md` §11, retired) — that was
     scoped for the old in-house chat LLM service (`packages/core`'s
     `llm.service.ts` / `buildSystemPrompt`), a surface now v2-deferred
-    post-MCP-pivot (`MILESTONES_V1_MCP.md`'s Milestone 3: "Chat UI ✅
-    shipped, now v2 surface"), and covered by CLAUDE.md's "never pull
-    work from MILESTONES_PT1.md/PT2.md" rule. Question 4 here is about
+    post-MCP-pivot (`Docs/milestones/MILESTONES_V1_MCP.md`'s Milestone 3: "Chat UI ✅
+    shipped, now v2 surface"), and covered by CLAUDE.md's rule that v2
+    detail (now in `Docs/milestones/MILESTONES_V2.md`) stays ineligible
+    for ticket selection until Alex explicitly opens v2 planning. Question 4 here is about
     how **Claude itself** behaves once connected via MCP — a v1-shaped,
     M-REMOTE-family concern, not the deferred feature. Do not resolve
     this gate by pulling PT2 §11's scope forward; it answers a different

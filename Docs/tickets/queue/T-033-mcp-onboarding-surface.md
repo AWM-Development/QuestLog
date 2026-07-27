@@ -1,6 +1,6 @@
 # T-033 — Onboarding surface: server `instructions` + `help` tool
 
-Milestone ref: M-REMOTE.6 (`Docs/MILESTONES_V1_1_MCP.md`)
+Milestone ref: M-REMOTE.6 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
 Priority: P1
 
@@ -58,6 +58,6 @@ Exit condition (machine-checkable):
 Iteration cap: 3 distinct approaches on any single failure, then Blocked Protocol
 
 Definition of done includes: checkbox flip for M-REMOTE.6 in
-  `Docs/MILESTONES_V1_1_MCP.md`, `IMPLEMENTATION_NOTES.md` updated if any
+  `Docs/milestones/MILESTONES_V1_1_MCP.md`, `IMPLEMENTATION_NOTES.md` updated if any
   non-obvious decision was made, a `CHANGELOG.md` entry under
   `[Unreleased]`, morning report written.

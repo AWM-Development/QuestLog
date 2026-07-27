@@ -36,6 +36,6 @@ Exit condition (machine-checkable):
 
 Iteration cap: 3 distinct approaches on any single failure, then Blocked Protocol
 
-Definition of done includes: checkbox flipped in MILESTONES_V1_2_MCP.md,
+Definition of done includes: checkbox flipped in Docs/milestones/MILESTONES_V1_2_MCP.md,
   IMPLEMENTATION_NOTES.md updated if any non-obvious decision was made,
   a CHANGELOG.md entry under [Unreleased], morning report written.

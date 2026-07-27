@@ -7,7 +7,7 @@ every other real-credential step in `Docs/DEPLOY_SETUP_CHECKLIST.md`) —
 write it up as an explicit to-do, do not attempt it, and do not put a real
 connection string anywhere in this session's output.
 
-Milestone ref: M-CICD.2 (`Docs/MILESTONES_V1_1_MCP.md`)
+Milestone ref: M-CICD.2 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
 Priority: P1
 
@@ -75,7 +75,7 @@ Exit condition (machine-checkable):
 Iteration cap: 3 distinct approaches on any single failure, then Blocked Protocol
 
 Definition of done includes: checkbox flip for M-CICD.2 in
-  `Docs/MILESTONES_V1_1_MCP.md` is **not** applicable until Alex adds the
+  `Docs/milestones/MILESTONES_V1_1_MCP.md` is **not** applicable until Alex adds the
   `DEV_DATABASE_URL` secret and confirms a real workflow run succeeds
   against the live dev branch. `IMPLEMENTATION_NOTES.md` updated with the
   new credential's existence and scope (relevant context for M-AUDIT.2's

@@ -2,7 +2,7 @@
 
 Gate type: 🧠 strategy
 
-Milestone ref: M-REMOTE.10 (`Docs/MILESTONES_V1_1_MCP.md`)
+Milestone ref: M-REMOTE.10 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
 Opened: 2026-07-26 — raised by Alex during T-032's morning review, alongside M-REMOTE.9
 

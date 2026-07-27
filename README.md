@@ -115,7 +115,7 @@ QuestLog is also an experiment in working *with* an AI coding agent (Claude Code
 
 ### The five pillars
 
-1. **Docs before code.** Every feature starts in `Docs/PRD.md`. Milestones are pre-broken-down in `Docs/MILESTONES_PT1.md` / `MILESTONES_PT2.md` with branch names and acceptance criteria. The agent doesn't choose what to build — it executes a defined scope.
+1. **Docs before code.** Every feature starts in `Docs/PRD.md`. Milestones are pre-broken-down in `Docs/milestones/MILESTONES_V1_MCP.md` / `MILESTONES_V1_1_MCP.md` / `MILESTONES_V1_2_MCP.md` with branch names and acceptance criteria. The agent doesn't choose what to build — it executes a defined scope.
 2. **AI as a guided executor.** `CLAUDE.md` is the entry point for the agent every session. It enforces a startup sequence: read implementation notes → development guide → milestones → relevant PRD section → design system. This prevents context loss between sessions.
 3. **Human gates on ambiguity.** Tasks are tagged 🎨 *Visual spec required* or 🧠 *Strategy discussion required*. When the agent hits one of these, it **stops and asks** instead of guessing. Ambiguity is the failure mode I'm guarding against.
 4. **Automated enforcement.** TDD is non-negotiable (Red → Green → Refactor). CI runs typecheck, lint, and tests. A code-review protocol (`Docs/DEVELOPMENT_GUIDE.md §10`) runs after every task with a fixed prompt, organized by severity, with known false positives explicitly listed so the agent doesn't re-flag them.
@@ -125,7 +125,7 @@ QuestLog is also an experiment in working *with* an AI coding agent (Claude Code
 
 - **`CLAUDE.md`** — the standing instructions the agent reads at the top of every session. The single encoding of SAAD for this project.
 - **`Docs/PRD.md`** — the product spec.
-- **`Docs/MILESTONES_PT1.md` / `MILESTONES_PT2.md`** — the ordered task list with branches and gates.
+- **`Docs/milestones/MILESTONES_V1_MCP.md` / `MILESTONES_V1_1_MCP.md` / `MILESTONES_V1_2_MCP.md`** — the ordered task list with branches and gates. `Docs/milestones/MILESTONES_V2.md` holds v2 detail, deferred until Alex opens v2 planning.
 - **`Docs/DEVELOPMENT_GUIDE.md`** — coding conventions, TDD discipline, the §10 review protocol, and the full SAAD writeup in §11.
 - **`Docs/DESIGN_SYSTEM.md`** — visual tokens and component patterns; supersedes the PRD on visual details.
 - **`Docs/IMPLEMENTATION_NOTES.md`** — the running log of non-obvious decisions, so future sessions don't re-litigate them.

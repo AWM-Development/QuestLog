@@ -1,7 +1,7 @@
 # QuestLog — v1.1 Milestones (Remote MCP)
 
-**Location:** `Docs/MILESTONES_V1_1_MCP.md`
-**Status:** CANONICAL task source for v1.1, supplementing `Docs/MILESTONES_V1_MCP.md` (v1 — shipped, kept as-is for historical record; v1's own "only task source" line now points here for anything past M-MCP.5).
+**Location:** `Docs/milestones/MILESTONES_V1_1_MCP.md`
+**Status:** CANONICAL task source for v1.1, supplementing `Docs/milestones/MILESTONES_V1_MCP.md` (v1 — shipped, kept as-is for historical record; v1's own "only task source" line now points here for anything past M-MCP.5).
 **Created:** 2026-07-22, immediately after v1 was signed off and deployed.
 
 ## Why v1.1 exists
@@ -104,7 +104,7 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   The OAuth shim, the new HTTP transport, the existing (currently unauthenticated) `POST /api/campaigns/:id/sources/upload` REST endpoint now sitting behind the same public Fly apps, and the new GitHub Actions secrets M-CICD.2/M-CICD.3 introduce. Produces a written report + follow-up tickets for anything found, same shape as T-017. Severe findings follow the Blocked Protocol rather than being remediated unilaterally.
 
 - [ ] **M-AUDIT.3 — Scalability-into-v2 review** (T-039)
-  Whether current infrastructure choices (Neon Free-tier compute, in-process MCP tool calls, single-instance assumptions) hold up against the deferred v2 web-app scope in `Docs/MILESTONES_V1_MCP.md`'s "Deferred to v2" table. Interactive, not autonomous — same reasoning as T-017 (judging "will this scale" needs Alex's institutional context, not just what's in the rules docs).
+  Whether current infrastructure choices (Neon Free-tier compute, in-process MCP tool calls, single-instance assumptions) hold up against the deferred v2 web-app scope in `Docs/milestones/MILESTONES_V1_MCP.md`'s "Deferred to v2" table. Interactive, not autonomous — same reasoning as T-017 (judging "will this scale" needs Alex's institutional context, not just what's in the rules docs).
 
 - [ ] **M-AUDIT.4 — Portfolio polish pass** (T-040)
   README quality, an architecture overview, demo script/screenshots, "how to run this" clarity for someone who has never seen the repo. Interactive — "does this read well to an outside reviewer" is a judgment call, not something to automate blind.

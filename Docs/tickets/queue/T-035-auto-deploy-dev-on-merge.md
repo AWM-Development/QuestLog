@@ -6,7 +6,7 @@ nightly-eligible work. Connecting Fly's dashboard GitHub integration to
 step in `Docs/DEPLOY_SETUP_CHECKLIST.md` §3) — write it up as an explicit
 to-do, do not attempt it.
 
-Milestone ref: M-CICD.1 (`Docs/MILESTONES_V1_1_MCP.md`)
+Milestone ref: M-CICD.1 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
 Priority: P1
 
@@ -56,7 +56,7 @@ Exit condition (machine-checkable):
 Iteration cap: 3 distinct approaches on any single failure, then Blocked Protocol
 
 Definition of done includes: checkbox flip for M-CICD.1 in
-  `Docs/MILESTONES_V1_1_MCP.md` is **not** applicable until Alex confirms
+  `Docs/milestones/MILESTONES_V1_1_MCP.md` is **not** applicable until Alex confirms
   the Fly dashboard connection is live and a real `develop` merge actually
   triggered a dev deploy — same pattern as prod's own unconfirmed §3 item.
   `IMPLEMENTATION_NOTES.md` updated if any non-obvious decision was made,

@@ -1,6 +1,6 @@
 # T-017 — Architecture & pattern audit: drift, dead code, and best-practicing across M-MCP
 
-**Amended 2026-07-22 (M-AUDIT.1, `Docs/MILESTONES_V1_1_MCP.md`):** scope extended
+**Amended 2026-07-22 (M-AUDIT.1, `Docs/milestones/MILESTONES_V1_1_MCP.md`):** scope extended
 to also cover the v1.1 additions (the M-REMOTE remote-MCP work and the
 M-CICD post-merge smoke-test workflows) once those ship, rather than filing
 a duplicate audit ticket. **Updated trigger condition:** pull this into an
@@ -51,7 +51,7 @@ Context files (load ONLY these to start — this ticket's whole point is
 that a narrower context file list would defeat the audit, so the "explicit
 file list" convention is deliberately relaxed here; the agent running this
 should read broadly):
-  - Docs/MILESTONES_V1_MCP.md
+  - Docs/milestones/MILESTONES_V1_MCP.md
   - Docs/tickets/done/*.md and Docs/tickets/reports/*.md (every completed
     ticket's report — this is the closest thing to a decision log)
   - Docs/IMPLEMENTATION_NOTES.md
@@ -85,7 +85,7 @@ Scope:
   3. **Dead / deprecated code** — anything left from the pre-pivot v2 web
      app that's genuinely orphaned (unreferenced exports, dead routes,
      unused components), as distinct from the *intentionally* frozen v2
-     surfaces `MILESTONES_V1_MCP.md`'s "Deferred to v2" section says to
+     surfaces `Docs/milestones/MILESTONES_V1_MCP.md`'s "Deferred to v2" section says to
      leave in place untouched. Don't flag the latter as debt — the
      milestone doc already made that call.
   4. **`IMPLEMENTATION_NOTES.md` hygiene** — stale or contradicted notes,
@@ -115,7 +115,7 @@ Scope:
 Out of scope:
   - No refactors beyond trivial inline fixes — this ticket produces
     findings and follow-up tickets, not a large diff.
-  - No re-opening of decisions `MILESTONES_V1_MCP.md` already closed (e.g.
+  - No re-opening of decisions `Docs/milestones/MILESTONES_V1_MCP.md` already closed (e.g.
     the v2-deferred list, the "Shape C" pivot itself) — audit for drift
     from those decisions, don't relitigate them.
   - No filed ticket gets auto-promoted to `queue/` as part of this

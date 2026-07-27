@@ -1,6 +1,6 @@
 # T-038 — Security review of the remote-MCP surface
 
-Milestone ref: M-AUDIT.2 (`Docs/MILESTONES_V1_1_MCP.md`)
+Milestone ref: M-AUDIT.2 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
 Priority: P1
 
@@ -100,7 +100,7 @@ Iteration cap: not applicable (audit-shaped, not autonomous execution in
   not unbounded unilateral fixing)
 
 Definition of done includes: checkbox flip for M-AUDIT.2 in
-  `Docs/MILESTONES_V1_1_MCP.md`, `IMPLEMENTATION_NOTES.md` updated with
+  `Docs/milestones/MILESTONES_V1_1_MCP.md`, `IMPLEMENTATION_NOTES.md` updated with
   any confirmed-safe design decisions worth recording, no `CHANGELOG.md`
   entry required unless a trivial inline fix changed shipped behavior,
   morning-report-equivalent is the review report itself.

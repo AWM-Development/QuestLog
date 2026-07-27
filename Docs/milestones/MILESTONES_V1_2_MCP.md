@@ -1,7 +1,7 @@
 # QuestLog — v1.2 Milestones (Executor Observability & Efficiency)
 
-**Location:** `Docs/MILESTONES_V1_2_MCP.md`
-**Status:** CANONICAL task source for v1.2, supplementing `Docs/MILESTONES_V1_1_MCP.md` (v1.1 — in progress, kept as the task source for M-REMOTE/M-CICD/M-AUDIT; v1.1's own "only task source" line now points here for anything past M-AUDIT).
+**Location:** `Docs/milestones/MILESTONES_V1_2_MCP.md`
+**Status:** CANONICAL task source for v1.2, supplementing `Docs/milestones/MILESTONES_V1_1_MCP.md` (v1.1 — in progress, kept as the task source for M-REMOTE/M-CICD/M-AUDIT; v1.1's own "only task source" line now points here for anything past M-AUDIT).
 **Created:** 2026-07-25, during a planning session auditing whether the "narrow ticket" discipline the whole executor pipeline depends on was actually working.
 
 ## Why v1.2 exists
@@ -75,4 +75,4 @@ This milestone builds the actual instrumentation instead of continuing to guess:
 
 ### Ordering constraint
 
-M-OBS.1, M-OBS.2, M-OBS.6, and M-OBS.7 have no dependency on each other or on anything else in this doc and can all ship immediately (M-OBS.7 references M-OBS.6's tier values but doesn't require it to have merged first — both are independent, self-contained config/doc changes). M-OBS.3 and M-OBS.4 wait on `G-003`; M-OBS.4 additionally depends on M-OBS.3's code once it ships, and should incorporate M-OBS.6/M-OBS.7's fields once those exist. M-OBS.5 (T-057/T-058/T-059) waits on M-OBS.4's code (T-054/T-055) once it exists; T-059 additionally only needs T-053 (not T-054/T-055) since it's a separate comment schema/endpoint, not a read over the run/report tables; T-058 waits on both T-057 (extends its app shell) and T-059 (its comment write endpoint). M-EFFICIENCY.1 and M-EFFICIENCY.2 have no dependency on each other, on M-OBS, or on anything in `MILESTONES_V1_1_MCP.md`, and can both ship immediately alongside M-OBS.1/M-OBS.2/M-OBS.6/M-OBS.7.
+M-OBS.1, M-OBS.2, M-OBS.6, and M-OBS.7 have no dependency on each other or on anything else in this doc and can all ship immediately (M-OBS.7 references M-OBS.6's tier values but doesn't require it to have merged first — both are independent, self-contained config/doc changes). M-OBS.3 and M-OBS.4 wait on `G-003`; M-OBS.4 additionally depends on M-OBS.3's code once it ships, and should incorporate M-OBS.6/M-OBS.7's fields once those exist. M-OBS.5 (T-057/T-058/T-059) waits on M-OBS.4's code (T-054/T-055) once it exists; T-059 additionally only needs T-053 (not T-054/T-055) since it's a separate comment schema/endpoint, not a read over the run/report tables; T-058 waits on both T-057 (extends its app shell) and T-059 (its comment write endpoint). M-EFFICIENCY.1 and M-EFFICIENCY.2 have no dependency on each other, on M-OBS, or on anything in `Docs/milestones/MILESTONES_V1_1_MCP.md`, and can both ship immediately alongside M-OBS.1/M-OBS.2/M-OBS.6/M-OBS.7.
