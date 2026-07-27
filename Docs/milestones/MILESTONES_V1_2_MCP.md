@@ -28,7 +28,7 @@ This milestone builds the actual instrumentation instead of continuing to guess:
 
 ### Tasks
 
-- [ ] **M-OBS.1 — Executor usage-capture hook** (T-046)
+- [x] **M-OBS.1 — Executor usage-capture hook** (T-046)
   A Claude Code `Stop` hook that parses the run's own JSONL transcript (the only ground truth for token usage available on this account) and writes a per-run artifact — tokens, theoretical cost at current Sonnet 5 rates, duration, turn count — tagged by ticket id or `empty_run: true` for no-ticket-queued runs.
   Exit: a simulated hook invocation against a fixture transcript produces the expected `*.usage.json` shape, including the empty-run case.
 

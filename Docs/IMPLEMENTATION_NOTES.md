@@ -667,6 +667,17 @@ Decided: a fixed 3-tier `Priority: P0 | P1 | P2` field on every ticket, defaulti
 ### `db.$client.end()` is required for any one-shot script that imports `@questlog/core/db/index.js`'s `db` singleton
 `apps/server/scripts/mcp-remote-smoke.ts` (a standalone script, not part of `pnpm test`) hung indefinitely after printing its final "PASS" line until `db.$client.end()` was added in a `finally` block alongside `app.close()`. The shared `db` export wraps a `postgres()` client that keeps its TCP socket open until explicitly ended — fine for a long-running server process (`main.ts` never needs to exit), but any one-shot script importing the same singleton needs to close it itself or the Node process never exits on its own.
 
+## T-046 — Executor usage-capture hook (2026-07-27)
+
+### Cost estimate defaults to the 1-hour cache-write multiplier, not Anthropic's 5-minute default
+`pricing.ts`'s `computeCost` needs to pick one of Sonnet 5's two cache-write multipliers (1.25x for a 5-minute TTL, 2x for 1-hour) when a transcript's `cache_creation_input_tokens` doesn't distinguish which TTL was used. This project's own Claude Code sessions are documented (in-session system context) as running under a 1-hour prompt-cache TTL rather than the 5-minute default, so `DEFAULT_CACHE_TTL` in `pricing.ts` is `"1h"` — the function still accepts an explicit override, so a future ticket with more precise per-turn TTL data (if Claude Code ever surfaces `cache_creation.ephemeral_5m_input_tokens` / `ephemeral_1h_input_tokens` separately in the transcript) can pass it through instead of relying on this default.
+
+### `turns_to_green` is detected by matching `scripts/run-tests-quiet.sh`'s (T-048) literal pass/fail output lines
+There's no structured "the TDD loop went green" signal in a transcript — `usage-summary.ts`'s `isPassingTestRunOutput` greps a `tool_result` block's text for the three `<stage>: pass` lines `run-tests-quiet.sh` prints on a fully-passing run, and the absence of any `FAIL` line. This is coupled to that script's exact output format; if T-048's script's pass/fail wording ever changes, this heuristic needs to change with it.
+
+### Human-message detection distinguishes real user turns from tool-result turns, both of which are `role: "user"` in the transcript
+A Claude Code transcript's `tool_result` blocks are themselves sent back as `role: "user"` messages (the API's normal shape for returning tool output), so counting every `role: "user"` entry would wildly over-count "human messages" — a kickoff message that triggers a dozen tool calls would look like a dozen human interruptions. `summarizeUsage` only counts a user-role entry as human when its `content` is a plain string (or an array with no `tool_result` block), which is what an actual typed/kicked-off message looks like.
+
 ## T-048 — `scripts/run-tests-quiet.sh` (2026-07-27)
 
 ### Log directory is `tmp/test-logs/`, matched by the existing `*.log` glob in `.gitignore`
