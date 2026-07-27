@@ -237,13 +237,13 @@ describe("resolveTicketId", () => {
 describe("resolveArtifactPath", () => {
 	it("uses the ticket id for a resolved run", () => {
 		expect(resolveArtifactPath("T-046", "sess-1")).toBe(
-			"Docs/tickets/reports/T-046.usage.json",
+			"Docs/tickets/cost-reports/T-046.usage.json",
 		);
 	});
 
 	it("uses the empty-run naming for an unresolved run", () => {
 		expect(resolveArtifactPath(null, "sess-1")).toBe(
-			"Docs/tickets/reports/empty-run-sess-1.usage.json",
+			"Docs/tickets/cost-reports/empty-run-sess-1.usage.json",
 		);
 	});
 });

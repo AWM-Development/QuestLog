@@ -33,7 +33,7 @@ describe("captureUsage", () => {
 		);
 
 		expect(artifactPath).toBe(
-			join(outDir, "Docs/tickets/reports/T-046.usage.json"),
+			join(outDir, "Docs/tickets/cost-reports/T-046.usage.json"),
 		);
 		expect(existsSync(artifactPath)).toBe(true);
 
@@ -72,7 +72,10 @@ describe("captureUsage", () => {
 		);
 
 		expect(artifactPath).toBe(
-			join(outDir, "Docs/tickets/reports/empty-run-sess-no-ticket.usage.json"),
+			join(
+				outDir,
+				"Docs/tickets/cost-reports/empty-run-sess-no-ticket.usage.json",
+			),
 		);
 		expect(existsSync(artifactPath)).toBe(true);
 		expect(artifact.ticket_id).toBeNull();

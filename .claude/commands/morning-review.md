@@ -13,7 +13,7 @@ Then:
 
 1. `git status` — if the working tree isn't clean, stash (`-u`) and say so before switching branches. `git fetch origin <head-branch>`, then `git checkout <head-branch>`. This is a read-only review — do not commit, push, or edit files as part of this command.
 2. Look for the ticket file this PR belongs to (`Docs/tickets/done/T-###-*.md` or `Docs/tickets/blocked/T-###-*.md`) and its report (`Docs/tickets/reports/T-###-*.md`). If neither exists — this PR isn't ticket-shaped — say so and use the PR description/diff for section 1 instead.
-3. Look for a usage artifact at `Docs/tickets/reports/T-###.usage.json` (same ticket id, `.usage.json` suffix — a separate file from the `.md` report, produced by the executor's `Stop` hook per `Docs/tickets/done/T-046-executor-usage-capture-hook.md`). It may not exist — the hook only started capturing data going forward from when T-046 shipped, so PRs from before that (or non-ticket-shaped PRs) won't have one.
+3. Look for a usage artifact at `Docs/tickets/cost-reports/T-###.usage.json` (produced by the executor's `Stop` hook per `Docs/tickets/done/T-046-executor-usage-capture-hook.md`, committed as part of Step 7 wrap-up). It may not exist — the hook only started capturing data going forward from when T-046 shipped, so PRs from before that (or non-ticket-shaped PRs) won't have one.
 
 Reply with exactly four sections, in this order:
 

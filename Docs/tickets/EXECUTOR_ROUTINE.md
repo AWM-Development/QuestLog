@@ -82,6 +82,7 @@ Invoke the `reviewer` subagent against the ticket file and the diff (`git diff d
 - Add an entry to `CHANGELOG.md` under `[Unreleased]` (use the existing section headings — Added/Changed/Fixed — grouped by this ticket's id, e.g. `### Added — T-###`) describing what shipped, in user/developer-facing terms, not an internal diff summary.
 - Write `Docs/tickets/reports/T-###-slug.md` per `Docs/tickets/REPORT_TEMPLATE.md` — outcome, diff stats, pasted test evidence (not a summary), exit-condition-by-exit-condition check, the reviewer's verbatim verdict, anything Alex must decide.
 - `git mv` the ticket from `in-progress/` to `Docs/tickets/done/T-###-slug.md`.
+- If `Docs/tickets/cost-reports/T-###.usage.json` exists (written by the usage-capture `Stop` hook, T-046), include it in the commit — it reflects the session as of the last hook fire before this one, not literally this final turn.
 - Commit all of the above.
 - Push the feature branch and open a PR against `develop` using the morning report as the PR description. Do NOT merge it. This is the single new-branch push described in Step 2; its fallback applies if rejected.
 - Output a brief summary: ticket id, outcome, PR link.

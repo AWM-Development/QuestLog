@@ -202,7 +202,7 @@ export function resolveArtifactPath(
 	sessionId: string,
 ): string {
 	if (ticketId === null) {
-		return `Docs/tickets/reports/empty-run-${sessionId}.usage.json`;
+		return `Docs/tickets/cost-reports/empty-run-${sessionId}.usage.json`;
 	}
-	return `Docs/tickets/reports/${ticketId}.usage.json`;
+	return `Docs/tickets/cost-reports/${ticketId}.usage.json`;
 }
