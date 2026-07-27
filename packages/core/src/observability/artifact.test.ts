@@ -6,6 +6,8 @@ const mainSummary: UsageSummary = {
 	inputTokens: 1_000_000,
 	outputTokens: 500_000,
 	cacheCreationInputTokens: 200_000,
+	cacheCreation5mTokens: 0,
+	cacheCreation1hTokens: 200_000,
 	cacheReadInputTokens: 100_000,
 	durationMs: 60_000,
 	turnCount: 4,
@@ -49,6 +51,8 @@ describe("buildUsageArtifact", () => {
 			inputTokens: 100_000,
 			outputTokens: 50_000,
 			cacheCreationInputTokens: 0,
+			cacheCreation5mTokens: 0,
+			cacheCreation1hTokens: 0,
 			cacheReadInputTokens: 10_000,
 		};
 

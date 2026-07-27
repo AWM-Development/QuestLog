@@ -31,6 +31,8 @@ const ZERO_TOTALS: TokenTotals = {
 	inputTokens: 0,
 	outputTokens: 0,
 	cacheCreationInputTokens: 0,
+	cacheCreation5mTokens: 0,
+	cacheCreation1hTokens: 0,
 	cacheReadInputTokens: 0,
 };
 

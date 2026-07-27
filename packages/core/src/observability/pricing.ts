@@ -8,8 +8,6 @@ export interface PricingRates {
 	cacheReadMultiplier: number;
 }
 
-export type CacheTtl = "5m" | "1h";
-
 export interface TheoreticalCostResult {
 	appliesRate: "intro" | "standard";
 	introUsd: number;
@@ -38,27 +36,17 @@ export const SONNET_5_INTRO_RATES: PricingRates = {
 
 export const INTRO_PRICING_EXPIRY = new Date("2026-08-31T23:59:59.999Z");
 
-// This project's Claude Code sessions run under a 1-hour prompt-cache TTL
-// (not the 5-minute default) — see Docs/IMPLEMENTATION_NOTES.md § T-046 —
-// so cache-write cost defaults to the 1h multiplier unless told otherwise.
-const DEFAULT_CACHE_TTL: CacheTtl = "1h";
-
-export function computeCost(
-	tokens: TokenTotals,
-	rates: PricingRates,
-	cacheTtl: CacheTtl = DEFAULT_CACHE_TTL,
-): number {
-	const cacheWriteMultiplier =
-		cacheTtl === "1h"
-			? rates.cacheWrite1hMultiplier
-			: rates.cacheWrite5mMultiplier;
-
+/** Prices each cache-write bucket at its own TTL multiplier — the transcript's own ephemeral_5m/1h split (see usage-summary.ts), not a guessed default. */
+export function computeCost(tokens: TokenTotals, rates: PricingRates): number {
 	const inputCost = (tokens.inputTokens / 1_000_000) * rates.inputPerMTok;
 	const outputCost = (tokens.outputTokens / 1_000_000) * rates.outputPerMTok;
 	const cacheWriteCost =
-		(tokens.cacheCreationInputTokens / 1_000_000) *
-		rates.inputPerMTok *
-		cacheWriteMultiplier;
+		(tokens.cacheCreation5mTokens / 1_000_000) *
+			rates.inputPerMTok *
+			rates.cacheWrite5mMultiplier +
+		(tokens.cacheCreation1hTokens / 1_000_000) *
+			rates.inputPerMTok *
+			rates.cacheWrite1hMultiplier;
 	const cacheReadCost =
 		(tokens.cacheReadInputTokens / 1_000_000) *
 		rates.inputPerMTok *

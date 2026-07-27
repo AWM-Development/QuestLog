@@ -1,7 +1,10 @@
 export interface TokenTotals {
 	inputTokens: number;
 	outputTokens: number;
+	/** Sum of the two buckets below — kept for display; pricing reads the split fields instead. */
 	cacheCreationInputTokens: number;
+	cacheCreation5mTokens: number;
+	cacheCreation1hTokens: number;
 	cacheReadInputTokens: number;
 }
 
@@ -18,6 +21,11 @@ interface TranscriptUsagePayload {
 	output_tokens?: number;
 	cache_creation_input_tokens?: number;
 	cache_read_input_tokens?: number;
+	/** Per-TTL cache-write split the API reports alongside the flat total above. */
+	cache_creation?: {
+		ephemeral_5m_input_tokens?: number;
+		ephemeral_1h_input_tokens?: number;
+	};
 }
 
 interface TranscriptEntry {
@@ -81,6 +89,8 @@ export function addTokenTotals(a: TokenTotals, b: TokenTotals): TokenTotals {
 		outputTokens: a.outputTokens + b.outputTokens,
 		cacheCreationInputTokens:
 			a.cacheCreationInputTokens + b.cacheCreationInputTokens,
+		cacheCreation5mTokens: a.cacheCreation5mTokens + b.cacheCreation5mTokens,
+		cacheCreation1hTokens: a.cacheCreation1hTokens + b.cacheCreation1hTokens,
 		cacheReadInputTokens: a.cacheReadInputTokens + b.cacheReadInputTokens,
 	};
 }
@@ -92,6 +102,8 @@ export function summarizeUsage(jsonl: string): UsageSummary {
 	let inputTokens = 0;
 	let outputTokens = 0;
 	let cacheCreationInputTokens = 0;
+	let cacheCreation5mTokens = 0;
+	let cacheCreation1hTokens = 0;
 	let cacheReadInputTokens = 0;
 	let turnCount = 0;
 	let turnsToGreen: number | null = null;
@@ -115,6 +127,18 @@ export function summarizeUsage(jsonl: string): UsageSummary {
 			outputTokens += u.output_tokens ?? 0;
 			cacheCreationInputTokens += u.cache_creation_input_tokens ?? 0;
 			cacheReadInputTokens += u.cache_read_input_tokens ?? 0;
+
+			// The API reports which TTL each cache-write actually used; only when
+			// a turn predates that split being logged do we fall back to this
+			// project's 1h-TTL default (see Docs/IMPLEMENTATION_NOTES.md § T-046).
+			if (u.cache_creation) {
+				cacheCreation5mTokens +=
+					u.cache_creation.ephemeral_5m_input_tokens ?? 0;
+				cacheCreation1hTokens +=
+					u.cache_creation.ephemeral_1h_input_tokens ?? 0;
+			} else {
+				cacheCreation1hTokens += u.cache_creation_input_tokens ?? 0;
+			}
 			continue;
 		}
 
@@ -144,6 +168,8 @@ export function summarizeUsage(jsonl: string): UsageSummary {
 		inputTokens,
 		outputTokens,
 		cacheCreationInputTokens,
+		cacheCreation5mTokens,
+		cacheCreation1hTokens,
 		cacheReadInputTokens,
 		durationMs,
 		turnCount,

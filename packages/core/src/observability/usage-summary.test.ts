@@ -16,6 +16,10 @@ function assistantTurn(
 		output_tokens: number;
 		cache_creation_input_tokens?: number;
 		cache_read_input_tokens?: number;
+		cache_creation?: {
+			ephemeral_5m_input_tokens?: number;
+			ephemeral_1h_input_tokens?: number;
+		};
 	},
 	timestamp: string,
 ): string {
@@ -90,6 +94,10 @@ describe("summarizeUsage", () => {
 		expect(result.inputTokens).toBe(330);
 		expect(result.outputTokens).toBe(135);
 		expect(result.cacheCreationInputTokens).toBe(10);
+		// no cache_creation split present on these turns — the whole flat total
+		// falls back to the 1h bucket, per this project's default TTL
+		expect(result.cacheCreation5mTokens).toBe(0);
+		expect(result.cacheCreation1hTokens).toBe(10);
 		expect(result.cacheReadInputTokens).toBe(20);
 		expect(result.turnCount).toBe(3);
 		expect(result.durationMs).toBe(
@@ -139,6 +147,30 @@ describe("summarizeUsage", () => {
 		expect(result.humanMessageCount).toBe(2);
 		expect(result.manuallyInspected).toBe(true);
 	});
+
+	it("prices from the transcript's own ephemeral 5m/1h cache-creation split when present", () => {
+		const jsonl = [
+			humanTurn("kick it off", "2026-07-27T10:00:00.000Z"),
+			assistantTurn(
+				{
+					input_tokens: 100,
+					output_tokens: 50,
+					cache_creation_input_tokens: 80,
+					cache_creation: {
+						ephemeral_5m_input_tokens: 30,
+						ephemeral_1h_input_tokens: 50,
+					},
+				},
+				"2026-07-27T10:00:05.000Z",
+			),
+		].join("\n");
+
+		const result = summarizeUsage(jsonl);
+
+		expect(result.cacheCreationInputTokens).toBe(80);
+		expect(result.cacheCreation5mTokens).toBe(30);
+		expect(result.cacheCreation1hTokens).toBe(50);
+	});
 });
 
 describe("addTokenTotals", () => {
@@ -147,18 +179,24 @@ describe("addTokenTotals", () => {
 			inputTokens: 1,
 			outputTokens: 2,
 			cacheCreationInputTokens: 3,
+			cacheCreation5mTokens: 1,
+			cacheCreation1hTokens: 2,
 			cacheReadInputTokens: 4,
 		};
 		const b = {
 			inputTokens: 10,
 			outputTokens: 20,
 			cacheCreationInputTokens: 30,
+			cacheCreation5mTokens: 10,
+			cacheCreation1hTokens: 20,
 			cacheReadInputTokens: 40,
 		};
 		expect(addTokenTotals(a, b)).toEqual({
 			inputTokens: 11,
 			outputTokens: 22,
 			cacheCreationInputTokens: 33,
+			cacheCreation5mTokens: 11,
+			cacheCreation1hTokens: 22,
 			cacheReadInputTokens: 44,
 		});
 	});
