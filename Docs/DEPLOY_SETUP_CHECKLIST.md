@@ -34,7 +34,7 @@ Resolved decisions this checklist assumes (see `Docs/DEPLOY_READINESS.md` §2 fo
   fly secrets set -c fly.prod.toml DATABASE_URL=<prod Neon connection string> ANTHROPIC_API_KEY=<key> VOYAGE_API_KEY=<key> CORS_ORIGIN=<real frontend origin>
   ```
   Set via the Fly dashboard's "Add Secrets" UI rather than the CLI — same effect.
-- [x] First deploy of **dev**, run manually (dev is never connected to GitHub auto-deploy — only prod is, §3 below):
+- [x] First deploy of **dev**, run manually (this predates dev's auto-deploy connection — see §3.1 below for dev's current auto-deploy setup):
   ```
   flyctl deploy -c fly.dev.toml
   ```
@@ -46,7 +46,7 @@ Resolved decisions this checklist assumes (see `Docs/DEPLOY_READINESS.md` §2 fo
 
 **Decided 2026-07-21:** prod auto-deploy uses Fly's own GitHub integration (Alex connected it directly in Fly's dashboard), not a custom GitHub Actions workflow — one fewer secret to manage, and no risk of two deploy mechanisms racing each other on the same push. `.github/workflows/deploy.yml` was removed for this reason.
 
-- [ ] In the Fly dashboard, on **`questlog-prod` only** (never `questlog-dev` — dev stays manual-deploy-only, per this repo's branch model), open the app's GitHub settings and connect it to this repo's **`main`** branch specifically, not `develop`.
+- [ ] In the Fly dashboard, on **`questlog-prod` only** (not `questlog-dev` — dev's own auto-deploy connection is §3.1 below), open the app's GitHub settings and connect it to this repo's **`main`** branch specifically, not `develop`.
 - [ ] Confirm the connected app is configured to build via `fly.prod.toml` (which points at `apps/server/Dockerfile` and carries the `release_command` migration step) — Fly's GitHub integration deploys through the app's own `fly.toml`, so as long as `questlog-prod` was created from `fly.prod.toml` (step 2 above), this should already be correct; just double-check in the dashboard before relying on it.
 - [ ] Trigger a real `develop` → `main` merge (or Fly's "redeploy" button) once the above is confirmed, and verify it actually builds + runs the migration `release_command`, not just a bare `fly deploy` default.
 
