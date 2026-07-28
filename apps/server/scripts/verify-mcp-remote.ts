@@ -14,21 +14,6 @@ import { campaignService } from "@questlog/core/services/campaign.service.js";
 // passphrase and target URL are both external inputs here since this script
 // doesn't control the server process.
 
-const EXPECTED_TOOLS = [
-	"query_lore",
-	"prep_brief",
-	"list_campaigns",
-	"list_entities",
-	"get_entity",
-	"create_entity",
-	"append_entity_note",
-	"log_session",
-	"confirm_log_session",
-	"ingest_text",
-	"get_source_status",
-	"help",
-].sort();
-
 const CALL_TIMEOUT_MS = 15_000;
 const SOURCE_POLL_TIMEOUT_MS = 60_000;
 const SOURCE_POLL_INTERVAL_MS = 2_000;
@@ -194,12 +179,15 @@ async function main() {
 		const { tools } = await withTimeout(client.listTools(), "tools/list");
 		const names = tools.map((tool) => tool.name).sort();
 		console.log(`Server reported ${names.length} tool(s): ${names.join(", ")}`);
-		const missing = EXPECTED_TOOLS.filter((name) => !names.includes(name));
-		if (missing.length > 0) {
-			throw new Error(`Missing expected tool(s): ${missing.join(", ")}`);
-		}
 
 		// 6. Call every tool with minimal valid input against the throwaway campaign.
+		//
+		// No hardcoded "expected tools" roster to keep in sync by hand — the
+		// coverage check below (Step 7) derives the exercised set from the
+		// `callRaw` calls actually made, so a new tool this script forgets to
+		// call surfaces as a visible warning instead of silently going
+		// unverified.
+		const calledTools = new Set<string>();
 		const activeClient = client;
 		const callRaw = async (name: string, args: Record<string, unknown>) => {
 			const result = (await withTimeout(
@@ -213,6 +201,7 @@ async function main() {
 				const text = result.content.find((c) => c.type === "text")?.text;
 				throw new Error(`Tool call returned isError: ${text}`);
 			}
+			calledTools.add(name);
 			console.log(`  ${name} OK`);
 			return result;
 		};
@@ -284,6 +273,17 @@ async function main() {
 			title: "Verification session",
 		});
 		await call("confirm_log_session", { token: preview.token as string });
+
+		// 7. Coverage check — anything the server reports that this script never
+		// called is invisible to the sequence above, so surface it explicitly
+		// rather than silently reporting PASS having verified fewer tools than
+		// actually exist.
+		const uncalled = names.filter((name) => !calledTools.has(name));
+		if (uncalled.length > 0) {
+			console.log(
+				`  WARNING — server reports tool(s) this script never called: ${uncalled.join(", ")} (add a call for it above)`,
+			);
+		}
 
 		console.log(
 			`PASS — full discover -> authorize -> token -> connect -> tools/list -> every-tool sequence succeeded against ${baseUrl}.`,
