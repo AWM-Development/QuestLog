@@ -5,6 +5,7 @@ import {
 	readdirSync,
 	writeFileSync,
 } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { type UsageArtifact, buildUsageArtifact } from "./artifact.js";
 import {
@@ -86,11 +87,46 @@ export function resolveActiveTicketId(projectDir: string): string | null {
 	return resolveTicketId(readFileSync(markerPath, "utf-8"));
 }
 
-// Entry point: reads the Stop hook's stdin JSON payload and writes the usage artifact.
+/** Fallback when tmp/.session-context.json is missing (T-035) — derives the same payload from CLAUDE_CODE_SESSION_ID + the CLI's transcript layout instead of skipping capture. See Docs/IMPLEMENTATION_NOTES.md § T-035 follow-up for why this stays a fallback, not the primary path. */
+export function resolveHookPayloadFromEnv(
+	claudeHomeDir: string,
+	sessionId: string | undefined,
+): HookPayload | null {
+	if (!sessionId) return null;
+
+	const projectsDir = join(claudeHomeDir, "projects");
+	if (!existsSync(projectsDir)) return null;
+
+	for (const projectName of readdirSync(projectsDir)) {
+		const candidate = join(projectsDir, projectName, `${sessionId}.jsonl`);
+		if (existsSync(candidate)) {
+			return { transcript_path: candidate, session_id: sessionId };
+		}
+	}
+	return null;
+}
+
+// Entry point: reads the Stop hook's stdin JSON payload and writes the usage artifact, falling back to resolveHookPayloadFromEnv (see its doc comment) when stdin is empty.
 if (import.meta.url === `file://${process.argv[1]}`) {
 	const projectDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
-	const stdin = readFileSync(0, "utf-8");
-	const payload = JSON.parse(stdin) as HookPayload;
+	let stdin = "";
+	try {
+		stdin = readFileSync(0, "utf-8");
+	} catch {
+		stdin = "";
+	}
+
+	const payload: HookPayload | null = stdin.trim()
+		? (JSON.parse(stdin) as HookPayload)
+		: resolveHookPayloadFromEnv(homedir(), process.env.CLAUDE_CODE_SESSION_ID);
+
+	if (payload === null) {
+		console.error(
+			"capture-usage: no stdin payload and no session found via CLAUDE_CODE_SESSION_ID — skipping usage capture",
+		);
+		process.exit(0);
+	}
+
 	captureUsage(payload, projectDir, {
 		resolveTicketId: () => resolveActiveTicketId(projectDir),
 	});

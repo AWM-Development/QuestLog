@@ -4,8 +4,6 @@ Milestone ref: none — pipeline/tooling hygiene, same category as T-027/T-043/T
 
 Priority: P1
 
-Blocked on: T-033 — must be merged into develop first
-
 Branch: chore/pipeline/t-064-mcp-tool-description-content-relocation
 
 Context files (load ONLY these):

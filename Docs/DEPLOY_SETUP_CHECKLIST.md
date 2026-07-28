@@ -34,7 +34,7 @@ Resolved decisions this checklist assumes (see `Docs/DEPLOY_READINESS.md` §2 fo
   fly secrets set -c fly.prod.toml DATABASE_URL=<prod Neon connection string> ANTHROPIC_API_KEY=<key> VOYAGE_API_KEY=<key> CORS_ORIGIN=<real frontend origin>
   ```
   Set via the Fly dashboard's "Add Secrets" UI rather than the CLI — same effect.
-- [x] First deploy of **dev**, run manually (dev is never connected to GitHub auto-deploy — only prod is, §3 below):
+- [x] First deploy of **dev**, run manually (this predates dev's auto-deploy connection — see §3.1 below for dev's current auto-deploy setup):
   ```
   flyctl deploy -c fly.dev.toml
   ```
@@ -46,9 +46,17 @@ Resolved decisions this checklist assumes (see `Docs/DEPLOY_READINESS.md` §2 fo
 
 **Decided 2026-07-21:** prod auto-deploy uses Fly's own GitHub integration (Alex connected it directly in Fly's dashboard), not a custom GitHub Actions workflow — one fewer secret to manage, and no risk of two deploy mechanisms racing each other on the same push. `.github/workflows/deploy.yml` was removed for this reason.
 
-- [ ] In the Fly dashboard, on **`questlog-prod` only** (never `questlog-dev` — dev stays manual-deploy-only, per this repo's branch model), open the app's GitHub settings and connect it to this repo's **`main`** branch specifically, not `develop`.
+- [ ] In the Fly dashboard, on **`questlog-prod` only** (not `questlog-dev` — dev's own auto-deploy connection is §3.1 below), open the app's GitHub settings and connect it to this repo's **`main`** branch specifically, not `develop`.
 - [ ] Confirm the connected app is configured to build via `fly.prod.toml` (which points at `apps/server/Dockerfile` and carries the `release_command` migration step) — Fly's GitHub integration deploys through the app's own `fly.toml`, so as long as `questlog-prod` was created from `fly.prod.toml` (step 2 above), this should already be correct; just double-check in the dashboard before relying on it.
 - [ ] Trigger a real `develop` → `main` merge (or Fly's "redeploy" button) once the above is confirmed, and verify it actually builds + runs the migration `release_command`, not just a bare `fly deploy` default.
+
+### 3.1 Dev auto-deploy (Fly's native GitHub integration)
+
+**Decided 2026-07-28:** dev now auto-deploys on every merge to `develop`, the same way prod auto-deploys on merge to `main` — using the same mechanism (Fly's native GitHub integration) for consistency with §3's "one deploy mechanism, no race" reasoning, rather than a separate custom GitHub Actions workflow.
+
+- [ ] In the Fly dashboard, on **`questlog-dev` only** (never `questlog-prod`), open the app's GitHub settings and connect it to this repo's **`develop`** branch specifically, not `main`.
+- [ ] Confirm the connected app is configured to build via `fly.dev.toml` (which points at `apps/server/Dockerfile` and carries the `release_command` migration step) — Fly's GitHub integration deploys through the app's own `fly.toml`, so as long as `questlog-dev` was created from `fly.dev.toml` (§2 above), this should already be correct; just double-check in the dashboard before relying on it.
+- [ ] Trigger a real merge into `develop` (or Fly's "redeploy" button) once the above is confirmed, and verify it actually builds + runs the migration `release_command`, not just a bare `fly deploy` default.
 
 ## 4. DNS (only if a custom domain is wanted)
 
