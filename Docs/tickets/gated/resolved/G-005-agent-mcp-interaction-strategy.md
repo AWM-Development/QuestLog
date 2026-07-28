@@ -72,3 +72,59 @@ Notes: Distinct from two things it could be confused with:
   No options evaluated in depth yet for any of the four sub-questions —
   this gate exists to bring them to Alex, not to pre-load a recommended
   default.
+
+## Resolution (2026-07-28)
+
+**Q1 — Attachments.** Investigated before deciding (Alex asked for this
+explicitly, having read the original framing as implying a missing
+capability). Findings:
+  - The Claude API-level MCP connector has no file-attachment-to-tool-call
+    mechanism — tool inputs are plain JSON; the documented pattern for
+    large files is a presigned-URL upload, and MCP's separate `resources`
+    primitive isn't exposed through the API connector QuestLog uses.
+  - Separately, and this is the load-bearing fact: when a user attaches a
+    document to a Claude.ai/Desktop conversation, Claude receives its
+    extracted content directly in its own context (multimodal reading) —
+    **not** something the user has to copy/paste, and not something that
+    goes through a tool call at all. The model can then autonomously call
+    `ingest_text` with that content as the `content` argument, in the same
+    turn, with no user action beyond attaching the file.
+  - The real constraint isn't transport, it's that a tool-call argument
+    isn't a raw passthrough — the model has to *regenerate* the document's
+    full text as output tokens to fill it. For a long document (e.g. a
+    200-page sourcebook) that's slow, costly, and risks truncation/drift
+    well before any actual size limit is hit.
+  - Decision: no new MCP transport, no base64 tool-call plumbing, no
+    resources primitive. Instead, build multi-call chunked ingestion —
+    the model splits a large document across several `ingest_text` calls
+    instead of one giant argument — plus explicit tool-description/
+    instructions guidance telling the model to extract-and-call directly
+    rather than asking the user to paste. **T-065.**
+
+**Q2 — Campaign creation.** Dedicated `create_campaign` tool (Alex's
+recommended option), mirroring `CampaignCreateModal`'s fields via the
+already-existing `CampaignCreateInput` shared validator. **T-066.**
+Additionally, `ingest_text` gains an inline "create a new campaign from
+this upload" option (`newCampaign`, alternative to `campaignId`) so a DM
+uploading a document for a campaign that doesn't exist yet doesn't need a
+separate `create_campaign` round-trip first. **T-067** (sequenced after
+T-065 — both touch `ingest_text`'s schema).
+
+**Q3 — Status-polling guidance.** Explicit guidance: `ingest_text`'s tool
+description now instructs the model to proactively re-call
+`get_source_status` after ingestion and narrate progress, rather than
+leaving it to unguided judgment. Folded into **T-065** (same tool, same
+text-update surface as Q1's attachment guidance).
+
+**Q4 — Broader instructions/system-prompt strategy.** T-033's shipped
+`instructions` + `help` tool stays the answer for now — no new mechanism.
+But Alex wants a standing, cross-tool "agent-interaction philosophy"
+question (plus general MCP app polish) addressed properly rather than
+decided piecemeal inside individual tool tickets, and wants that scoped
+as its own v1.3 milestone. Rather than pre-scope that milestone inline
+here (a materially different, milestone-shaped decision from Q1-Q3's
+concrete, ticketable gaps), split it out to a new gate: **G-012**
+(`Docs/tickets/gated/G-012-v1-3-interaction-philosophy-and-mcp-polish-milestone.md`).
+
+**Tickets drafted:** T-065 (`queue/`), T-066 (`queue/`), T-067 (`backlog/`,
+blocked on T-065's merge). **Follow-on gate filed:** G-012.
