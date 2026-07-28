@@ -111,6 +111,23 @@ describe("mcp-oauth routes", () => {
 			);
 			expect(body.code_challenge_methods_supported).toEqual(["S256"]);
 		});
+
+		it("advertises https:// endpoints when reached via a TLS-terminating proxy's X-Forwarded-Proto header", async () => {
+			// Regression coverage for server.ts's trustProxy option — see
+			// IMPLEMENTATION_NOTES.md § T-034 for why this is required.
+			const response = await app.inject({
+				method: "GET",
+				url: "/.well-known/oauth-authorization-server",
+				headers: { "x-forwarded-proto": "https" },
+			});
+
+			expect(response.statusCode).toBe(200);
+			const body = response.json();
+			expect(body.issuer).toMatch(/^https:\/\//);
+			expect(body.authorization_endpoint).toMatch(/^https:\/\//);
+			expect(body.registration_endpoint).toMatch(/^https:\/\//);
+			expect(body.token_endpoint).toMatch(/^https:\/\//);
+		});
 	});
 
 	describe("POST /register", () => {

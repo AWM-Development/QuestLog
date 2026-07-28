@@ -91,7 +91,8 @@ export function buildApp({
 		});
 	const accessPassphrase =
 		accessPassphraseOption ?? process.env.MCP_ACCESS_PASSPHRASE;
-	const app = Fastify();
+	// trustProxy: see IMPLEMENTATION_NOTES.md § T-034 for why this is required.
+	const app = Fastify({ trustProxy: true });
 
 	app.register(cors, {
 		origin: process.env.CORS_ORIGIN || true,
