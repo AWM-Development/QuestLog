@@ -1,11 +1,11 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { NotFoundError } from "@questlog/core/lib/errors.js";
+import { NotFoundError, ValidationError } from "@questlog/core/lib/errors.js";
 
 /**
- * Wraps a tool handler so a thrown `NotFoundError` becomes the structured
- * `{ isError: true, content: [...] }` shape required by `.claude/rules/mcp.md`
- * instead of an exception that kills the MCP connection. Any other error
- * rethrows unchanged.
+ * Wraps a tool handler so a thrown `NotFoundError`/`ValidationError` becomes
+ * the structured `{ isError: true, content: [...] }` shape required by
+ * `.claude/rules/mcp.md` instead of an exception that kills the MCP
+ * connection. Any other error rethrows unchanged.
  */
 export function withToolErrors<Args extends unknown[]>(
 	handler: (...args: Args) => Promise<CallToolResult>,
@@ -22,6 +22,19 @@ export function withToolErrors<Args extends unknown[]>(
 							type: "text",
 							text: JSON.stringify({
 								error: { code: "NOT_FOUND", message: error.message },
+							}),
+						},
+					],
+				};
+			}
+			if (error instanceof ValidationError) {
+				return {
+					isError: true,
+					content: [
+						{
+							type: "text",
+							text: JSON.stringify({
+								error: { code: "VALIDATION_ERROR", message: error.message },
 							}),
 						},
 					],

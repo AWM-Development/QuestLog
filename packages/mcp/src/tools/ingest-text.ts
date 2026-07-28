@@ -22,7 +22,14 @@ export function registerIngestText(
 		withToolErrors(
 			async ({ campaignId, title, content, sourceId, final = true }) => {
 				const source = sourceId
-					? await sourceService.appendContent(db, sourceId, content)
+					? await (async () => {
+							// appendContent takes a bare sourceId (no campaignId param,
+							// per its ticket-specified signature) — validate ownership
+							// here first so a sourceId from another campaign 404s
+							// instead of silently appending.
+							await sourceService.getByIdForCampaign(db, campaignId, sourceId);
+							return sourceService.appendContent(db, sourceId, content);
+						})()
 					: await sourceService.createFromText(db, {
 							campaignId,
 							name: title,
