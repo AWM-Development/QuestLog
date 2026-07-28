@@ -87,18 +87,7 @@ export function resolveActiveTicketId(projectDir: string): string | null {
 	return resolveTicketId(readFileSync(markerPath, "utf-8"));
 }
 
-/**
- * Fallback for EXECUTOR_ROUTINE.md's manual Step 6/7 invocation
- * (`cat tmp/.session-context.json | ... capture-usage`) when that stash file
- * is missing or empty — observed on T-035, cause unconfirmed. Derives the
- * same {transcript_path, session_id} pair session-start.sh would have
- * stashed, straight from the CLI's own on-disk transcript layout, instead of
- * skipping capture or fabricating numbers. See Docs/IMPLEMENTATION_NOTES.md
- * § T-035 for why this is a fallback, not a replacement: it leans on
- * `CLAUDE_CODE_SESSION_ID` and the `~/.claude/projects` transcript layout
- * (one `sessionId.jsonl` file per project directory), which are CLI-internal
- * conventions, not a documented contract.
- */
+/** Fallback when tmp/.session-context.json is missing (T-035) — derives the same payload from CLAUDE_CODE_SESSION_ID + the CLI's transcript layout instead of skipping capture. See Docs/IMPLEMENTATION_NOTES.md § T-035 follow-up for why this stays a fallback, not the primary path. */
 export function resolveHookPayloadFromEnv(
 	claudeHomeDir: string,
 	sessionId: string | undefined,
@@ -117,11 +106,7 @@ export function resolveHookPayloadFromEnv(
 	return null;
 }
 
-// Entry point: reads the Stop hook's stdin JSON payload and writes the usage
-// artifact. Falls back to resolveHookPayloadFromEnv when stdin is empty —
-// EXECUTOR_ROUTINE.md's manual Step 6/7 invocation pipes tmp/.session-context.json
-// in, and that file isn't always present (see resolveHookPayloadFromEnv's doc
-// comment).
+// Entry point: reads the Stop hook's stdin JSON payload and writes the usage artifact, falling back to resolveHookPayloadFromEnv (see its doc comment) when stdin is empty.
 if (import.meta.url === `file://${process.argv[1]}`) {
 	const projectDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
 	let stdin = "";
