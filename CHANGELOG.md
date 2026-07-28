@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Changed — T-035
+
+- **`fly.dev.toml` and `Docs/DEPLOY_SETUP_CHECKLIST.md` updated for dev auto-deploy**: `fly.dev.toml`'s header comment no longer claims dev is manual-deploy-only — it now documents that `questlog-dev` will auto-deploy on every merge to `develop` via Fly's native GitHub integration, mirroring how `questlog-prod` already auto-deploys on merge to `main`. A new §3.1 subsection in `DEPLOY_SETUP_CHECKLIST.md` lists the exact Alex-only dashboard steps (connect `questlog-dev`'s GitHub integration to `develop`, confirm it builds via `fly.dev.toml`). The actual Fly dashboard connection is Alex-only and not done by this ticket — the milestone checkbox (M-CICD.1) stays unflipped until Alex confirms a real `develop` merge triggered a dev deploy.
+
 ### Added — T-034
 
 - **`apps/server/scripts/verify-mcp-remote.ts`**: exercises the full remote MCP flow — discover, register, authorize, token exchange, connect, `tools/list`, then every one of the 12 registered tools with minimal valid input — against a real deployed base URL, using its own throwaway campaign it creates and cleans up. Run it with `MCP_ACCESS_PASSPHRASE`/`DATABASE_URL` set in the environment: `pnpm --filter @questlog/server exec tsx scripts/verify-mcp-remote.ts https://questlog-dev.fly.dev`.
