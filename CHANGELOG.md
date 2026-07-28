@@ -10,6 +10,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Changed — T-065
+
+- **`ingest_text` supports multi-call chunked ingestion**: `IngestTextInput` gained optional `sourceId` and `final` fields. Passing the `source.id` echoed back from a previous call appends the new text onto that still-`pending` source instead of creating a new one; passing `final: false` skips triggering processing until the last chunk. This lets Claude split a large attached document's extracted text across several `ingest_text` calls instead of needing to regenerate the whole document as one JSON argument.
+- **`ingest_text`'s description and the onboarding instructions now tell the model to extract attached documents directly**: when the user attaches a PDF/DOCX/image, the model should extract its text and call `ingest_text` itself rather than asking the user to paste it, splitting long documents across multiple calls via `sourceId`/`final`. Both also now instruct the model to proactively call `get_source_status` after ingesting and narrate progress to the user.
+
 ### Changed — T-035
 
 - **`fly.dev.toml` and `Docs/DEPLOY_SETUP_CHECKLIST.md` updated for dev auto-deploy**: `fly.dev.toml`'s header comment no longer claims dev is manual-deploy-only — it now documents that `questlog-dev` will auto-deploy on every merge to `develop` via Fly's native GitHub integration, mirroring how `questlog-prod` already auto-deploys on merge to `main`. A new §3.1 subsection in `DEPLOY_SETUP_CHECKLIST.md` lists the exact Alex-only dashboard steps (connect `questlog-dev`'s GitHub integration to `develop`, confirm it builds via `fly.dev.toml`). The actual Fly dashboard connection is Alex-only and not done by this ticket — the milestone checkbox (M-CICD.1) stays unflipped until Alex confirms a real `develop` merge triggered a dev deploy.
