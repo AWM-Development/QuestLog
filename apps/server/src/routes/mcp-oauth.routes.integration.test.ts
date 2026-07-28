@@ -113,13 +113,8 @@ describe("mcp-oauth routes", () => {
 		});
 
 		it("advertises https:// endpoints when reached via a TLS-terminating proxy's X-Forwarded-Proto header", async () => {
-			// Fly.io terminates TLS at its edge and forwards plain HTTP internally
-			// (fly.dev.toml's force_https only applies at the edge) — without
-			// Fastify's trustProxy honoring X-Forwarded-Proto, every discovery
-			// endpoint advertises http:// URLs a real client can't complete OAuth
-			// against. Surfaced by T-034's verify-mcp-remote.ts against the real
-			// questlog-dev deploy: POST /register got redirected (http -> https)
-			// and lost its JSON body, so client_id came back undefined.
+			// Regression coverage for server.ts's trustProxy option — see
+			// IMPLEMENTATION_NOTES.md § T-034 for why this is required.
 			const response = await app.inject({
 				method: "GET",
 				url: "/.well-known/oauth-authorization-server",

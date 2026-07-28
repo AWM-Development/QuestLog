@@ -91,11 +91,7 @@ export function buildApp({
 		});
 	const accessPassphrase =
 		accessPassphraseOption ?? process.env.MCP_ACCESS_PASSPHRASE;
-	// trustProxy: Fly.io terminates TLS at its edge and forwards plain HTTP
-	// internally, so request.protocol reflects that internal scheme unless
-	// Fastify is told to honor X-Forwarded-Proto — without it, every OAuth
-	// discovery endpoint (mcp-oauth.view.ts's baseUrl()) advertises http://
-	// URLs a real client can't complete OAuth against (T-034).
+	// trustProxy: see IMPLEMENTATION_NOTES.md § T-034 for why this is required.
 	const app = Fastify({ trustProxy: true });
 
 	app.register(cors, {
