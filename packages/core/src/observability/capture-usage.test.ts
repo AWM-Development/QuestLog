@@ -9,7 +9,11 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { captureUsage, resolveActiveTicketId } from "./capture-usage.js";
+import {
+	captureUsage,
+	resolveActiveTicketId,
+	resolveHookPayloadFromEnv,
+} from "./capture-usage.js";
 
 const FIXTURES = join(__dirname, "__fixtures__");
 
@@ -161,5 +165,50 @@ describe("resolveActiveTicketId", () => {
 		expect(resolveActiveTicketId(dir)).toBeNull();
 
 		rmSync(dir, { recursive: true, force: true });
+	});
+});
+
+describe("resolveHookPayloadFromEnv", () => {
+	let claudeHomeDir: string | undefined;
+
+	afterEach(() => {
+		if (claudeHomeDir) {
+			rmSync(claudeHomeDir, { recursive: true, force: true });
+			claudeHomeDir = undefined;
+		}
+	});
+
+	it("returns null when no session id is given — nothing to search for", () => {
+		claudeHomeDir = mkdtempSync(join(tmpdir(), "questlog-claude-home-"));
+
+		expect(resolveHookPayloadFromEnv(claudeHomeDir, undefined)).toBeNull();
+	});
+
+	it("returns null when ~/.claude/projects doesn't exist", () => {
+		claudeHomeDir = mkdtempSync(join(tmpdir(), "questlog-claude-home-"));
+
+		expect(resolveHookPayloadFromEnv(claudeHomeDir, "sess-123")).toBeNull();
+	});
+
+	it("returns null when no project directory has a matching transcript", () => {
+		claudeHomeDir = mkdtempSync(join(tmpdir(), "questlog-claude-home-"));
+		const projectDir = join(claudeHomeDir, "projects", "-some-project");
+		mkdirSync(projectDir, { recursive: true });
+		writeFileSync(join(projectDir, "other-session.jsonl"), "{}\n");
+
+		expect(resolveHookPayloadFromEnv(claudeHomeDir, "sess-123")).toBeNull();
+	});
+
+	it("finds the transcript under whichever project directory has it, and returns the session id", () => {
+		claudeHomeDir = mkdtempSync(join(tmpdir(), "questlog-claude-home-"));
+		const projectDir = join(claudeHomeDir, "projects", "-home-user-QuestLog");
+		mkdirSync(projectDir, { recursive: true });
+		const transcriptPath = join(projectDir, "sess-123.jsonl");
+		writeFileSync(transcriptPath, "{}\n");
+
+		expect(resolveHookPayloadFromEnv(claudeHomeDir, "sess-123")).toEqual({
+			transcript_path: transcriptPath,
+			session_id: "sess-123",
+		});
 	});
 });

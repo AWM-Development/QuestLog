@@ -5,6 +5,7 @@ import {
 	readdirSync,
 	writeFileSync,
 } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { type UsageArtifact, buildUsageArtifact } from "./artifact.js";
 import {
@@ -86,11 +87,61 @@ export function resolveActiveTicketId(projectDir: string): string | null {
 	return resolveTicketId(readFileSync(markerPath, "utf-8"));
 }
 
-// Entry point: reads the Stop hook's stdin JSON payload and writes the usage artifact.
+/**
+ * Fallback for EXECUTOR_ROUTINE.md's manual Step 6/7 invocation
+ * (`cat tmp/.session-context.json | ... capture-usage`) when that stash file
+ * is missing or empty — observed on T-035, cause unconfirmed. Derives the
+ * same {transcript_path, session_id} pair session-start.sh would have
+ * stashed, straight from the CLI's own on-disk transcript layout, instead of
+ * skipping capture or fabricating numbers. See Docs/IMPLEMENTATION_NOTES.md
+ * § T-035 for why this is a fallback, not a replacement: it leans on
+ * `CLAUDE_CODE_SESSION_ID` and the `~/.claude/projects` transcript layout
+ * (one `sessionId.jsonl` file per project directory), which are CLI-internal
+ * conventions, not a documented contract.
+ */
+export function resolveHookPayloadFromEnv(
+	claudeHomeDir: string,
+	sessionId: string | undefined,
+): HookPayload | null {
+	if (!sessionId) return null;
+
+	const projectsDir = join(claudeHomeDir, "projects");
+	if (!existsSync(projectsDir)) return null;
+
+	for (const projectName of readdirSync(projectsDir)) {
+		const candidate = join(projectsDir, projectName, `${sessionId}.jsonl`);
+		if (existsSync(candidate)) {
+			return { transcript_path: candidate, session_id: sessionId };
+		}
+	}
+	return null;
+}
+
+// Entry point: reads the Stop hook's stdin JSON payload and writes the usage
+// artifact. Falls back to resolveHookPayloadFromEnv when stdin is empty —
+// EXECUTOR_ROUTINE.md's manual Step 6/7 invocation pipes tmp/.session-context.json
+// in, and that file isn't always present (see resolveHookPayloadFromEnv's doc
+// comment).
 if (import.meta.url === `file://${process.argv[1]}`) {
 	const projectDir = process.env.CLAUDE_PROJECT_DIR ?? process.cwd();
-	const stdin = readFileSync(0, "utf-8");
-	const payload = JSON.parse(stdin) as HookPayload;
+	let stdin = "";
+	try {
+		stdin = readFileSync(0, "utf-8");
+	} catch {
+		stdin = "";
+	}
+
+	const payload: HookPayload | null = stdin.trim()
+		? (JSON.parse(stdin) as HookPayload)
+		: resolveHookPayloadFromEnv(homedir(), process.env.CLAUDE_CODE_SESSION_ID);
+
+	if (payload === null) {
+		console.error(
+			"capture-usage: no stdin payload and no session found via CLAUDE_CODE_SESSION_ID — skipping usage capture",
+		);
+		process.exit(0);
+	}
+
 	captureUsage(payload, projectDir, {
 		resolveTicketId: () => resolveActiveTicketId(projectDir),
 	});
