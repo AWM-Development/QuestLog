@@ -78,6 +78,38 @@ describe("sourceService", () => {
 		});
 	});
 
+	describe("appendContent", () => {
+		it("concatenates onto the existing metadata.content of a pending source", async () => {
+			const created = await sourceService.createFromText(db, {
+				campaignId,
+				name: "Chunked Primer",
+				content: "Part one. ",
+			});
+
+			const updated = await sourceService.appendContent(
+				db,
+				created.id,
+				"Part two.",
+			);
+
+			expect(updated.metadata?.content).toBe("Part one. Part two.");
+			expect(updated.status).toBe("pending");
+		});
+
+		it("throws when the source is not pending", async () => {
+			const created = await sourceService.createFromText(db, {
+				campaignId,
+				name: "Already Processing",
+				content: "Some content.",
+			});
+			await sourceService.updateStatus(db, created.id, "done");
+
+			await expect(
+				sourceService.appendContent(db, created.id, "More content."),
+			).rejects.toThrow();
+		});
+	});
+
 	describe("listByCampaign", () => {
 		it("returns sources for the campaign ordered by createdAt desc", async () => {
 			// Use explicit timestamps because Postgres pins NOW() to the transaction

@@ -414,6 +414,20 @@ describe("server instructions + help tool (T-033)", () => {
 		const content = result.content as Array<{ type: string; text: string }>;
 		expect(content[0]?.text).toBe(instructions);
 	});
+
+	it("onboarding instructions and ingest_text's description both cover attachment extraction and status-polling guidance (T-065)", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const instructions = client.getInstructions() ?? "";
+
+		expect(instructions).toMatch(/extract its text/i);
+		expect(instructions).toMatch(/get_source_status/);
+
+		const { tools } = await client.listTools();
+		const ingestText = tools.find((tool) => tool.name === "ingest_text");
+		expect(ingestText?.description).toMatch(/extract its text/i);
+		expect(ingestText?.description).toMatch(/get_source_status/);
+		expect(ingestText?.description).toMatch(/sourceId/);
+	});
 });
 
 describe("get_entity tool", () => {
@@ -1156,6 +1170,111 @@ describe("ingest_text + get_source_status tools", () => {
 		);
 		expect(statusPayload.status).toBe("error");
 		expect(statusPayload.errorReason).toBeTruthy();
+	});
+
+	it("chains two ingest_text calls with the same sourceId into one queryable source (T-065)", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const firstResult = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Ashfall Primer",
+				content: "Mira Duskwood patrols the Old Road near Ashfall Peak. ",
+				final: false,
+			},
+		});
+		expect(firstResult.isError).toBeFalsy();
+		const firstContent = firstResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { source } = JSON.parse(firstContent[0]?.text ?? "{}");
+		expect(source.status).toBe("pending");
+
+		// Processing must not have started after a non-final chunk.
+		const stillPending = await sourceService.getById(db, source.id);
+		expect(stillPending.status).toBe("pending");
+
+		const secondResult = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Ashfall Primer",
+				content: "The party rests at the Ashfall inn.",
+				sourceId: source.id,
+				final: true,
+			},
+		});
+		expect(secondResult.isError).toBeFalsy();
+		const secondContent = secondResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const secondPayload = JSON.parse(secondContent[0]?.text ?? "{}");
+		expect(secondPayload.source.id).toBe(source.id);
+
+		const finalStatus = await waitForStatus(source.id, "done");
+		expect(finalStatus).toBe("done");
+
+		const roadQuery = await client.callTool({
+			name: "query_lore",
+			arguments: { campaignId, query: "Who patrols the road?" },
+		});
+		const roadPayload = JSON.parse(
+			(roadQuery.content as Array<{ type: string; text: string }>)[0]?.text ??
+				"{}",
+		);
+		expect(roadPayload.citations).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ sourceId: source.id }),
+			]),
+		);
+
+		const innQuery = await client.callTool({
+			name: "query_lore",
+			arguments: { campaignId, query: "Where does the party rest?" },
+		});
+		const innPayload = JSON.parse(
+			(innQuery.content as Array<{ type: string; text: string }>)[0]?.text ??
+				"{}",
+		);
+		expect(innPayload.citations).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ sourceId: source.id }),
+			]),
+		);
+	});
+
+	it("throws when ingest_text is called with a sourceId pointing at a non-pending source", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const ingestResult = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Ashfall Primer",
+				content: "Some content.",
+			},
+		});
+		const { source } = JSON.parse(
+			(ingestResult.content as Array<{ type: string; text: string }>)[0]
+				?.text ?? "{}",
+		);
+
+		await waitForStatus(source.id, "done");
+
+		const secondResult = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Ashfall Primer",
+				content: "More content.",
+				sourceId: source.id,
+			},
+		});
+
+		expect(secondResult.isError).toBe(true);
 	});
 
 	it("get_source_status returns a structured not-found error for a source outside the given campaign", async () => {
