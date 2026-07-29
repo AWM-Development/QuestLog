@@ -2,7 +2,7 @@
 
 Milestone ref: M-PIPELINE.3 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
-Priority: P1
+Priority: P0
 
 Branch: chore/m-pipeline/t-071-uniform-per-package-test-databases
 
