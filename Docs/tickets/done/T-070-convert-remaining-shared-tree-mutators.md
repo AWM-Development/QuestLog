@@ -4,8 +4,6 @@ Milestone ref: M-PIPELINE.2 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
 Priority: P0
 
-Blocked on: T-069 — must be merged into develop first
-
 Branch: feat/m-pipeline/t-070-convert-remaining-shared-tree-mutators
 
 Context files (load ONLY these):

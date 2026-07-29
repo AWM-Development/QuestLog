@@ -776,3 +776,12 @@ Removed: `session-start.sh`'s stash-writing block, `tmp/.session-context*.json` 
 
 ### Proving the claim mechanism — this ticket's own execution
 No probe branch (would violate the branch rules being hardened). This ticket's own Step 2 claim push and Step 6/7 wrap-up push are the two-pushes-to-one-branch sequence under test — see `Docs/tickets/reports/T-069-executor-concurrency-safety.md` for the outcome.
+
+## T-070 — Converted the remaining shared-tree mutators to T-069's worktree convention (2026-07-29)
+`lineup.md`, `morning-review.md`, `ungate/SKILL.md`, and `ticket-writer/SKILL.md` all followed T-069's convention above rather than inventing a variant. Two non-obvious calls:
+- `lineup.md` needed no worktree at all — it's genuinely read-only, so it now reads ticket files straight off `origin/develop` (`git show origin/develop:<path>`), the same pattern `promote.md` already used. This is cheaper than a worktree and has no claim/isolation concerns since nothing is ever written.
+- `morning-review.md`'s `git stash -u` was deleted outright, not kept as a fallback: a fresh worktree has nothing to stash, and keeping the stash step around would have silently reintroduced the exact hazard (sweeping a concurrent session's uncommitted work) this ticket exists to remove.
+
+`ticket-writer/SKILL.md` step 0's conversion was mechanical (same `<branch-prefix>/<slug>` shape as `ungate`'s), so it was converted too rather than left as a judgment call.
+
+**Follow-up fix (2026-07-29, same PR, caught during `/morning-review`'s own review of this ticket):** the initial cut of `morning-review.md`'s Step 1 called `git worktree add tmp/worktrees/review-<head-branch>/ <head-branch>` unconditionally. That fails whenever `<head-branch>` is already checked out in another worktree — and since worktrees are never reaped, the executor's own `tmp/worktrees/T-###/` for that exact branch is routinely still on disk right after it lands a PR, which is exactly when `/morning-review` tends to run next. Reproduced live on this very PR's own branch. Fixed by checking `git worktree list --porcelain` for an existing worktree on the branch first and `cd`-ing into it if found, only falling back to `git worktree add` otherwise — the same "resume an existing branch" shape T-069 already established for stale ticket claims.
