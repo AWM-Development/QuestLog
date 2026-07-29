@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Fixed
+
+- **A malformed `DATABASE_URL` now fails with a clear, actionable error instead of a raw Node internals crash**: the first real run of `smoke-test-dev.ts` against `questlog-dev` hit exactly this — `DEV_DATABASE_URL` wasn't a valid connection string, and `packages/core/src/db/index.ts` passed it straight to `postgres()` unchecked, surfacing as `TypeError: Invalid URL` deep inside `node:internal/url` with no mention of `DATABASE_URL` at all. A new `assertValidDatabaseUrl` export validates presence and shape (parses as a URL, `postgres:`/`postgresql:` protocol) up front, so every consumer of `packages/core/src/db/index.ts` — not just this smoke test — gets a message naming the actual problem.
+
 ### Added — T-036
 
 - **Post-merge smoke test against the real deployed dev environment**: a new GitHub Actions workflow (`.github/workflows/smoke-test-dev.yml`), triggered on push to `develop` (plus `workflow_dispatch` for on-demand runs), polls `questlog-dev`'s `/health` endpoint until the deploy is live, then runs `apps/server/scripts/smoke-test-dev.ts` — a real `campaign.create` -> `campaign.list` round trip through the live tRPC API, a direct Postgres connection confirming the schema and `vector`/`pg_trgm` extensions are present on the real database, then a scoped cleanup delete of the throwaway campaign. Separate from `ci.yml`'s per-PR gate entirely; a failure here means the code that just merged doesn't actually work against real infra, not a PR gate. Requires a new `DEV_DATABASE_URL` GitHub Actions secret Alex still needs to provision — see this ticket's report for the checklist.
