@@ -16,7 +16,8 @@
 		"capture-usage": "tsx ../../packages/core/src/observability/capture-usage.ts",
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
-		"smoke:mcp-remote": "tsx --env-file=../../.env scripts/mcp-remote-smoke.ts"
+		"smoke:mcp-remote": "tsx --env-file=../../.env scripts/mcp-remote-smoke.ts",
+		"smoke:dev": "tsx scripts/smoke-test-dev.ts"
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.79.0",
@@ -39,6 +40,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
+		"@trpc/client": "^11.13.4",
 		"@types/node": "^22.13.10",
 		"drizzle-kit": "^0.31.9",
 		"esbuild": "^0.28.1",
