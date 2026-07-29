@@ -39,6 +39,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
+		"@trpc/client": "^11.13.4",
 		"@types/node": "^22.13.10",
 		"drizzle-kit": "^0.31.9",
 		"esbuild": "^0.28.1",

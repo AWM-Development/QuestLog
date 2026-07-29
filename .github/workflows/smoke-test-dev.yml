@@ -1,0 +1,65 @@
+name: Smoke Test (dev)
+
+# Post-merge confidence check against the real deployed dev environment —
+# questlog-dev.fly.dev and its real Neon dev branch — not the ephemeral
+# local Postgres ci.yml's PR gate uses. A failure here means the code that
+# just merged doesn't actually work against real infra; it's not a PR gate
+# (mirrors e2e-release-check.yml's reasoning for running post-merge instead
+# of per-PR).
+#
+# Triggered on push to `develop` so it fires once Fly's dashboard GitHub
+# integration (T-035) redeploys questlog-dev with the new code. Until that
+# Alex-only connection step is done, `push` alone never fires — workflow_dispatch
+# is also available for an on-demand run against whatever is currently live.
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+env:
+  DEV_BASE_URL: https://questlog-dev.fly.dev
+
+jobs:
+  smoke-test-dev:
+    name: Smoke Test — questlog-dev
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── Wait for the dev deploy to be live ───────────────────────────────
+      # Fly's GitHub integration (T-035) deploys asynchronously after this
+      # push triggers — poll /health instead of assuming it's already done.
+      - name: Poll /health until the dev deploy is live
+        run: |
+          for i in $(seq 1 20); do
+            if curl -sf "$DEV_BASE_URL/health" | grep -q '"status":"ok"'; then
+              echo "✅ $DEV_BASE_URL/health is up."
+              exit 0
+            fi
+            echo "Waiting for $DEV_BASE_URL/health ($i/20)..."
+            sleep 15
+          done
+          echo "❌ $DEV_BASE_URL/health never became healthy."
+          exit 1
+
+      # ── Full round trip ───────────────────────────────────────────────────
+      # DATABASE_URL here is the dev Neon branch's connection string (the
+      # DEV_DATABASE_URL GitHub secret — Alex-only to provision, see
+      # Docs/tickets/reports/T-036-post-merge-smoke-test-dev.md), scoped to
+      # this one step only so it's never exported more broadly than needed.
+      - name: Run smoke test against questlog-dev
+        env:
+          DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
+        run: pnpm exec tsx apps/server/scripts/smoke-test-dev.ts "$DEV_BASE_URL"
