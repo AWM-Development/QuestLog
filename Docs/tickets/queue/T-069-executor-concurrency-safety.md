@@ -64,6 +64,14 @@ Definition of done includes: checkbox flipped in Docs/milestones/MILESTONES_V1_1
   IMPLEMENTATION_NOTES.md updated if any non-obvious decision was made,
   a CHANGELOG.md entry under [Unreleased], morning report written.
 
-**Additionally, and specific to this ticket — flag this prominently in the report under "Anything Alex must decide":** `EXECUTOR_ROUTINE.md`'s own header states the scheduled-agent config is a *copy* of that file, not a reference to it. Until Alex updates the scheduler config by hand, every nightly run keeps executing the old, non-concurrency-safe routine, and this ticket's changes will appear to have silently not taken effect. The report must say so explicitly rather than assuming the merge is sufficient.
+**Additionally, and specific to this ticket — flag this prominently in the report under "Anything Alex must decide."** The scheduled agent's prompt is a two-line pointer that reads `EXECUTOR_ROUTINE.md` fresh on every run (see that file's corrected header), so edits to Steps 1–7 take effect automatically once merged — no scheduler change needed for those. **But its first line is the bootstrap this ticket removes:**
+
+```
+git fetch origin develop && git checkout -B develop origin/develop
+```
+
+That line lives in the scheduler prompt itself, which no ticket can edit. So there are three copies of it: `.claude/commands/executor.md:5` and `.claude/commands/promote-execute.md:12` (both in scope here) and the scheduler prompt (Alex-only, out of reach). Until Alex updates that third copy by hand, **every nightly run still force-checkouts `develop` in the shared working directory before this routine's Step 0 ever gets read** — defeating scope item (a) for exactly the unattended runs it matters most for, while appearing to work fine for every locally-invoked `/executor`.
+
+The report must give Alex the literal replacement text for that first line, matching whatever bootstrap Step 0 lands on — not merely mention that a change is needed.
 
 **Note on self-modification.** This ticket rewrites the routine the executing agent is itself following. There is precedent (`T-048`/`T-049` both edited `EXECUTOR_ROUTINE.md` and shipped normally), and the rule is the same as theirs: keep following the routine as loaded at session start, and edit the file as an artifact. Do not re-read the routine mid-run and switch to the half-written version.

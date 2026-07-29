@@ -3,7 +3,7 @@
 **Location:** `Docs/tickets/COMMANDS.md`
 **Last Updated:** 2026-07-26
 **Purpose:** Quick-read index of every slash command in the ticket pipeline (`.claude/commands/*.md`). Read this when you just need "what commands exist and what do they do" without opening each command file. Full behavior always lives in the command's own `.claude/commands/<name>.md` — this is a summary, not a spec; if the two disagree, the command file wins.
-**Keeping this in sync:** adding, removing, or materially changing a command's behavior means updating its row here in the same PR — same discipline `EXECUTOR_ROUTINE.md`'s own header applies to itself ("if you edit the routine, edit here first, then update the scheduler config to match"). `/command-help` cross-checks this file against `.claude/commands/*.md` and flags drift.
+**Keeping this in sync:** adding, removing, or materially changing a command's behavior means updating its row here in the same PR. This file is a genuine second copy of information that lives authoritatively in `.claude/commands/*.md`, so it can drift; `/command-help` cross-checks the two and flags it when it does. (`EXECUTOR_ROUTINE.md` used to be cited here as the same kind of discipline — that was based on a since-corrected claim in its header that the scheduler held a copy of it. It doesn't: the scheduler reads that file directly, so it has no sync obligation. This table still does.)
 
 | Command | Args | What it does | Mutates? | Unattended-safe? |
 |---|---|---|---|---|
