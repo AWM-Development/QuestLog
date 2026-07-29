@@ -642,7 +642,7 @@ Every unit of work ends with a fixed set of doc update obligations: check off th
 
 ### The Single Encoding Point
 
-`CLAUDE.md` at the repo root is the top-level pointer that encodes SAAD's hard rules for an AI agent — the ordered pointer map, the TDD hard rule, the 🧠/mockup gate distinction, and the autonomous-run branch rules. `Docs/tickets/EXECUTOR_ROUTINE.md` is the detailed, literal procedure the nightly executor follows (it's the actual scheduler config, version-controlled); this guide is the narrative reference for code patterns and conventions that both ticket work and interactive work draw on.
+`CLAUDE.md` at the repo root is the top-level pointer that encodes SAAD's hard rules for an AI agent — the ordered pointer map, the TDD hard rule, the 🧠/mockup gate distinction, and the autonomous-run branch rules. `Docs/tickets/EXECUTOR_ROUTINE.md` is the detailed, literal procedure the nightly executor follows (the scheduler's prompt is a two-line pointer that reads it fresh each run, so it's the live routine rather than a version-controlled mirror of one); this guide is the narrative reference for code patterns and conventions that both ticket work and interactive work draw on.
 
 Every AI coding session reads `CLAUDE.md` first. If the methodology evolves, update `CLAUDE.md` — it is the canonical instruction set.
 

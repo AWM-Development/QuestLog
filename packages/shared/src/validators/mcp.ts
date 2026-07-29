@@ -17,6 +17,8 @@ export const IngestTextInput = z.object({
 	campaignId: z.string().uuid(),
 	title: z.string().min(1).max(200),
 	content: z.string().min(1),
+	sourceId: z.string().uuid().optional(),
+	final: z.boolean().optional(),
 });
 export type IngestTextInput = z.infer<typeof IngestTextInput>;
 
