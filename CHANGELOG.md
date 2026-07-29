@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Changed — T-071
+
+- **Every DB-touching package now runs its tests against its own physical database.** `packages/core` and `apps/server` no longer share `questlog_test` — each gets its own (`questlog_test_core`, `questlog_test_server`), matching `questlog_test_mcp`'s existing isolation. `turbo.json`'s `test.dependsOn: ["^test"]`, the ordering that previously stood in for isolation between those two packages, is deleted — no package's test correctness depends on another package's task finishing first anymore, and this closes an identical, previously-unfixed race on the `test:e2e` tier. CI provisioning in `ci.yml`/`e2e-release-check.yml` is now one generic loop over `scripts/test-db-names.sh`'s test-tier name list instead of two separate hardcoded steps — a new database only needs one name added to that list, not a new workflow step.
+
 ### Changed — T-069
 
 - **Nightly/interactive ticket execution is now concurrency-safe.** Each execution session works in its own git worktree (`tmp/worktrees/T-###/`), created from `origin/develop`, instead of checking out in the shared primary working directory — a locally-run `/executor` or `/promote-execute` no longer yanks the working tree out from under a concurrent session. Ticket pickup now pushes the feature branch immediately as a claim, turning the existing dedup check into a real mutex; resuming an apparently-abandoned claim now waits for a 6-hour staleness window before treating it as safe to take over, so two sessions can no longer land on the same branch. Usage-capture attribution across concurrent sessions no longer depends on a stashed `tmp/.session-context.json` file at all — that mechanism was removed in favor of deriving the transcript directly from `CLAUDE_CODE_SESSION_ID`, which sidesteps the collision problem entirely instead of just keying around it. Scheduled agent's prompt updated by Alex to match.
