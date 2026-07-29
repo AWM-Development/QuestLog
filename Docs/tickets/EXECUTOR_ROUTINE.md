@@ -4,25 +4,16 @@
 **Last Updated:** 2026-07-27
 **Purpose:** The procedure the nightly scheduled agent follows. Kept here, version-controlled, so changes to the nightly loop are diffable and reviewable like everything else in the pipeline.
 
-**How the scheduler reaches this file (corrected 2026-07-29):** the scheduled agent's prompt is *not* a copy of this document — an earlier version of this header claimed it was, and that was wrong. The prompt is two lines, the same shape as `.claude/commands/executor.md`:
-
-```
-git fetch origin develop && git checkout -B develop origin/develop
-Read Docs/tickets/EXECUTOR_ROUTINE.md in full and follow it exactly, starting at Step 1.
-```
-
-So this file is read fresh from the checkout on every run: **editing it here is sufficient, and takes effect on the next nightly run once merged to `develop`.** There is no separate copy to keep in sync, and no manual scheduler update after a routine change.
-
-The one exception is that first line, which is duplicated into the scheduler prompt itself and therefore *cannot* be changed by editing this file — the same bootstrap also appears in `.claude/commands/executor.md` and `.claude/commands/promote-execute.md`, which can. A change to the bootstrap specifically needs a one-time manual edit of the scheduler prompt by Alex; a change to anything else in this routine does not.
-
-**Scheduler prompt update needed (T-069, 2026-07-29):** Step 0 below no longer force-checkouts `develop` in the shared working directory — each session now works in its own git worktree, so a concurrent session sharing the same sandbox no longer gets its working tree yanked out from under it. The scheduler prompt's first line predates this and still runs the old unconditional checkout before this file is ever read, defeating the fix for every nightly run until updated by hand (no ticket can edit the scheduler prompt itself). Replace the scheduler prompt's two lines with:
+**How the scheduler reaches this file (updated 2026-07-29, T-069):** the scheduled agent's prompt is *not* a copy of this document. The prompt is two lines, the same shape as `.claude/commands/executor.md`:
 
 ```
 git fetch origin develop
 Read Docs/tickets/EXECUTOR_ROUTINE.md in full and follow it exactly, starting at Step 1.
 ```
 
-(Just the fetch — no `checkout -B develop`. Step 1 reads ticket files off `origin/develop` directly and Step 2 creates the session's worktree from `origin/develop`, so nothing needs a primary-tree checkout at all.) This is an Alex-only, one-time manual edit — see the ticket report for confirmation of whether it's been applied yet.
+So this file is read fresh from the checkout on every run: **editing it here is sufficient, and takes effect on the next nightly run once merged to `develop`.** There is no separate copy to keep in sync, and no manual scheduler update after a routine change.
+
+The one exception is that first line, which is duplicated into the scheduler prompt itself and therefore *cannot* be changed by editing this file — the same bootstrap also appears in `.claude/commands/executor.md` and `.claude/commands/promote-execute.md`, which can. A change to the bootstrap specifically needs a one-time manual edit of the scheduler prompt by Alex; a change to anything else in this routine does not. (T-069 removed the prior `git checkout -B develop origin/develop` from this line — a concurrent session sharing the same sandbox no longer gets its working tree yanked out from under it, since each session now works in its own git worktree per Step 0/2 below. Alex applied that scheduler-prompt edit on 2026-07-29; the line above reflects the current, live prompt.)
 **Assumes:** `Docs/tickets/TICKET_SPEC.md` (ticket format), `Docs/tickets/GATE_SPEC.md` (gate-stub format, `Gated on:` field), `Docs/tickets/BLOCKED_TEMPLATE.md` / `REPORT_TEMPLATE.md` (protocols), `.claude/agents/reviewer.md` (review step), `.claude/skills/tdd-loop/SKILL.md` (implementation loop), and the branch model documented in `Docs/IMPLEMENTATION_NOTES.md` (`main` deployed, `develop` integration).
 
 ---
@@ -101,8 +92,8 @@ Invoke the `reviewer` subagent against the ticket file and the diff (`git diff d
 ## Step 6: Blocked (only if Step 4 or Step 5 hit the cap)
 - Fill out `Docs/tickets/BLOCKED_TEMPLATE.md` for this ticket: what failed, the distinct approaches attempted with evidence, your hypothesis, the exact question for Alex, and branch state.
 - `git mv` the ticket from `in-progress/` to `Docs/tickets/blocked/T-###-slug.md`, commit the ticket move and the blocked report together.
-- Invoke usage-capture directly, synchronously, same as Step 7: `cat "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")/tmp/.session-context.${CLAUDE_CODE_SESSION_ID}.json" | pnpm --filter @questlog/server run capture-usage`. A blocked run still burns real tokens and should have a cost record; include the resulting `Docs/tickets/cost-reports/T-###.usage.json` in the same commit as the blocked report. (The session-context file lives in the *primary* directory's `tmp/`, not this worktree's — `session-start.sh` writes it at session start, before this worktree exists; the `git rev-parse --git-common-dir` indirection finds the primary root from inside any worktree. See `Docs/IMPLEMENTATION_NOTES.md` § T-069.)
-- Push the feature branch (for inspection) but do NOT open a PR. The branch already exists on origin from Step 2's claim push — this is the second push to it (T-069's claim mechanism proved this permitted, or fell back per Step 2's fallback, which applies here too if this push is rejected).
+- Invoke usage-capture directly, synchronously, same as Step 7: `cat "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")/tmp/.session-context.${CLAUDE_CODE_SESSION_ID}.json" | CLAUDE_PROJECT_DIR="$(pwd)" pnpm --filter @questlog/server run capture-usage`. A blocked run still burns real tokens and should have a cost record; include the resulting `Docs/tickets/cost-reports/T-###.usage.json` in the same commit as the blocked report. (`CLAUDE_PROJECT_DIR="$(pwd)"` is required here, not optional — `pnpm --filter` runs the script with its cwd shifted to `apps/server`, and without this the capture script silently falls back to `apps/server/tmp/.active-ticket`, finds nothing, and no-ops with no error. See `Docs/IMPLEMENTATION_NOTES.md` § T-069 for both this and why the session-context path above isn't `tmp/.session-context.json` directly.)
+- Push the feature branch (for inspection) but do NOT open a PR. This is the second push to the branch — see Step 2's claim-push note and `Docs/IMPLEMENTATION_NOTES.md` § T-069 for why that's permitted (or the fallback if rejected).
 - Delete `tmp/.active-ticket` — this session's ticket work is done (blocked, not shipped, but done), and the marker must not linger to misattribute a later, unrelated session's usage to this ticket.
 - Output the blocked report as your summary. Stop — do not proceed to Step 7.
 
@@ -112,8 +103,8 @@ Invoke the `reviewer` subagent against the ticket file and the diff (`git diff d
 - Add an entry to `CHANGELOG.md` under `[Unreleased]` (use the existing section headings — Added/Changed/Fixed — grouped by this ticket's id, e.g. `### Added — T-###`) describing what shipped, in user/developer-facing terms, not an internal diff summary.
 - Write `Docs/tickets/reports/T-###-slug.md` per `Docs/tickets/REPORT_TEMPLATE.md` — outcome, diff stats, pasted test evidence (not a summary), exit-condition-by-exit-condition check, the reviewer's verbatim verdict, anything Alex must decide.
 - `git mv` the ticket from `in-progress/` to `Docs/tickets/done/T-###-slug.md`.
-- Invoke usage-capture directly, synchronously, instead of waiting for the `Stop` hook to fire (which wouldn't happen until after this turn ends, i.e. after the PR is already open): `cat "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")/tmp/.session-context.${CLAUDE_CODE_SESSION_ID}.json" | pnpm --filter @questlog/server run capture-usage`. This reuses the exact CLI entrypoint and stdin payload shape the `Stop` hook already feeds it — `session-start.sh` stashed that shape, keyed by this session's id, in the *primary* directory's `tmp/` (not this worktree's) at session start, before this worktree existed. Include the resulting `Docs/tickets/cost-reports/T-###.usage.json` in the same commit as the rest of this wrap-up.
+- Invoke usage-capture directly, synchronously, instead of waiting for the `Stop` hook to fire (which wouldn't happen until after this turn ends, i.e. after the PR is already open): `cat "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")/tmp/.session-context.${CLAUDE_CODE_SESSION_ID}.json" | CLAUDE_PROJECT_DIR="$(pwd)" pnpm --filter @questlog/server run capture-usage`. This reuses the exact CLI entrypoint and stdin payload shape the `Stop` hook already feeds it. `CLAUDE_PROJECT_DIR="$(pwd)"` is required — see Step 6's note on why. Include the resulting `Docs/tickets/cost-reports/T-###.usage.json` in the same commit as the rest of this wrap-up.
 - Commit all of the above.
 - Delete `tmp/.active-ticket` — this session's ticket work is done, and the marker must not linger to misattribute a later, unrelated session's usage.
-- Push the feature branch and open a PR against `develop` using the morning report as the PR description. Do NOT merge it. The branch already exists on origin from Step 2's claim push — this is the second push to it (T-069's claim mechanism proved this permitted, or fell back per Step 2's fallback, which applies here too if this push is rejected).
+- Push the feature branch and open a PR against `develop` using the morning report as the PR description. Do NOT merge it. This is the second push to the branch — see Step 2's claim-push note and `Docs/IMPLEMENTATION_NOTES.md` § T-069 for why that's permitted (or the fallback if rejected).
 - Output a brief summary: ticket id, outcome, PR link.
