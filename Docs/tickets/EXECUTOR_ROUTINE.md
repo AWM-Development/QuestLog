@@ -2,7 +2,18 @@
 
 **Location:** `Docs/tickets/EXECUTOR_ROUTINE.md`
 **Last Updated:** 2026-07-27
-**Purpose:** The exact prompt configured in the nightly scheduled agent. Kept here, version-controlled, so changes to the nightly loop are diffable and reviewable like everything else in the pipeline — the scheduler config is a copy of this file, not a separate source of truth. If you edit the routine, edit here first, then update the scheduler config to match.
+**Purpose:** The procedure the nightly scheduled agent follows. Kept here, version-controlled, so changes to the nightly loop are diffable and reviewable like everything else in the pipeline.
+
+**How the scheduler reaches this file (corrected 2026-07-29):** the scheduled agent's prompt is *not* a copy of this document — an earlier version of this header claimed it was, and that was wrong. The prompt is two lines, the same shape as `.claude/commands/executor.md`:
+
+```
+git fetch origin develop && git checkout -B develop origin/develop
+Read Docs/tickets/EXECUTOR_ROUTINE.md in full and follow it exactly, starting at Step 1.
+```
+
+So this file is read fresh from the checkout on every run: **editing it here is sufficient, and takes effect on the next nightly run once merged to `develop`.** There is no separate copy to keep in sync, and no manual scheduler update after a routine change.
+
+The one exception is that first line, which is duplicated into the scheduler prompt itself and therefore *cannot* be changed by editing this file — the same bootstrap also appears in `.claude/commands/executor.md` and `.claude/commands/promote-execute.md`, which can. A change to the bootstrap specifically needs a one-time manual edit of the scheduler prompt by Alex; a change to anything else in this routine does not.
 **Assumes:** `Docs/tickets/TICKET_SPEC.md` (ticket format), `Docs/tickets/GATE_SPEC.md` (gate-stub format, `Gated on:` field), `Docs/tickets/BLOCKED_TEMPLATE.md` / `REPORT_TEMPLATE.md` (protocols), `.claude/agents/reviewer.md` (review step), `.claude/skills/tdd-loop/SKILL.md` (implementation loop), and the branch model documented in `Docs/IMPLEMENTATION_NOTES.md` (`main` deployed, `develop` integration).
 
 ---
@@ -15,6 +26,9 @@ CRITICAL BRANCH RULES — NEVER VIOLATE:
 - NEVER merge any branch — not into `develop`, not into `main`. You open a PR against `develop`; you never merge it.
 - The only ref you ever push is the current ticket's feature branch — its nominal `Branch:` name, or your session's harness-assigned branch as Step 2's fallback (or, when resuming per Step 1 case 4, the branch that ticket's prior work actually lives on). Never push `develop`, `main`, or any other existing branch: the git proxy blocks those pushes mechanically, and you must never attempt them regardless.
 - Model: sonnet, always. Never opus/fable for execution.
+
+## Known sandbox constraint: no real Docker builds
+This sandbox cannot pull images from Docker Hub (blob-layer CDN returns `403 Forbidden` — confirmed repeatedly across T-023/T-024/T-042, see `Docs/IMPLEMENTATION_NOTES.md`). If a ticket's exit condition calls for `docker build`/`docker pull`, do not attempt it — go straight to the established substitute: run the bundled `dist/*.js` output directly under plain `node`, and manually simulate any Dockerfile `COPY` step whose behavior needs confirming. State in the report that the substitute was used and why (citing this note), rather than re-discovering and re-documenting the same restriction from scratch. A real `docker build` outside this sandbox is still the correct final check before an actual deploy — that's `Docs/DEPLOY_SETUP_CHECKLIST.md`'s job, not this routine's.
 
 ## Step 0: Land on `develop` — do not trust the branch you were started on
 The sandbox this routine runs in may be created from an arbitrary starting point (not necessarily `develop`) — never assume the working directory already reflects `develop`. Before anything else, unconditionally:
