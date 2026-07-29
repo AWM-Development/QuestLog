@@ -1,12 +1,24 @@
-import { sql } from "drizzle-orm";
+import { is, sql } from "drizzle-orm";
+import { PgTable, getTableConfig } from "drizzle-orm/pg-core";
 import { afterAll, describe, expect, it } from "vitest";
+import { REQUIRED_EXTENSIONS } from "../migrate.js";
 import { createTestDb } from "../test-helpers.js";
+import * as schema from "./index.js";
 
 const { db, close } = createTestDb();
 
 afterAll(async () => {
 	await close();
 });
+
+// Derived from the schema barrel rather than hand-copied — this list had
+// already silently drifted (missing write_requests/mcp_oauth_* tables) since
+// `toContain` never fails on a missing expectation being absent from the
+// list itself, only on the reverse. Deriving it means it's structurally
+// impossible for this test to go stale the same way again.
+const EXPECTED_TABLES = Object.values(schema)
+	.filter((value) => is(value, PgTable))
+	.map((table) => getTableConfig(table as PgTable).name);
 
 describe("database schema", () => {
 	it("has all expected tables", async () => {
@@ -17,29 +29,20 @@ describe("database schema", () => {
 		`);
 		const tables = result.map((r) => (r as Record<string, unknown>).table_name);
 
-		expect(tables).toContain("campaigns");
-		expect(tables).toContain("sessions");
-		expect(tables).toContain("entities");
-		expect(tables).toContain("entity_relationships");
-		expect(tables).toContain("sources");
-		expect(tables).toContain("chunks");
-		expect(tables).toContain("conversations");
-		expect(tables).toContain("messages");
-		expect(tables).toContain("session_entities");
+		for (const expected of EXPECTED_TABLES) {
+			expect(tables).toContain(expected);
+		}
 	});
 
-	it("has pgvector extension enabled", async () => {
-		const result = await db.execute(
-			sql`SELECT extname FROM pg_extension WHERE extname = 'vector'`,
+	it("has every required extension enabled", async () => {
+		const result = await db.execute(sql`SELECT extname FROM pg_extension`);
+		const extensions = new Set(
+			result.map((r) => (r as Record<string, unknown>).extname),
 		);
-		expect(result.length).toBe(1);
-	});
 
-	it("has pg_trgm extension enabled", async () => {
-		const result = await db.execute(
-			sql`SELECT extname FROM pg_extension WHERE extname = 'pg_trgm'`,
-		);
-		expect(result.length).toBe(1);
+		for (const required of REQUIRED_EXTENSIONS) {
+			expect(extensions.has(required)).toBe(true);
+		}
 	});
 
 	it("has a btree index on campaign_id for every campaign-scoped table", async () => {

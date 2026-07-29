@@ -94,7 +94,7 @@ export function resolveHookPayloadFromEnv(
 ): HookPayload | null {
 	if (!sessionId) return null;
 
-	const projectsDir = join(claudeHomeDir, "projects");
+	const projectsDir = join(claudeHomeDir, ".claude", "projects");
 	if (!existsSync(projectsDir)) return null;
 
 	for (const projectName of readdirSync(projectsDir)) {

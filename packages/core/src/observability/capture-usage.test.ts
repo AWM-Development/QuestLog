@@ -192,7 +192,12 @@ describe("resolveHookPayloadFromEnv", () => {
 
 	it("returns null when no project directory has a matching transcript", () => {
 		claudeHomeDir = mkdtempSync(join(tmpdir(), "questlog-claude-home-"));
-		const projectDir = join(claudeHomeDir, "projects", "-some-project");
+		const projectDir = join(
+			claudeHomeDir,
+			".claude",
+			"projects",
+			"-some-project",
+		);
 		mkdirSync(projectDir, { recursive: true });
 		writeFileSync(join(projectDir, "other-session.jsonl"), "{}\n");
 
@@ -201,7 +206,12 @@ describe("resolveHookPayloadFromEnv", () => {
 
 	it("finds the transcript under whichever project directory has it, and returns the session id", () => {
 		claudeHomeDir = mkdtempSync(join(tmpdir(), "questlog-claude-home-"));
-		const projectDir = join(claudeHomeDir, "projects", "-home-user-QuestLog");
+		const projectDir = join(
+			claudeHomeDir,
+			".claude",
+			"projects",
+			"-home-user-QuestLog",
+		);
 		mkdirSync(projectDir, { recursive: true });
 		const transcriptPath = join(projectDir, "sess-123.jsonl");
 		writeFileSync(transcriptPath, "{}\n");

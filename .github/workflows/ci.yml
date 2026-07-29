@@ -150,7 +150,7 @@ jobs:
           MIGRATION_ADDED=false
 
           while IFS= read -r file; do
-            if echo "$file" | grep -qE ".*/schema/.*\.(ts|sql)$"; then
+            if echo "$file" | grep -qE ".*/schema/.*\.(ts|sql)$" && ! echo "$file" | grep -qE "\.test\.ts$"; then
               SCHEMA_CHANGED=true
             fi
             if echo "$file" | grep -qE ".*/migrations/.*\.sql$"; then
