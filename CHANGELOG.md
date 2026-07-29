@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-066
+
+- **`create_campaign` MCP tool**: a DM working entirely through an MCP-connected Claude session can now start a new campaign directly from chat, instead of needing the web app's `CampaignCreateModal`. Direct write (additive-only, no preview/confirm) — validates via the existing `CampaignCreateInput` schema (name, description, theme, gameSystem) and calls the existing `campaignService.create`. `list_campaigns`-first onboarding guidance now also mentions `create_campaign` for starting a new one.
+
 ### Changed — T-065
 
 - **`ingest_text` supports multi-call chunked ingestion**: `IngestTextInput` gained optional `sourceId` and `final` fields. Passing the `source.id` echoed back from a previous call appends the new text onto that still-`pending` source instead of creating a new one; passing `final: false` skips triggering processing until the last chunk. This lets Claude split a large attached document's extracted text across several `ingest_text` calls instead of needing to regenerate the whole document as one JSON argument.

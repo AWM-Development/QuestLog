@@ -38,6 +38,7 @@ const EXPECTED_TOOLS = [
 	"query_lore",
 	"prep_brief",
 	"list_campaigns",
+	"create_campaign",
 	"list_entities",
 	"get_entity",
 	"create_entity",
@@ -152,7 +153,7 @@ describe("mcp-http routes", () => {
 	});
 
 	describe("POST /mcp — with a valid bearer token", () => {
-		it("completes the initialize handshake and tools/list returns all 12 tools", async () => {
+		it("completes the initialize handshake and tools/list returns all 13 tools", async () => {
 			const accessToken = await getAccessToken();
 
 			const initResponse = await app.inject({

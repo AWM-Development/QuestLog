@@ -6,7 +6,7 @@
  */
 export const ONBOARDING_INSTRUCTIONS = `QuestLog helps you manage a tabletop RPG campaign: upload campaign documents, track sessions as you play, and query campaign lore.
 
-Start with \`list_campaigns\` to find the campaign's id — every other tool needs it. From there:
+Start with \`list_campaigns\` to find the campaign's id — every other tool needs it. If the user doesn't have one yet, use \`create_campaign\` to start one. From there:
 - \`ingest_text\` to upload campaign documents (primers, notes, session recaps) so \`query_lore\` can search them. If the user attaches a document to the conversation, extract its text yourself and call \`ingest_text\` directly rather than asking them to paste it. If writing out the extracted text yourself would take more than roughly a page or two of your own response, don't put it all in one call — split it across multiple calls using \`sourceId\`/\`final\` instead. After ingesting, proactively call \`get_source_status\` to check progress and let the user know when it's done.
 - \`log_session\` (then \`confirm_log_session\`) to track a session as it happens — this links mentioned entities and keeps campaign lore up to date.
 - \`create_entity\` and \`append_entity_note\` to author NPCs, locations, factions, items, and arcs directly.
