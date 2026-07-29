@@ -1,10 +1,15 @@
-# G-012 — Open v1.3 planning: agent-interaction philosophy & MCP app polish
+# G-012 — Open next-milestone planning: agent-interaction philosophy & MCP app polish
 
 Gate type: 🧠 strategy
 
 Milestone ref: none yet — this gate's resolution is what opens a new
-  `Docs/milestones/MILESTONES_V1_3_MCP.md`, the same way v1.1 itself
-  originated from a conversation rather than a pre-existing milestone task.
+  milestone doc (originally slotted as v1.3; that slot was claimed
+  directly by Alex on 2026-07-29 for canon correction & automatic entity
+  extraction — see `G-014`/`G-015` and
+  `Docs/milestones/MILESTONES_V1_3_MCP.md` — so resolving this gate now
+  opens whichever milestone comes after v1.3, e.g. v1.4), the same way
+  v1.1 itself originated from a conversation rather than a pre-existing
+  milestone task.
 
 Opened: 2026-07-28 — filed by agent during G-005's `/ungate` resolution,
   raised by Alex (Q4: T-033's `instructions`/`help` tool is sufficient for
