@@ -18,19 +18,24 @@ dotenv.config({ path: "../../.env" });
 // migrate.ts's own location — its sibling packages/core/src/db/migrations —
 // resolves correctly in both. See apps/server/Dockerfile's migrations COPY
 // step, which mirrors this same file-relative offset into dist/.
-const migrationsFolder = fileURLToPath(
+export const migrationsFolder = fileURLToPath(
 	new URL("./migrations", import.meta.url),
 );
 
-const connectionString = process.env.DATABASE_URL ?? testDbUrl("questlog");
-
-const client = postgres(connectionString, { max: 1 });
-const db = drizzle(client);
+/** Single source of truth for extensions this app depends on — the CREATE EXTENSION loop below and the post-deploy smoke test (apps/server/scripts/smoke-test-dev.ts) both read this instead of hand-copying the list. */
+export const REQUIRED_EXTENSIONS = ["vector", "pg_trgm"] as const;
 
 async function main() {
+	const connectionString = process.env.DATABASE_URL ?? testDbUrl("questlog");
+	const client = postgres(connectionString, { max: 1 });
+	const db = drizzle(client);
+
 	console.log("Enabling extensions...");
-	await db.execute(sql`CREATE EXTENSION IF NOT EXISTS "vector"`);
-	await db.execute(sql`CREATE EXTENSION IF NOT EXISTS "pg_trgm"`);
+	for (const extension of REQUIRED_EXTENSIONS) {
+		await db.execute(
+			sql`CREATE EXTENSION IF NOT EXISTS ${sql.identifier(extension)}`,
+		);
+	}
 
 	console.log("Running migrations...");
 	await migrate(db, { migrationsFolder });
@@ -39,7 +44,13 @@ async function main() {
 	await client.end();
 }
 
-main().catch((err) => {
-	console.error("Migration failed:", err);
-	process.exit(1);
-});
+// Entry point: only runs when invoked directly (`tsx migrate.ts`), not when
+// imported elsewhere for its exports (REQUIRED_EXTENSIONS, migrationsFolder) —
+// same guard pattern as capture-usage.ts, so importing this module never
+// opens a DB connection or re-runs migrations as a side effect.
+if (import.meta.url === `file://${process.argv[1]}`) {
+	main().catch((err) => {
+		console.error("Migration failed:", err);
+		process.exit(1);
+	});
+}

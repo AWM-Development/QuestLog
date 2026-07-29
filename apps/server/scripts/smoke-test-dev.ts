@@ -1,6 +1,14 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { db } from "@questlog/core/db/index.js";
+import {
+	REQUIRED_EXTENSIONS,
+	migrationsFolder,
+} from "@questlog/core/db/migrate.js";
+import * as schema from "@questlog/core/db/schema/index.js";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
-import { sql } from "drizzle-orm";
+import { is, sql } from "drizzle-orm";
+import { PgTable, getTableConfig } from "drizzle-orm/pg-core";
 import superjson from "superjson";
 import type { AppRouter } from "../src/routers/_app.js";
 
@@ -17,23 +25,17 @@ import type { AppRouter } from "../src/routers/_app.js";
 // reject any non-local DATABASE_URL by design (packages/core/src/db/test-db-url.ts),
 // and this script's whole point is to talk to a real hosted database.
 
-const EXPECTED_TABLES = [
-	"campaigns",
-	"sessions",
-	"entities",
-	"entity_relationships",
-	"session_entities",
-	"sources",
-	"chunks",
-	"conversations",
-	"messages",
-	"write_requests",
-	"mcp_oauth_clients",
-	"mcp_oauth_codes",
-	"mcp_oauth_tokens",
-];
+// Derived from the schema barrel/migrate.ts rather than hand-copied — a
+// hardcoded list here would be a third copy of information Drizzle already
+// owns (packages/core/src/db/schema/tables.ts is the source of truth; a
+// hardcoded copy in packages/core/src/db/schema/schema.integration.test.ts
+// had already silently drifted before this was written). Adding/renaming a
+// table or extension never requires touching this file.
+const EXPECTED_TABLES = Object.values(schema)
+	.filter((value) => is(value, PgTable))
+	.map((table) => getTableConfig(table as PgTable).name);
 
-const EXPECTED_EXTENSIONS = ["vector", "pg_trgm"];
+const EXPECTED_EXTENSIONS = REQUIRED_EXTENSIONS;
 
 async function main() {
 	const baseUrl = process.argv[2] ?? process.env.SMOKE_TEST_BASE_URL;
@@ -111,8 +113,29 @@ async function main() {
 			);
 		}
 		console.log(`  extensions OK (${EXPECTED_EXTENSIONS.join(", ")})`);
+
+		// 5. Migration drift check — every migration in the journal actually
+		// applied to this database, not just that `migrate.ts` exited 0 at
+		// some point in the past. Compares counts rather than re-deriving
+		// drizzle-orm's internal hash scheme, so it needs no maintenance as
+		// migrations are added.
+		const journal = JSON.parse(
+			readFileSync(join(migrationsFolder, "meta", "_journal.json"), "utf-8"),
+		) as { entries: unknown[] };
+		const appliedRows = await db.execute(
+			sql`SELECT count(*)::int AS count FROM drizzle.__drizzle_migrations`,
+		);
+		const appliedCount = (appliedRows[0] as { count: number }).count;
+		if (appliedCount < journal.entries.length) {
+			throw new Error(
+				`Migration drift: journal has ${journal.entries.length} entries, only ${appliedCount} applied to this database`,
+			);
+		}
+		console.log(
+			`  migrations OK (${appliedCount}/${journal.entries.length} applied)`,
+		);
 	} finally {
-		// 5. Clean up — scoped delete by the exact id this script created,
+		// 6. Clean up — scoped delete by the exact id this script created,
 		// never an unscoped delete.
 		await db.execute(sql`DELETE FROM campaigns WHERE id = ${campaign.id}`);
 		console.log(`  cleaned up campaign ${campaign.id}`);
