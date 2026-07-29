@@ -62,4 +62,4 @@ jobs:
       - name: Run smoke test against questlog-dev
         env:
           DATABASE_URL: ${{ secrets.DEV_DATABASE_URL }}
-        run: pnpm exec tsx apps/server/scripts/smoke-test-dev.ts "$DEV_BASE_URL"
+        run: pnpm --filter @questlog/server smoke:dev "$DEV_BASE_URL"
