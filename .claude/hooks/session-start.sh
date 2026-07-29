@@ -11,37 +11,6 @@ set -euo pipefail
 
 cd "$CLAUDE_PROJECT_DIR"
 
-# Stash this session's transcript_path/session_id every time it starts, local or
-# remote — capture-usage needs it available synchronously at EXECUTOR_ROUTINE.md
-# Step 7, instead of only via the Stop hook firing after the PR is already open.
-# See Docs/IMPLEMENTATION_NOTES.md § T-046 and G-011's resolution for the rationale.
-# Lives under tmp/, not .claude/ — the harness treats any write under .claude/ as
-# touching a sensitive file and gates it behind an interactive confirmation, which
-# would stall this on every unattended nightly run (T-062).
-#
-# Filename is keyed by session_id (T-069): this hook fires at session start, before
-# a worktree exists (Docs/IMPLEMENTATION_NOTES.md § T-069's worktree convention —
-# the ticket id isn't even known yet), and CLAUDE_PROJECT_DIR is a harness-set env
-# var fixed to the sandbox root for the process lifetime, not something a later
-# `cd`/`git worktree add` moves. A flat `.session-context.json` name is therefore a
-# shared file across every concurrent session on one physical checkout regardless
-# of (a)'s per-ticket worktrees — the session_id suffix is what actually separates
-# them; EXECUTOR_ROUTINE.md Step 7 reads back the matching suffixed file.
-HOOK_STDIN="$(cat)"
-mkdir -p "$CLAUDE_PROJECT_DIR/tmp"
-HOOK_STDIN="$HOOK_STDIN" node -e '
-  const fs = require("node:fs");
-  const payload = JSON.parse(process.env.HOOK_STDIN);
-  const stash = {
-    transcript_path: payload.transcript_path,
-    session_id: payload.session_id,
-  };
-  fs.writeFileSync(
-    process.env.CLAUDE_PROJECT_DIR + "/tmp/.session-context." + payload.session_id + ".json",
-    JSON.stringify(stash) + "\n",
-  );
-'
-
 pnpm install
 
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
