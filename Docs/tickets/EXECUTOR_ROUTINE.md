@@ -16,6 +16,9 @@ CRITICAL BRANCH RULES — NEVER VIOLATE:
 - The only ref you ever push is the current ticket's feature branch — its nominal `Branch:` name, or your session's harness-assigned branch as Step 2's fallback (or, when resuming per Step 1 case 4, the branch that ticket's prior work actually lives on). Never push `develop`, `main`, or any other existing branch: the git proxy blocks those pushes mechanically, and you must never attempt them regardless.
 - Model: sonnet, always. Never opus/fable for execution.
 
+## Known sandbox constraint: no real Docker builds
+This sandbox cannot pull images from Docker Hub (blob-layer CDN returns `403 Forbidden` — confirmed repeatedly across T-023/T-024/T-042, see `Docs/IMPLEMENTATION_NOTES.md`). If a ticket's exit condition calls for `docker build`/`docker pull`, do not attempt it — go straight to the established substitute: run the bundled `dist/*.js` output directly under plain `node`, and manually simulate any Dockerfile `COPY` step whose behavior needs confirming. State in the report that the substitute was used and why (citing this note), rather than re-discovering and re-documenting the same restriction from scratch. A real `docker build` outside this sandbox is still the correct final check before an actual deploy — that's `Docs/DEPLOY_SETUP_CHECKLIST.md`'s job, not this routine's.
+
 ## Step 0: Land on `develop` — do not trust the branch you were started on
 The sandbox this routine runs in may be created from an arbitrary starting point (not necessarily `develop`) — never assume the working directory already reflects `develop`. Before anything else, unconditionally:
 ```bash
