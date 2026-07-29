@@ -117,7 +117,13 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   M-PIPELINE.1 makes the executor path safe but leaves three other entrypoints checking out or stashing in the shared primary working directory, and isolation is only as good as its least-converted entrypoint — one `/lineup` run mid-executor undoes it. `.claude/commands/lineup.md:9` force-checkouts `develop` while calling itself a "read-only bootstrap" (and `COMMANDS.md` advertises it as safe to schedule daily, which is how a scheduled `/lineup` gets to clobber a running executor); `.claude/commands/morning-review.md:14` runs `git stash -u`, which on a shared tree sweeps up another session's uncommitted work; `.claude/skills/ungate/SKILL.md:18` cuts its branch wherever the session started. `.claude/commands/promote.md` already reads from `origin/develop` without checking out and is the reference implementation for the `/lineup` fix. Blocked on T-069 — it follows the worktree convention that ticket establishes rather than inventing its own.
   Exit: see T-070 — combined with T-069, no command or skill in the repo mutates the shared working tree.
 
-**Deliberately not in M-PIPELINE.1 — per-worktree test databases.** Concurrent agents also share one physical `questlog_test`, whose `global-setup.ts` truncates every table repo-wide, so one agent's run wipes another's fixtures mid-assertion. That surface is owned by the open gate `G-008` (test-database topology), whose `Blocks:` line already names the exact four provisioning files a fix would touch. `G-008` has been annotated with this second, orthogonal axis (package × worktree) so resolving it settles both together. Not ticketed until `G-008` clears.
+- [ ] **M-PIPELINE.3 — Uniform per-package test databases; delete `turbo.json`'s cross-package `dependsOn`** (T-071)
+  Resolved via `/ungate` (`G-008`): every DB-touching package gets its own physical test database; `test: { dependsOn: ["^test"] }` is deleted. Removes the implicit "core's run must finish first" contract that caused T-052 and a still-live `test:e2e`-tier race (no `dependsOn` exists on that task at all today). CI provisioning must be a loop over `scripts/test-db-names.sh`'s array, not a copy-paste per database — the condition Alex attached to calling this a simplification rather than sprawl.
+  Exit: see T-071.
+
+- [ ] **M-PIPELINE.4 — Per-worktree Postgres instance for concurrent local test runs** (T-072)
+  Resolved via `/ungate` (`G-008`, second axis, added during `T-069`'s ticket-writing): each worktree runs its own Postgres container on its own port rather than per-worktree database names inside a shared instance — sidesteps a per-worktree DB lifecycle (create/migrate/reap) entirely; reaping is `docker compose down`. Local-only; CI is untouched (isolated service container per run already). Blocked on `T-069`'s worktree convention landing first.
+  Exit: see T-072.
 
 ---
 
