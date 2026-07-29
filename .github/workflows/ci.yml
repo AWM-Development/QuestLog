@@ -18,6 +18,9 @@ jobs:
         env:
           POSTGRES_USER: questlog
           POSTGRES_PASSWORD: questlog
+          # Postgres requires a bootstrap DB at container boot; nothing about
+          # its name is load-bearing afterward — every real test-tier
+          # database is created and migrated by the loop below (T-071).
           POSTGRES_DB: questlog_test
         ports:
           - 5433:5432
@@ -26,9 +29,6 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
-
-    env:
-      DATABASE_URL: postgresql://questlog:questlog@localhost:5433/questlog_test
 
     steps:
       - uses: actions/checkout@v4
@@ -63,23 +63,21 @@ jobs:
           fi
           echo "✅ No test.only or test.skip found."
 
-      # ── Run migrations ────────────────────────────────────────────────────
-      # Uses the Postgres service container above (DATABASE_URL is hardcoded
-      # to the local service, no secrets required).
-      - name: Run database migrations
-        run: pnpm --filter @questlog/server db:migrate
-
-      # ── Provision apps/mcp's isolated test database ─────────────────────
-      # questlog_test_mcp isolates apps/mcp's suite from apps/server's
-      # (T-026). Canonical name list: scripts/test-db-names.sh — also
-      # sourced by e2e-release-check.yml and session-start.sh. Why:
+      # ── Provision and migrate every test-tier database ──────────────────
+      # One generic loop over the test-tier names, so a new DB-touching
+      # package needs one name added to scripts/test-db-names.sh and zero
+      # new lines here (T-071/G-008). TEST_DB_NAMES_CI excludes the dev
+      # database on purpose — CI must never create/migrate it. Canonical
+      # name list: scripts/test-db-names.sh — also sourced by
+      # e2e-release-check.yml and session-start.sh. Why:
       # IMPLEMENTATION_NOTES.md § T-027.
-      - name: Create and migrate apps/mcp's test database
+      - name: Provision and migrate test-tier databases
         run: |
           source scripts/test-db-names.sh
-          export DATABASE_URL="postgresql://questlog:questlog@localhost:5433/${TEST_DB_NAME_MCP}"
-          PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog_test -c "CREATE DATABASE ${TEST_DB_NAME_MCP}"
-          pnpm --filter @questlog/server db:migrate
+          for dbname in "${TEST_DB_NAMES_CI[@]}"; do
+            PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog_test -c "CREATE DATABASE ${dbname}"
+            DATABASE_URL="postgresql://questlog:questlog@localhost:5433/${dbname}" pnpm --filter @questlog/server db:migrate
+          done
 
       # ── Full test suite ───────────────────────────────────────────────────
       # Unit + integration only (real DB, mocked external APIs). The real-API

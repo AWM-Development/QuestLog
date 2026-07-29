@@ -14,7 +14,7 @@ export default defineConfig({
 		globalSetup: ["./src/db/global-setup.ts"],
 		exclude: [...configDefaults.exclude, "**/*.e2e.test.ts"],
 		env: {
-			DATABASE_URL: testDbUrl("questlog_test"),
+			DATABASE_URL: testDbUrl("questlog_test_core"),
 		},
 	},
 });
