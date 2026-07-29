@@ -10,6 +10,9 @@ Context files (load ONLY these):
   - Docs/tickets/EXECUTOR_ROUTINE.md (the file this ticket principally rewrites — Steps 0, 1, 2, 6, 7)
   - .claude/commands/executor.md (2 lines; carries its own copy of the Step 0 force-checkout)
   - .claude/commands/promote-execute.md (hands off into the same routine at Step 2 — must not be left behind)
+  - .claude/commands/lineup.md, .claude/commands/morning-review.md, .claude/skills/ungate/SKILL.md (the three other shared-tree mutators — see scope item (d))
+  - .claude/commands/promote.md (read-only reference implementation — the pattern the others should adopt; do not change it)
+  - Docs/tickets/COMMANDS.md (the `Unattended-safe?` column, currently wrong for `/lineup`)
   - .claude/hooks/session-start.sh (writes tmp/.session-context.json; also the develop-sync guard)
   - packages/core/src/observability/capture-usage.ts (`resolveActiveTicketId` — the sole consumer of tmp/.active-ticket)
   - Docs/tickets/TICKET_SPEC.md § "Why develop's ticket directories can lag reality" and § "Branch naming"
@@ -31,6 +34,16 @@ This forces a matching change to Step 1's **case 4** (`matching branch found, no
 
 **(c) `tmp/` marker isolation.** Confirm `tmp/.active-ticket` and `tmp/.session-context.json` actually resolve per-worktree once (a) lands — i.e. that `CLAUDE_PROJECT_DIR` points at the worktree and not the primary repo. **Verify this; do not assume it.** If it resolves per-worktree, both markers are fixed for free and the scope item is a one-line note in the report saying so. If it resolves to the primary repo, make the two markers session-scoped so concurrent sessions can't clobber each other. `tmp/.session-context.json` is the more urgent of the two: `session-start.sh` rewrites it unconditionally on *every* session start, so a second session silently replaces the transcript path an earlier session's Step 7 `capture-usage` will read — meaning cost records are likely already misattributed today, before any of this ticket's changes.
 
+**(d) Apply the same rule to every other shared-tree mutator.** Isolation is worthless if one unconverted command still checks out or stashes in the primary working directory — one `/lineup` run mid-executor undoes the whole ticket. An audit found five surfaces total; (a) covers two, and these three are the rest:
+
+  - **`.claude/commands/lineup.md:9`** runs `git checkout -B develop origin/develop` while describing it as a "read-only bootstrap." It is not read-only: `-B` force-moves the local `develop` ref and switches the working tree. `/lineup` genuinely only ever *reads* ticket files, so it needs no checkout at all — convert it to read from `origin/develop` directly, following `.claude/commands/promote.md:12`, which already does exactly this and is the reference implementation. Then fix `Docs/tickets/COMMANDS.md`'s row for `/lineup`, which currently claims `Unattended-safe? Yes — safe to schedule daily`; that is true only once this change lands, and is actively misleading until then, since a scheduled daily `/lineup` can clobber a running executor.
+  - **`.claude/commands/morning-review.md:14`** runs `git stash -u` and then checks out the PR's head branch. On a shared tree the stash sweeps up *another* concurrent session's uncommitted work, which is the most likely mechanism behind real observed data loss (see M-PIPELINE's Context note). Give it its own worktree — it is a pure review command and never needs the primary tree — and drop the stash step entirely, since a fresh worktree has nothing to stash.
+  - **`.claude/skills/ungate/SKILL.md:18`** cuts a `gates/<gate-slug>` branch in whatever directory it starts in. Same treatment: its own worktree. Keep the `gates/*` branch-prefix convention exactly as-is — the naming scheme is not what this ticket changes, only where the checkout happens.
+
+`.claude/skills/ticket-writer/SKILL.md`'s step 0 has the same shape (cut a `tickets/<milestone-slug>` branch) but expresses it as prose rather than a command. Convert it if doing so is mechanical; if it needs judgement about how the skill is invoked, leave it and note it in the report rather than expanding scope here.
+
+`.claude/commands/promote.md` and `.claude/commands/archive-implementation-notes.md` were audited and need no change — leave both alone.
+
 **Proving the claim mechanism.** No spike, and deliberately no probe branch: `EXECUTOR_ROUTINE.md`'s CRITICAL BRANCH RULES permit pushing only the current ticket's own feature branch, so a throwaway probe would violate the very rules this ticket is hardening. Instead this ticket's own execution is the experiment — its Step 2 claim push and its Step 6/7 final push are exactly the two-pushes-to-one-branch sequence under test. Step 2's existing prose flags that a second push to an already-existing branch "is not similarly known-safe" with the git proxy; this ticket settles that empirically. **If the second push is rejected, that is a legitimate finding, not a failure**: fall back to the harness-assigned branch exactly as Step 2's existing fallback already directs, record the rejection verbatim in the report under "Anything Alex must decide", and leave scope items (a) and (c) shipped. Do not spend iteration-cap attempts trying to force it through.
 
 Out of scope:
@@ -51,6 +64,8 @@ Exit condition (machine-checkable):
   - `Docs/tickets/EXECUTOR_ROUTINE.md` Step 1 case 4 names an explicit staleness threshold and only resumes a branch whose claim is older than it
   - `grep -c 'checkout -B develop' .claude/commands/promote-execute.md` returns `0` — it carries its own copy of the Step 0 bootstrap at line 12, independent of `executor.md`'s
   - `.claude/commands/promote-execute.md`'s step 6 "matching branch, no PR, not blocked" case applies the same staleness threshold as the routine's Step 1 case 4 — it is a **second, independently-worded copy of that same resume rule** (line 24), and fixing only the routine leaves `/promote-execute` able to hijack a live claim. Both copies must agree; consolidating them so the rule exists once is preferred over editing two copies to match, if that can be done without expanding scope.
+  - `grep -rlE 'checkout -B develop|git stash' .claude/commands/ .claude/skills/` returns no file — every shared-tree mutator identified in scope item (d) is converted, not just the two executor entrypoints
+  - `Docs/tickets/COMMANDS.md`'s `/lineup` row no longer claims unattended-safety on the strength of a force-checkout it no longer performs
   - the ticket's own final push either succeeded against its already-claimed branch (proving the second push is permitted) or was rejected and the rejection is recorded verbatim in the report — both are passing outcomes for this condition
 
 Iteration cap: 3 distinct approaches on any single failure, then Blocked Protocol
