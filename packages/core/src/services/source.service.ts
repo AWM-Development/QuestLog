@@ -2,7 +2,7 @@ import type { SourceStatus } from "@questlog/shared";
 import { and, desc, eq } from "drizzle-orm";
 import type { Database } from "../db/index.js";
 import { chunks, sources } from "../db/schema/index.js";
-import { NotFoundError } from "../lib/errors.js";
+import { NotFoundError, ValidationError } from "../lib/errors.js";
 import { first } from "../lib/utils.js";
 
 export interface CreateSourceInput {
@@ -52,6 +52,36 @@ export const sourceService = {
 				status: "pending",
 				metadata: { content: input.content },
 			})
+			.returning();
+		return first(rows);
+	},
+
+	/**
+	 * Append text onto a `pending` source's `metadata.content` (multi-call
+	 * chunked ingestion — T-065). Throws if processing has already started,
+	 * since appending after extraction has begun would race processSource's
+	 * read of that same field.
+	 */
+	async appendContent(db: Database, id: string, content: string) {
+		const existing = await this.getById(db, id);
+		if (existing.status !== "pending") {
+			throw new ValidationError(
+				`Source ${id} is not pending (status: ${existing.status}); cannot append content`,
+			);
+		}
+		const currentContent =
+			typeof existing.metadata?.content === "string"
+				? existing.metadata.content
+				: "";
+		const rows = await db
+			.update(sources)
+			.set({
+				metadata: {
+					...(existing.metadata ?? {}),
+					content: currentContent + content,
+				},
+			})
+			.where(eq(sources.id, id))
 			.returning();
 		return first(rows);
 	},
