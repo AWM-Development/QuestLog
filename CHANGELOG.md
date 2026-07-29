@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-036
+
+- **Post-merge smoke test against the real deployed dev environment**: a new GitHub Actions workflow (`.github/workflows/smoke-test-dev.yml`), triggered on push to `develop` (plus `workflow_dispatch` for on-demand runs), polls `questlog-dev`'s `/health` endpoint until the deploy is live, then runs `apps/server/scripts/smoke-test-dev.ts` — a real `campaign.create` -> `campaign.list` round trip through the live tRPC API, a direct Postgres connection confirming the schema and `vector`/`pg_trgm` extensions are present on the real database, then a scoped cleanup delete of the throwaway campaign. Separate from `ci.yml`'s per-PR gate entirely; a failure here means the code that just merged doesn't actually work against real infra, not a PR gate. Requires a new `DEV_DATABASE_URL` GitHub Actions secret Alex still needs to provision — see this ticket's report for the checklist.
+
 ### Changed — T-035
 
 - **`fly.dev.toml` and `Docs/DEPLOY_SETUP_CHECKLIST.md` updated for dev auto-deploy**: `fly.dev.toml`'s header comment no longer claims dev is manual-deploy-only — it now documents that `questlog-dev` will auto-deploy on every merge to `develop` via Fly's native GitHub integration, mirroring how `questlog-prod` already auto-deploys on merge to `main`. A new §3.1 subsection in `DEPLOY_SETUP_CHECKLIST.md` lists the exact Alex-only dashboard steps (connect `questlog-dev`'s GitHub integration to `develop`, confirm it builds via `fly.dev.toml`). The actual Fly dashboard connection is Alex-only and not done by this ticket — the milestone checkbox (M-CICD.1) stays unflipped until Alex confirms a real `develop` merge triggered a dev deploy.
