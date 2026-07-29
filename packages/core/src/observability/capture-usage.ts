@@ -87,7 +87,7 @@ export function resolveActiveTicketId(projectDir: string): string | null {
 	return resolveTicketId(readFileSync(markerPath, "utf-8"));
 }
 
-/** Fallback when tmp/.session-context.json is missing (T-035) — derives the same payload from CLAUDE_CODE_SESSION_ID + the CLI's transcript layout instead of skipping capture. See Docs/IMPLEMENTATION_NOTES.md § T-035 follow-up for why this stays a fallback, not the primary path. */
+/** Derives {transcript_path, session_id} from CLAUDE_CODE_SESSION_ID + the CLI's transcript layout under ~/.claude/projects. Used whenever stdin carries no JSON payload — the only invocation path since T-069 removed the session-start.sh stash file. See Docs/IMPLEMENTATION_NOTES.md § T-069. */
 export function resolveHookPayloadFromEnv(
 	claudeHomeDir: string,
 	sessionId: string | undefined,

@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Changed — T-069
+
+- **Nightly/interactive ticket execution is now concurrency-safe.** Each execution session works in its own git worktree (`tmp/worktrees/T-###/`), created from `origin/develop`, instead of checking out in the shared primary working directory — a locally-run `/executor` or `/promote-execute` no longer yanks the working tree out from under a concurrent session. Ticket pickup now pushes the feature branch immediately as a claim, turning the existing dedup check into a real mutex; resuming an apparently-abandoned claim now waits for a 6-hour staleness window before treating it as safe to take over, so two sessions can no longer land on the same branch. Usage-capture attribution across concurrent sessions no longer depends on a stashed `tmp/.session-context.json` file at all — that mechanism was removed in favor of deriving the transcript directly from `CLAUDE_CODE_SESSION_ID`, which sidesteps the collision problem entirely instead of just keying around it. Scheduled agent's prompt updated by Alex to match.
+
 ### Added — T-066
 
 - **`create_campaign` MCP tool**: a DM working entirely through an MCP-connected Claude session can now start a new campaign directly from chat, instead of needing the web app's `CampaignCreateModal`. Direct write (additive-only, no preview/confirm) — validates via the existing `CampaignCreateInput` schema (name, description, theme, gameSystem) and calls the existing `campaignService.create`. `list_campaigns`-first onboarding guidance now also mentions `create_campaign` for starting a new one.
