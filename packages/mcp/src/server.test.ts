@@ -1275,6 +1275,55 @@ describe("ingest_text + get_source_status tools", () => {
 		});
 
 		expect(secondResult.isError).toBe(true);
+		const secondContent = secondResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { error } = JSON.parse(secondContent[0]?.text ?? "{}");
+		expect(error).toEqual(
+			expect.objectContaining({ code: "VALIDATION_ERROR" }),
+		);
+	});
+
+	it("returns a structured not-found error when ingest_text's sourceId belongs to a different campaign", async () => {
+		const otherCampaign = await campaignService.create(db, {
+			name: "Other Campaign",
+			theme: "fantasy",
+		});
+		otherCampaignId = otherCampaign.id;
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const ingestResult = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Ashfall Primer",
+				content: "Some content.",
+				final: false,
+			},
+		});
+		const { source } = JSON.parse(
+			(ingestResult.content as Array<{ type: string; text: string }>)[0]
+				?.text ?? "{}",
+		);
+
+		const result = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId: otherCampaign.id,
+				title: "Ashfall Primer",
+				content: "More content.",
+				sourceId: source.id,
+			},
+		});
+
+		expect(result.isError).toBe(true);
+		const resultContent = result.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { error } = JSON.parse(resultContent[0]?.text ?? "{}");
+		expect(error).toEqual(expect.objectContaining({ code: "NOT_FOUND" }));
 	});
 
 	it("get_source_status returns a structured not-found error for a source outside the given campaign", async () => {

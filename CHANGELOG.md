@@ -14,6 +14,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 - **`ingest_text` supports multi-call chunked ingestion**: `IngestTextInput` gained optional `sourceId` and `final` fields. Passing the `source.id` echoed back from a previous call appends the new text onto that still-`pending` source instead of creating a new one; passing `final: false` skips triggering processing until the last chunk. This lets Claude split a large attached document's extracted text across several `ingest_text` calls instead of needing to regenerate the whole document as one JSON argument.
 - **`ingest_text`'s description and the onboarding instructions now tell the model to extract attached documents directly**: when the user attaches a PDF/DOCX/image, the model should extract its text and call `ingest_text` itself rather than asking the user to paste it, splitting long documents across multiple calls via `sourceId`/`final`. Both also now instruct the model to proactively call `get_source_status` after ingesting and narrate progress to the user.
+- **Fixed (review follow-up):** `ingest_text` now rejects a `sourceId` from another campaign (404 instead of silently appending), and the MCP tool layer now maps `ValidationError` to a structured `{ error: { code: "VALIDATION_ERROR", message } }` response instead of an unstructured error string.
 
 ### Fixed
 
