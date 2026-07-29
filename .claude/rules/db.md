@@ -28,4 +28,4 @@ Used for fuzzy entity matching (`word_similarity` for a low-threshold candidate 
 
 ## Test database
 
-`questlog_test` on `:5433` (docker-compose). `global-setup.ts` truncates tables between test files but does **not** run migrations — run `db:migrate` against it manually after pulling a new migration, or tests fail with missing-column errors.
+Each DB-touching package has its own physical test database on `:5433` (docker-compose) — `questlog_test_core` (`packages/core`), `questlog_test_server` (`apps/server`), `questlog_test_mcp` (`packages/mcp`/`apps/mcp-stdio`); canonical list in `scripts/test-db-names.sh` (T-071). `global-setup.ts` truncates tables between test files but does **not** run migrations — run `db:migrate` against each one manually after pulling a new migration, or tests fail with missing-column errors.
