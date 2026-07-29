@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Changed — T-070
+
+- **The rest of the ticket pipeline now follows T-069's worktree convention.** `/lineup` no longer force-checkouts `develop` while calling itself "read-only" — it genuinely is now, reading ticket files straight off `origin/develop`, so a scheduled `/lineup` run can no longer clobber a concurrent executor session's working tree; `COMMANDS.md` updated to reflect why it's safe to schedule unattended. `/morning-review` no longer `git stash -u`s before checking out a PR branch (which could sweep up a different session's uncommitted work) — it now reviews in its own worktree instead. `/ungate` cuts its `gates/<gate-slug>` branch in its own worktree too (the naming convention itself is unchanged). `ticket-writer`'s branch setup converted the same way.
+
 ### Changed — T-069
 
 - **Nightly/interactive ticket execution is now concurrency-safe.** Each execution session works in its own git worktree (`tmp/worktrees/T-###/`), created from `origin/develop`, instead of checking out in the shared primary working directory — a locally-run `/executor` or `/promote-execute` no longer yanks the working tree out from under a concurrent session. Ticket pickup now pushes the feature branch immediately as a claim, turning the existing dedup check into a real mutex; resuming an apparently-abandoned claim now waits for a 6-hour staleness window before treating it as safe to take over, so two sessions can no longer land on the same branch. Usage-capture attribution across concurrent sessions no longer depends on a stashed `tmp/.session-context.json` file at all — that mechanism was removed in favor of deriving the transcript directly from `CLAUDE_CODE_SESSION_ID`, which sidesteps the collision problem entirely instead of just keying around it. Scheduled agent's prompt updated by Alex to match.
