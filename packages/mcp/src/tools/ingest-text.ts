@@ -15,7 +15,7 @@ export function registerIngestText(
 			description:
 				"Create a new knowledge-base source from text or markdown and start processing it (chunking + embedding) in the background. Returns immediately with the source's id and pending status. " +
 				"If the user attaches a document (PDF/DOCX/image) to the conversation, extract its text yourself and call this tool directly - do not ask the user to paste it manually. " +
-				"For a long document, don't put the whole thing in one call: split the extracted text across multiple calls, passing the first call's returned source.id as sourceId on each subsequent call and final: false until the last chunk (final: true, the default, on the last one) so processing only starts once. " +
+				"If writing out the extracted text yourself would take more than roughly a page or two of your own response, don't put it all in one call: split it across multiple calls instead, passing the first call's returned source.id as sourceId on each subsequent call and final: false until the last chunk (final: true, the default, on the last one) so processing only starts once. " +
 				"After the final chunk, proactively call get_source_status to check progress and narrate it to the user.",
 			inputSchema: IngestTextInput,
 		},
