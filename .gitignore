@@ -36,6 +36,11 @@ coverage/
 # Executor session scratch state (session-start.sh / EXECUTOR_ROUTINE.md).
 # Lives under tmp/, not .claude/ — writes under .claude/ are gated behind an
 # interactive confirmation by the harness, which stalls unattended runs (T-062).
-tmp/.session-context.json
+# session-context is keyed by session_id (T-069) so concurrent sessions on one
+# checkout don't clobber each other's marker — see Docs/IMPLEMENTATION_NOTES.md § T-069.
+tmp/.session-context*.json
 tmp/.active-ticket
+
+# Per-ticket executor worktrees (T-069) — see Docs/IMPLEMENTATION_NOTES.md § T-069.
+tmp/worktrees/
 
