@@ -8,7 +8,7 @@
 		"build": "node scripts/build.mjs",
 		"test": "vitest run",
 		"test:e2e": "vitest run --config vitest.e2e.config.ts",
-		"typecheck": "tsc -b",
+		"typecheck": "tsc --noEmit",
 		"lint": "biome check .",
 		"smoke": "tsx scripts/smoke.ts"
 	},

@@ -3,17 +3,11 @@
 	"compilerOptions": {
 		"jsx": "react-jsx",
 		"lib": ["ES2022", "DOM", "DOM.Iterable"],
-		"outDir": "./dist",
-		"rootDir": "./src",
 		"paths": {
 			"@/*": ["./src/*"],
 			"@questlog/shared": ["../../packages/shared/src"],
 			"@questlog/server/*": ["../../apps/server/src/*"]
 		}
 	},
-	"include": ["src"],
-	"references": [
-		{ "path": "../../packages/shared" },
-		{ "path": "../../apps/server" }
-	]
+	"include": ["src"]
 }

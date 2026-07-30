@@ -1,9 +1,6 @@
 {
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
-		"composite": true,
-		"outDir": "./dist",
-		"rootDir": "./src",
 		"lib": ["ES2022"],
 		"paths": {
 			"@questlog/shared": ["../../packages/shared/src"],
@@ -13,10 +10,5 @@
 			"@questlog/mcp/*": ["../../packages/mcp/src/*"]
 		}
 	},
-	"include": ["src"],
-	"references": [
-		{ "path": "../../packages/shared" },
-		{ "path": "../../packages/core" },
-		{ "path": "../../packages/mcp" }
-	]
+	"include": ["src"]
 }

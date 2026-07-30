@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-093
+
+- **Dropped TypeScript composite project references repo-wide in favor of plain `tsc --noEmit`.** No tsconfig sets `composite: true` or a `references` array anymore — cross-package imports resolve entirely through each package's existing `paths` aliases, which is all that ever made them resolve. Nothing outside `tsc -b` itself consumed the emitted `dist/**`/`.typecheck-out/**` output, and the emit was the root cause of two live bugs: a concurrent-write race between `packages/core`'s and `packages/mcp`'s `tsc -b` runs (`turbo.json`'s `typecheck` task has no `dependsOn`, live-hit in PR #95/T-052), and `apps/server/tsconfig.json`'s `outDir` colliding with its esbuild bundle output. Both are now structurally impossible rather than coordinated around. Resolves gate `G-007` — see `Docs/tickets/gated/resolved/G-007-drop-typescript-composite-project-references.md` for the full decision.
+
 ### Fixed — T-038
 
 - **The MCP OAuth passphrase check is now constant-time.** `/authorize` was comparing the submitted passphrase with a plain `!==`, which can leak timing information about the real `MCP_ACCESS_PASSPHRASE`. It now hashes both sides and compares with `crypto.timingSafeEqual`. Found during a security review of the remote-MCP surface (full report: `Docs/tickets/reports/T-038-security-review-remote-mcp-surface.md`); no other severe findings.
