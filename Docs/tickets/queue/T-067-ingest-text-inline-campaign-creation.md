@@ -4,7 +4,6 @@ Milestone ref: M-REMOTE.8 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
 Priority: P1
 
-Blocked on: T-065 — must be merged into develop first (both tickets touch `IngestTextInput`/`ingest-text.ts`; sequencing avoids a schema merge conflict)
 
 Branch: feat/m-remote/t-067-ingest-text-inline-campaign-creation
 
