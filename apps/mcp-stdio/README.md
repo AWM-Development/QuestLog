@@ -1,10 +1,13 @@
 # @questlog/mcp-stdio
 
-The v1 interface to QuestLog: a stdio-transport binary exposing lore query,
-entity lookup, session logging, and prep-brief tools (defined in
-`packages/mcp`) over the same Postgres + pgvector backend `apps/server`
-uses. Connect it to Claude Desktop (or any MCP client) and talk to a
-campaign directly from a chat.
+The local interface to QuestLog: a stdio-transport binary exposing the full
+`packages/mcp` tool set — lore query, entity lookup/authoring, session
+logging, document ingestion, and prep-brief tools — over the same Postgres +
+pgvector backend `apps/server` uses. Connect it to Claude Desktop (or any MCP
+client) and manage a campaign directly from a chat. The same tools are also
+reachable remotely, without a local checkout, via `apps/server`'s Streamable
+HTTP transport (see the root `README.md`'s "Connecting to QuestLog" section)
+— this package is the local-only, stdio path.
 
 ## Prerequisites
 
@@ -120,16 +123,24 @@ except `list_campaigns` takes a `campaignId`, so start there:
 | Tool | Type | Purpose |
 |---|---|---|
 | `list_campaigns` | read | List campaigns (id, name, theme, etc.) — the entry point for finding a `campaignId` |
+| `create_campaign` | write (direct) | Create a new campaign from chat |
 | `query_lore` | read | Hybrid vector + keyword search over ingested campaign content |
 | `get_entity` | read | Look up an NPC/location/faction/item/arc by id or fuzzy name |
 | `list_entities` | read | List a campaign's entities, optionally filtered by type |
+| `create_entity` | write (direct) | Create a new NPC/location/faction/item/arc |
+| `append_entity_note` | write (direct) | Append a note to an existing entity's description, without overwriting it |
+| `ingest_text` | write (direct) | Chunk + embed pasted text (or an attached document's extracted text) into the campaign's knowledge base; supports multi-call chunked ingestion for long documents via `sourceId`/`final` |
+| `get_source_status` | read | Poll an `ingest_text` source's processing status (`pending` → `extracting` → `chunking` → `embedding` → `done`/`error`) |
 | `prep_brief` | read | "Previously on," active threads, likely NPCs, and loose ends for session prep |
 | `log_session` | write (preview) | Preview a session log: proposed entity links, chunking, and consolidation — writes nothing |
 | `confirm_log_session` | write (confirm) | Commit a previously-previewed `log_session` call using its token |
+| `help` | read | Returns the same onboarding workflow summary surfaced automatically at connection time |
 
 `log_session` never writes on its own — see `.claude/rules/mcp.md` if
-you're modifying these tools. Every write goes through preview → confirm so
-nothing lands in the database without an explicit second call.
+you're modifying these tools. Every tool that mutates *existing* data goes
+through preview → confirm; tools that only ever create a new row
+(`create_campaign`, `create_entity`, `append_entity_note`, `ingest_text`)
+are direct writes with no preview step, per `G-001`'s resolved scope.
 
 ## Troubleshooting
 
@@ -140,7 +151,7 @@ nothing lands in the database without an explicit second call.
   try the full path to your `node` binary (`which node`) as `command`
   instead of `"node"`.
 - **`query_lore` always returns empty citations:** confirm content has
-  actually been ingested for that campaign (via `log_session` +
+  actually been ingested for that campaign (via `ingest_text`, `log_session` +
   `confirm_log_session`, or the web app's ingestion flow) and that
   `VOYAGE_API_KEY` was set when that content was embedded — a missing key
   at embed time silently skips embedding rather than erroring.
