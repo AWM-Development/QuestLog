@@ -17,6 +17,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 ### Fixed — session-start.sh develop-sync guard
 
 - **`.claude/hooks/session-start.sh`'s develop-sync guard (T-041) now runs on local sessions too, not just remote.** It was gated behind `CLAUDE_CODE_REMOTE=true`, so a local session sitting on a stale branch never got its `.claude/commands`/`.claude/skills` files refreshed from `origin/develop` — surfaced when a `/ticket-writer` session on a branch cut before a fix merged gave stale instructions, then a later `/morning-review` session hit the same already-fixed bug because the primary directory was left on that stale branch. The guard's per-file merge-base safety check (never overwrites a branch's own committed edits) is ungated now; each actual refresh also prints to stdout instead of applying silently.
+- **Added a second, independent guard: local `develop` now self-heals when stale.** Commands like `/promote`/`/promote-execute` commit small changes directly onto `develop` in the primary directory, then push — with no fast-forward step first. If local `develop` was behind (a different ticket merged since), that push was rejected non-fast-forward with no documented recovery (observed live: `/promote-execute T-072` hit this after T-071 merged). `session-start.sh` now fast-forwards local `develop` to `origin/develop` at session start, but only when it's unambiguously safe: exactly on `develop`, with a clean working tree. Any other branch, or a dirty `develop`, is left untouched.
 
 ### Changed — T-070
 

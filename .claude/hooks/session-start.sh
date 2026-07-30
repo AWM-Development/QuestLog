@@ -9,26 +9,10 @@ pnpm install
 # --- develop-sync guard: begin (extracted verbatim by the T-041 repro
 #     harness — keep this block self-contained and don't rename the
 #     markers without updating the repro script that greps for them) ---
-# A session's working tree can start from a snapshot that predates a slash
-# command or skill being added to develop (e.g. cut from main, or from an
-# older point on develop), which leaves it undiscoverable until something
-# happens to fetch/checkout develop mid-session — observed locally, not just
-# on remote: a ticket-planning branch cut before a fix merged gave stale
-# instructions for both /ticket-writer and /morning-review in the same
-# session (Docs/IMPLEMENTATION_NOTES.md § T-070 follow-up). Originally gated
-# on `CLAUDE_CODE_REMOTE=true` (T-041) since the motivating case was a fresh
-# remote sandbox snapshot; ungated here since the staleness this guards
-# against is a property of the local working tree's branch, not of where the
-# session runs. Sync just these two tooling directories from origin/develop
-# so they're present from the first turn, without switching the session's
-# actual branch. Per-file, not per-directory: working-tree cleanliness alone
-# doesn't catch a file this branch has already committed but not yet merged,
-# so each candidate file is checked against the branch's merge-base with
-# origin/develop instead — only a file identical to that merge-base copy
-# (i.e. untouched by this branch, committed or not) gets overwritten with
-# develop's latest. Each actual overwrite is printed — silent staleness is
-# exactly what this block exists to prevent, so a silent fix would be a
-# regression in the same spirit. See Docs/IMPLEMENTATION_NOTES.md § T-041.
+# Refreshes .claude/commands/.claude/skills files from origin/develop that
+# this branch hasn't itself touched (merge-base diff, so a committed-but-
+# unmerged edit is never clobbered). Ungated from remote-only in the T-070
+# follow-up below. Why: Docs/IMPLEMENTATION_NOTES.md § T-041.
 git fetch origin develop --quiet 2>/dev/null || true
 merge_base="$(git merge-base HEAD origin/develop 2>/dev/null || true)"
 if [ -n "$merge_base" ]; then
@@ -46,6 +30,23 @@ if [ -n "$merge_base" ]; then
   fi
 fi
 # --- develop-sync guard: end ---
+
+# --- develop-ff guard: begin ---
+# Fast-forwards local develop only when safe (exactly on develop, clean tree)
+# so a direct-to-develop push (/promote, /promote-execute) doesn't get
+# rejected non-fast-forward. Why, not just what: Docs/IMPLEMENTATION_NOTES.md
+# § T-041 "Second follow-up".
+current_branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+if [ "$current_branch" = "develop" ] && git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null; then
+  before_sha="$(git rev-parse HEAD 2>/dev/null || true)"
+  if git merge --ff-only origin/develop --quiet 2>/dev/null; then
+    after_sha="$(git rev-parse HEAD 2>/dev/null || true)"
+    if [ -n "$after_sha" ] && [ "$before_sha" != "$after_sha" ]; then
+      echo "session-start.sh: fast-forwarded local develop $before_sha -> $after_sha"
+    fi
+  fi
+fi
+# --- develop-ff guard: end ---
 
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
