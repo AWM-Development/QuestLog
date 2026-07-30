@@ -33,6 +33,30 @@ against fixture campaign — see search.integration.test.ts:84".>
 <PASS | PASS-WITH-NOTES | FAIL, plus the reviewer subagent's file:line notes
 verbatim. If FAIL and a remediation pass was made, show before/after.>
 
+## Efficiency notes
+
+<Self-report, in your own words, why this run ran long or stayed tight — the
+kind of thing only the agent doing the work can know. This is the
+qualitative half of the observability system T-046's hook/schema/JSON
+artifact provides the quantitative half of (tokens, cost, duration) — don't
+duplicate T-046's mechanics here, just narrate. E.g.:
+- "given superfluous frontend context on a backend-only ticket"
+- "had to refactor a non-standard existing pattern before the new
+  implementation could proceed"
+- "exit condition required an integration test the ticket's Context files
+  didn't mention, so context had to be pulled in mid-ticket"
+
+**Retry log:** for each Red/Green iteration in Step 4 that failed and
+triggered a retry (each "distinct approach" counted against the ticket's
+iteration cap), record a cause category and a total count:
+- `environment_setup` — a DB/config/tooling problem, not the ticket's own logic
+- `mechanical_lint_typecheck` — a lint/typecheck failure, not a test failure
+- `genuine_bug_caught_by_test` — the test suite correctly caught a real logic error
+
+e.g. "2 retries: 1 environment_setup (Postgres container not migrated), 1
+genuine_bug_caught_by_test (off-by-one in chunk offset)." "0 retries" is a
+valid, common answer.
+
 ## Anything Alex must decide
 
 <Any 🧠-gated checkpoint skipped this ticket — cite the `G-###` gate-stub
