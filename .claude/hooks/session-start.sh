@@ -156,5 +156,5 @@ for dbname in "${TEST_DB_NAMES[@]}"; do
     sudo -u postgres psql -p "$PGPORT" -c "CREATE DATABASE ${dbname} OWNER ${DB_USER}"
   fi
   DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${PGPORT}/${dbname}" \
-    pnpm --filter @questlog/server db:migrate
+    ${TEST_DB_MIGRATE_CMD[$dbname]}
 done
