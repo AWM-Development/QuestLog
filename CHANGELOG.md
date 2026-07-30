@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Fixed — session-start.sh develop-sync guard
+
+- **`.claude/hooks/session-start.sh`'s develop-sync guard (T-041) now runs on local sessions too, not just remote.** It was gated behind `CLAUDE_CODE_REMOTE=true`, so a local session sitting on a stale branch never got its `.claude/commands`/`.claude/skills` files refreshed from `origin/develop` — surfaced when a `/ticket-writer` session on a branch cut before a fix merged gave stale instructions, then a later `/morning-review` session hit the same already-fixed bug because the primary directory was left on that stale branch. The guard's per-file merge-base safety check (never overwrites a branch's own committed edits) is ungated now; each actual refresh also prints to stdout instead of applying silently.
+
 ### Changed — T-070
 
 - **The rest of the ticket pipeline now follows T-069's worktree convention.** `/lineup` no longer force-checkouts `develop` while calling itself "read-only" — it genuinely is now, reading ticket files straight off `origin/develop`, so a scheduled `/lineup` run can no longer clobber a concurrent executor session's working tree; `COMMANDS.md` updated to reflect why it's safe to schedule unattended. `/morning-review` no longer `git stash -u`s before checking out a PR branch (which could sweep up a different session's uncommitted work) — it now reviews in its own worktree instead. `/ungate` cuts its `gates/<gate-slug>` branch in its own worktree too (the naming convention itself is unchanged). `ticket-writer`'s branch setup converted the same way.
