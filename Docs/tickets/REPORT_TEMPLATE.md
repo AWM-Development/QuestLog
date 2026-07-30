@@ -11,6 +11,8 @@ Written to `Docs/tickets/reports/T-###-slug.md` on completion (shipped or blocke
 **Outcome:** shipped | blocked
 **Branch:** feat/<milestone>/<slug>
 **Diff:** <N files changed, +X/-Y lines>
+**Complexity tier:** S | M | L (from the ticket)
+**Strategy-gate flag:** yes | no (from the ticket)
 
 ## What shipped
 

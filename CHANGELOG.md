@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-050
+
+- **Tickets now carry a `Complexity tier` and a `Strategy-gate flag`.** `TICKET_SPEC.md`'s fixed ticket format gains two new fields under `Milestone ref:`: `Complexity tier: S | M | L`, sized by a documented rubric (single-file/established-pattern vs. multi-file/new-service vs. new-subsystem/cross-cutting), and `Strategy-gate flag: yes | no`, a provenance marker for whether the ticket only became draftable after resolving a 🎨/🧠 gate. `ticket-writer` now assigns both on every future ticket; `REPORT_TEMPLATE.md` and `EXECUTOR_ROUTINE.md`'s Step 7 echo them into the morning report. Lays the groundwork for tier-relative cost/efficiency metrics (M-OBS.3/M-EFFICIENCY.3) without any DB/API/dashboard changes yet.
+
 ### Added — T-047
 
 - **Morning reports now carry a required "Efficiency notes" section.** `REPORT_TEMPLATE.md` and `BLOCKED_TEMPLATE.md` both add a section where the executor self-reports, in its own words, why a run ran long or stayed tight — plus a structured retry log categorizing each Red/Green retry as `environment_setup`, `mechanical_lint_typecheck`, or `genuine_bug_caught_by_test`. This is the qualitative complement to T-046's objective token/cost/duration data. `EXECUTOR_ROUTINE.md` Step 6/7 now reference writing it explicitly.
