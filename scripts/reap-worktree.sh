@@ -31,6 +31,7 @@ fi
 export CLAUDE_PROJECT_DIR="$(pwd)/$WORKTREE_PATH"
 # shellcheck source=/dev/null
 source scripts/worktree-postgres-env.sh
+set +e
 
 if [ -n "$(docker compose -p "$COMPOSE_PROJECT_NAME" ps -q 2>/dev/null)" ]; then
   echo "reap-worktree: tearing down Postgres stack '$COMPOSE_PROJECT_NAME'"
