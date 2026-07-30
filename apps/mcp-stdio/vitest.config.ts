@@ -22,15 +22,7 @@ export default defineConfig({
 		// bypasses Vite's resolver. Cross-package import is intentional. Why:
 		// Docs/IMPLEMENTATION_NOTES.md § T-027.
 		globalSetup: ["../../packages/core/src/db/global-setup.ts"],
-		// ".typecheck-out" isn't excluded by configDefaults (only "dist" is) —
-		// without this, vitest's default include pattern (which matches .js as
-		// well as .ts) picks up tsc -b's compiled test output there too, and
-		// every test in src/ runs a second time against the compiled copy.
-		exclude: [
-			...configDefaults.exclude,
-			"**/*.e2e.test.ts",
-			"**/.typecheck-out/**",
-		],
+		exclude: [...configDefaults.exclude, "**/*.e2e.test.ts"],
 		env: {
 			// Own physical database, isolated from every other package's
 			// (apps/server's questlog_test_server, packages/core's
