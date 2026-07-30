@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-047
+
+- **Morning reports now carry a required "Efficiency notes" section.** `REPORT_TEMPLATE.md` and `BLOCKED_TEMPLATE.md` both add a section where the executor self-reports, in its own words, why a run ran long or stayed tight — plus a structured retry log categorizing each Red/Green retry as `environment_setup`, `mechanical_lint_typecheck`, or `genuine_bug_caught_by_test`. This is the qualitative complement to T-046's objective token/cost/duration data. `EXECUTOR_ROUTINE.md` Step 6/7 now reference writing it explicitly.
+
 ### Changed — T-094
 
 - **Retired the `.integration.test.ts` naming tier.** All 13 files using that suffix are renamed to plain `*.test.ts` — every vitest config already ran both in the same default tier (splitting out only `*.e2e.test.ts`), so the suffix signaled nothing a config or contributor could rely on. Test conventions docs (`.claude/rules/backend.md`, `.claude/skills/tdd-loop/SKILL.md`, `Docs/DEVELOPMENT_GUIDE.md`) now state plainly that unit and integration tests share one suffix. Resolves gate `G-009` — see `Docs/tickets/gated/resolved/G-009-integration-test-suffix-retire-or-enforce.md` for the full decision.

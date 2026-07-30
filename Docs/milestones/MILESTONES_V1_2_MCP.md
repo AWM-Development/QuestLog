@@ -32,7 +32,7 @@ This milestone builds the actual instrumentation instead of continuing to guess:
   A Claude Code `Stop` hook that parses the run's own JSONL transcript (the only ground truth for token usage available on this account) and writes a per-run artifact — tokens, theoretical cost at current Sonnet 5 rates, duration, turn count — tagged by ticket id or `empty_run: true` for no-ticket-queued runs.
   Exit: a simulated hook invocation against a fixture transcript produces the expected `*.usage.json` shape, including the empty-run case.
 
-- [ ] **M-OBS.2 — Efficiency-notes reporting convention** (T-047)
+- [x] **M-OBS.2 — Efficiency-notes reporting convention** (T-047)
   A required "Efficiency notes" section in `REPORT_TEMPLATE.md`/`BLOCKED_TEMPLATE.md` where the executor self-reports *why* a run ran long or tight (e.g. superfluous context, pre-existing code needing a fix before the real work could start) — the qualitative half T-046's objective data can't provide on its own.
   Exit: both templates carry the new section; `EXECUTOR_ROUTINE.md` explicitly instructs writing it.
 
