@@ -5,38 +5,17 @@ import {
 	StdioClientTransport,
 	getDefaultEnvironment,
 } from "@modelcontextprotocol/sdk/client/stdio.js";
+import {
+	EXPECTED_TOOLS,
+	withTimeout,
+} from "@questlog/shared/testing/mcp-verification.js";
 
 // Spawns the *built* dist/main.js over stdio, the same way a real MCP
 // client (e.g. Claude Desktop) would — proof the documented setup actually
 // boots, distinct from server.test.ts's in-process InMemoryTransport pair,
 // which never exercises main.ts, dist/, or a real child process transport.
 
-const EXPECTED_TOOLS = [
-	"query_lore",
-	"prep_brief",
-	"list_campaigns",
-	"list_entities",
-	"get_entity",
-	"log_session",
-	"confirm_log_session",
-];
-
 const HANDSHAKE_TIMEOUT_MS = 15_000;
-
-function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
-	return Promise.race([
-		promise,
-		new Promise<T>((_, reject) => {
-			setTimeout(
-				() =>
-					reject(
-						new Error(`Timed out after ${HANDSHAKE_TIMEOUT_MS}ms: ${label}`),
-					),
-				HANDSHAKE_TIMEOUT_MS,
-			);
-		}),
-	]);
-}
 
 async function main() {
 	if (!process.env.DATABASE_URL) {
@@ -61,10 +40,18 @@ async function main() {
 	});
 	const client = new Client({ name: "questlog-mcp-smoke", version: "0.0.0" });
 
-	await withTimeout(client.connect(transport), "MCP initialize handshake");
+	await withTimeout(
+		client.connect(transport),
+		"MCP initialize handshake",
+		HANDSHAKE_TIMEOUT_MS,
+	);
 	console.log(`Initialize handshake succeeded against ${distEntry}`);
 
-	const { tools } = await withTimeout(client.listTools(), "tools/list");
+	const { tools } = await withTimeout(
+		client.listTools(),
+		"tools/list",
+		HANDSHAKE_TIMEOUT_MS,
+	);
 	const names = tools.map((tool) => tool.name).sort();
 	console.log(`Server reported ${names.length} tool(s): ${names.join(", ")}`);
 
