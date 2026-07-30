@@ -21,7 +21,7 @@ Open question: Now that `/mcp` has real bearer-token auth (M-REMOTE.2/T-029),
   token to yet)? If closing: same bearer-token scheme as `/mcp`, or
   something lighter suited to same-origin browser calls?
 
-Blocks: T-089 (`Docs/tickets/backlog/T-089-upload-endpoint-auth-gap-decision.md`)
+Blocks: T-092 (`Docs/tickets/backlog/T-092-upload-endpoint-auth-gap-decision.md`)
 
 Notes: Practical exploitability is low today (campaign ids are
   unguessable UUIDs, single-user tool), but both endpoints are live on

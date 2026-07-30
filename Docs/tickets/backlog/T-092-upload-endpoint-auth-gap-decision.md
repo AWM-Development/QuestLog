@@ -1,4 +1,4 @@
-# T-089 — Close (or formally accept) the unauthenticated upload/conversation-stream endpoints
+# T-092 — Close (or formally accept) the unauthenticated upload/conversation-stream endpoints
 
 Milestone ref: none — follow-up from T-038's security review (`Docs/tickets/reports/T-038-security-review-remote-mcp-surface.md`, Area 4)
 
@@ -6,7 +6,7 @@ Priority: P1
 
 Gated on: G-017 — must be resolved via /ungate first
 
-Branch: feat/m-audit/t-089-upload-endpoint-auth-gap-decision
+Branch: feat/m-audit/t-092-upload-endpoint-auth-gap-decision
 
 Context files (load ONLY these):
   - apps/server/src/server.ts (`POST /api/campaigns/:campaignId/sources/upload` and `POST /api/conversation/:conversationId/stream` — both completely unauthenticated; `registerMcpOauthRoutes`/`registerMcpHttpRoutes` calls just above them, for contrast)

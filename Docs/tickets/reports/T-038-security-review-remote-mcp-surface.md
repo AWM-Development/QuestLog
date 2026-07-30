@@ -6,7 +6,7 @@
 
 ## What shipped
 
-A written security review of the M-REMOTE/M-CICD surface (OAuth shim, `/mcp` transport, new write tools, CI secrets), covering all 6 areas the ticket scoped. One trivial finding (non-constant-time passphrase comparison) was fixed inline with a regression test. Two substantive findings were filed as follow-up tickets (`T-088`, `T-089` — the latter gated on `G-017`, since it needs Alex's judgment call). No severe finding (nothing letting an unauthenticated party read/write real campaign data through the *new* surface, or exfiltrate a secret) was found.
+A written security review of the M-REMOTE/M-CICD surface (OAuth shim, `/mcp` transport, new write tools, CI secrets), covering all 6 areas the ticket scoped. One trivial finding (non-constant-time passphrase comparison) was fixed inline with a regression test. Two substantive findings were filed as follow-up tickets (`T-091`, `T-092` — the latter gated on `G-017`, since it needs Alex's judgment call). No severe finding (nothing letting an unauthenticated party read/write real campaign data through the *new* surface, or exfiltrate a secret) was found.
 
 ## Findings by area
 
@@ -16,7 +16,7 @@ A written security review of the M-REMOTE/M-CICD surface (OAuth shim, `/mcp` tra
 - **Passphrase comparison was not timing-safe — FIXED.** `fields.passphrase !== accessPassphrase` (a plain string `!==`) is a textbook timing side-channel against a shared secret. Fixed inline: hash both sides to a fixed-length SHA-256 digest, then `crypto.timingSafeEqual` (`mcp-oauth.routes.ts`, new `timingSafeStringEqual` helper). Hashing first also sidesteps `timingSafeEqual`'s own length-mismatch throw, which a naive raw-buffer comparison would hit for any wrong-length passphrase. Test added: `mcp-oauth.routes.integration.test.ts` — "wrong passphrase / is rejected without a 500 even when its length differs from the real passphrase."
 - **Authorization codes are single-use and short-lived.** `AUTHORIZATION_CODE_TTL_MS = 60_000`; `exchangeAuthorizationCode` claims the code via an atomic `UPDATE ... SET used = true WHERE used = false AND expiresAt > now()`, so a losing concurrent exchange or a replay sees zero rows, not a race (`mcp-oauth.service.ts:81-99`). Confirmed by existing tests ("rejects a used authorization code redeemed a second time", "rejects an expired authorization code").
 - **PKCE (S256) is genuinely enforced, not merely accepted-if-present.** `code_challenge_method` is `z.literal("S256")` in the schema (no "plain" downgrade possible), `code_verifier` is `min(1)` (required, not optional), and `exchangeAuthorizationCode` always calls `matchesPkceChallenge` — there's no code path that skips this check. Confirmed by existing test "rejects a code whose code_verifier doesn't match the original code_challenge."
-- **`/token` does *not* validate `resource` against this server's own URL.** It only checks that the `resource` presented at `/token` matches the value stored at `/authorize` time — never against the server's actual issuer URL. Not exploitable in this single-resource deployment (nothing downstream keys off `resource`), but the RFC 8707 audience-binding guarantee the discovery metadata implies doesn't actually hold. **Filed as `T-088`.**
+- **`/token` does *not* validate `resource` against this server's own URL.** It only checks that the `resource` presented at `/token` matches the value stored at `/authorize` time — never against the server's actual issuer URL. Not exploitable in this single-resource deployment (nothing downstream keys off `resource`), but the RFC 8707 audience-binding guarantee the discovery metadata implies doesn't actually hold. **Filed as `T-091`.**
 
 ### 2. Transport-layer auth
 
@@ -31,7 +31,7 @@ A written security review of the M-REMOTE/M-CICD surface (OAuth shim, `/mcp` tra
 
 ### 4. The pre-existing unauthenticated upload endpoint
 
-- Confirmed: `POST /api/campaigns/:campaignId/sources/upload` and `POST /api/conversation/:conversationId/stream` (`apps/server/src/server.ts`) have zero authentication, on the same public Fly app that now gates `/mcp` behind a bearer token. Both are live today on `questlog-dev.fly.dev`/`questlog-prod.fly.dev` (`Docs/DEPLOY_SETUP_CHECKLIST.md` §2) — a real, deployed gap, not hypothetical. Practical exploitability is low (campaign ids are unguessable UUIDs, single-user tool), but naming it either way per the ticket's own instruction: this is a real inconsistency, not silently accepted. **Filed as `T-089`, gated on `G-017`** — whether to close this is Alex's call (the local web UI hitting these routes has no auth/session story of its own to attach a token to yet), not something to decide unilaterally.
+- Confirmed: `POST /api/campaigns/:campaignId/sources/upload` and `POST /api/conversation/:conversationId/stream` (`apps/server/src/server.ts`) have zero authentication, on the same public Fly app that now gates `/mcp` behind a bearer token. Both are live today on `questlog-dev.fly.dev`/`questlog-prod.fly.dev` (`Docs/DEPLOY_SETUP_CHECKLIST.md` §2) — a real, deployed gap, not hypothetical. Practical exploitability is low (campaign ids are unguessable UUIDs, single-user tool), but naming it either way per the ticket's own instruction: this is a real inconsistency, not silently accepted. **Filed as `T-092`, gated on `G-017`** — whether to close this is Alex's call (the local web UI hitting these routes has no auth/session story of its own to attach a token to yet), not something to decide unilaterally.
 
 ### 5. New CI secrets
 
@@ -73,7 +73,7 @@ $ pnpm --filter @questlog/server test -- mcp-oauth.routes.integration
 ## Exit condition check
 
 - **Written report covering all 6 areas, each with concrete findings or explicit "nothing found."** ✅ — above.
-- **Every substantive finding has a corresponding ticket filed in `Docs/tickets/backlog/`, linked from the report.** ✅ — `T-088` (resource/audience binding) and `T-089` (upload/conversation auth gap, gated on `G-017`).
+- **Every substantive finding has a corresponding ticket filed in `Docs/tickets/backlog/`, linked from the report.** ✅ — `T-091` (resource/audience binding) and `T-092` (upload/conversation auth gap, gated on `G-017`).
 - **Any trivial inline fixes are a small, reviewable diff, called out separately from the filed-tickets list.** ✅ — `apps/server/src/routes/mcp-oauth.routes.ts` + its integration test, +30/-1 lines, commit `2bed1b1`.
 - **Any severe finding is flagged per the Blocked Protocol, not silently patched.** ✅ (vacuously) — no severe finding (nothing letting an unauthenticated party read/write real campaign data through the *new* M-REMOTE/M-CICD surface, or exfiltrate a secret). The upload-endpoint gap (area 4) is real but pre-existing, low-practical-severity, and named/gated rather than silently patched or escalated as severe.
 
@@ -85,6 +85,6 @@ Not applicable in the usual sense — `EXECUTOR_ROUTINE.md` Step 5 invokes the `
 
 ## Anything Alex must decide
 
-- **`G-017`** (blocks `T-089`): should `POST /api/campaigns/:campaignId/sources/upload` and `POST /api/conversation/:conversationId/stream` gain the same bearer-token auth `/mcp` has, or is leaving them open an accepted v1 tradeoff given the local web UI has no auth/session story of its own yet to attach a token to? See `Docs/tickets/gated/G-017-upload-endpoint-auth-tradeoff.md`.
-- `T-088` (resource/audience binding gap) is filed as `P2`, not `P1` — it's a real spec-compliance gap but not currently exploitable in this single-resource deployment; flag if that priority reads wrong.
-- No milestone checkbox was flipped for `T-088`/`T-089` themselves — neither exists as a milestone task line (both are review follow-ups, same convention `T-068` already used), only `M-AUDIT.2`'s own checkbox (this ticket) is flipped.
+- **`G-017`** (blocks `T-092`): should `POST /api/campaigns/:campaignId/sources/upload` and `POST /api/conversation/:conversationId/stream` gain the same bearer-token auth `/mcp` has, or is leaving them open an accepted v1 tradeoff given the local web UI has no auth/session story of its own yet to attach a token to? See `Docs/tickets/gated/G-017-upload-endpoint-auth-tradeoff.md`.
+- `T-091` (resource/audience binding gap) is filed as `P2`, not `P1` — it's a real spec-compliance gap but not currently exploitable in this single-resource deployment; flag if that priority reads wrong.
+- No milestone checkbox was flipped for `T-091`/`T-092` themselves — neither exists as a milestone task line (both are review follow-ups, same convention `T-068` already used), only `M-AUDIT.2`'s own checkbox (this ticket) is flipped.

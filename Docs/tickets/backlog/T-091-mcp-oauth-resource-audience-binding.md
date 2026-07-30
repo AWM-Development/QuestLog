@@ -1,10 +1,10 @@
-# T-088 — Validate the OAuth `resource` parameter against this server's own URL
+# T-091 — Validate the OAuth `resource` parameter against this server's own URL
 
 Milestone ref: none — follow-up from T-038's security review (`Docs/tickets/reports/T-038-security-review-remote-mcp-surface.md`, Area 1)
 
 Priority: P2
 
-Branch: feat/m-audit/t-088-mcp-oauth-resource-audience-binding
+Branch: feat/m-audit/t-091-mcp-oauth-resource-audience-binding
 
 Context files (load ONLY these):
   - apps/server/src/routes/mcp-oauth.routes.ts (`/authorize` and `/token` handlers — where `resource` is accepted and would need checking against `baseUrl(request)`)
