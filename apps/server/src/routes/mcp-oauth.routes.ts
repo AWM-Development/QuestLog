@@ -1,3 +1,4 @@
+import { createHash, timingSafeEqual } from "node:crypto";
 import type { Database } from "@questlog/core/db/index.js";
 import { OAuthError } from "@questlog/core/lib/errors.js";
 import { first } from "@questlog/core/lib/utils.js";
@@ -19,6 +20,20 @@ async function isValidClientRedirect(
 ) {
 	const client = await mcpOauthService.getClient(db, clientId);
 	return client !== null && client.redirectUri === redirectUri;
+}
+
+/**
+ * Constant-time string equality. Comparing raw strings with `!==` (or
+ * `crypto.timingSafeEqual` on differently-sized buffers, which throws) lets
+ * an attacker recover the passphrase byte-by-byte / its length from response
+ * timing. Hashing both sides to a fixed 32-byte digest first sidesteps the
+ * length-mismatch throw entirely while keeping the comparison itself
+ * constant-time.
+ */
+function timingSafeStringEqual(a: string, b: string): boolean {
+	const hashA = createHash("sha256").update(a).digest();
+	const hashB = createHash("sha256").update(b).digest();
+	return timingSafeEqual(hashA, hashB);
 }
 
 function sendOAuthError(reply: FastifyReply, error: unknown) {
@@ -124,7 +139,7 @@ export function registerMcpOauthRoutes(
 		if (
 			!accessPassphrase ||
 			!validClientRedirect ||
-			fields.passphrase !== accessPassphrase
+			!timingSafeStringEqual(fields.passphrase, accessPassphrase)
 		) {
 			if (!accessPassphrase) {
 				return reply.status(500).send({
