@@ -4,7 +4,6 @@ Milestone ref: M-PIPELINE.7 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
 Priority: P0
 
-Blocked on: T-072 — must be merged into develop first
 
 Branch: feat/m-pipeline/t-087-worktree-postgres-reaping
 
