@@ -1,7 +1,15 @@
 const HOST = "localhost";
-const PORT = 5433;
+const DEFAULT_PORT = 5433;
 const USER = "questlog";
 const PASSWORD = "questlog";
+
+// Resolved per call, not cached — so vi.stubEnv and late overrides both work (T-072).
+function resolvePort(): number {
+	const raw = process.env.QUESTLOG_PG_PORT;
+	if (!raw) return DEFAULT_PORT;
+	const parsed = Number(raw);
+	return Number.isFinite(parsed) ? parsed : DEFAULT_PORT;
+}
 
 /**
  * Builds the local docker-compose Postgres connection string for a given
@@ -9,10 +17,11 @@ const PASSWORD = "questlog";
  * `postgresql://questlog:questlog@localhost:5433/<dbname>` literal that used
  * to be hand-typed across both packages' vitest configs, test-helpers.ts's
  * fallback, and migrate.ts's fallback — collapsed here so all of them stay
- * in sync if the local stack's host/port/credentials ever change.
+ * in sync if the local stack's host/port/credentials ever change. Reads
+ * `QUESTLOG_PG_PORT` first (T-072) — no call-site changes needed.
  */
 export function testDbUrl(dbname: string): string {
-	return `postgresql://${USER}:${PASSWORD}@${HOST}:${PORT}/${dbname}`;
+	return `postgresql://${USER}:${PASSWORD}@${HOST}:${resolvePort()}/${dbname}`;
 }
 
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1"]);

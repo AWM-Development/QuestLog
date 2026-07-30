@@ -121,7 +121,7 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   Resolved via `/ungate` (`G-008`): every DB-touching package gets its own physical test database; `test: { dependsOn: ["^test"] }` is deleted. Removes the implicit "core's run must finish first" contract that caused T-052 and a still-live `test:e2e`-tier race (no `dependsOn` exists on that task at all today). CI provisioning must be a loop over `scripts/test-db-names.sh`'s array, not a copy-paste per database — the condition Alex attached to calling this a simplification rather than sprawl.
   Exit: see T-071.
 
-- [ ] **M-PIPELINE.4 — Per-worktree Postgres instance for concurrent local test runs** (T-072)
+- [x] **M-PIPELINE.4 — Per-worktree Postgres instance for concurrent local test runs** (T-072)
   Resolved via `/ungate` (`G-008`, second axis, added during `T-069`'s ticket-writing): each worktree runs its own Postgres container on its own port rather than per-worktree database names inside a shared instance — sidesteps a per-worktree DB lifecycle (create/migrate/reap) entirely; reaping is `docker compose down`. Local-only; CI is untouched (isolated service container per run already). Blocked on `T-069`'s worktree convention landing first.
   Exit: see T-072.
 

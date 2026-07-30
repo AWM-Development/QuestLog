@@ -49,6 +49,28 @@ fi
 # --- develop-ff guard: end ---
 
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
+  # Worktree-scoped Postgres provisioning (T-072) — see Docs/IMPLEMENTATION_NOTES.md § T-072.
+  case "$CLAUDE_PROJECT_DIR" in
+    */tmp/worktrees/*) ;;
+    *) exit 0 ;;
+  esac
+  source "$CLAUDE_PROJECT_DIR/scripts/worktree-postgres-env.sh"
+  echo "session-start.sh: worktree '${WORKTREE_NAME}' -> Postgres :${QUESTLOG_PG_PORT} (project ${COMPOSE_PROJECT_NAME})"
+
+  docker compose up -d
+
+  for _ in $(seq 1 30); do
+    pg_isready -h localhost -p "$QUESTLOG_PG_PORT" -q && break
+    sleep 1
+  done
+
+  # Test-tier only (TEST_DB_NAMES_CI excludes the dev DB) — see § T-072.
+  source "$CLAUDE_PROJECT_DIR/scripts/test-db-names.sh"
+  for dbname in "${TEST_DB_NAMES_CI[@]}"; do
+    DATABASE_URL="postgresql://questlog:questlog@localhost:${QUESTLOG_PG_PORT}/${dbname}" \
+      pnpm --filter @questlog/server db:migrate
+  done
+
   exit 0
 fi
 

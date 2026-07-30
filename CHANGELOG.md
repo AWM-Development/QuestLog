@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-072
+
+- **Each git worktree (T-069's per-ticket convention) now runs its own local Postgres instance instead of sharing the primary directory's `:5433`.** `session-start.sh`, when run inside a `tmp/worktrees/T-###/` checkout, derives a per-worktree port and `docker compose` project name from the worktree's identity, brings up that worktree's own compose stack, and migrates its test-tier databases — so concurrent local sessions can never truncate or overwrite each other's test data. `testDbUrl()` now reads the port from `QUESTLOG_PG_PORT` (falling back to 5433) so every existing call site picks up the override automatically. The primary working directory's own Postgres instance is unaffected — still `:5433`, no config change needed. Confirmed local-only: remote/sandboxed sessions each provision their own native Postgres already and never share one process.
+
 ### Changed — T-071
 
 - **Every DB-touching package now runs its tests against its own physical database.** `packages/core` and `apps/server` no longer share `questlog_test` — each gets its own (`questlog_test_core`, `questlog_test_server`), matching `questlog_test_mcp`'s existing isolation. `turbo.json`'s `test.dependsOn: ["^test"]`, the ordering that previously stood in for isolation between those two packages, is deleted — no package's test correctness depends on another package's task finishing first anymore, and this closes an identical, previously-unfixed race on the `test:e2e` tier. CI provisioning in `ci.yml`/`e2e-release-check.yml` is now one generic loop over `scripts/test-db-names.sh`'s test-tier name list instead of two separate hardcoded steps — a new database only needs one name added to that list, not a new workflow step.

@@ -7,6 +7,10 @@ import {
 } from "./test-db-url.js";
 
 describe("testDbUrl", () => {
+	afterEach(() => {
+		vi.unstubAllEnvs();
+	});
+
 	it("builds a local Postgres connection string for the given database name", () => {
 		expect(testDbUrl("questlog_test")).toBe(
 			"postgresql://questlog:questlog@localhost:5433/questlog_test",
@@ -16,6 +20,30 @@ describe("testDbUrl", () => {
 	it("swaps in a different database name without changing host/port/credentials", () => {
 		expect(testDbUrl("questlog_test_mcp")).toBe(
 			"postgresql://questlog:questlog@localhost:5433/questlog_test_mcp",
+		);
+	});
+
+	it("uses QUESTLOG_PG_PORT when set, so a per-worktree override needs no call-site changes", () => {
+		vi.stubEnv("QUESTLOG_PG_PORT", "5501");
+
+		expect(testDbUrl("questlog_test")).toBe(
+			"postgresql://questlog:questlog@localhost:5501/questlog_test",
+		);
+	});
+
+	it("falls back to 5433 when QUESTLOG_PG_PORT is unset", () => {
+		vi.stubEnv("QUESTLOG_PG_PORT", undefined);
+
+		expect(testDbUrl("questlog_test")).toBe(
+			"postgresql://questlog:questlog@localhost:5433/questlog_test",
+		);
+	});
+
+	it("falls back to 5433 when QUESTLOG_PG_PORT is not a valid number", () => {
+		vi.stubEnv("QUESTLOG_PG_PORT", "not-a-port");
+
+		expect(testDbUrl("questlog_test")).toBe(
+			"postgresql://questlog:questlog@localhost:5433/questlog_test",
 		);
 	});
 });
