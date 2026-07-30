@@ -39,3 +39,26 @@ Notes: Not just an implementation detail — `entities` is the only one of
   intact and still resolve, since the row itself isn't gone) — it only
   needs a policy decision for *new* activity involving an archived
   entity (e.g. can `append_entity_note` target an archived entity?).
+
+## Resolution (2026-07-30)
+
+Decided with Alex via `/ungate`:
+
+1. **Storage: soft-archive.** Add a `status` column to `entities` (`text`,
+   `notNull`, `default("active")`), same shape as `campaigns.status`. No
+   hard delete.
+2. **Reference handling: no cascade/block logic needed.** Because the
+   entity row never disappears, `session_entities`/`entity_relationships`
+   rows referencing it keep resolving exactly as before — soft-archive
+   sidesteps this axis entirely, as flagged in this gate's own Notes.
+3. **Writes against an archived entity: allowed**, not blocked. Archived
+   is a listing-visibility flag, not a read/write lock. Alex additionally
+   requested an unarchive path so an archived entity can come back.
+
+Consumers unblocked: M-REMOTE.10, split into two tickets — T-088
+(`Docs/tickets/queue/T-088-entity-archive-schema-and-service.md`: schema
+migration, `entityService.archive`/`unarchive`, `list` excludes archived
+by default) and T-089
+(`Docs/tickets/backlog/T-089-mcp-archive-entity-tools.md`: MCP
+`archive_entity`/`unarchive_entity` preview/confirm tool pairs, `Blocked
+on: T-088`).

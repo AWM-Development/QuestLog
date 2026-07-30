@@ -759,6 +759,9 @@ Decided: stop relying on the `Stop` hook's fire timing entirely. `session-start.
 ## G-005 — Agent-interaction strategy for MCP-hooked sessions (2026-07-28)
 Decided: no new MCP transport for document attachment. The API-level MCP connector has no file-attachment-to-tool-call mechanism (tool inputs are JSON only), but Claude.ai/Desktop already embeds an attached document's content directly into the model's own context — the model can extract and pass that text to `ingest_text` today with zero user copy-paste and zero new protocol work. The only real constraint is the model having to regenerate a large document's full text as output tokens to fill one tool-call argument, which T-065 addresses with multi-call chunked ingestion (`sourceId`/`final` on `ingest_text`), not a new transport. Full rationale and the other three sub-decisions (campaign creation, status-polling guidance, instructions strategy) on `Docs/tickets/gated/resolved/G-005-agent-mcp-interaction-strategy.md`'s Resolution section; the work is T-065/T-066/T-067. The standing "agent-interaction philosophy" question was split out to `G-012` as a v1.3-scoping decision rather than answered here.
 
+## G-006 — Entity delete/archive semantics (2026-07-30)
+Decided: soft-archive, not hard delete — `entities.status` column mirroring `campaigns.status`. Because the row never disappears, `session_entities`/`entity_relationships` references need no cascade/block logic; writes against an archived entity stay allowed; an unarchive path exists to reverse it. Full rationale on `Docs/tickets/gated/resolved/G-006-entity-delete-archive-semantics.md`'s Resolution section; the work is T-088 (schema + service) / T-089 (MCP tool pair, blocked on T-088).
+
 ## T-065 — `ingest_text` multi-call chunked ingestion + attachment/status-polling guidance (2026-07-28)
 
 ### `appendContent` is not campaign-scoped, unlike `getByIdForCampaign` — fixed same-day in review follow-up
