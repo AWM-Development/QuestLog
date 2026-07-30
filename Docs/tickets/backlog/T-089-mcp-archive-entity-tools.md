@@ -2,7 +2,7 @@
 
 Milestone ref: M-REMOTE.10 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
-Priority: P1
+Priority: P2
 
 Blocked on: T-088 — must be merged into develop first (adds
   `entities.status`, `entityService.archive`/`unarchive`)
@@ -30,10 +30,13 @@ Model: sonnet
 
 Scope:
   G-006 resolved entity removal as soft-archive (T-088 added the schema +
-  service methods). This ticket exposes that as MCP tools. Per
-  `.claude/rules/mcp.md`, mutating an existing row requires preview/confirm
-  — archiving and unarchiving both qualify, so each gets its own pair
-  rather than a single direct-write tool.
+  service methods) — archive is a **hide** mechanism for a mistaken entity
+  or note, not a way to mark something as narratively dead (a killed NPC
+  or an abandoned location stays active/searchable). This ticket exposes
+  archive/unarchive as MCP tools. Per `.claude/rules/mcp.md`, mutating an
+  existing row requires preview/confirm — archiving and unarchiving both
+  qualify, so each gets its own pair rather than a single direct-write
+  tool.
 
   1. `archive_entity` tool — validates input (campaign-scoped `entityId`),
      builds a preview payload showing the entity's current `status` and
@@ -46,15 +49,17 @@ Scope:
      applying `entityService.unarchive`.
 
 Out of scope:
-  - No change to `entityService.archive`/`unarchive`/`list` themselves —
-    T-088 already implemented and tested those; this ticket only adds the
-    MCP tool layer.
+  - No change to `entityService.archive`/`unarchive`/`list`/`getByName`
+    themselves — T-088 already implemented and tested those; this ticket
+    only adds the MCP tool layer.
+  - No change to `entityService.detectSpans`/`log_session` auto-linking —
+    that's T-090.
   - No batch archive/unarchive — one entity per call, same granularity as
     `update_entity` (T-056).
   - No change to `append_entity_note`'s or any other tool's behavior
     against an archived entity — writes against archived entities remain
-    allowed per G-006's resolution, and no other tool needs modification
-    for that.
+    allowed via explicit id per G-006's resolution, and no other tool
+    needs modification for that.
 
 Exit condition (machine-checkable):
   - all tests green, typecheck clean, lint clean — pasted output, not a
@@ -75,6 +80,7 @@ Exit condition (machine-checkable):
 Iteration cap: 3 distinct approaches on any single failure, then Blocked Protocol
 
 Definition of done includes: checkbox flip for M-REMOTE.10 in
-  `Docs/milestones/MILESTONES_V1_1_MCP.md`, `IMPLEMENTATION_NOTES.md`
+  `Docs/milestones/MILESTONES_V1_1_MCP.md` only once T-090 also ships (this
+  ticket alone doesn't complete M-REMOTE.10), `IMPLEMENTATION_NOTES.md`
   updated if any non-obvious decision was made, a `CHANGELOG.md` entry
   under `[Unreleased]`, morning report written.

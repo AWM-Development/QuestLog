@@ -19,7 +19,7 @@ v1.3 closes all three, reusing the one proven pattern already in the codebase fo
 - `G-015` (`Docs/tickets/gated/resolved/G-015-auto-entity-extraction-design.md`) — extraction runs automatically inline with every `ingest_text` call; extracted entities are staged and confirmed via a `confirm_log_session`-style flow, not auto-created; post-confirm review uses existing `list_entities`/`get_entity`, no new UI; same `ENTITY_TYPES` taxonomy as manual authoring. Ticketed as M-EXTRACT.
 - `G-016` (`Docs/tickets/gated/resolved/G-016-lore-seeded-entity-creation-design.md`) — `create_entity` runs a synchronous lore search before writing; below-threshold matches attach as suggestions rather than being discarded; provenance stored as `metadata.seededFrom`; a user-supplied description is never overwritten, only appended alongside a seeded draft; conflicting sources are surfaced separately rather than auto-resolved; default auto-seed confidence threshold `0.7`, implemented as a tunable constant. Ticketed as M-SEED.
 
-**Open gates:** none introduced by this milestone. `G-006` (`Docs/tickets/gated/resolved/G-006-entity-delete-archive-semantics.md`, resolved 2026-07-30 — soft-archive) was a soft dependency for M-EXTRACT.3's cleanup/re-extraction path; T-088/T-089 (`Docs/milestones/MILESTONES_V1_1_MCP.md` M-REMOTE.10) now cover that path once merged.
+**Open gates:** none introduced by this milestone. `G-006` (`Docs/tickets/gated/resolved/G-006-entity-delete-archive-semantics.md`, resolved 2026-07-30 — soft-archive as a hide mechanism, not a "narratively dead" marker) was a soft dependency for M-EXTRACT.3's cleanup/re-extraction path; T-088/T-089/T-090 (`Docs/milestones/MILESTONES_V1_1_MCP.md` M-REMOTE.10) now cover that path once merged.
 
 ---
 
@@ -70,7 +70,7 @@ M-CANON.1 has no dependency and can ship first. M-CANON.2 depends on M-CANON.1's
   Exit: confirming an `ingest_text` preview creates exactly the confirmed candidate entities (not auto-created before confirm); each created entity links to its source document.
 
 - [ ] **M-EXTRACT.3 — Mark extracted entities as machine-proposed for review** (T-081)
-  Extracted entities carry a `metadata` marker (e.g. `extractedFrom: sourceId`) distinguishing them from manually authored ones, so Alex can identify and refine them via existing `list_entities`/`get_entity` review — no new UI. Note: iterating on extraction specificity (wrong granularity, duplicate/near-duplicate entities) may want entity archival, now covered by T-088/T-089 (`G-006` resolved 2026-07-30 — soft-archive) — this task ships without waiting on those, since they're independent tickets, not a hard blocker.
+  Extracted entities carry a `metadata` marker (e.g. `extractedFrom: sourceId`) distinguishing them from manually authored ones, so Alex can identify and refine them via existing `list_entities`/`get_entity` review — no new UI. Note: iterating on extraction specificity (wrong granularity, duplicate/near-duplicate entities) may want entity archival, now covered by T-088/T-089/T-090 (`G-006` resolved 2026-07-30 — soft-archive as a hide mechanism) — this task ships without waiting on those, since they're independent tickets, not a hard blocker.
   Exit: a created entity's metadata records which source/extraction produced it; `get_entity`/`list_entities` surface that marker in their existing output shape.
 
 ### Ordering constraint
