@@ -34,6 +34,8 @@ If invoked without a specific milestone task (e.g. "what's next", "what should w
    - If Scope can't honestly be written yet (the decision changes what's being built, not just how), don't draft a ticket at all — the gate-stub's `Blocks:` reference to the milestone task is enough. `/ungate` drafts the real ticket once the decision lands. Tag the milestone task's own line `(Gated on: G-###)` (no ticket id yet).
    - Either way, do not stop the session over this — move on to the next slice.
 4. For each ticket you're drafting now (gate-free, or gated-but-scoped per step 3), fill out every field in `Docs/tickets/TICKET_SPEC.md` exactly:
+   - **Complexity tier** — assign `S`, `M`, or `L` per the rubric in `TICKET_SPEC.md`'s field notes.
+   - **Strategy-gate flag** — `yes` if this ticket only became draftable after resolving a 🎨/🧠 gate (i.e. it previously existed as a `Gated on:` reference, or is being drafted directly by `/ungate`); `no` otherwise.
    - **Priority** — propose `P1` (the default) unless the ticket obviously reads as higher/lower, then confirm the tier with Alex before filing the ticket; never set it without that confirmation. See `TICKET_SPEC.md`'s field notes.
    - **Branch** — `feat/<milestone-group>/t-###-<slug>` (ticket id prepended to the slug — see `TICKET_SPEC.md`'s "Branch naming" section). Not the same as this session's own `tickets/*` branch.
    - **Context files** — an explicit list (file paths, PRD `§` references), never "read the whole PRD" or "read the whole service."
