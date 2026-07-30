@@ -2,9 +2,7 @@
 
 Milestone ref: M-PIPELINE.4 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
-Priority: P1
-
-Blocked on: T-069 — must be merged into develop first
+Priority: P0
 
 Branch: chore/m-pipeline/t-072-per-worktree-postgres-instance
 
