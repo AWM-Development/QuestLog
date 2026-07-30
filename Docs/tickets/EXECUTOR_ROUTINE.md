@@ -4,16 +4,18 @@
 **Last Updated:** 2026-07-27
 **Purpose:** The procedure the nightly scheduled agent follows. Kept here, version-controlled, so changes to the nightly loop are diffable and reviewable like everything else in the pipeline.
 
-**How the scheduler reaches this file (updated 2026-07-29, T-069):** the scheduled agent's prompt is *not* a copy of this document. The prompt is two lines, the same shape as `.claude/commands/executor.md`:
+**How the scheduler reaches this file (updated 2026-07-30):** the scheduled agent's prompt is *not* a copy of this document. The prompt is two lines, the same shape as `.claude/commands/executor.md`:
 
 ```
-git fetch origin develop
-Read Docs/tickets/EXECUTOR_ROUTINE.md in full and follow it exactly, starting at Step 1.
+git fetch origin develop && git show origin/develop:Docs/tickets/EXECUTOR_ROUTINE.md
+Read that output in full and follow it exactly, starting at Step 1.
 ```
 
 So this file is read fresh from the checkout on every run: **editing it here is sufficient, and takes effect on the next nightly run once merged to `develop`.** There is no separate copy to keep in sync, and no manual scheduler update after a routine change.
 
-The one exception is that first line, which is duplicated into the scheduler prompt itself and therefore *cannot* be changed by editing this file — the same bootstrap also appears in `.claude/commands/executor.md` and `.claude/commands/promote-execute.md`, which can. A change to the bootstrap specifically needs a one-time manual edit of the scheduler prompt by Alex; a change to anything else in this routine does not. (T-069 removed the prior `git checkout -B develop origin/develop` from this line — a concurrent session sharing the same sandbox no longer gets its working tree yanked out from under it, since each session now works in its own git worktree per Step 0/2 below. Alex applied that scheduler-prompt edit on 2026-07-29; the line above reflects the current, live prompt.)
+The one exception is that first line, which is duplicated into the scheduler prompt itself and therefore *cannot* be changed by editing this file — the same bootstrap also appears in `.claude/commands/executor.md` and `.claude/commands/promote-execute.md`, which can. A change to the bootstrap specifically needs a one-time manual edit of the scheduler prompt by Alex; a change to anything else in this routine does not. (T-069 removed the prior `git checkout -B develop origin/develop` from this line — a concurrent session sharing the same sandbox no longer gets its working tree yanked out from under it, since each session now works in its own git worktree per Step 0/2 below.
+
+**Fixed 2026-07-30 (found live, during T-037's own run):** the two-line form above — `git fetch origin develop` followed by a separate, plain `Read Docs/tickets/EXECUTOR_ROUTINE.md` — let an agent read this file *before* the fetch's effects were visible to it. `git fetch` only updates the `origin/develop` remote-tracking ref; it never touches the working tree, and per Step 0 below the working tree is explicitly not trustworthy ("may be created from an arbitrary starting point"). A session that (harmlessly, from its own point of view) issued the fetch and the read as two independent actions instead of one strictly-ordered one ended up reading whatever stale copy of this file was already sitting in its working tree — in the observed case, a pre-T-069 version with no worktree isolation and no usage-capture step — and executed an entire ticket against it, skipping both. The fix: chain the fetch and the read into one command, `git show origin/develop:<path>` instead of a raw file `Read`, so the content returned is pinned to the just-fetched ref regardless of working-tree state — the identical technique Step 1 already uses to read ticket files safely. Alex applied this exact edit to the live scheduler prompt directly, in the same session this was found, rather than waiting on a merge.)
 **Assumes:** `Docs/tickets/TICKET_SPEC.md` (ticket format), `Docs/tickets/GATE_SPEC.md` (gate-stub format, `Gated on:` field), `Docs/tickets/BLOCKED_TEMPLATE.md` / `REPORT_TEMPLATE.md` (protocols), `.claude/agents/reviewer.md` (review step), `.claude/skills/tdd-loop/SKILL.md` (implementation loop), and the branch model documented in `Docs/IMPLEMENTATION_NOTES.md` (`main` deployed, `develop` integration).
 
 ---
