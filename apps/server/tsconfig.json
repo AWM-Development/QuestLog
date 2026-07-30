@@ -6,9 +6,17 @@
 		"rootDir": "./src",
 		"lib": ["ES2022"],
 		"paths": {
-			"@questlog/shared": ["../../packages/shared/src"]
+			"@questlog/shared": ["../../packages/shared/src"],
+			"@questlog/core": ["../../packages/core/src"],
+			"@questlog/core/*": ["../../packages/core/src/*"],
+			"@questlog/mcp": ["../../packages/mcp/src"],
+			"@questlog/mcp/*": ["../../packages/mcp/src/*"]
 		}
 	},
 	"include": ["src"],
-	"references": [{ "path": "../../packages/shared" }]
+	"references": [
+		{ "path": "../../packages/shared" },
+		{ "path": "../../packages/core" },
+		{ "path": "../../packages/mcp" }
+	]
 }

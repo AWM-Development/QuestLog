@@ -10,7 +10,7 @@ alwaysApply: false
 
 ## Migration workflow — journal only, never `drizzle-kit push`
 
-CI applies migrations via `pnpm --filter @questlog/server db:migrate`, which only runs files listed in `apps/server/src/db/migrations/meta/_journal.json`. `drizzle-kit push` edits the live schema directly and bypasses the journal — mixing the two leaves SQL on disk that CI never applies (this has happened before: see `Docs/IMPLEMENTATION_NOTES.md §Database Migrations` for the incident).
+CI applies migrations via `pnpm --filter @questlog/server db:migrate`, which only runs files listed in `packages/core/src/db/migrations/meta/_journal.json`. `drizzle-kit push` edits the live schema directly and bypasses the journal — mixing the two leaves SQL on disk that CI never applies (this has happened before: see `Docs/IMPLEMENTATION_NOTES.md §Database Migrations` for the incident).
 
 **Rule:** every schema change (`src/db/schema/*.ts`) produces a journaled migration. If you ever run `push` against a dev DB, immediately run `drizzle-kit generate` and commit both the SQL file and the journal entry. CI's migration-guard job hard-fails a PR that changes `schema/` without a corresponding file in `migrations/`.
 
@@ -28,4 +28,4 @@ Used for fuzzy entity matching (`word_similarity` for a low-threshold candidate 
 
 ## Test database
 
-`questlog_test` on `:5433` (docker-compose). `global-setup.ts` truncates tables between test files but does **not** run migrations — run `db:migrate` against it manually after pulling a new migration, or tests fail with missing-column errors.
+Each DB-touching package has its own physical test database on `:5433` (docker-compose) — `questlog_test_core` (`packages/core`), `questlog_test_server` (`apps/server`), `questlog_test_mcp` (`packages/mcp`/`apps/mcp-stdio`); canonical list in `scripts/test-db-names.sh` (T-071). `global-setup.ts` truncates tables between test files but does **not** run migrations — run `db:migrate` against each one manually after pulling a new migration, or tests fail with missing-column errors.

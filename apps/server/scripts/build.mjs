@@ -1,6 +1,7 @@
 import { build } from "esbuild";
+import { EXTERNAL_PACKAGES } from "./build.externals.mjs";
 
-// See apps/mcp/scripts/build.mjs for the precedent this mirrors: `tsc`
+// See apps/mcp-stdio/scripts/build.mjs for the precedent this mirrors: `tsc`
 // alone (the previous "build" script) never resolves @questlog/shared's
 // bare-specifier import to anything plain `node` can load, since that
 // package ships raw TypeScript with no dist/ (Docs/IMPLEMENTATION_NOTES.md
@@ -12,28 +13,18 @@ import { build } from "esbuild";
 // its own `require("fs")` internally, which esbuild's ESM output can't
 // satisfy with a dynamic require (confirmed directly: bundling it throws
 // "Dynamic require of 'fs' is not supported" at run time). It's listed as
-// a real dependency (not dev-only) for exactly this reason.
+// a real dependency (not dev-only) for exactly this reason. See
+// build.externals.mjs for why the list itself lives in its own module.
 await build({
-	entryPoints: ["src/main.ts", "src/db/migrate.ts"],
+	entryPoints: [
+		{ in: "src/main.ts", out: "main" },
+		{ in: "../../packages/core/src/db/migrate.ts", out: "db/migrate" },
+	],
 	outdir: "dist",
 	bundle: true,
 	platform: "node",
 	format: "esm",
 	target: "node20",
-	external: [
-		"@anthropic-ai/sdk",
-		"@fastify/cors",
-		"@fastify/multipart",
-		"@trpc/server",
-		"dotenv",
-		"drizzle-orm",
-		"drizzle-orm/*",
-		"fastify",
-		"mammoth",
-		"pdf-parse",
-		"postgres",
-		"superjson",
-		"zod",
-	],
+	external: EXTERNAL_PACKAGES,
 	logLevel: "info",
 });

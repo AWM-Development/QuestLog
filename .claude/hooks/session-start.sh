@@ -1,34 +1,85 @@
 #!/bin/bash
-# SessionStart hook for Claude Code on the web.
-#
-# QuestLog's docker-compose.yml expects a real Docker daemon (Postgres +
-# pgvector on :5433), but Claude Code on the web sandboxes don't run one.
-# This provisions the same Postgres 16 + pgvector setup natively instead,
-# so `pnpm test` / `db:migrate` work without Docker. Local dev keeps using
-# `docker compose up -d` as documented in CLAUDE.md — this hook only runs
-# in the remote sandbox.
+# SessionStart hook — runs for every session, local and remote.
 set -euo pipefail
 
 cd "$CLAUDE_PROJECT_DIR"
 
 pnpm install
 
+# --- develop-sync guard: begin (extracted verbatim by the T-041 repro
+#     harness — keep this block self-contained and don't rename the
+#     markers without updating the repro script that greps for them) ---
+# Refreshes .claude/commands/.claude/skills files from origin/develop that
+# this branch hasn't itself touched (merge-base diff, so a committed-but-
+# unmerged edit is never clobbered). Ungated from remote-only in the T-070
+# follow-up below. Why: Docs/IMPLEMENTATION_NOTES.md § T-041.
+git fetch origin develop --quiet 2>/dev/null || true
+merge_base="$(git merge-base HEAD origin/develop 2>/dev/null || true)"
+if [ -n "$merge_base" ]; then
+  synced_count=0
+  while IFS= read -r -d '' file; do
+    if git diff --quiet "$merge_base" -- "$file" 2>/dev/null; then
+      if git checkout origin/develop -- "$file" 2>/dev/null; then
+        echo "session-start.sh: refreshed $file from origin/develop (untouched by this branch)"
+        synced_count=$((synced_count + 1))
+      fi
+    fi
+  done < <(git ls-tree -r -z --name-only "$merge_base" -- .claude/commands .claude/skills 2>/dev/null)
+  if [ "$synced_count" -gt 0 ]; then
+    echo "session-start.sh: synced $synced_count file(s) from origin/develop — this branch's own edits (if any) were left untouched"
+  fi
+fi
+# --- develop-sync guard: end ---
+
+# --- develop-ff guard: begin ---
+# Fast-forwards local develop only when safe (exactly on develop, clean tree)
+# so a direct-to-develop push (/promote, /promote-execute) doesn't get
+# rejected non-fast-forward. Why, not just what: Docs/IMPLEMENTATION_NOTES.md
+# § T-041 "Second follow-up".
+current_branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+if [ "$current_branch" = "develop" ] && git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null; then
+  before_sha="$(git rev-parse HEAD 2>/dev/null || true)"
+  if git merge --ff-only origin/develop --quiet 2>/dev/null; then
+    after_sha="$(git rev-parse HEAD 2>/dev/null || true)"
+    if [ -n "$after_sha" ] && [ "$before_sha" != "$after_sha" ]; then
+      echo "session-start.sh: fast-forwarded local develop $before_sha -> $after_sha"
+    fi
+  fi
+fi
+# --- develop-ff guard: end ---
+
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
+  # Worktree-scoped Postgres provisioning (T-072) — see Docs/IMPLEMENTATION_NOTES.md § T-072.
+  case "$CLAUDE_PROJECT_DIR" in
+    */tmp/worktrees/*) ;;
+    *) exit 0 ;;
+  esac
+  source "$CLAUDE_PROJECT_DIR/scripts/worktree-postgres-env.sh"
+  echo "session-start.sh: worktree '${WORKTREE_NAME}' -> Postgres :${QUESTLOG_PG_PORT} (project ${COMPOSE_PROJECT_NAME})"
+
+  docker compose up -d
+
+  for _ in $(seq 1 30); do
+    pg_isready -h localhost -p "$QUESTLOG_PG_PORT" -q && break
+    sleep 1
+  done
+
+  # Test-tier only (TEST_DB_NAMES_CI excludes the dev DB) — see § T-072.
+  source "$CLAUDE_PROJECT_DIR/scripts/test-db-names.sh"
+  for dbname in "${TEST_DB_NAMES_CI[@]}"; do
+    DATABASE_URL="postgresql://questlog:questlog@localhost:${QUESTLOG_PG_PORT}/${dbname}" \
+      pnpm --filter @questlog/server db:migrate
+  done
+
   exit 0
 fi
 
-# A remote session's working tree can start from a snapshot that predates a
-# slash command or skill being added to develop (e.g. cut from main, or from
-# an older point on develop), which leaves it undiscoverable until something
-# happens to fetch/checkout develop mid-session. Sync just these two
-# tooling directories from origin/develop so they're present from the first
-# turn, without switching the session's actual branch. Skip if either path
-# already has local changes, so we never clobber in-progress edits to a
-# command/skill file itself.
-if [ -z "$(git status --porcelain -- .claude/commands .claude/skills 2>/dev/null)" ]; then
-  git fetch origin develop --quiet 2>/dev/null \
-    && git checkout origin/develop -- .claude/commands .claude/skills 2>/dev/null || true
-fi
+# QuestLog's docker-compose.yml expects a real Docker daemon (Postgres +
+# pgvector on :5433), but Claude Code on the web sandboxes don't run one.
+# This provisions the same Postgres 16 + pgvector setup natively instead,
+# so `pnpm test` / `db:migrate` work without Docker. Local dev keeps using
+# `docker compose up -d` as documented in CLAUDE.md — everything below this
+# point only runs in the remote sandbox.
 
 # Derive credentials/port from the project's own DATABASE_URL rather than
 # hardcoding a fourth copy alongside docker-compose.yml/.env.example/CI.
@@ -95,10 +146,11 @@ fi
 # Extension creation is left to `db:migrate` (apps/server/src/db/migrate.ts
 # runs `CREATE EXTENSION IF NOT EXISTS` before applying migrations), so each
 # database only needs an existence check plus one migrate call here.
-# Isolated per-package test DBs (T-026/T-027). List also duplicated in
-# ci.yml and e2e-release-check.yml — update all three. Why:
-# Docs/IMPLEMENTATION_NOTES.md § T-027.
-for dbname in questlog questlog_test questlog_test_mcp; do
+# Isolated per-package test DBs (T-026/T-027). Canonical name list:
+# scripts/test-db-names.sh — also sourced by ci.yml and
+# e2e-release-check.yml. Why: Docs/IMPLEMENTATION_NOTES.md § T-027.
+source "$CLAUDE_PROJECT_DIR/scripts/test-db-names.sh"
+for dbname in "${TEST_DB_NAMES[@]}"; do
   db_exists=$(sudo -u postgres psql -p "$PGPORT" -tAc "SELECT 1 FROM pg_database WHERE datname='${dbname}'")
   if [ "$db_exists" != "1" ]; then
     sudo -u postgres psql -p "$PGPORT" -c "CREATE DATABASE ${dbname} OWNER ${DB_USER}"

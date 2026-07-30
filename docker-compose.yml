@@ -6,7 +6,8 @@ services:
       POSTGRES_PASSWORD: questlog
       POSTGRES_DB: questlog
     ports:
-      - "5433:5432"
+      # Per-worktree port override, defaults to 5433 (T-072).
+      - "${QUESTLOG_PG_PORT:-5433}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 

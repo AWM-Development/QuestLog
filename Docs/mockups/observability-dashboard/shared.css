@@ -1,0 +1,248 @@
+/* QuestLog Pipeline Observatory — shared tokens + chrome
+   Reused from Docs/DESIGN_SYSTEM.md (depth planes, color, type, spacing).
+   Entity-color system and mascot are deliberately NOT reused — this is
+   ops tooling for Alex, not the campaign-content product. */
+
+:root {
+  /* Depth planes (§2) */
+  --bg-void:          #090d12;
+  --bg-surface:       #0e1820;
+  --bg-elevated:      #111c26;
+  --bg-focal:         #152636;
+  --bg-focal-hover:   #1a2e40;
+
+  /* Text (§3) */
+  --text-primary:     #d0e4f0;
+  --text-secondary:   #8aa4b4;
+  --text-muted:       #4a6a7a;
+  --text-dim:         #2e4856;
+
+  /* Borders (§3) */
+  --border:           #1a2838;
+  --border-hover:     #1e3448;
+  --border-subtle:    #14222e;
+
+  /* Status (§3) — reused directly for outcome badges */
+  --status-success:   #40d8a0;
+  --status-error:     #dc6060;
+  --status-warning:   #e8b040;
+  --status-info:      #60b8ff;
+
+  /* Accent (§3) */
+  --accent:           #60b8ff;
+  --accent-hover:     #78c8ff;
+  --accent-muted:     rgba(96, 184, 255, 0.1);
+
+  /* Type (§4) */
+  --font-display: 'Crimson Pro', Georgia, serif;
+  --font-body:    'DM Sans', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Spacing (§5) */
+  --space-1: 4px; --space-1-5: 6px; --space-2: 8px; --space-2-5: 10px;
+  --space-3: 12px; --space-3-5: 14px; --space-4: 16px; --space-5: 20px;
+  --space-6: 24px; --space-8: 32px;
+
+  /* Radius (§5) */
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-pill: 20px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg-void);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+a { color: inherit; text-decoration: none; }
+
+/* ---- Top chrome (standalone tool: top nav, not the app's rail+panel) ---- */
+
+.chrome-header {
+  background: var(--bg-surface);
+  border-bottom: 0.5px solid var(--border);
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chrome-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 20px;
+  color: var(--text-primary);
+}
+.chrome-title .sub {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 400;
+  display: block;
+  margin-top: 2px;
+}
+
+.chrome-nav {
+  display: flex;
+  gap: var(--space-1);
+  background: var(--bg-elevated);
+  border: 0.5px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 3px;
+}
+.chrome-nav a {
+  padding: var(--space-1-5) var(--space-3-5);
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+.chrome-nav a:hover { color: var(--text-secondary); }
+.chrome-nav a.active {
+  background: var(--accent-muted);
+  color: var(--accent);
+}
+
+.page-body {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: var(--space-6);
+}
+
+/* ---- Buttons (§7.7) ---- */
+.btn-secondary {
+  background: transparent;
+  color: var(--text-muted);
+  border: 0.5px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 6px 12px;
+  font-size: 12px;
+  font-family: var(--font-body);
+  cursor: pointer;
+}
+.btn-secondary:hover { color: var(--text-secondary); border-color: var(--border-hover); background: rgba(208,228,240,0.02); }
+.btn-secondary.on { color: var(--accent); border-color: var(--accent); background: var(--accent-muted); }
+
+/* ---- Tags / badges (§7.8) ---- */
+.tag {
+  display: inline-block;
+  border-radius: 3px;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.tag-tier-s { background: rgba(96,184,255,0.1); color: var(--status-info); }
+.tag-tier-m { background: rgba(232,176,64,0.1); color: var(--status-warning); }
+.tag-tier-l { background: rgba(220,96,96,0.1); color: var(--status-error); }
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: var(--r-pill);
+  padding: 3px 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.badge-success { background: rgba(64,216,160,0.1); color: var(--status-success); }
+.badge-error   { background: rgba(220,96,96,0.1); color: var(--status-error); }
+.badge-warning { background: rgba(232,176,64,0.1); color: var(--status-warning); }
+.badge-info    { background: rgba(96,184,255,0.1); color: var(--status-info); }
+
+/* ---- Cards / panels ---- */
+.panel {
+  background: var(--bg-elevated);
+  border: 0.5px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: var(--space-4);
+}
+
+.section-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 var(--space-1) 0;
+}
+.section-sub {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin: 0 0 var(--space-4) 0;
+}
+
+.overline {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.mono { font-family: var(--font-mono); }
+
+/* ---- Empty state (§8.2, no mascot per brief) ---- */
+.empty-state {
+  text-align: center;
+  padding: var(--space-8) var(--space-4);
+  color: var(--text-secondary);
+}
+.empty-state .headline { font-family: var(--font-display); font-size: 16px; color: var(--text-primary); margin-bottom: var(--space-1); }
+.empty-state .sub { font-size: 12px; color: var(--text-muted); }
+
+/* ---- Comment threads (Log entries) ---- */
+.comments {
+  margin-top: var(--space-3);
+  padding-top: var(--space-3);
+  border-top: 0.5px solid var(--border-subtle);
+}
+.comment-list { display: flex; flex-direction: column; gap: var(--space-2-5); margin-bottom: var(--space-2-5); }
+.comment {
+  display: flex;
+  gap: var(--space-2-5);
+}
+.comment .author-chip {
+  flex-shrink: 0;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  padding: 2px 6px;
+  border-radius: 3px;
+  height: fit-content;
+}
+.comment .author-chip.alex  { background: var(--accent-muted); color: var(--accent); }
+.comment .author-chip.agent { background: rgba(192,160,255,0.1); color: #c0a0ff; }
+.comment .comment-body { font-size: 12px; color: var(--text-secondary); }
+.comment .comment-meta { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+.comment-add { display: flex; gap: var(--space-2); }
+.comment-add textarea {
+  flex: 1;
+  background: var(--bg-focal);
+  border: 0.5px solid var(--border);
+  border-radius: var(--r-sm);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 12px;
+  padding: var(--space-2);
+  resize: vertical;
+  min-height: 32px;
+}
+.comment-add textarea:focus {
+  outline: none;
+  border-color: var(--border-hover);
+  box-shadow: 0 0 0 3px rgba(96,184,255,0.06);
+}
+.comment-add button {
+  align-self: flex-end;
+}

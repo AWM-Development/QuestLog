@@ -22,8 +22,10 @@ WORKDIR /repo
 FROM base AS deps
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY apps/server/package.json apps/server/package.json
-COPY apps/mcp/package.json apps/mcp/package.json
+COPY apps/mcp-stdio/package.json apps/mcp-stdio/package.json
 COPY packages/shared/package.json packages/shared/package.json
+COPY packages/core/package.json packages/core/package.json
+COPY packages/mcp/package.json packages/mcp/package.json
 RUN pnpm install --frozen-lockfile
 
 # ---- build: bundle apps/server into dist/main.js + dist/db/migrate.js -----
@@ -36,6 +38,8 @@ FROM base AS prod-deps
 COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
 COPY apps/server/package.json apps/server/package.json
 COPY packages/shared/package.json packages/shared/package.json
+COPY packages/core/package.json packages/core/package.json
+COPY packages/mcp/package.json packages/mcp/package.json
 RUN pnpm install --prod --frozen-lockfile --filter @questlog/server...
 
 # ---- runtime ----------------------------------------------------------------
@@ -45,10 +49,14 @@ WORKDIR /repo
 COPY --from=prod-deps /repo/node_modules ./node_modules
 COPY --from=prod-deps /repo/apps/server/node_modules ./apps/server/node_modules
 COPY --from=build /repo/apps/server/dist ./apps/server/dist
-# migrate.ts's `migrationsFolder: "./src/db/migrations"` is a runtime fs path
-# resolved against process.cwd(), not the bundled script's own location —
-# the SQL files themselves are never bundled, so they're copied separately.
-COPY --from=build /repo/apps/server/src/db/migrations ./apps/server/src/db/migrations
+# migrate.ts resolves `migrationsFolder` relative to its own file location
+# (import.meta.url), not process.cwd() — cwd-relative broke once this file
+# started running from two different working directories (apps/server
+# locally via tsx, apps/server/dist in this bundled image). The SQL files
+# themselves are never bundled, so they're copied separately, to the same
+# offset migrate.ts computes from its own location: sibling "migrations" of
+# wherever migrate.js itself ends up (dist/db/migrate.js → dist/db/migrations).
+COPY --from=build /repo/packages/core/src/db/migrations ./apps/server/dist/db/migrations
 
 WORKDIR /repo/apps/server
 EXPOSE 3000

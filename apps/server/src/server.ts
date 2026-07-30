@@ -1,28 +1,31 @@
 import { createHash } from "node:crypto";
 import cors from "@fastify/cors";
+import formbody from "@fastify/formbody";
 import multipart from "@fastify/multipart";
+import type { Database } from "@questlog/core/db/index.js";
+import { mapDomainError } from "@questlog/core/lib/errors.js";
+import { conversationService } from "@questlog/core/services/conversation.service.js";
+import {
+	type ProcessOptions,
+	importService,
+} from "@questlog/core/services/import.service.js";
+import { sourceService } from "@questlog/core/services/source.service.js";
+import {
+	type StorageProvider,
+	createLocalFilesystemStorage,
+} from "@questlog/core/services/storage.service.js";
 import {
 	type FastifyTRPCPluginOptions,
 	fastifyTRPCPlugin,
 } from "@trpc/server/adapters/fastify";
 import Fastify from "fastify";
-import type { Database } from "./db/index.js";
-import { mapDomainError } from "./lib/errors.js";
 import { type AppRouter, appRouter } from "./routers/_app.js";
 import {
 	conversationStreamBodySchema,
 	conversationStreamParamsSchema,
 } from "./routers/conversation.schemas.js";
-import { conversationService } from "./services/conversation.service.js";
-import {
-	type ProcessOptions,
-	importService,
-} from "./services/import.service.js";
-import { sourceService } from "./services/source.service.js";
-import {
-	type StorageProvider,
-	createLocalFilesystemStorage,
-} from "./services/storage.service.js";
+import { registerMcpHttpRoutes } from "./routes/mcp-http.routes.js";
+import { registerMcpOauthRoutes } from "./routes/mcp-oauth.routes.js";
 import { createContextFactory } from "./trpc.js";
 
 /** MIME types accepted for upload, per PRD §4.1 */
@@ -61,6 +64,8 @@ export interface BuildAppOptions {
 	autoProcessUploads?: boolean;
 	/** Forwarded to `processSource` when `autoProcessUploads` is set (e.g. to inject a mock `fetchFn` in tests). */
 	autoProcessOptions?: ProcessOptions;
+	/** Shared passphrase gating the MCP OAuth shim's `/authorize` screen. Defaults to `MCP_ACCESS_PASSPHRASE`; unset in most existing tests, which never hit those routes. */
+	accessPassphrase?: string;
 }
 
 /** Postgres SQLSTATE from driver-wrapped errors (42P01 = undefined_table). */
@@ -77,13 +82,17 @@ export function buildApp({
 	storage: storageOption,
 	autoProcessUploads = false,
 	autoProcessOptions,
+	accessPassphrase: accessPassphraseOption,
 }: BuildAppOptions) {
 	const storage =
 		storageOption ??
 		createLocalFilesystemStorage({
 			basePath: process.env.UPLOAD_PATH ?? "uploads",
 		});
-	const app = Fastify();
+	const accessPassphrase =
+		accessPassphraseOption ?? process.env.MCP_ACCESS_PASSPHRASE;
+	// trustProxy: see IMPLEMENTATION_NOTES.md § T-034 for why this is required.
+	const app = Fastify({ trustProxy: true });
 
 	app.register(cors, {
 		origin: process.env.CORS_ORIGIN || true,
@@ -94,6 +103,11 @@ export function buildApp({
 			fileSize: 50 * 1024 * 1024, // 50 MB per PRD §4.1
 		},
 	});
+
+	app.register(formbody);
+
+	registerMcpOauthRoutes(app, { db, accessPassphrase });
+	registerMcpHttpRoutes(app, { db, storage });
 
 	app.get("/health", async () => {
 		return { status: "ok" };

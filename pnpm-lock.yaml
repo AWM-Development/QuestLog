@@ -15,14 +15,17 @@ importers:
         specifier: ^5.8.2
         version: 5.9.3
 
-  apps/mcp:
+  apps/mcp-stdio:
     dependencies:
       '@modelcontextprotocol/sdk':
         specifier: ^1.29.0
         version: 1.29.0(zod@3.25.76)
-      '@questlog/server':
+      '@questlog/core':
         specifier: workspace:*
-        version: link:../server
+        version: link:../../packages/core
+      '@questlog/mcp':
+        specifier: workspace:*
+        version: link:../../packages/mcp
       '@questlog/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -69,9 +72,21 @@ importers:
       '@fastify/cors':
         specifier: ^11.2.0
         version: 11.2.0
+      '@fastify/formbody':
+        specifier: ^8.0.2
+        version: 8.0.2
       '@fastify/multipart':
         specifier: ^9.0.0
         version: 9.4.0
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.29.0
+        version: 1.29.0(zod@3.25.76)
+      '@questlog/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@questlog/mcp':
+        specifier: workspace:*
+        version: link:../../packages/mcp
       '@questlog/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -106,12 +121,12 @@ importers:
       '@biomejs/biome':
         specifier: ^1.9.4
         version: 1.9.4
+      '@trpc/client':
+        specifier: ^11.13.4
+        version: 11.13.4(@trpc/server@11.13.4(typescript@5.9.3))(typescript@5.9.3)
       '@types/node':
         specifier: ^22.13.10
         version: 22.19.15
-      '@types/pdf-parse':
-        specifier: ^1.1.5
-        version: 1.1.5
       drizzle-kit:
         specifier: ^0.31.9
         version: 0.31.9
@@ -230,6 +245,77 @@ importers:
       vite:
         specifier: ^6.2.2
         version: 6.4.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.31.1)(tsx@4.21.0)
+      vitest:
+        specifier: ^3.0.9
+        version: 3.2.4(@types/node@22.19.15)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.31.1)(msw@2.12.11(@types/node@22.19.15)(typescript@5.9.3))(tsx@4.21.0)
+
+  packages/core:
+    dependencies:
+      '@anthropic-ai/sdk':
+        specifier: ^0.79.0
+        version: 0.79.0(zod@3.25.76)
+      '@questlog/shared':
+        specifier: workspace:*
+        version: link:../shared
+      dotenv:
+        specifier: ^17.3.1
+        version: 17.3.1
+      drizzle-orm:
+        specifier: ^0.45.1
+        version: 0.45.1(postgres@3.4.8)
+      mammoth:
+        specifier: ^1.12.0
+        version: 1.12.0
+      pdf-parse:
+        specifier: ^2.4.5
+        version: 2.4.5
+      postgres:
+        specifier: ^3.4.8
+        version: 3.4.8
+    devDependencies:
+      '@biomejs/biome':
+        specifier: ^1.9.4
+        version: 1.9.4
+      '@types/node':
+        specifier: ^22.13.10
+        version: 22.19.15
+      '@types/pdf-parse':
+        specifier: ^1.1.5
+        version: 1.1.5
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.9
+        version: 3.2.4(@types/node@22.19.15)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.31.1)(msw@2.12.11(@types/node@22.19.15)(typescript@5.9.3))(tsx@4.21.0)
+
+  packages/mcp:
+    dependencies:
+      '@modelcontextprotocol/sdk':
+        specifier: ^1.29.0
+        version: 1.29.0(zod@3.25.76)
+      '@questlog/core':
+        specifier: workspace:*
+        version: link:../core
+      '@questlog/shared':
+        specifier: workspace:*
+        version: link:../shared
+      drizzle-orm:
+        specifier: ^0.45.1
+        version: 0.45.1(postgres@3.4.8)
+    devDependencies:
+      '@biomejs/biome':
+        specifier: ^1.9.4
+        version: 1.9.4
+      '@types/node':
+        specifier: ^22.13.10
+        version: 22.19.15
+      postgres:
+        specifier: ^3.4.8
+        version: 3.4.8
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
       vitest:
         specifier: ^3.0.9
         version: 3.2.4(@types/node@22.19.15)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.31.1)(msw@2.12.11(@types/node@22.19.15)(typescript@5.9.3))(tsx@4.21.0)
@@ -1060,6 +1146,9 @@ packages:
 
   '@fastify/fast-json-stringify-compiler@5.0.3':
     resolution: {integrity: sha512-uik7yYHkLr6fxd8hJSZ8c+xF4WafPK+XzneQDPU+D10r5X19GW8lJcom2YijX2+qtFF1ENJlHXKFM9ouXNJYgQ==}
+
+  '@fastify/formbody@8.0.2':
+    resolution: {integrity: sha512-84v5J2KrkXzjgBpYnaNRPqwgMsmY7ZDjuj0YVuMR3NXCJRCgKEZy/taSP1wUYGn0onfxJpLyRGDLa+NMaDJtnA==}
 
   '@fastify/forwarded@3.0.1':
     resolution: {integrity: sha512-JqDochHFqXs3C3Ml3gOY58zM7OqO9ENqPo0UqAjAjH8L01fRZqwX9iLeX34//kiJubF7r2ZQHtBRU36vONbLlw==}
@@ -3867,6 +3956,11 @@ snapshots:
   '@fastify/fast-json-stringify-compiler@5.0.3':
     dependencies:
       fast-json-stringify: 6.3.0
+
+  '@fastify/formbody@8.0.2':
+    dependencies:
+      fast-querystring: 1.1.2
+      fastify-plugin: 5.1.0
 
   '@fastify/forwarded@3.0.1': {}
 

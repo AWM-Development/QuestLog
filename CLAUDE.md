@@ -1,8 +1,8 @@
 # CLAUDE.md — QuestLog
 
-QuestLog is a single-user AI campaign manager for tabletop RPG DMs. v1's primary interface is an **MCP server** (`apps/mcp`) exposing lore query, entity lookup, session logging, and prep-brief tools over a Fastify + tRPC + Drizzle/pgvector backend (`apps/server`, `packages/shared`). The only kept web surface is SourcesPage; everything else is v2.
+QuestLog is a single-user AI campaign manager for tabletop RPG DMs. v1's primary interface is an **MCP server** (`apps/mcp-stdio`, tools defined in `packages/mcp`) exposing lore query, entity lookup, session logging, and prep-brief tools over a Fastify + tRPC + Drizzle/pgvector backend (`apps/server`, `packages/core`, `packages/shared`). The only kept web surface is SourcesPage; everything else is v2.
 
-**The only task source is [`Docs/MILESTONES_V1_MCP.md`](Docs/MILESTONES_V1_MCP.md).** Never pull work from `MILESTONES_PT1.md`/`PT2.md` — they're retained for detail only.
+**The task source is [`Docs/milestones/MILESTONES_V1_MCP.md`](Docs/milestones/MILESTONES_V1_MCP.md) (v1, shipped) plus [`Docs/milestones/MILESTONES_V1_1_MCP.md`](Docs/milestones/MILESTONES_V1_1_MCP.md) (v1.1, in progress) plus [`Docs/milestones/MILESTONES_V1_2_MCP.md`](Docs/milestones/MILESTONES_V1_2_MCP.md) (v1.2, in progress — executor observability & efficiency) plus [`Docs/milestones/MILESTONES_V1_3_MCP.md`](Docs/milestones/MILESTONES_V1_3_MCP.md) (v1.3, in progress — canon correction & automatic entity extraction).** `MILESTONES_PT1.md`/`PT2.md` no longer exist — their v2 task detail was consolidated into [`Docs/milestones/MILESTONES_V2.md`](Docs/milestones/MILESTONES_V2.md), which stays ineligible for ticket selection until Alex explicitly opens v2 planning.
 
 ## Principles
 
@@ -28,6 +28,7 @@ pnpm test           # Vitest, all packages (needs Postgres on :5433, migrated)
 
 - Conventions detail → `Docs/DEVELOPMENT_GUIDE.md`
 - Non-obvious gotchas → `Docs/IMPLEMENTATION_NOTES.md`
+- Pipeline commands quick reference → `Docs/tickets/COMMANDS.md` (or run `/command-help`)
 - Visual reference → `Docs/mockups/` + `Docs/DESIGN_SYSTEM.md`
 - Path-scoped patterns → `.claude/rules/` (loads automatically when matching files are touched)
 
@@ -36,4 +37,4 @@ pnpm test           # Vitest, all packages (needs Postgres on :5433, migrated)
 - `main` is the deployed branch — never push to it, never target it. Ticket branches cut from `develop`, PR back into `develop`. Never merge a PR yourself.
 - Never modify files under `Docs/mockups/`.
 - Obey the ticket's iteration cap. On cap, follow the Blocked Protocol (`Docs/tickets/BLOCKED_TEMPLATE.md`) and stop.
-- A ticket referencing a mockup is not visually gated — the mockup is the answer. A 🧠 strategy gate has no answer available to you — skip it, log it in the report, continue to the next ticket.
+- A ticket referencing a mockup is not visually gated — the mockup is the answer. A 🧠 strategy gate has no answer available to you — skip it, file it as a gate-stub in `Docs/tickets/gated/` (`Docs/tickets/GATE_SPEC.md`), note it in the report, continue to the next ticket. `/ungate` is the only way a gate gets resolved — never resolve one yourself.

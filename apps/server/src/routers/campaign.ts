@@ -1,6 +1,6 @@
+import { campaignService } from "@questlog/core/services/campaign.service.js";
 import { CampaignCreateInput, CampaignUpdateInput } from "@questlog/shared";
 import { z } from "zod";
-import { campaignService } from "../services/campaign.service.js";
 import { procedure, router, withErrorHandling } from "../trpc.js";
 
 export const campaignRouter = router({

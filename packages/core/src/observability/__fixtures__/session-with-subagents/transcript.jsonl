@@ -1,0 +1,4 @@
+{"type":"user","timestamp":"2026-07-27T10:00:00.000Z","message":{"role":"user","content":"kick off T-046"}}
+{"type":"assistant","timestamp":"2026-07-27T10:00:05.000Z","message":{"role":"assistant","content":[{"type":"text","text":"working"}],"usage":{"input_tokens":1000,"output_tokens":200,"cache_creation_input_tokens":50,"cache_read_input_tokens":10}}}
+{"type":"user","timestamp":"2026-07-27T10:00:06.000Z","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"t1","content":"lint: pass (0 warnings)\ntypecheck: pass\ntest: pass (10 passed)"}]}}
+{"type":"assistant","timestamp":"2026-07-27T10:01:00.000Z","message":{"role":"assistant","content":[{"type":"text","text":"done"}],"usage":{"input_tokens":300,"output_tokens":100,"cache_creation_input_tokens":0,"cache_read_input_tokens":20}}}

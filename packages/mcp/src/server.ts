@@ -1,0 +1,41 @@
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { ONBOARDING_INSTRUCTIONS } from "./content/onboarding-instructions.js";
+import { registerAppendEntityNote } from "./tools/append-entity-note.js";
+import { registerConfirmLogSession } from "./tools/confirm-log-session.js";
+import { registerCreateCampaign } from "./tools/create-campaign.js";
+import { registerCreateEntity } from "./tools/create-entity.js";
+import { registerGetEntity } from "./tools/get-entity.js";
+import { registerGetSourceStatus } from "./tools/get-source-status.js";
+import { registerHelp } from "./tools/help.js";
+import { registerIngestText } from "./tools/ingest-text.js";
+import { registerListCampaigns } from "./tools/list-campaigns.js";
+import { registerListEntities } from "./tools/list-entities.js";
+import { registerLogSession } from "./tools/log-session.js";
+import { registerPrepBrief } from "./tools/prep-brief.js";
+import { registerQueryLore } from "./tools/query-lore.js";
+import type { ToolDeps } from "./tools/types.js";
+
+export type CreateMcpServerOptions = ToolDeps;
+
+export function createMcpServer(deps: CreateMcpServerOptions): McpServer {
+	const server = new McpServer(
+		{ name: "questlog-mcp", version: "0.0.0" },
+		{ instructions: ONBOARDING_INSTRUCTIONS },
+	);
+
+	registerQueryLore(server, deps);
+	registerPrepBrief(server, deps);
+	registerListCampaigns(server, deps);
+	registerCreateCampaign(server, deps);
+	registerListEntities(server, deps);
+	registerGetEntity(server, deps);
+	registerCreateEntity(server, deps);
+	registerAppendEntityNote(server, deps);
+	registerLogSession(server, deps);
+	registerConfirmLogSession(server, deps);
+	registerIngestText(server, deps);
+	registerGetSourceStatus(server, deps);
+	registerHelp(server);
+
+	return server;
+}

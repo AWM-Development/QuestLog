@@ -35,13 +35,15 @@ verbatim. If FAIL and a remediation pass was made, show before/after.>
 
 ## Anything Alex must decide
 
-<Any 🧠-gated checkpoint skipped this ticket, any scope judgment call made
-that a stricter reading of "out of scope" might disagree with, any
-follow-up ticket this work implies. "None" is a valid, common answer.>
+<Any 🧠-gated checkpoint skipped this ticket — cite the `G-###` gate-stub
+filed for it (`Docs/tickets/GATE_SPEC.md`), not just a prose description —
+any scope judgment call made that a stricter reading of "out of scope"
+might disagree with, any follow-up ticket this work implies. "None" is a
+valid, common answer.>
 ```
 
 ## Notes
 
 - If blocked, use `Docs/tickets/BLOCKED_TEMPLATE.md` instead — that's the full report for a blocked ticket, there's no separate morning report on top of it.
 - "Test evidence" means pasted output. A report that says "tests pass" without showing the run is not acceptable — this is the same discipline as `CLAUDE.md`'s "never claim done without showing output."
-- Definition of done (per `TICKET_SPEC.md`) includes updating `MILESTONES_V1_MCP.md`'s checkbox, `IMPLEMENTATION_NOTES.md` if applicable, and a `CHANGELOG.md` entry under `[Unreleased]` — confirm all three happened before writing "shipped."
+- Definition of done (per `TICKET_SPEC.md`) includes updating `Docs/milestones/MILESTONES_V1_MCP.md`'s checkbox, `IMPLEMENTATION_NOTES.md` if applicable, and a `CHANGELOG.md` entry under `[Unreleased]` — confirm all three happened before writing "shipped."

@@ -33,3 +33,11 @@ coverage/
 # Lock file artifacts
 .~lock.*
 
+# Executor session scratch state (EXECUTOR_ROUTINE.md).
+# Lives under tmp/, not .claude/ — writes under .claude/ are gated behind an
+# interactive confirmation by the harness, which stalls unattended runs (T-062).
+tmp/.active-ticket
+
+# Per-ticket executor worktrees (T-069) — see Docs/IMPLEMENTATION_NOTES.md § T-069.
+tmp/worktrees/
+

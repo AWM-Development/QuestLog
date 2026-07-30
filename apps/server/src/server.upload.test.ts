@@ -1,3 +1,6 @@
+import { createTestDb } from "@questlog/core/db/test-helpers.js";
+import { campaignService } from "@questlog/core/services/campaign.service.js";
+import { createMemoryStorage } from "@questlog/core/services/storage.service.js";
 /**
  * Integration tests for POST /api/campaigns/:campaignId/sources/upload
  *
@@ -15,10 +18,7 @@ import {
 	expect,
 	it,
 } from "vitest";
-import { createTestDb } from "./db/test-helpers.js";
 import { buildApp } from "./server.js";
-import { campaignService } from "./services/campaign.service.js";
-import { createMemoryStorage } from "./services/storage.service.js";
 
 const { db, close } = createTestDb();
 const storage = createMemoryStorage();
