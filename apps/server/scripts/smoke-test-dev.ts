@@ -24,6 +24,12 @@ import type { AppRouter } from "../src/routers/_app.js";
 // Deliberately does NOT go through createTestDb()/global-setup.ts — both
 // reject any non-local DATABASE_URL by design (packages/core/src/db/test-db-url.ts),
 // and this script's whole point is to talk to a real hosted database.
+//
+// T-037: reused for prod via a `--read-only` flag (smoke:prod) rather than a
+// forked copy — prod skips the campaign.create/list round trip and cleanup
+// entirely, running only /health and the read-only schema/extension checks,
+// since an unattended write-then-delete against prod on every merge is a
+// bigger call than dev's full round trip.
 
 // Derived from the schema barrel/migrate.ts rather than hand-copied — a
 // hardcoded list here would be a third copy of information Drizzle already
@@ -37,20 +43,55 @@ const EXPECTED_TABLES = Object.values(schema)
 
 const EXPECTED_EXTENSIONS = REQUIRED_EXTENSIONS;
 
+/** Schema + extensions check — direct Postgres connection, bypassing the app. Read-only. */
+async function checkSchemaAndExtensions() {
+	const tableRows = await db.execute(sql`
+		SELECT table_name FROM information_schema.tables
+		WHERE table_schema = 'public'
+	`);
+	const tables = new Set(
+		tableRows.map((r) => (r as Record<string, unknown>).table_name),
+	);
+	const missingTables = EXPECTED_TABLES.filter((t) => !tables.has(t));
+	if (missingTables.length > 0) {
+		throw new Error(`Missing expected table(s): ${missingTables.join(", ")}`);
+	}
+	console.log(
+		`  schema OK (${EXPECTED_TABLES.length} expected tables present)`,
+	);
+
+	const extRows = await db.execute(sql`SELECT extname FROM pg_extension`);
+	const extensions = new Set(
+		extRows.map((r) => (r as Record<string, unknown>).extname),
+	);
+	const missingExtensions = EXPECTED_EXTENSIONS.filter(
+		(e) => !extensions.has(e),
+	);
+	if (missingExtensions.length > 0) {
+		throw new Error(
+			`Missing expected extension(s): ${missingExtensions.join(", ")}`,
+		);
+	}
+	console.log(`  extensions OK (${EXPECTED_EXTENSIONS.join(", ")})`);
+}
+
 async function main() {
-	const baseUrl = process.argv[2] ?? process.env.SMOKE_TEST_BASE_URL;
+	const rawArgs = process.argv.slice(2);
+	const readOnly = rawArgs.includes("--read-only");
+	const baseUrl =
+		rawArgs.find((a) => a !== "--read-only") ?? process.env.SMOKE_TEST_BASE_URL;
 	if (!baseUrl) {
 		throw new Error(
-			"Usage: smoke-test-dev.ts <base-url> (or set SMOKE_TEST_BASE_URL) — e.g. https://questlog-dev.fly.dev",
+			"Usage: smoke-test-dev.ts <base-url> [--read-only] (or set SMOKE_TEST_BASE_URL) — e.g. https://questlog-dev.fly.dev",
 		);
 	}
 	if (!process.env.DATABASE_URL) {
 		throw new Error(
-			"DATABASE_URL is not set — this script connects directly to the target environment's database (the DEV_DATABASE_URL GitHub secret) to verify schema/extensions.",
+			"DATABASE_URL is not set — this script connects directly to the target environment's database (the DEV_DATABASE_URL/PROD_DATABASE_URL GitHub secret) to verify schema/extensions.",
 		);
 	}
 
-	console.log(`Smoke-testing ${baseUrl}`);
+	console.log(`Smoke-testing ${baseUrl}${readOnly ? " (read-only)" : ""}`);
 
 	// 1. /health
 	const health = (await fetch(`${baseUrl}/health`).then((r) => r.json())) as {
@@ -62,6 +103,16 @@ async function main() {
 		);
 	}
 	console.log("  /health OK");
+
+	if (readOnly) {
+		// No campaign.create/list round trip, no cleanup delete — prod stays
+		// read-only under this flag, per T-037's scope.
+		await checkSchemaAndExtensions();
+		console.log(
+			`PASS — /health -> schema -> extensions succeeded against ${baseUrl} (read-only, no writes issued).`,
+		);
+		return;
+	}
 
 	// 2. campaign.create -> campaign.list through the real, live tRPC API.
 	const client = createTRPCClient<AppRouter>({
@@ -83,38 +134,10 @@ async function main() {
 		}
 		console.log("  campaign.list OK");
 
-		// 3. Schema check — direct Postgres connection, bypassing the app.
-		const tableRows = await db.execute(sql`
-			SELECT table_name FROM information_schema.tables
-			WHERE table_schema = 'public'
-		`);
-		const tables = new Set(
-			tableRows.map((r) => (r as Record<string, unknown>).table_name),
-		);
-		const missingTables = EXPECTED_TABLES.filter((t) => !tables.has(t));
-		if (missingTables.length > 0) {
-			throw new Error(`Missing expected table(s): ${missingTables.join(", ")}`);
-		}
-		console.log(
-			`  schema OK (${EXPECTED_TABLES.length} expected tables present)`,
-		);
+		// 3. Schema + extensions check.
+		await checkSchemaAndExtensions();
 
-		// 4. Extensions check.
-		const extRows = await db.execute(sql`SELECT extname FROM pg_extension`);
-		const extensions = new Set(
-			extRows.map((r) => (r as Record<string, unknown>).extname),
-		);
-		const missingExtensions = EXPECTED_EXTENSIONS.filter(
-			(e) => !extensions.has(e),
-		);
-		if (missingExtensions.length > 0) {
-			throw new Error(
-				`Missing expected extension(s): ${missingExtensions.join(", ")}`,
-			);
-		}
-		console.log(`  extensions OK (${EXPECTED_EXTENSIONS.join(", ")})`);
-
-		// 5. Migration drift check — every migration in the journal actually
+		// 4. Migration drift check — every migration in the journal actually
 		// applied to this database, not just that `migrate.ts` exited 0 at
 		// some point in the past. Compares counts rather than re-deriving
 		// drizzle-orm's internal hash scheme, so it needs no maintenance as
@@ -135,7 +158,7 @@ async function main() {
 			`  migrations OK (${appliedCount}/${journal.entries.length} applied)`,
 		);
 	} finally {
-		// 6. Clean up — scoped delete by the exact id this script created,
+		// 5. Clean up — scoped delete by the exact id this script created,
 		// never an unscoped delete.
 		await db.execute(sql`DELETE FROM campaigns WHERE id = ${campaign.id}`);
 		console.log(`  cleaned up campaign ${campaign.id}`);

@@ -17,7 +17,8 @@
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
 		"smoke:mcp-remote": "tsx --env-file=../../.env scripts/mcp-remote-smoke.ts",
-		"smoke:dev": "tsx scripts/smoke-test-dev.ts"
+		"smoke:dev": "tsx scripts/smoke-test-dev.ts",
+		"smoke:prod": "tsx scripts/smoke-test-dev.ts --read-only"
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.79.0",

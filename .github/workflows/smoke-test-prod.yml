@@ -1,0 +1,67 @@
+name: Smoke Test (prod)
+
+# Post-merge confidence check against the real deployed prod environment —
+# questlog-prod.fly.dev and its real Neon root branch. Read-only by default
+# (per T-037/M-CICD.3): only /health and schema/extension checks, no
+# campaign.create/list round trip and no cleanup delete — an unattended
+# write-then-delete against prod on every merge is a bigger call than dev's
+# full round trip (smoke-test-dev.yml) defaults into silently.
+#
+# Triggered on push to `main` only, since `main` is the deployed-to-prod
+# branch and prod auto-deploys via Fly's native GitHub integration
+# (Docs/DEPLOY_SETUP_CHECKLIST.md §2) once that Alex-only connection step is
+# done. workflow_dispatch is also available for an on-demand run against
+# whatever is currently live, mirroring smoke-test-dev.yml.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PROD_BASE_URL: https://questlog-prod.fly.dev
+
+jobs:
+  smoke-test-prod:
+    name: Smoke Test — questlog-prod (read-only)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # ── Wait for the prod deploy to be live ──────────────────────────────
+      # Fly's GitHub integration deploys asynchronously after this push
+      # triggers — poll /health instead of assuming it's already done.
+      - name: Poll /health until the prod deploy is live
+        run: |
+          for i in $(seq 1 20); do
+            if curl -sf "$PROD_BASE_URL/health" | grep -q '"status":"ok"'; then
+              echo "✅ $PROD_BASE_URL/health is up."
+              exit 0
+            fi
+            echo "Waiting for $PROD_BASE_URL/health ($i/20)..."
+            sleep 15
+          done
+          echo "❌ $PROD_BASE_URL/health never became healthy."
+          exit 1
+
+      # ── Read-only verification ───────────────────────────────────────────
+      # DATABASE_URL here is the prod Neon root branch's connection string
+      # (the PROD_DATABASE_URL GitHub secret — Alex-only to provision, see
+      # this ticket's report), scoped to this one step only so it's never
+      # exported more broadly than needed. No writes: --read-only skips the
+      # campaign.create/list round trip and cleanup delete entirely.
+      - name: Run read-only smoke test against questlog-prod
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        run: pnpm --filter @questlog/server smoke:prod "$PROD_BASE_URL"
