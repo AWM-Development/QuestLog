@@ -28,12 +28,13 @@ export default defineConfig({
 		globalSetup: ["../../packages/core/src/db/global-setup.ts"],
 		include: ["**/*.e2e.test.ts"],
 		env: {
-			// Own database (questlog_test_mcp), not apps/server's questlog_test:
-			// turbo runs both packages' e2e suites concurrently with no
-			// `dependsOn` between them (same as the default `test` task, see
-			// Docs/IMPLEMENTATION_NOTES.md § T-018 / T-026), so sharing one
-			// physical database here would reopen the identical race T-026
-			// already fixed for the default tier.
+			// Own database (questlog_test_mcp), not apps/server's
+			// questlog_test_server: turbo runs every package's e2e suite
+			// concurrently with no `dependsOn` between them (same as the
+			// default `test` task, see Docs/IMPLEMENTATION_NOTES.md § T-018 /
+			// T-026 / T-071), so sharing one physical database here would
+			// reopen the identical race T-026 already fixed for the default
+			// tier.
 			DATABASE_URL: testDbUrl("questlog_test_mcp"),
 		},
 	},

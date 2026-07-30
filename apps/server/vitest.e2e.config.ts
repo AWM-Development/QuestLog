@@ -14,7 +14,7 @@ export default defineConfig({
 		globalSetup: ["../../packages/core/src/db/global-setup.ts"],
 		include: ["**/*.e2e.test.ts"],
 		env: {
-			DATABASE_URL: testDbUrl("questlog_test"),
+			DATABASE_URL: testDbUrl("questlog_test_server"),
 		},
 	},
 });

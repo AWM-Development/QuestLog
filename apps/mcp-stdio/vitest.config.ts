@@ -32,11 +32,13 @@ export default defineConfig({
 			"**/.typecheck-out/**",
 		],
 		env: {
-			// Isolated from apps/server's questlog_test: turbo runs both suites
-			// as separate concurrent processes against the same physical DB
-			// with no ordering between them, which made an unscoped mutation
-			// (e.g. a literal-empty-table assertion) unsafe here. See
-			// Docs/IMPLEMENTATION_NOTES.md § T-018 / T-026.
+			// Own physical database, isolated from every other package's
+			// (apps/server's questlog_test_server, packages/core's
+			// questlog_test_core) — turbo runs all suites concurrently with
+			// no ordering between them, so sharing a DB would make an
+			// unscoped mutation (e.g. a literal-empty-table assertion)
+			// unsafe here. See Docs/IMPLEMENTATION_NOTES.md § T-018 / T-026 /
+			// T-071.
 			DATABASE_URL: testDbUrl("questlog_test_mcp"),
 		},
 	},

@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Changed — T-071
+
+- **Every DB-touching package now runs its tests against its own physical database.** `packages/core` and `apps/server` no longer share `questlog_test` — each gets its own (`questlog_test_core`, `questlog_test_server`), matching `questlog_test_mcp`'s existing isolation. `turbo.json`'s `test.dependsOn: ["^test"]`, the ordering that previously stood in for isolation between those two packages, is deleted — no package's test correctness depends on another package's task finishing first anymore, and this closes an identical, previously-unfixed race on the `test:e2e` tier. CI provisioning in `ci.yml`/`e2e-release-check.yml` is now one generic loop over `scripts/test-db-names.sh`'s test-tier name list instead of two separate hardcoded steps — a new database only needs one name added to that list, not a new workflow step.
+
 ### Fixed — session-start.sh develop-sync guard
 
 - **`.claude/hooks/session-start.sh`'s develop-sync guard (T-041) now runs on local sessions too, not just remote.** It was gated behind `CLAUDE_CODE_REMOTE=true`, so a local session sitting on a stale branch never got its `.claude/commands`/`.claude/skills` files refreshed from `origin/develop` — surfaced when a `/ticket-writer` session on a branch cut before a fix merged gave stale instructions, then a later `/morning-review` session hit the same already-fixed bug because the primary directory was left on that stale branch. The guard's per-file merge-base safety check (never overwrites a branch's own committed edits) is ungated now; each actual refresh also prints to stdout instead of applying silently.

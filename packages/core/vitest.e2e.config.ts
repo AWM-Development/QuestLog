@@ -19,7 +19,7 @@ export default defineConfig({
 		// packages/core legitimately has zero e2e test files now.
 		passWithNoTests: true,
 		env: {
-			DATABASE_URL: testDbUrl("questlog_test"),
+			DATABASE_URL: testDbUrl("questlog_test_core"),
 		},
 	},
 });

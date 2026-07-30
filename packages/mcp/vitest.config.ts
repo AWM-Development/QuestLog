@@ -3,12 +3,12 @@ import { testDbUrl } from "../core/src/db/test-db-url.js";
 
 /**
  * packages/mcp's only default-tier suite is server.test.ts (relocated here
- * by T-042, originally by T-028). Own physical database (questlog_test_mcp),
- * not packages/core's questlog_test: packages/mcp has no dependency edge to
- * apps/server, so turbo can run this package's tests concurrently with
- * apps/server's against a different physical DB — same isolation T-026
- * originally set up for apps/mcp. See Docs/IMPLEMENTATION_NOTES.md § T-018 /
- * T-026 / T-042.
+ * by T-042, originally by T-028). Own physical database (questlog_test_mcp):
+ * packages/mcp has no dependency edge to apps/server, so turbo can run this
+ * package's tests concurrently with every other package's against its own
+ * physical DB — same isolation T-026 originally set up for apps/mcp, T-071
+ * for the rest. See Docs/IMPLEMENTATION_NOTES.md § T-018 / T-026 / T-042 /
+ * T-071.
  */
 export default defineConfig({
 	test: {

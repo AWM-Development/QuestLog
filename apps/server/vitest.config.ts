@@ -13,14 +13,13 @@ export default defineConfig({
 		sequence: { concurrent: false },
 		// Relative path required, not a @questlog/core import — Vitest's
 		// globalSetup loader bypasses Vite's resolver. Cross-package import is
-		// intentional; also ordered ahead of this task by turbo.json's
-		// "test": { "dependsOn": ["^test"] } (added by T-042), so packages/core's
-		// own test run truncates+leaves the tables in the state this run
-		// expects. Why: Docs/IMPLEMENTATION_NOTES.md § T-027 / T-042.
+		// intentional. No ordering with packages/core's test task needed —
+		// each package has its own physical database (T-071). Why:
+		// Docs/IMPLEMENTATION_NOTES.md § T-027 / G-008.
 		globalSetup: ["../../packages/core/src/db/global-setup.ts"],
 		exclude: [...configDefaults.exclude, "**/*.e2e.test.ts"],
 		env: {
-			DATABASE_URL: testDbUrl("questlog_test"),
+			DATABASE_URL: testDbUrl("questlog_test_server"),
 		},
 	},
 });
