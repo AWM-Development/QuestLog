@@ -148,7 +148,7 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 - [ ] **M-AUDIT.1 — Extend `T-017`'s scope to cover v1.1** (T-017, amended in place)
   `T-017` (architecture & pattern audit) already existed in the backlog, already unblocked (its trigger condition — the M-MCP hardening backlog being in `done/` — was already satisfied). Amended to also cover the M-REMOTE and M-CICD additions once they ship, rather than filing a duplicate. Stays interactive/Alex-present, never auto-promoted — unchanged from its original design.
 
-- [ ] **M-AUDIT.2 — Security review of the new remote-MCP surface** (T-038)
+- [x] **M-AUDIT.2 — Security review of the new remote-MCP surface** (T-038)
   The OAuth shim, the new HTTP transport, the existing (currently unauthenticated) `POST /api/campaigns/:id/sources/upload` REST endpoint now sitting behind the same public Fly apps, and the new GitHub Actions secrets M-CICD.2/M-CICD.3 introduce. Produces a written report + follow-up tickets for anything found, same shape as T-017. Severe findings follow the Blocked Protocol rather than being remediated unilaterally.
 
 - [ ] **M-AUDIT.3 — Scalability-into-v2 review** (T-039)
