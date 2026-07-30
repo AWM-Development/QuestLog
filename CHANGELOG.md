@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This pr
 
 ## [Unreleased]
 
+### Added — T-037
+
+- **Read-only post-merge smoke test against the real deployed prod environment**: a new GitHub Actions workflow (`.github/workflows/smoke-test-prod.yml`), triggered on push to `main` (plus `workflow_dispatch` for on-demand runs), polls `questlog-prod`'s `/health` endpoint until the deploy is live, then runs the same verification script T-036 added (`apps/server/scripts/smoke-test-dev.ts`) via a new `--read-only` flag: only `/health` plus a direct Postgres connection confirming the schema and `vector`/`pg_trgm` extensions are present — no `campaign.create`/`campaign.list` round trip, no writes or deletes against prod under any flag. Requires a new `PROD_DATABASE_URL` GitHub Actions secret Alex still needs to provision — see this ticket's report for the checklist.
+
 ### Added — T-072
 
 - **Each git worktree (T-069's per-ticket convention) now runs its own local Postgres instance instead of sharing the primary directory's `:5433`.** `session-start.sh`, when run inside a `tmp/worktrees/T-###/` checkout, derives a per-worktree port and `docker compose` project name from the worktree's identity, brings up that worktree's own compose stack, and migrates its test-tier databases — so concurrent local sessions can never truncate or overwrite each other's test data. `testDbUrl()` now reads the port from `QUESTLOG_PG_PORT` (falling back to 5433) so every existing call site picks up the override automatically. The primary working directory's own Postgres instance is unaffected — still `:5433`, no config change needed. Confirmed local-only: remote/sandboxed sessions each provision their own native Postgres already and never share one process.
