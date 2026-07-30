@@ -11,7 +11,17 @@ Resolve the review target from `$ARGUMENTS` (may be empty):
 
 Then:
 
-1. `git status` — if the working tree isn't clean, stash (`-u`) and say so before switching branches. `git fetch origin <head-branch>`, then `git checkout <head-branch>`. This is a read-only review — do not commit, push, or edit files as part of this command.
+1. `git fetch origin <head-branch>`, then enter a worktree for it — following the convention `Docs/IMPLEMENTATION_NOTES.md` § T-069 records. `git worktree add` fails if `<head-branch>` is already checked out elsewhere (worktrees aren't reaped automatically — an executor session's own `tmp/worktrees/T-###/` for this exact branch is often still on disk right after it lands a PR, which is precisely when this command tends to run), so check first and reuse it if present, per T-069's own "resume an existing branch" pattern:
+   ```bash
+   existing=$(git worktree list --porcelain | grep -B2 "^branch refs/heads/<head-branch>$" | awk -F' ' '/^worktree/{print $2}')
+   if [ -n "$existing" ]; then
+     cd "$existing"
+   else
+     git worktree add "tmp/worktrees/review-<head-branch>/" <head-branch>
+     cd "tmp/worktrees/review-<head-branch>/"
+   fi
+   ```
+   This never touches the shared primary directory, so a concurrent session's uncommitted work there is never at risk (previously this stashed (`-u`) before checking out in place, which could sweep up a *different* session's uncommitted changes — see `Docs/IMPLEMENTATION_NOTES.md` § T-070). This is a read-only review — do not commit, push, or edit files as part of this command.
 2. Look for the ticket file this PR belongs to (`Docs/tickets/done/T-###-*.md` or `Docs/tickets/blocked/T-###-*.md`) and its report (`Docs/tickets/reports/T-###-*.md`). If neither exists — this PR isn't ticket-shaped — say so and use the PR description/diff for section 1 instead.
 3. Look for a usage artifact at `Docs/tickets/cost-reports/T-###.usage.json` (produced by the executor's `Stop` hook per `Docs/tickets/done/T-046-executor-usage-capture-hook.md`, committed as part of Step 7 wrap-up). It may not exist — the hook only started capturing data going forward from when T-046 shipped, so PRs from before that (or non-ticket-shaped PRs) won't have one.
 
@@ -33,4 +43,4 @@ Form your own independent judgment on the diff (`git diff origin/develop...<head
 
 Explain what was actually built, for Alex specifically: 8 years as a senior engineer, ~99% UI/UX and mobile background. He's technical and doesn't need concepts simplified, but backend/DB/architecture vocabulary that's off his home turf (migrations, query planners, indexes, embeddings/ANN search, tRPC routers, Drizzle, pgvector, hybrid search, etc.) should be translated into plain English rather than assumed. Cover concretely what changed, then — only if applicable — real-world UX implications: does this change any user-facing behavior, response time, error case, or interaction in QuestLog? If it's a pure backend/infra change with zero observable difference to using the app, say that explicitly rather than inventing a UX angle.
 
-Do not modify, commit, or push anything during this command. If you end on a branch other than the one you started this session on, say so at the end so Alex knows to switch back if he wants to.
+Do not modify, commit, or push anything during this command. The review happens entirely in its own worktree, so the primary directory's branch is never touched — nothing to switch back to.
