@@ -25,11 +25,8 @@ import type { AppRouter } from "../src/routers/_app.js";
 // reject any non-local DATABASE_URL by design (packages/core/src/db/test-db-url.ts),
 // and this script's whole point is to talk to a real hosted database.
 //
-// T-037: reused for prod via a `--read-only` flag (smoke:prod) rather than a
-// forked copy — prod skips the campaign.create/list round trip and cleanup
-// entirely, running only /health and the read-only schema/extension checks,
-// since an unattended write-then-delete against prod on every merge is a
-// bigger call than dev's full round trip.
+// T-037 reuses this via `--read-only` (smoke:prod) — see § T-037 in
+// Docs/IMPLEMENTATION_NOTES.md.
 
 // Derived from the schema barrel/migrate.ts rather than hand-copied — a
 // hardcoded list here would be a third copy of information Drizzle already
@@ -105,8 +102,6 @@ async function main() {
 	console.log("  /health OK");
 
 	if (readOnly) {
-		// No campaign.create/list round trip, no cleanup delete — prod stays
-		// read-only under this flag, per T-037's scope.
 		await checkSchemaAndExtensions();
 		console.log(
 			`PASS — /health -> schema -> extensions succeeded against ${baseUrl} (read-only, no writes issued).`,
