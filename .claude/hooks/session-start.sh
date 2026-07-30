@@ -68,7 +68,7 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   source "$CLAUDE_PROJECT_DIR/scripts/test-db-names.sh"
   for dbname in "${TEST_DB_NAMES_CI[@]}"; do
     DATABASE_URL="postgresql://questlog:questlog@localhost:${QUESTLOG_PG_PORT}/${dbname}" \
-      pnpm --filter @questlog/server db:migrate
+      $(test_db_migrate_cmd "$dbname")
   done
 
   exit 0
@@ -156,5 +156,5 @@ for dbname in "${TEST_DB_NAMES[@]}"; do
     sudo -u postgres psql -p "$PGPORT" -c "CREATE DATABASE ${dbname} OWNER ${DB_USER}"
   fi
   DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${PGPORT}/${dbname}" \
-    ${TEST_DB_MIGRATE_CMD[$dbname]}
+    $(test_db_migrate_cmd "$dbname")
 done

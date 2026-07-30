@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import type { UsageArtifact } from "@questlog/core/observability/artifact.js";
-import { db } from "./db/index.js";
+import type { Database } from "./db/index.js";
 import {
 	type ReportType,
 	mapReportToTicketReport,
@@ -18,9 +18,13 @@ function inferReportType(content: string): ReportType {
 /**
  * Reads a `*.usage.json` file (and, if given, its report markdown) and
  * upserts both into the observability store. Idempotent on ticket id — safe
- * to re-run against the same pair.
+ * to re-run against the same pair. `db` is injected (not imported from
+ * ./db/index.js directly) so this stays testable against a test database
+ * without opening the real OBSERVABILITY_DATABASE_URL connection — same
+ * thin-shell/tested-service split as packages/core/src/observability/capture-usage.ts.
  */
 export async function ingestUsageArtifact(
+	db: Database,
 	usageJsonPath: string,
 	reportPath?: string,
 ) {
@@ -51,7 +55,8 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 		);
 		process.exit(1);
 	}
-	ingestUsageArtifact(usageJsonPath, reportPath)
+	import("./db/index.js")
+		.then(({ db }) => ingestUsageArtifact(db, usageJsonPath, reportPath))
 		.then(() => {
 			console.log(`Ingested ${usageJsonPath}`);
 		})

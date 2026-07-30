@@ -19,11 +19,16 @@ TEST_DB_NAMES_CI=("$TEST_DB_NAME_CORE" "$TEST_DB_NAME_SERVER" "$TEST_DB_NAME_MCP
 # db:migrate; packages/observability's schema is independent (G-003) and
 # migrates via its own package script instead. Consumed by ci.yml and
 # session-start.sh so neither hardcodes a single migrate command for every
-# dbname. Why: Docs/IMPLEMENTATION_NOTES.md § T-053.
-declare -A TEST_DB_MIGRATE_CMD=(
-	["$TEST_DB_NAME_DEV"]="pnpm --filter @questlog/server db:migrate"
-	["$TEST_DB_NAME_CORE"]="pnpm --filter @questlog/server db:migrate"
-	["$TEST_DB_NAME_SERVER"]="pnpm --filter @questlog/server db:migrate"
-	["$TEST_DB_NAME_MCP"]="pnpm --filter @questlog/server db:migrate"
-	["$TEST_DB_NAME_OBSERVABILITY"]="pnpm --filter @questlog/observability db:migrate"
-)
+# dbname. A function, not an associative array (`declare -A`) — macOS ships
+# bash 3.2 by default (no associative-array support), and session-start.sh
+# must run under that. Why: Docs/IMPLEMENTATION_NOTES.md § T-053.
+test_db_migrate_cmd() {
+	case "$1" in
+		"$TEST_DB_NAME_OBSERVABILITY")
+			echo "pnpm --filter @questlog/observability db:migrate"
+			;;
+		*)
+			echo "pnpm --filter @questlog/server db:migrate"
+			;;
+	esac
+}

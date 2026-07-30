@@ -5,6 +5,7 @@ import type { UsageArtifact } from "@questlog/core/observability/artifact.js";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres, { type Sql } from "postgres";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
+import { ingestUsageArtifact } from "./cli.js";
 import { truncateAllTables } from "./db/global-setup.js";
 import {
 	mapReportToTicketReport,
@@ -99,5 +100,37 @@ describe("upsertTicketReport idempotency", () => {
 		);
 		expect(matching).toHaveLength(1);
 		expect(matching[0]?.remediationPassRequired).toBe(false);
+	});
+});
+
+describe("ingestUsageArtifact (CLI)", () => {
+	it("run twice against the same fixture usage.json + report pair upserts once on the first run and updates (not duplicates) on the second", async () => {
+		const usageJsonPath = `${fixturesDir}/T-999.usage.json`;
+		const reportPath = `${fixturesDir}/T-999-fixture-report.md`;
+
+		await ingestUsageArtifact(db, usageJsonPath, reportPath);
+		await ingestUsageArtifact(db, usageJsonPath, reportPath);
+
+		const runs = (await db.select().from(ticketRuns)).filter(
+			(r) => r.ticketId === "T-999",
+		);
+		const reports = (await db.select().from(ticketReports)).filter(
+			(r) => r.ticketId === "T-999",
+		);
+		expect(runs).toHaveLength(1);
+		expect(reports).toHaveLength(1);
+		expect(reports[0]?.reviewerVerdict).toBe("PASS-WITH-NOTES");
+	});
+
+	it("an empty-run fixture (no ticket id, no report) upserts only the ticket_runs row", async () => {
+		const usageJsonPath = `${fixturesDir}/empty-run-fixture.usage.json`;
+
+		await ingestUsageArtifact(db, usageJsonPath);
+
+		const all = await db.select().from(ticketRuns);
+		expect(all).toHaveLength(1);
+		expect(all[0]?.ticketId).toBeNull();
+		const reports = await db.select().from(ticketReports);
+		expect(reports).toHaveLength(0);
 	});
 });
