@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Fixed — T-038
+
+- **The MCP OAuth passphrase check is now constant-time.** `/authorize` was comparing the submitted passphrase with a plain `!==`, which can leak timing information about the real `MCP_ACCESS_PASSPHRASE`. It now hashes both sides and compares with `crypto.timingSafeEqual`. Found during a security review of the remote-MCP surface (full report: `Docs/tickets/reports/T-038-security-review-remote-mcp-surface.md`); no other severe findings.
+
 ### Added — T-087
 
 - **Stale ticket worktrees now get cleaned up automatically instead of accumulating forever.** `scripts/reap-worktree.sh <name> [--force]` tears down a worktree's per-worktree Postgres stack (if any) and removes the git worktree itself, refusing (unless `--force`d) when the worktree has uncommitted changes so nothing in-progress is ever silently discarded. The nightly executor's pre-flight (`EXECUTOR_ROUTINE.md` Step 1) now sweeps every worktree under `tmp/worktrees/` before picking a ticket, reaping any whose branch has an actually-merged PR and leaving everything else untouched — no more manual disk/Docker cleanup after a ticket ships.

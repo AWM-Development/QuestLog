@@ -205,6 +205,20 @@ describe("mcp-oauth routes", () => {
 			expect(response.statusCode).not.toBe(302);
 			expect(response.headers.location).toBeUndefined();
 		});
+
+		it("is rejected without a 500 even when its length differs from the real passphrase (guards a naive constant-time-compare regression)", async () => {
+			const clientId = await registerClient();
+			const { codeChallenge } = makePkcePair();
+
+			const response = await completeAuthorization({
+				clientId,
+				codeChallenge,
+				passphrase: "short",
+			});
+
+			expect(response.statusCode).toBe(401);
+			expect(response.headers.location).toBeUndefined();
+		});
 	});
 
 	describe("POST /token", () => {
