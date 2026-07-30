@@ -720,7 +720,7 @@ Biome's `check` exits 0 when every diagnostic is warn-severity (only errors fail
 ### New tool input schemas live in `packages/shared`, never `zod` imported directly into `packages/mcp/src/tools`
 `packages/mcp/package.json` has no direct `zod` dependency — every existing tool's `inputSchema` is sourced from `@questlog/shared` instead. `append_entity_note`'s input (`entityId`, `note`) has no other consumer, but rather than add a new dependency edge for one file, `AppendEntityNoteInput` was added to `packages/shared/src/validators/entity.ts` alongside `EntityCreateInput` and exported from the validators barrel — matching every prior tool's precedent even though this particular shape isn't actually shared with the frontend.
 
-### `apps/server/src/routes/mcp-http.routes.integration.test.ts` hard-codes the full tool list
+### `apps/server/src/routes/mcp-http.routes.test.ts` hard-codes the full tool list
 That file's `EXPECTED_TOOLS` array and its "tools/list returns all N tools" test name aren't scoped to any one ticket — they assert every registered MCP tool by exact name. Any ticket that registers a new tool (this one added `create_entity`/`append_entity_note`, bumping 7→9) needs to update both in the same PR or that integration test fails through no fault of its own logic. This file wasn't in T-032's `Context files:` list; flagged here so the next tool-adding ticket expects the same ripple.
 
 ## T-031 — `ingest_text` / `get_source_status` MCP tools (2026-07-25)
