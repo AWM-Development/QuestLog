@@ -2,13 +2,15 @@
 
 All notable changes to QuestLog are documented here.
 
-Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). This project has not yet reached v1.0; all work is grouped under `[Unreleased]` until the first production release.
+Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Versioned starting at `1.1.0` (the `develop` → `main` promotion that first applied this file's own cut-on-promote convention; everything shipped before that point is folded into that same first cut rather than reconstructed retroactively). `packages/*`/`apps/*` stay pinned at a placeholder `0.0.0` — they're private, unpublished workspace members; only the root `package.json` version tracks real releases.
 
 **Obligation:** Every ticket PR merged into `develop` must add an entry here — this is part of the nightly executor's definition of done (`Docs/tickets/TICKET_SPEC.md`, `Docs/tickets/EXECUTOR_ROUTINE.md` Step 7). `[Unreleased]` accumulates entries across `develop` until Alex promotes `develop` → `main` for a release, at which point it's cut into a dated version section.
 
 ---
 
 ## [Unreleased]
+
+## [1.1.0] - 2026-07-30
 
 ### Added — T-037
 
