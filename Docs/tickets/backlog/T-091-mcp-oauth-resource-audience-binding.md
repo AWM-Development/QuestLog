@@ -11,7 +11,7 @@ Context files (load ONLY these):
   - apps/server/src/routes/mcp-oauth.view.ts (`baseUrl` helper, already used elsewhere in this file for exactly this kind of self-referential URL check)
   - packages/core/src/services/mcp-oauth.service.ts (`createAuthorizationCode`, `exchangeAuthorizationCode` — where `resource` is currently stored and cross-checked against itself, never against the issuer)
   - apps/server/src/routes/mcp-oauth.schemas.ts (`resource: z.string().url()` on both `authorizeRequestSchema` and `tokenBodySchema`)
-  - apps/server/src/routes/mcp-oauth.routes.integration.test.ts (existing OAuth flow tests to extend)
+  - apps/server/src/routes/mcp-oauth.routes.test.ts (existing OAuth flow tests to extend)
 
 Mockup: none
 

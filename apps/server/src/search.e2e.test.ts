@@ -2,7 +2,7 @@
  * T-000 — real end-to-end retrieval proof.
  *
  * Unlike search.service.test.ts (synthetic basis-vector embeddings, mocked
- * fetch) and search.integration.test.ts (mocked search service entirely),
+ * fetch) and routers/search.test.ts (mocked search service entirely),
  * this test uses the REAL Voyage API against a permanent fixture
  * (test-fixtures/ashfall-primer.md) and proves the full path:
  *

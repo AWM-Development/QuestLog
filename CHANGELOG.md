@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-094
+
+- **Retired the `.integration.test.ts` naming tier.** All 13 files using that suffix are renamed to plain `*.test.ts` — every vitest config already ran both in the same default tier (splitting out only `*.e2e.test.ts`), so the suffix signaled nothing a config or contributor could rely on. Test conventions docs (`.claude/rules/backend.md`, `.claude/skills/tdd-loop/SKILL.md`, `Docs/DEVELOPMENT_GUIDE.md`) now state plainly that unit and integration tests share one suffix. Resolves gate `G-009` — see `Docs/tickets/gated/resolved/G-009-integration-test-suffix-retire-or-enforce.md` for the full decision.
+
 ### Changed — T-093
 
 - **Dropped TypeScript composite project references repo-wide in favor of plain `tsc --noEmit`.** No tsconfig sets `composite: true` or a `references` array anymore — cross-package imports resolve entirely through each package's existing `paths` aliases, which is all that ever made them resolve. Nothing outside `tsc -b` itself consumed the emitted `dist/**`/`.typecheck-out/**` output, and the emit was the root cause of two live bugs: a concurrent-write race between `packages/core`'s and `packages/mcp`'s `tsc -b` runs (`turbo.json`'s `typecheck` task has no `dependsOn`, live-hit in PR #95/T-052), and `apps/server/tsconfig.json`'s `outDir` colliding with its esbuild bundle output. Both are now structurally impossible rather than coordinated around. Resolves gate `G-007` — see `Docs/tickets/gated/resolved/G-007-drop-typescript-composite-project-references.md` for the full decision.

@@ -72,7 +72,7 @@ Exit condition (machine-checkable):
   - `packages/mcp/src/server.test.ts`'s existing tests (tool-list
     contents, individual tool behavior) still pass unmodified, proving
     the relocation changed no observable behavior
-  - `apps/server/src/routes/mcp-http.routes.integration.test.ts`'s
+  - `apps/server/src/routes/mcp-http.routes.test.ts`'s
     `EXPECTED_TOOLS`/tool-count assertion still passes unmodified
 
 Iteration cap: 3 distinct approaches on any single failure, then Blocked Protocol
