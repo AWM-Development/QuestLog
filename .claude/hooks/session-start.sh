@@ -47,6 +47,31 @@ if [ -n "$merge_base" ]; then
 fi
 # --- develop-sync guard: end ---
 
+# --- develop-ff guard: begin ---
+# Separate problem from the file-sync guard above: some commands (/promote,
+# /promote-execute's priority-bump commit) commit small changes directly onto
+# develop in the primary directory, then push straight to origin/develop with
+# no fast-forward step first. If local develop is behind (a different ticket
+# merged since this checkout was last updated), that push is rejected
+# non-fast-forward with no documented recovery — observed live against T-072
+# (local develop 10 commits behind after T-071 merged; the session had to
+# improvise a rebase-and-retry). Fast-forward local develop here, but only
+# when it's unambiguously safe: exactly on develop, with a clean working
+# tree, so this can never discard uncommitted work — and `git merge --ff-only`
+# itself can only ever advance the ref or no-op, never rewrite history. Any
+# other branch, or a dirty develop, is left untouched.
+current_branch="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+if [ "$current_branch" = "develop" ] && git diff --quiet 2>/dev/null && git diff --cached --quiet 2>/dev/null; then
+  before_sha="$(git rev-parse HEAD 2>/dev/null || true)"
+  if git merge --ff-only origin/develop --quiet 2>/dev/null; then
+    after_sha="$(git rev-parse HEAD 2>/dev/null || true)"
+    if [ -n "$after_sha" ] && [ "$before_sha" != "$after_sha" ]; then
+      echo "session-start.sh: fast-forwarded local develop $before_sha -> $after_sha"
+    fi
+  fi
+fi
+# --- develop-ff guard: end ---
+
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   exit 0
 fi
