@@ -10,20 +10,19 @@ import { createTestDb } from "./test-helpers.js";
 
 class RollbackForTest extends Error {}
 
-// truncateAllTables deletes every table repo-wide, unscoped to any one
-// test's campaignId — a real DELETE, not a no-op, inside these tests' own
-// transactions. Postgres re-checks FK constraints against whatever's
-// committed by the time each DELETE statement runs, so a concurrently
-// running test file that commits a referencing row after this transaction's
-// own DELETE FROM "sources" (but before its DELETE FROM "campaigns") is
-// exactly the race that produced the FK-violation flake this file's tests
-// guard against (Docs/tickets/T-060-fix-global-setup-truncate-race.md).
-// Taking this lock first blocks (not races) any such concurrent write until
-// the transaction ends.
+// Blocks (not races) a concurrent write into any of these tables while this
+// transaction truncates them. Locked parent-first (reverse of
+// TABLES_IN_DELETE_ORDER) to match how every other test file in this
+// package acquires these same tables' locks (campaign row first, then
+// children) — locking child-first here would instead deadlock against
+// that pattern. Why: Docs/IMPLEMENTATION_NOTES.md § T-060.
 async function lockTruncationTargets(sql: {
 	unsafe: (query: string) => Promise<unknown>;
 }) {
-	const tables = TABLES_IN_DELETE_ORDER.map((table) => `"${table}"`).join(", ");
+	const tables = [...TABLES_IN_DELETE_ORDER]
+		.reverse()
+		.map((table) => `"${table}"`)
+		.join(", ");
 	await sql.unsafe(`LOCK TABLE ${tables} IN EXCLUSIVE MODE`);
 }
 
