@@ -4,7 +4,6 @@ Milestone ref: M-EFFICIENCY.3
 
 Priority: P1
 
-Blocked on: T-050 — must be merged into develop first
 
 Branch: feat/m-efficiency/t-084-tier-gated-executor-process-weight
 

@@ -320,6 +320,40 @@ importers:
         specifier: ^3.0.9
         version: 3.2.4(@types/node@22.19.15)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.31.1)(msw@2.12.11(@types/node@22.19.15)(typescript@5.9.3))(tsx@4.21.0)
 
+  packages/observability:
+    dependencies:
+      '@questlog/core':
+        specifier: workspace:*
+        version: link:../core
+      dotenv:
+        specifier: ^17.3.1
+        version: 17.3.1
+      drizzle-orm:
+        specifier: ^0.45.1
+        version: 0.45.1(postgres@3.4.8)
+      postgres:
+        specifier: ^3.4.8
+        version: 3.4.8
+    devDependencies:
+      '@biomejs/biome':
+        specifier: ^1.9.4
+        version: 1.9.4
+      '@types/node':
+        specifier: ^22.13.10
+        version: 22.19.15
+      drizzle-kit:
+        specifier: ^0.31.9
+        version: 0.31.9
+      tsx:
+        specifier: ^4.19.3
+        version: 4.21.0
+      typescript:
+        specifier: ^5.8.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.9
+        version: 3.2.4(@types/node@22.19.15)(jiti@2.6.1)(jsdom@26.1.0)(lightningcss@1.31.1)(msw@2.12.11(@types/node@22.19.15)(typescript@5.9.3))(tsx@4.21.0)
+
   packages/shared:
     dependencies:
       zod:
@@ -329,6 +363,9 @@ importers:
       '@biomejs/biome':
         specifier: ^1.9.4
         version: 1.9.4
+      '@types/node':
+        specifier: ^22.13.10
+        version: 22.19.15
       typescript:
         specifier: ^5.8.2
         version: 5.9.3
