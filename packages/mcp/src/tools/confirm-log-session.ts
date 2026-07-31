@@ -6,6 +6,7 @@ import type { EntitySpan } from "@questlog/core/services/entity.service.js";
 import { sessionService } from "@questlog/core/services/session.service.js";
 import { writeRequestService } from "@questlog/core/services/write-request.service.js";
 import { ConfirmLogSessionInput } from "@questlog/shared";
+import { CONFIRM_LOG_SESSION_DESCRIPTION } from "../content/tool-descriptions.js";
 import { withToolErrors } from "./errors.js";
 import type { ToolDeps } from "./types.js";
 
@@ -39,8 +40,7 @@ export function registerConfirmLogSession(
 	server.registerTool(
 		"confirm_log_session",
 		{
-			description:
-				"Confirm a previously-previewed log_session change-set: creates the session record, links its confirmed entities, chunks + embeds the content, and applies entity consolidation updates, all inside a single transaction.",
+			description: CONFIRM_LOG_SESSION_DESCRIPTION,
 			inputSchema: ConfirmLogSessionInput,
 		},
 		withToolErrors(async ({ token }) => {

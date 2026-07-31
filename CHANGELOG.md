@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-064
+
+- **MCP tool `description` strings relocated out of each tool file into one aggregated `packages/mcp/src/content/tool-descriptions.ts`.** Pure text move, no behavioral change: every tool's `server.registerTool(...)` call now imports its description from a shared, single-source-of-truth module instead of carrying it as an inline string literal, extending the same pattern T-033's `onboarding-instructions.ts` started. Dev-experience only — no tool name, schema, or handler behavior changed.
+
 ### Fixed — T-060
 
 - **Fixed an intermittent FK-violation race in `packages/core`'s test suite.** `global-setup.test.ts`'s two tests exercising `truncateAllTables` mid-suite could occasionally fail with a foreign-key violation when another concurrently-running test file committed a row in the small window between the truncation's `sources` and `campaigns` deletes — a genuine race, not a flaky assertion (root-caused and deterministically reproduced before landing the fix). Both tests now take an explicit table lock before truncating, blocking concurrent writers instead of racing them; a new regression test guards against reintroducing the race. Dev/CI-only — no production behavior changed.

@@ -18,6 +18,8 @@ Each tool is a thin adapter: Zod-validate the MCP input, call the service, shape
 
 One file per tool under `packages/mcp/src/tools/`, each exporting a `register<ToolName>(server, deps)` function that calls `server.registerTool(...)` with the tool's name, description, and `inputSchema`. `packages/mcp/src/server.ts` only constructs the `McpServer` and calls each `register*` function — adding a tool is one new file under `tools/` plus one line in `server.ts`, never a new inline block there.
 
+A tool's `description` text lives in `content/tool-descriptions.ts` as an exported `UPPER_SNAKE_CASE` constant, not inlined as a string literal in its `register*` function — the `register<ToolName>(server, deps)` shape and one-file-per-tool rule above are otherwise unchanged.
+
 Shared dependencies (`db`, `fetchFn`, etc.) are typed once as `ToolDeps` in `packages/mcp/src/tools/types.ts` and destructured per tool file — don't redeclare the shape per file.
 
 Wrap any handler whose underlying service can throw a typed error (e.g. `NotFoundError`) in `withToolErrors` (`packages/mcp/src/tools/errors.ts`) rather than hand-rolling a `try/catch`. It's safe to apply even to handlers that don't currently throw — it's a no-op that keeps every tool file the same shape and costs nothing if that changes later.
