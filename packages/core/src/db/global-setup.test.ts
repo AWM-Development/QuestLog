@@ -6,25 +6,9 @@ import {
 	truncateAllTables,
 } from "./global-setup.js";
 import { FAKE_HOSTED_DB_URL, testDbUrl } from "./test-db-url.js";
-import { createTestDb } from "./test-helpers.js";
+import { createTestDb, lockTruncationTargets } from "./test-helpers.js";
 
 class RollbackForTest extends Error {}
-
-// Blocks (not races) a concurrent write into any of these tables while this
-// transaction truncates them. Locked parent-first (reverse of
-// TABLES_IN_DELETE_ORDER) to match how every other test file in this
-// package acquires these same tables' locks (campaign row first, then
-// children) — locking child-first here would instead deadlock against
-// that pattern. Why: Docs/IMPLEMENTATION_NOTES.md § T-060.
-async function lockTruncationTargets(sql: {
-	unsafe: (query: string) => Promise<unknown>;
-}) {
-	const tables = [...TABLES_IN_DELETE_ORDER]
-		.reverse()
-		.map((table) => `"${table}"`)
-		.join(", ");
-	await sql.unsafe(`LOCK TABLE ${tables} IN EXCLUSIVE MODE`);
-}
 
 describe("setup", () => {
 	afterEach(() => {
@@ -58,9 +42,10 @@ describe("global-setup", () => {
 		// Runs inside BEGIN/ROLLBACK (forced by throwing RollbackForTest below)
 		// so the real truncation never commits, and the explicit lock below
 		// blocks (rather than races) any concurrently-running test file that
-		// commits a referencing row mid-truncation — see the FK-violation race
-		// documented at lockTruncationTargets' definition above. Uses tx.unsafe()
-		// with bound parameters (not tagged templates) because TypeScript's
+		// commits a referencing row mid-truncation — see lockTruncationTargets'
+		// definition in test-helpers.ts for the FK-violation race this guards
+		// against. Uses tx.unsafe() with bound parameters (not tagged
+		// templates) because TypeScript's
 		// Omit — used to derive TransactionSql from Sql — drops call signatures,
 		// so `tx`\`...\` alone doesn't typecheck even though it works at runtime.
 		await expect(
