@@ -2,7 +2,7 @@
 
 **Purpose:** Non-obvious decisions and gotchas that aren't derivable from reading the code. Read at the start of every session. Add an entry when you make a non-obvious decision. Retired entries: `Docs/IMPLEMENTATION_NOTES_ARCHIVE.md`.
 
-**Last Updated:** 2026-07-29
+**Last Updated:** 2026-07-31
 
 ## Component directory organization (M4.5 polish, 2026-04-24)
 
@@ -840,3 +840,9 @@ Full findings in `Docs/tickets/reports/T-038-security-review-remote-mcp-surface.
 - **`mcp-oauth.routes.ts`'s `/authorize` passphrase check now hashes both sides (SHA-256) before `crypto.timingSafeEqual`, rather than comparing raw strings.** Hashing first isn't just about constant time — `timingSafeEqual` throws on a buffer-length mismatch, so comparing raw strings directly would make a wrong-length passphrase crash the request instead of cleanly 401ing. Hashing to a fixed 32-byte digest sidesteps that entirely. Any future secret-vs-user-input comparison in this codebase (not just OAuth) should use the same `timingSafeStringEqual` shape, not a fresh `!==`.
 - **RFC 8707 `resource` binding is currently decorative, not enforced.** `/authorize` and `/token` both accept a client-supplied `resource` and only check it against *each other* (code-issuance time vs. exchange time), never against this server's own actual URL (`baseUrl(request)`). Not exploitable today — this deployment has exactly one resource server, and nothing downstream keys off `resource` — but the audience-binding guarantee the `.well-known` discovery metadata implies doesn't actually hold. Tracked as `T-091`; fix it there rather than re-discovering this gap from scratch if `resource` checking is ever added ad hoc elsewhere.
 - **The pre-existing unauthenticated `POST /api/campaigns/:id/sources/upload` and `POST /api/conversation/:id/stream` routes are real, live, and unrelated to this milestone's own auth work** (`/mcp`'s bearer-token gate doesn't touch them) — whether to close that gap is gated on `G-017` (`T-092`), not something this review resolved unilaterally.
+
+## T-056 — `update_entity` MCP tool (2026-07-31)
+
+**`update_entity` validates `entityId` eagerly at preview time, not just at confirm.** The ticket's exit conditions literally named `confirm_update_entity` as the tool that should return the not-found error for a bogus `entityId`, but `update_entity`'s preview step also calls `entityService.getById` up front and rejects immediately — matching `get_entity`/`append_entity_note`'s existing fail-fast convention (better UX: no write-request row gets created for an id that can never resolve). `entityService.update` still independently guards against a nonexistent id inside the confirm transaction (defense in depth, mirrors `campaignService.update`'s `rows.length === 0` check) — `packages/mcp/src/server.test.ts`'s "returns a well-formed not-found error from confirm_update_entity for a bogus entityId" test exercises that second path directly by hand-constructing a write-request via `writeRequestService.createPreview`, bypassing `update_entity`'s own check, so both layers are actually covered.
+
+**`entityService.update` scopes its `WHERE` by `campaignId`, not just `id`,** unlike the ticket's illustrative signature (`{ id, name?, type?, description? }`). Matches `getById`/`getByName`'s existing campaign-scoping convention in the same file — an entity id that exists but belongs to a different campaign 404s rather than silently succeeding.

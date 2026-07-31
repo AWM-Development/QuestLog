@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-056
+
+- **New `update_entity`/`confirm_update_entity` MCP tool pair.** Lets a DM rename an entity, replace its description, or change its type, following the same preview/confirm pattern as `log_session`: `update_entity` previews the proposed before/after field values without persisting anything, and `confirm_update_entity` applies only the fields that were actually provided. Rejects an unresolvable `entityId` (before creating a write request) or an invalid `type`, and cleanly rejects a reused/unknown confirm token — no crashes.
+
 ### Added — T-050
 
 - **Tickets now carry a `Complexity tier` and a `Strategy-gate flag`.** `TICKET_SPEC.md`'s fixed ticket format gains two new fields under `Milestone ref:`: `Complexity tier: S | M | L`, sized by a documented rubric (single-file/established-pattern vs. multi-file/new-service vs. new-subsystem/cross-cutting), and `Strategy-gate flag: yes | no`, a provenance marker for whether the ticket only became draftable after resolving a 🎨/🧠 gate. `ticket-writer` now assigns both on every future ticket; `REPORT_TEMPLATE.md` and `EXECUTOR_ROUTINE.md`'s Step 7 echo them into the morning report. Lays the groundwork for tier-relative cost/efficiency metrics (M-OBS.3/M-EFFICIENCY.3) without any DB/API/dashboard changes yet.
