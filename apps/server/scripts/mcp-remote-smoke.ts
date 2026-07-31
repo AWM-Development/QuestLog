@@ -1,7 +1,12 @@
-import { createHash, randomBytes, randomUUID } from "node:crypto";
+import { randomUUID } from "node:crypto";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { db } from "@questlog/core/db/index.js";
+import {
+	EXPECTED_TOOLS,
+	makePkcePair,
+	withTimeout,
+} from "@questlog/shared/testing/mcp-verification.js";
 import { buildApp } from "../src/server.js";
 
 // Proof that the real remote transport (T-030) works end to end: discover the
@@ -12,40 +17,7 @@ import { buildApp } from "../src/server.js";
 // the browser redirect (scripted directly via fetch, same as a user would
 // submit the rendered form).
 
-const EXPECTED_TOOLS = [
-	"query_lore",
-	"prep_brief",
-	"list_campaigns",
-	"list_entities",
-	"get_entity",
-	"log_session",
-	"confirm_log_session",
-];
-
 const HANDSHAKE_TIMEOUT_MS = 15_000;
-
-function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
-	return Promise.race([
-		promise,
-		new Promise<T>((_, reject) => {
-			setTimeout(
-				() =>
-					reject(
-						new Error(`Timed out after ${HANDSHAKE_TIMEOUT_MS}ms: ${label}`),
-					),
-				HANDSHAKE_TIMEOUT_MS,
-			);
-		}),
-	]);
-}
-
-function makePkcePair() {
-	const codeVerifier = randomBytes(32).toString("base64url");
-	const codeChallenge = createHash("sha256")
-		.update(codeVerifier)
-		.digest("base64url");
-	return { codeVerifier, codeChallenge };
-}
 
 async function main() {
 	if (!process.env.DATABASE_URL) {
@@ -158,10 +130,18 @@ async function main() {
 			version: "0.0.0",
 		});
 
-		await withTimeout(client.connect(transport), "MCP initialize handshake");
+		await withTimeout(
+			client.connect(transport),
+			"MCP initialize handshake",
+			HANDSHAKE_TIMEOUT_MS,
+		);
 		console.log(`Initialize handshake succeeded against ${baseUrl}/mcp`);
 
-		const { tools } = await withTimeout(client.listTools(), "tools/list");
+		const { tools } = await withTimeout(
+			client.listTools(),
+			"tools/list",
+			HANDSHAKE_TIMEOUT_MS,
+		);
 		const names = tools.map((tool) => tool.name).sort();
 		console.log(`Server reported ${names.length} tool(s): ${names.join(", ")}`);
 

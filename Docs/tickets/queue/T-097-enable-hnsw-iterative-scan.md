@@ -35,7 +35,7 @@ Context files (load ONLY these):
   - Docs/tickets/archive/T-022-pgvector-iterative-scan-upgrade.md (the
     original ticket's Scope/Exit condition — largely still accurate for
     the application-code half; this ticket narrows it, see Out of scope)
-  - Docs/tickets/queue/T-095-remote-sandbox-db-bootstrap-hardening.md
+  - Docs/tickets/queue/T-098-remote-sandbox-db-bootstrap-hardening.md
     (item 2 — may close the sandbox's pgvector version gap as a side
     effect; if it has and its report says which version resulted, this
     ticket's own verification step should use that context, not
@@ -46,7 +46,7 @@ Mockup: none
 Model: sonnet
 
 Scope:
-  Confirm the currently-reachable Postgres (per whatever T-095 leaves the
+  Confirm the currently-reachable Postgres (per whatever T-098 leaves the
   sandbox with) has pgvector >= 0.8.0 (`SELECT extversion FROM
   pg_extension WHERE extname='vector'`). If it doesn't, stop and follow
   the Blocked Protocol — this ticket cannot proceed on < 0.8.0, since
@@ -78,7 +78,7 @@ Out of scope:
     documented defaults for `iterative_scan` — real tuning against actual
     production data volume is future work, not this ticket.
   - Upgrading pgvector itself, or touching `docker-compose.yml`/CI's
-    image pin, or `.claude/hooks/session-start.sh` — that's T-095's scope
+    image pin, or `.claude/hooks/session-start.sh` — that's T-098's scope
     (or already-done T-023/T-024 infra work), not this ticket's. This
     ticket only proceeds once >= 0.8.0 is already available; it doesn't
     make it available.

@@ -27,7 +27,7 @@ Open question: Should the nightly executor's remote-sandbox sessions stop
   local dev / CI keep the existing Docker-compose/apt paths unchanged, or
   does this replace those too?
 
-Blocks: T-095 (`Docs/tickets/queue/T-095-remote-sandbox-db-bootstrap-hardening.md`,
+Blocks: T-098 (`Docs/tickets/queue/T-098-remote-sandbox-db-bootstrap-hardening.md`,
   drafted by this gate's own resolution — see below)
 
 Notes: This is not a code-quality problem with the existing scripts — the
@@ -47,7 +47,7 @@ Notes: This is not a code-quality problem with the existing scripts — the
 
 ## Resolution (2026-07-31)
 
-**Decision: keep the remote sandbox on local, natively-provisioned Postgres. Harden that path instead of replacing it. Neon is rejected for the sandbox.** Drafted as `T-095` (P0, `queue/`).
+**Decision: keep the remote sandbox on local, natively-provisioned Postgres. Harden that path instead of replacing it. Neon is rejected for the sandbox.** Drafted as `T-098` (P0, `queue/`).
 
 ### Why not Neon (the option this gate opened to evaluate)
 
@@ -61,7 +61,7 @@ The gate was filed on the premise that swapping the from-scratch apt bootstrap f
 The four incidents that motivated this gate are not four instances of one converging problem — separating them by which code path they actually hit:
 
 - Docker Hub registry 403 (T-023) and the Docker daemon's inability to bind a socket (found live in T-056) — **irrelevant to this path.** The remote branch provisions natively and never invokes Docker. These were conflated with the Postgres bootstrap when the gate was filed; they are a real sandbox limitation but not one this subsystem touches.
-- pgvector pinned at 0.6.0 by Ubuntu's apt package (T-016) — real, latent, and *not* fixed by any dpkg patch. Addressed in T-095 scope item 2 (PGDG repo, best-effort with fallback).
+- pgvector pinned at 0.6.0 by Ubuntu's apt package (T-016) — real, latent, and *not* fixed by any dpkg patch. Addressed in T-098 scope item 2 (PGDG repo, best-effort with fallback).
 - dpkg interrupted state (T-056) — real, and healed by one package-agnostic `dpkg --configure -a`.
 
 So the genuinely-failing surface is two issues, both narrow, neither requiring a hosted database to solve.
@@ -72,7 +72,7 @@ Alex's stated requirement was certainty that this stops recurring. That certaint
 
 `session-start.sh` runs under `set -euo pipefail`, so a failed provisioning step kills the hook mid-script, leaving a half-built database and no signal. Every incident so far has been discovered 20+ turns downstream as unexplained test failures, costing a session of archaeology. **The fix is a verification gate that makes any failure — including ones neither of us has anticipated — announce itself in one line at session start.** That converts an unknown future breakage from expensive-and-mysterious to cheap-and-legible, which is the achievable form of "resolved."
 
-T-095 therefore ships four things, not just the dpkg one-liner: the self-heal, the pgvector version fix, the verification gate (the most important deliverable), and explicit deletion of superseded code — with an exit condition requiring the gate be *proven to fail correctly*, not just to pass.
+T-098 therefore ships four things, not just the dpkg one-liner: the self-heal, the pgvector version fix, the verification gate (the most important deliverable), and explicit deletion of superseded code — with an exit condition requiring the gate be *proven to fail correctly*, not just to pass.
 
 ### Explicitly preserved
 

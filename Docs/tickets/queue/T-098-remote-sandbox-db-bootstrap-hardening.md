@@ -1,4 +1,4 @@
-# T-095 — Remote-sandbox DB bootstrap: self-heal, verify loudly, close the pgvector version gap
+# T-098 — Remote-sandbox DB bootstrap: self-heal, verify loudly, close the pgvector version gap
 
 Milestone ref: none — surfaced by `/morning-review` on T-056 (PR #143), resolved via G-018
 
@@ -8,7 +8,7 @@ Strategy-gate flag: yes
 
 Priority: P0
 
-Branch: chore/m-pipeline/t-095-remote-sandbox-db-bootstrap-hardening
+Branch: chore/m-pipeline/t-098-remote-sandbox-db-bootstrap-hardening
 
 Context files (load ONLY these):
   - .claude/hooks/session-start.sh (lines 77-160 — the remote-only native-Postgres bootstrap this ticket hardens; note `set -euo pipefail` on line 3, the reason a failed step currently kills the script silently mid-provision)
@@ -88,7 +88,7 @@ Out of scope:
     describe the *old* behavior (T-016's 0.6.0 finding, T-023/T-024's
     Docker notes, T-025's provisioning description). Those are an
     append-only record of what was true when each ticket ran, not live
-    documentation — add a new § T-095 entry instead of editing them.
+    documentation — add a new § T-098 entry instead of editing them.
   - Any attempt to fix the sandbox's Docker daemon (confirmed during T-056
     to be a container-runtime capability gap, not a config problem) — the
     remote path is native Postgres and never invokes Docker.
@@ -117,7 +117,7 @@ Exit condition (machine-checkable):
 
 Iteration cap: 3 distinct approaches on any single failure, then Blocked Protocol
 
-Definition of done includes: checkbox flipped in `Docs/milestones/MILESTONES_V1_1_MCP.md` (none currently references this — skip if no line exists), `IMPLEMENTATION_NOTES.md` updated with a new § T-095 entry, a `CHANGELOG.md` entry under `[Unreleased]`, morning report written.
+Definition of done includes: checkbox flipped in `Docs/milestones/MILESTONES_V1_1_MCP.md` (none currently references this — skip if no line exists), `IMPLEMENTATION_NOTES.md` updated with a new § T-098 entry, a `CHANGELOG.md` entry under `[Unreleased]`, morning report written.
 
 ## Note on verification (read before starting)
 

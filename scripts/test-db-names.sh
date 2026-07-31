@@ -8,7 +8,27 @@ TEST_DB_NAME_DEV=questlog
 TEST_DB_NAME_CORE=questlog_test_core
 TEST_DB_NAME_SERVER=questlog_test_server
 TEST_DB_NAME_MCP=questlog_test_mcp
-TEST_DB_NAMES=("$TEST_DB_NAME_DEV" "$TEST_DB_NAME_CORE" "$TEST_DB_NAME_SERVER" "$TEST_DB_NAME_MCP")
+TEST_DB_NAME_OBSERVABILITY=questlog_test_observability
+TEST_DB_NAMES=("$TEST_DB_NAME_DEV" "$TEST_DB_NAME_CORE" "$TEST_DB_NAME_SERVER" "$TEST_DB_NAME_MCP" "$TEST_DB_NAME_OBSERVABILITY")
 # Test-tier-only names (excludes TEST_DB_NAME_DEV) — for CI provisioning and
 # any other consumer that must never create/migrate the dev database.
-TEST_DB_NAMES_CI=("$TEST_DB_NAME_CORE" "$TEST_DB_NAME_SERVER" "$TEST_DB_NAME_MCP")
+TEST_DB_NAMES_CI=("$TEST_DB_NAME_CORE" "$TEST_DB_NAME_SERVER" "$TEST_DB_NAME_MCP" "$TEST_DB_NAME_OBSERVABILITY")
+
+# Maps each test-tier dbname to the migrate command that applies its schema.
+# Most packages share packages/core's migrations via @questlog/server's
+# db:migrate; packages/observability's schema is independent (G-003) and
+# migrates via its own package script instead. Consumed by ci.yml and
+# session-start.sh so neither hardcodes a single migrate command for every
+# dbname. A function, not an associative array (`declare -A`) — macOS ships
+# bash 3.2 by default (no associative-array support), and session-start.sh
+# must run under that. Why: Docs/IMPLEMENTATION_NOTES.md § T-053.
+test_db_migrate_cmd() {
+	case "$1" in
+		"$TEST_DB_NAME_OBSERVABILITY")
+			echo "pnpm --filter @questlog/observability db:migrate"
+			;;
+		*)
+			echo "pnpm --filter @questlog/server db:migrate"
+			;;
+	esac
+}

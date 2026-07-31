@@ -14,6 +14,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 - **`manually_inspected` no longer false-positives on nearly every executor run.** Cost-report human-message detection was miscounting framework-injected transcript turns — skill/slash-command load expansions and interrupt notices — as if Alex had typed them, so almost every run (including fully autonomous overnight ones) showed up flagged as manually inspected. `summarizeUsage` now recognizes those two shapes and excludes them; a real follow-up message from Alex still trips the flag as before.
 
+### Added — T-053
+
+- **New `packages/observability` workspace package holds a queryable store for executor run/report data.** Own Drizzle schema (`ticket_runs`, `ticket_reports`), own migrations, and its own `OBSERVABILITY_DATABASE_URL`-backed connection — deliberately kept independent of `packages/core`'s campaign-data schema (per `G-003`'s resolution). A pure mapping layer converts T-046's `*.usage.json` artifacts and ticket report markdown into insertable rows; upsert helpers are idempotent on `ticket_id`, and a thin CLI (`packages/observability/src/cli.ts`) ingests a given usage-artifact/report pair. No API endpoints or dashboard yet — those are M-OBS.4/M-OBS.5, blocked on this ticket.
+
 ### Added — T-050
 
 - **Tickets now carry a `Complexity tier` and a `Strategy-gate flag`.** `TICKET_SPEC.md`'s fixed ticket format gains two new fields under `Milestone ref:`: `Complexity tier: S | M | L`, sized by a documented rubric (single-file/established-pattern vs. multi-file/new-service vs. new-subsystem/cross-cutting), and `Strategy-gate flag: yes | no`, a provenance marker for whether the ticket only became draftable after resolving a 🎨/🧠 gate. `ticket-writer` now assigns both on every future ticket; `REPORT_TEMPLATE.md` and `EXECUTOR_ROUTINE.md`'s Step 7 echo them into the morning report. Lays the groundwork for tier-relative cost/efficiency metrics (M-OBS.3/M-EFFICIENCY.3) without any DB/API/dashboard changes yet.
