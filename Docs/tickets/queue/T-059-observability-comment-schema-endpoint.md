@@ -4,7 +4,6 @@ Milestone ref: M-OBS.5
 
 Priority: P2
 
-Blocked on: T-053 — must be merged into develop first
 
 Branch: feat/m-obs/t-059-observability-comment-schema-endpoint
 
