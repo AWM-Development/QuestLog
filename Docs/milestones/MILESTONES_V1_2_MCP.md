@@ -53,7 +53,7 @@ This milestone builds the actual instrumentation instead of continuing to guess:
   A small, clearly-labeled-as-assumptions config (`packages/core/src/observability/cost-model.ts`) holding what no transcript can supply: Alex's fully-loaded hourly rate, a default review-time-per-ticket estimate, and human-engineer-hour-equivalents per complexity tier (from M-OBS.6) — plus pure functions computing "total system cost" (agent + reviewer-subagent + review-time cost) and the cost-vs-human-equivalent ratio per tier.
   Exit: both functions unit-tested against fixture inputs; the assumption-vs-measurement distinction is explicit in code comments.
 
-- [ ] **M-OBS.8 — Fix `manually_inspected` false-positive detection** (T-095)
+- [x] **M-OBS.8 — Fix `manually_inspected` false-positive detection** (T-095)
   Investigated 2026-07-31: `summarizeUsage`'s human-message detection (M-OBS.1/T-046) treats any `user`-role transcript turn that isn't a plain string or a `tool_result` block as a human-typed message. In practice, skill/slash-command expansions and interrupt notices also arrive as `user` turns with array content whose blocks are `type: "text"` — so `humanMessageCount` climbs past 1, and `manually_inspected` fires, on nearly every run including fully autonomous ones. Fix the classification instead of removing the field.
   Exit: `summarizeUsage` correctly excludes framework-injected text-block user turns from `humanMessageCount`; regression tests cover the shapes found in real transcripts (skill-load text, `[Request interrupted by user]`) alongside the existing genuine-human-string case.
 
