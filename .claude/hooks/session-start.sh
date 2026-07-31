@@ -65,8 +65,16 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   done
 
   # Test-tier only (TEST_DB_NAMES_CI excludes the dev DB) — see § T-072.
+  # docker-compose.yml's POSTGRES_DB only creates `questlog` itself; every
+  # other name needs an explicit CREATE DATABASE, same as ci.yml's own
+  # provisioning step. Why this wasn't always here: Docs/IMPLEMENTATION_NOTES.md § T-098.
   source "$CLAUDE_PROJECT_DIR/scripts/test-db-names.sh"
   for dbname in "${TEST_DB_NAMES_CI[@]}"; do
+    db_exists=$(PGPASSWORD=questlog psql -h localhost -p "$QUESTLOG_PG_PORT" -U questlog -d questlog -tAc \
+      "SELECT 1 FROM pg_database WHERE datname='${dbname}'" 2>/dev/null || echo none)
+    if [ "$db_exists" != "1" ]; then
+      PGPASSWORD=questlog psql -h localhost -p "$QUESTLOG_PG_PORT" -U questlog -d questlog -c "CREATE DATABASE ${dbname}"
+    fi
     DATABASE_URL="postgresql://questlog:questlog@localhost:${QUESTLOG_PG_PORT}/${dbname}" \
       eval "$(test_db_migrate_cmd "$dbname")"
   done
@@ -213,13 +221,19 @@ if [ -z "$failed" ]; then
       failed="database ${dbname} does not exist"
       break
     fi
-    for ext in $required_extensions; do
-      ext_ok=$(sudo -u postgres psql -p "$PGPORT" -d "$dbname" -tAc "SELECT 1 FROM pg_extension WHERE extname='${ext}'" 2>/dev/null || echo none)
-      if [ "$ext_ok" != "1" ]; then
-        failed="extension ${ext} missing on database ${dbname}"
-        break 2
-      fi
-    done
+    # packages/observability has its own independent schema (G-003) with no
+    # vector/pg_trgm columns — its migrate script legitimately never creates
+    # these, so checking for them there is a false alarm, not a real failure.
+    # Same distinction test_db_migrate_cmd() already draws by dbname.
+    if [ "$dbname" != "$TEST_DB_NAME_OBSERVABILITY" ]; then
+      for ext in $required_extensions; do
+        ext_ok=$(sudo -u postgres psql -p "$PGPORT" -d "$dbname" -tAc "SELECT 1 FROM pg_extension WHERE extname='${ext}'" 2>/dev/null || echo none)
+        if [ "$ext_ok" != "1" ]; then
+          failed="extension ${ext} missing on database ${dbname}"
+          break 2
+        fi
+      done
+    fi
     migration_count=$(sudo -u postgres psql -p "$PGPORT" -d "$dbname" -tAc \
       "SELECT count(*) FROM drizzle.__drizzle_migrations" 2>/dev/null || echo 0)
     if [ "${migration_count:-0}" -lt 1 ]; then

@@ -128,3 +128,14 @@ report about which exit conditions were proven live versus reasoned about.
 The genuine end-to-end proof is the *next* remote executor run's session-start
 output showing the green verification summary; the report should say so plainly
 rather than implying local verification settled it.
+
+## Addendum (2026-07-31) — scope explicitly expanded past this ticket's own Out-of-scope line
+
+After this ticket shipped, Alex asked for rigorous, executed (not reasoned-about) proof that session startup works across all three real environments: remote sandbox, local/manual worktree execution, and GitHub Actions CI — explicitly stating that another round of ticket-filing for environment issues would be unwelcome.
+
+Executing that verification directly (building a real Ubuntu 24.04 Docker container for the remote branch; running the actual `session-start.sh` via its own shebang, not pasted into an interactive shell, for the local branch) surfaced two more real bugs, both fixed in this same branch rather than deferred to a new ticket:
+
+1. **The local-worktree branch (`CLAUDE_CODE_REMOTE != true`) never created `TEST_DB_NAMES_CI`'s databases before migrating.** Only `docker-compose.yml`'s default `questlog` database ever existed. This ticket's own Out-of-scope line explicitly named the local-dev branch as "not what has been failing" — that assumption was wrong, confirmed by direct repro on a genuinely fresh per-worktree Docker volume. Fixed by adding the same check-then-`CREATE DATABASE` pattern `ci.yml` already uses.
+2. **This ticket's own verification gate had a false-positive:** it checked every `TEST_DB_NAMES` database for `vector`/`pg_trgm`, including `packages/observability`'s, which has its own independent schema (G-003) with no vector columns and legitimately never creates those extensions. Caught via a real end-to-end run in the Ubuntu container. Fixed by skipping the extension check for that one database.
+
+Both fixes independently reviewed (fresh-context `reviewer` subagent, second pass): **PASS-WITH-NOTES**. The one process note — that this modifies the branch this ticket explicitly scoped out, without its own ticket file — is addressed by this addendum rather than a new `T-###`, per Alex's explicit instruction not to file more environment tickets this session. Full verification evidence (container runs, exit codes, pgvector versions, CI check results) is in `Docs/tickets/reports/T-098-remote-sandbox-db-bootstrap-hardening.md`'s addendum.
