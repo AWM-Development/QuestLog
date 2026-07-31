@@ -28,6 +28,20 @@ export const AppendEntityNoteInput = z.object({
 });
 export type AppendEntityNoteInput = z.infer<typeof AppendEntityNoteInput>;
 
+export const EntityUpdateInput = z.object({
+	campaignId: z.string().uuid(),
+	entityId: z.string().uuid(),
+	name: z.string().min(1).max(200).optional(),
+	type: z.enum(ENTITY_TYPES).optional(),
+	description: z.string().max(2000).optional(),
+});
+export type EntityUpdateInput = z.infer<typeof EntityUpdateInput>;
+
+export const ConfirmUpdateEntityInput = z.object({
+	token: z.string().uuid(),
+});
+export type ConfirmUpdateEntityInput = z.infer<typeof ConfirmUpdateEntityInput>;
+
 export const GetEntityInput = z
 	.object({
 		campaignId: z.string().uuid(),

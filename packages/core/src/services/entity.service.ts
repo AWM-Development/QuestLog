@@ -298,6 +298,46 @@ export const entityService = {
 		return row;
 	},
 
+	async update(
+		db: Database | Transaction,
+		input: {
+			id: string;
+			campaignId: string;
+			name?: string;
+			type?: string;
+			description?: string;
+		},
+	) {
+		const { id, campaignId, ...fields } = input;
+
+		// Build update payload, only including fields that were provided
+		const updateData: Record<string, unknown> = {};
+		if ("name" in fields) updateData.name = fields.name;
+		if ("type" in fields) updateData.type = fields.type;
+		if ("description" in fields) updateData.description = fields.description;
+
+		if (Object.keys(updateData).length === 0) {
+			const rows = await db
+				.select()
+				.from(entities)
+				.where(and(eq(entities.id, id), eq(entities.campaignId, campaignId)));
+			const row = rows[0];
+			if (!row) throw new NotFoundError("Entity", id);
+			return row;
+		}
+
+		const rows = await db
+			.update(entities)
+			.set(updateData)
+			.where(and(eq(entities.id, id), eq(entities.campaignId, campaignId)))
+			.returning();
+
+		if (rows.length === 0) {
+			throw new NotFoundError("Entity", id);
+		}
+		return first(rows);
+	},
+
 	async list(db: Database, campaignId: string, type?: string) {
 		return db
 			.select()
