@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Fixed — T-098
+
+- **Remote-sandbox session-start no longer fails silently mid-provision.** `.claude/hooks/session-start.sh`'s remote-only Postgres bootstrap now self-heals an interrupted `dpkg` state before installing (the actual cause of T-056's lost session — a boot-time proxy-CA package, unrelated to QuestLog, left mid-configure), attempts pgvector from the PGDG repo (0.8.x, closing T-016's version gap) before falling back to Ubuntu's 0.6.0 package, and ends with a verification gate that confirms every required extension and test database is actually present and migrated — failing loudly with a specific diagnostic instead of the previous silent, `set -e`-driven death that used to surface 20+ turns later as unexplained test failures. Resolves gate `G-018` — see `Docs/tickets/gated/resolved/G-018-remote-sandbox-db-provisioning-strategy.md` for why a hosted-DB (Neon) alternative was rejected.
+
 ### Fixed — T-096
 
 - **`manually_inspected` no longer false-positives on nearly every executor run.** Cost-report human-message detection was miscounting framework-injected transcript turns — skill/slash-command load expansions and interrupt notices — as if Alex had typed them, so almost every run (including fully autonomous overnight ones) showed up flagged as manually inspected. `summarizeUsage` now recognizes those two shapes and excludes them; a real follow-up message from Alex still trips the flag as before.
