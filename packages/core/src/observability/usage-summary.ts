@@ -73,7 +73,7 @@ function extractToolResultText(content: unknown[]): string | null {
 // The harness injects non-human `user`-role turns as array content with a
 // bare `type: "text"` block (no `tool_result`) — skill/slash-command load
 // expansions and interrupt notices are the two confirmed shapes (found in
-// this project's own transcripts; see Docs/IMPLEMENTATION_NOTES.md § T-095).
+// this project's own transcripts; see Docs/IMPLEMENTATION_NOTES.md § T-096).
 // Neither is a human typing a message, so both must be excluded from
 // humanMessageCount or manually_inspected false-positives on nearly every run.
 const INTERRUPT_NOTICE_PATTERN = /^\[Request interrupted by user.*\]$/;

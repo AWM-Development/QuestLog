@@ -1,4 +1,4 @@
-# T-095 — Fix `manually_inspected` false-positive detection
+# T-096 — Fix `manually_inspected` false-positive detection
 
 Milestone ref: M-OBS.8
 
@@ -8,7 +8,7 @@ Strategy-gate flag: no
 
 Priority: P1
 
-Branch: feat/m-obs/t-095-fix-manually-inspected-false-positive
+Branch: feat/m-obs/t-096-fix-manually-inspected-false-positive
 
 Context files (load ONLY these):
   - packages/core/src/observability/usage-summary.ts

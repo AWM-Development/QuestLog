@@ -1,4 +1,4 @@
-# T-095 — Fix `manually_inspected` false-positive detection
+# T-096 — Fix `manually_inspected` false-positive detection
 
 **Outcome:** shipped
 **Branch:** tickets/m-obs.8
@@ -44,7 +44,7 @@ Targeted run before the full chain:
 > Scope check: The fix adds `isInjectedTextBlock`/`isInjectedTextTurn` (`usage-summary.ts:79-100`) matching exactly the two confirmed shapes named in the ticket... no broader classifier was built, honoring the "Out of scope" clause against speculative hardening.
 > Tests: Two new regression tests use fixture JSONL built from the real shapes described in the ticket... Assertions are concrete (exact counts/booleans), not theater.
 > Exit condition: All three machine-checkable exit bullets are satisfied by the diff as verified above.
-> Pattern/comment discipline: WHY-focused, points to IMPLEMENTATION_NOTES.md § T-095 (added in wrap-up, after the review ran).
+> Pattern/comment discipline: WHY-focused, points to IMPLEMENTATION_NOTES.md § T-096 (added in wrap-up, after the review ran).
 > DRY: No duplication introduced.
 > Out of scope violations: None found.
 > Scope creep: None.

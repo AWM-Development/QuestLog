@@ -10,7 +10,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
-### Fixed — T-095
+### Fixed — T-096
 
 - **`manually_inspected` no longer false-positives on nearly every executor run.** Cost-report human-message detection was miscounting framework-injected transcript turns — skill/slash-command load expansions and interrupt notices — as if Alex had typed them, so almost every run (including fully autonomous overnight ones) showed up flagged as manually inspected. `summarizeUsage` now recognizes those two shapes and excludes them; a real follow-up message from Alex still trips the flag as before.
 
