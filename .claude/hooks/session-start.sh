@@ -65,8 +65,16 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   done
 
   # Test-tier only (TEST_DB_NAMES_CI excludes the dev DB) — see § T-072.
+  # docker-compose.yml's POSTGRES_DB only creates `questlog` itself; every
+  # other name needs an explicit CREATE DATABASE, same as ci.yml's own
+  # provisioning step. Why this wasn't always here: Docs/IMPLEMENTATION_NOTES.md § T-098.
   source "$CLAUDE_PROJECT_DIR/scripts/test-db-names.sh"
   for dbname in "${TEST_DB_NAMES_CI[@]}"; do
+    db_exists=$(PGPASSWORD=questlog psql -h localhost -p "$QUESTLOG_PG_PORT" -U questlog -d questlog -tAc \
+      "SELECT 1 FROM pg_database WHERE datname='${dbname}'" 2>/dev/null || echo none)
+    if [ "$db_exists" != "1" ]; then
+      PGPASSWORD=questlog psql -h localhost -p "$QUESTLOG_PG_PORT" -U questlog -d questlog -c "CREATE DATABASE ${dbname}"
+    fi
     DATABASE_URL="postgresql://questlog:questlog@localhost:${QUESTLOG_PG_PORT}/${dbname}" \
       eval "$(test_db_migrate_cmd "$dbname")"
   done
@@ -110,9 +118,37 @@ if ! PARSED=$(DATABASE_URL_VALUE="$DATABASE_URL_VALUE" node -e '
 fi
 { read -r DB_USER; read -r DB_PASSWORD; read -r PGPORT; } <<< "$PARSED"
 
+# A boot-time apt operation outside this repo's control (observed: the
+# sandbox's own proxy-CA provisioning for ca-certificates-java) can leave
+# dpkg mid-configure before this hook ever runs, which makes the apt-get
+# below fail immediately with "dpkg was interrupted". Package-agnostic
+# (heals whatever's stuck, not just that one package) and a no-op on a
+# healthy system — never let this line itself fail the hook.
+dpkg --configure -a >/dev/null 2>&1 || true
+
 if ! dpkg -s postgresql-16-pgvector >/dev/null 2>&1; then
-  apt-get update -qq
-  apt-get install -y -qq postgresql-16-pgvector
+  # Ubuntu's own postgresql-16-pgvector package is pinned at 0.6.0 — three
+  # minors behind the 0.8.0 that hnsw.iterative_scan needs (recall-cliff
+  # fix, IMPLEMENTATION_NOTES.md § T-016). Try PGDG's repo first (ships
+  # 0.8.x); fall back to Ubuntu's package on any failure, including the
+  # egress proxy blocking apt.postgresql.org — a live possibility here,
+  # since the launchpad PPAs already 403 in this sandbox. This whole
+  # attempt must never fail the run; only the final fallback install may.
+  pgdg_ok=false
+  if command -v lsb_release >/dev/null 2>&1 &&
+    wget -qO /tmp/pgdg.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc 2>/dev/null &&
+    gpg --dearmor -o /usr/share/keyrings/pgdg.gpg /tmp/pgdg.asc 2>/dev/null; then
+    echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
+      >/etc/apt/sources.list.d/pgdg.list
+    if apt-get update -qq 2>/dev/null && apt-get install -y -qq postgresql-16-pgvector 2>/dev/null; then
+      pgdg_ok=true
+    fi
+    rm -f /etc/apt/sources.list.d/pgdg.list /tmp/pgdg.asc
+  fi
+  if [ "$pgdg_ok" != true ]; then
+    apt-get update -qq
+    apt-get install -y -qq postgresql-16-pgvector
+  fi
 fi
 
 PG_CONF=/etc/postgresql/16/main/postgresql.conf
@@ -158,3 +194,60 @@ for dbname in "${TEST_DB_NAMES[@]}"; do
   DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${PGPORT}/${dbname}" \
     eval "$(test_db_migrate_cmd "$dbname")"
 done
+
+# Verification gate (T-098) — the recurring cost of this subsystem has
+# never been that the sandbox breaks (that box isn't ours to control),
+# it's been that a broken step failed silently under `set -e` above,
+# surfacing 20+ turns later as unexplained test failures. Confirm the
+# actual end state and fail loudly with a specific diagnostic instead.
+# Extension list is parsed from migrate.ts, not hand-copied, so it can
+# never drift from the app's own source of truth.
+required_extensions=$(grep 'REQUIRED_EXTENSIONS' "$CLAUDE_PROJECT_DIR/packages/core/src/db/migrate.ts" \
+  | head -1 | grep -oE '"[a-zA-Z_]+"' | tr -d '"')
+
+failed=""
+if ! pg_isready -h localhost -p "$PGPORT" -q; then
+  failed="connection to localhost:${PGPORT}"
+fi
+
+if [ -z "$failed" ]; then
+  for dbname in "${TEST_DB_NAMES[@]}"; do
+    # 2>/dev/null || echo 0/none on every check here, not just the migration
+    # count below — a psql connection error (not just an empty result) must
+    # still reach the "$failed" diagnostic instead of letting `set -e` kill
+    # the script first, which would silently defeat this gate's entire point.
+    db_exists=$(sudo -u postgres psql -p "$PGPORT" -tAc "SELECT 1 FROM pg_database WHERE datname='${dbname}'" 2>/dev/null || echo none)
+    if [ "$db_exists" != "1" ]; then
+      failed="database ${dbname} does not exist"
+      break
+    fi
+    # packages/observability has its own independent schema (G-003) with no
+    # vector/pg_trgm columns — its migrate script legitimately never creates
+    # these, so checking for them there is a false alarm, not a real failure.
+    # Same distinction test_db_migrate_cmd() already draws by dbname.
+    if [ "$dbname" != "$TEST_DB_NAME_OBSERVABILITY" ]; then
+      for ext in $required_extensions; do
+        ext_ok=$(sudo -u postgres psql -p "$PGPORT" -d "$dbname" -tAc "SELECT 1 FROM pg_extension WHERE extname='${ext}'" 2>/dev/null || echo none)
+        if [ "$ext_ok" != "1" ]; then
+          failed="extension ${ext} missing on database ${dbname}"
+          break 2
+        fi
+      done
+    fi
+    migration_count=$(sudo -u postgres psql -p "$PGPORT" -d "$dbname" -tAc \
+      "SELECT count(*) FROM drizzle.__drizzle_migrations" 2>/dev/null || echo 0)
+    if [ "${migration_count:-0}" -lt 1 ]; then
+      failed="database ${dbname} has no applied migrations (drizzle.__drizzle_migrations empty or missing)"
+      break
+    fi
+  done
+fi
+
+if [ -n "$failed" ]; then
+  echo "session-start.sh: PROVISIONING FAILED — ${failed}" >&2
+  exit 1
+fi
+
+pgvector_version=$(sudo -u postgres psql -p "$PGPORT" -d "$TEST_DB_NAME_DEV" -tAc \
+  "SELECT extversion FROM pg_extension WHERE extname='vector'")
+echo "session-start.sh: remote sandbox DB provisioned OK — pgvector ${pgvector_version}, ${#TEST_DB_NAMES[@]} database(s) migrated"
