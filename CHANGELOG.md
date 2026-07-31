@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Fixed — T-060
+
+- **Fixed an intermittent FK-violation race in `packages/core`'s test suite.** `global-setup.test.ts`'s two tests exercising `truncateAllTables` mid-suite could occasionally fail with a foreign-key violation when another concurrently-running test file committed a row in the small window between the truncation's `sources` and `campaigns` deletes — a genuine race, not a flaky assertion (root-caused and deterministically reproduced before landing the fix). Both tests now take an explicit table lock before truncating, blocking concurrent writers instead of racing them; a new regression test guards against reintroducing the race. Dev/CI-only — no production behavior changed.
+
 ### Fixed — T-098
 
 - **Remote-sandbox session-start no longer fails silently mid-provision.** `.claude/hooks/session-start.sh`'s remote-only Postgres bootstrap now self-heals an interrupted `dpkg` state before installing (the actual cause of T-056's lost session — a boot-time proxy-CA package, unrelated to QuestLog, left mid-configure), attempts pgvector from the PGDG repo (0.8.x, closing T-016's version gap) before falling back to Ubuntu's 0.6.0 package, and ends with a verification gate that confirms every required extension and test database is actually present and migrated — failing loudly with a specific diagnostic instead of the previous silent, `set -e`-driven death that used to surface 20+ turns later as unexplained test failures. Verified end-to-end on a real Ubuntu 24.04 container (matching the sandbox's actual OS), including both the PGDG-success path (confirmed pgvector `0.8.5`) and the Ubuntu-fallback path (confirmed with `apt.postgresql.org` blackholed). Resolves gate `G-018` — see `Docs/tickets/gated/resolved/G-018-remote-sandbox-db-provisioning-strategy.md` for why a hosted-DB (Neon) alternative was rejected.
