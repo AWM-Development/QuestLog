@@ -62,7 +62,7 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 - [ ] **M-REMOTE.7 — Deploy + connect a real Claude Project + full remote test pass** (T-034)
   Deploy the above to dev, connect it as a real Claude.ai Custom Connector in an actual Project, re-run the v1 test plan (this session's table) against the remote transport end-to-end, then repeat for prod. **The Custom Connector setup itself is an Alex-only action** — it happens inside Alex's own Claude.ai account and cannot be scripted.
 
-- [ ] **M-REMOTE.8 — Agent-interaction strategy for MCP-hooked sessions** (T-065, T-066, T-067)
+- [x] **M-REMOTE.8 — Agent-interaction strategy for MCP-hooked sessions** (T-065, T-066, T-067)
   Resolved via `/ungate` on 2026-07-28 (`G-005`): no new MCP transport for
   attachments — Claude already reads attached documents natively in the
   conversation, so `ingest_text` gains multi-call chunked ingestion
