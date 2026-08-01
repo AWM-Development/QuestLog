@@ -4,7 +4,10 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const vitestConfig = readFileSync(resolve(here, "../../vitest.config.ts"), "utf8");
+const vitestConfig = readFileSync(
+	resolve(here, "../../vitest.config.ts"),
+	"utf8",
+);
 const turboJson = JSON.parse(
 	readFileSync(resolve(here, "../../../../turbo.json"), "utf8"),
 ) as {
