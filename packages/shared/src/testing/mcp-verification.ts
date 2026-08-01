@@ -39,9 +39,12 @@ export const EXPECTED_TOOLS = [
 	"get_entity",
 	"create_entity",
 	"append_entity_note",
+	"update_entity",
+	"confirm_update_entity",
 	"log_session",
 	"confirm_log_session",
 	"ingest_text",
 	"get_source_status",
+	"correct_lore",
 	"help",
 ] as const;

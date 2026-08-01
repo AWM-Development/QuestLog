@@ -14,6 +14,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 - **`entityService.detectCandidates` proposes brand-new entities from free text.** For proper-noun-like capitalized spans not already matched by `detectSpans`, it returns a name, an `ENTITY_TYPES` guess (npc/location/faction/item/arc from surrounding cue words and name suffixes), a description snippet via `extractExcerpt`, and the source span. Heuristic only — no NLP/LLM dependency. Wiring into `ingest_text` is T-079.
 
+### Added — T-075
+
+- **New `correct_lore` MCP tool (preview half).** Takes correction text plus exactly one of `sourceId` (all that source's non-superseded chunks), `chunkIds` (explicit targets), or `entityId` (attribution only — empty target set). Returns a `write_requests` preview token and payload without marking any chunk superseded. Apply half is T-076 (`confirm_correct_lore`).
+
 ### Added — T-056
 
 - **New `update_entity`/`confirm_update_entity` MCP tool pair.** Lets a DM rename an entity, replace its description, or change its type, following the same preview/confirm pattern as `log_session`: `update_entity` previews the proposed before/after field values without persisting anything, and `confirm_update_entity` applies only the fields that were actually provided. Rejects an unresolvable `entityId` (before creating a write request) or an invalid `type`, and cleanly rejects a reused/unknown confirm token — no crashes. `packages/mcp/src/content/onboarding-instructions.ts` now mentions both tools, and their description strings live in `content/tool-descriptions.ts` per T-064's convention.

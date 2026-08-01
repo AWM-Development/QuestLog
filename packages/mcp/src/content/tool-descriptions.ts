@@ -44,5 +44,8 @@ export const INGEST_TEXT_DESCRIPTION =
 export const GET_SOURCE_STATUS_DESCRIPTION =
 	"Check the processing status of a source created via ingest_text (or file upload): pending, extracting, chunking, embedding, done, or error.";
 
+export const CORRECT_LORE_DESCRIPTION =
+	"Preview a lore correction: given correction text plus exactly one of sourceId (all that source's non-superseded chunks), chunkIds (explicit targets), or entityId (attribution only — empty target set, a pure addition). Returns a token and preview payload without marking anything superseded. Call confirm_correct_lore (separate tool) with the token to apply.";
+
 export const HELP_DESCRIPTION =
 	"Returns a summary of QuestLog's workflow: uploading campaign documents, tracking sessions, and querying lore. Call this if you're unsure where to start.";

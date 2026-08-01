@@ -35,7 +35,7 @@ v1.3 closes all three, reusing the one proven pattern already in the codebase fo
   Add a status-style column to the `chunks` table (pattern-matched against the existing `status` text column on `sources`/`sessions`, per `.claude/rules/db.md`) marking a chunk superseded, plus whatever index it needs for `query_lore`'s filtered queries. Migration + Drizzle schema update in `packages/core/src/db/schema/tables.ts`.
   Exit: migration applies cleanly; a chunk can be marked superseded and queried by that flag.
 
-- [ ] **M-CANON.2 — `correct_lore` tool (preview half)** (T-075)
+- [x] **M-CANON.2 — `correct_lore` tool (preview half)** (T-075)
   A new MCP tool taking a correction statement plus a reference to what it supersedes (entity id, source id, or explicit chunk id(s)). Computes a preview payload — the new correction content plus which existing chunk(s) it will mark superseded — and creates it via `write_requests` (`writeRequestService.createPreview`), per `G-001`'s resolved rule that mutating existing data requires preview/confirm.
   Exit: calling the tool returns a preview token and a human-readable summary of what will change, without mutating anything yet.
 
