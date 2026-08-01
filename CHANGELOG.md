@@ -14,6 +14,18 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 - **New `update_entity`/`confirm_update_entity` MCP tool pair.** Lets a DM rename an entity, replace its description, or change its type, following the same preview/confirm pattern as `log_session`: `update_entity` previews the proposed before/after field values without persisting anything, and `confirm_update_entity` applies only the fields that were actually provided. Rejects an unresolvable `entityId` (before creating a write request) or an invalid `type`, and cleanly rejects a reused/unknown confirm token — no crashes. `packages/mcp/src/content/onboarding-instructions.ts` now mentions both tools, and their description strings live in `content/tool-descriptions.ts` per T-064's convention.
 
+### Added — T-074
+
+- **`chunks` now has a `status` column (default `"active"`) plus a `chunks_status_idx` btree index.** Mirrors the existing text-status pattern on `sources`/`sessions` so a chunk can later be soft-superseded without deleting it. Schema + journaled migration only — nothing reads or writes the column yet (T-075/T-076/T-077).
+
+### Changed — T-068
+
+- **Unscoped source lookups are now named `getByIdUnscoped`, and MCP tools are guarded against calling them.** `sourceService.getById` was renamed so trusted-internal callers (tRPC routers, import pipeline) and MCP tool handlers can't silently share the same unscoped lookup — MCP tools must keep using `getByIdForCampaign` (or another campaign-scoped method). A lightweight text-scan test under `packages/mcp/src/tools/` fails the suite if any tool file calls a method ending in `Unscoped`, and `.claude/rules/mcp.md` documents the convention.
+
+### Added — T-067
+
+- **`ingest_text` can create a new campaign in the same call.** Previously you had to call `create_campaign` first and then pass its id to `ingest_text` separately. Now `ingest_text` accepts `newCampaign` (the same shape as `create_campaign`'s input) as an alternative to `campaignId` — exactly one of the two must be given — and the response includes the new campaign's id alongside the source's, so a document you attach can spin up its own campaign in one step. Closes out M-REMOTE.8 (agent-interaction strategy for MCP-hooked sessions).
+
 ### Changed — T-064
 
 - **MCP tool `description` strings relocated out of each tool file into one aggregated `packages/mcp/src/content/tool-descriptions.ts`.** Pure text move, no behavioral change: every tool's `server.registerTool(...)` call now imports its description from a shared, single-source-of-truth module instead of carrying it as an inline string literal, extending the same pattern T-033's `onboarding-instructions.ts` started. Dev-experience only — no tool name, schema, or handler behavior changed.

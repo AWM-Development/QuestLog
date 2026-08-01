@@ -160,7 +160,7 @@ describe("sourceService", () => {
 		});
 	});
 
-	describe("getById", () => {
+	describe("getByIdUnscoped", () => {
 		it("returns the source when it exists", async () => {
 			const created = await sourceService.create(db, {
 				campaignId,
@@ -170,14 +170,14 @@ describe("sourceService", () => {
 				hash: "deadbeef",
 			});
 
-			const found = await sourceService.getById(db, created.id);
+			const found = await sourceService.getByIdUnscoped(db, created.id);
 			expect(found.id).toBe(created.id);
 			expect(found.name).toBe("test.md");
 		});
 
 		it("throws NotFoundError for non-existent id", async () => {
 			const fakeId = "00000000-0000-0000-0000-000000000000";
-			await expect(sourceService.getById(db, fakeId)).rejects.toThrow(
+			await expect(sourceService.getByIdUnscoped(db, fakeId)).rejects.toThrow(
 				NotFoundError,
 			);
 		});
@@ -319,9 +319,9 @@ describe("sourceService", () => {
 
 			await sourceService.delete(db, created.id);
 
-			await expect(sourceService.getById(db, created.id)).rejects.toThrow(
-				NotFoundError,
-			);
+			await expect(
+				sourceService.getByIdUnscoped(db, created.id),
+			).rejects.toThrow(NotFoundError);
 		});
 
 		it("does not throw when deleting a non-existent source (idempotent)", async () => {
@@ -350,7 +350,7 @@ describe("sourceService", () => {
 			});
 
 			// Old source should be gone
-			await expect(sourceService.getById(db, old.id)).rejects.toThrow(
+			await expect(sourceService.getByIdUnscoped(db, old.id)).rejects.toThrow(
 				NotFoundError,
 			);
 			// New source should exist with new hash

@@ -36,6 +36,7 @@ export const CONFIRM_LOG_SESSION_DESCRIPTION =
 
 export const INGEST_TEXT_DESCRIPTION =
 	"Create a new knowledge-base source from text or markdown and start processing it (chunking + embedding) in the background. Returns immediately with the source's id and pending status. " +
+	"Provide exactly one of campaignId (from list_campaigns, to attach to an existing campaign) or newCampaign (same shape as create_campaign's input, to spin up a new campaign in the same call) - if newCampaign is used, the response includes the created campaign's id alongside the source's. " +
 	"If the user attaches a document (PDF/DOCX/image) to the conversation, extract its text yourself and call this tool directly - do not ask the user to paste it manually. " +
 	"If writing out the extracted text yourself would take more than roughly a page or two of your own response, don't put it all in one call: split it across multiple calls instead, passing the first call's returned source.id as sourceId on each subsequent call and final: false until the last chunk (final: true, the default, on the last one) so processing only starts once. " +
 	"After the final chunk, proactively call get_source_status to check progress and narrate it to the user.";

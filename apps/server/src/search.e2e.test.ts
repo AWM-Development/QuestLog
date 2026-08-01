@@ -46,7 +46,7 @@ async function waitForStatus(
 	const start = Date.now();
 	let lastStatus = "";
 	while (Date.now() - start < timeoutMs) {
-		const source = await sourceService.getById(db, sourceId);
+		const source = await sourceService.getByIdUnscoped(db, sourceId);
 		lastStatus = source.status;
 		if (lastStatus === target || lastStatus === "error") return lastStatus;
 		await new Promise((resolve) => setTimeout(resolve, 100));
