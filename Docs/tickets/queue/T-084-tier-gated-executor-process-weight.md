@@ -4,7 +4,6 @@ Milestone ref: M-EFFICIENCY.3
 
 Priority: P1
 
-
 Branch: feat/m-efficiency/t-084-tier-gated-executor-process-weight
 
 Context files (load ONLY these):

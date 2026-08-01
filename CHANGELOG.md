@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-056
+
+- **New `update_entity`/`confirm_update_entity` MCP tool pair.** Lets a DM rename an entity, replace its description, or change its type, following the same preview/confirm pattern as `log_session`: `update_entity` previews the proposed before/after field values without persisting anything, and `confirm_update_entity` applies only the fields that were actually provided. Rejects an unresolvable `entityId` (before creating a write request) or an invalid `type`, and cleanly rejects a reused/unknown confirm token — no crashes. `packages/mcp/src/content/onboarding-instructions.ts` now mentions both tools, and their description strings live in `content/tool-descriptions.ts` per T-064's convention.
+
 ### Added — T-074
 
 - **`chunks` now has a `status` column (default `"active"`) plus a `chunks_status_idx` btree index.** Mirrors the existing text-status pattern on `sources`/`sessions` so a chunk can later be soft-superseded without deleting it. Schema + journaled migration only — nothing reads or writes the column yet (T-075/T-076/T-077).
