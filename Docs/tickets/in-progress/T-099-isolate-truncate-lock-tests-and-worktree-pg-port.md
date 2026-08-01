@@ -7,7 +7,7 @@ Complexity tier: S
 
 Strategy-gate flag: yes
 
-Priority: P1
+Priority: P0
 
 Branch: chore/pipeline/t-099-isolate-truncate-lock-tests-and-worktree-pg-port
 
