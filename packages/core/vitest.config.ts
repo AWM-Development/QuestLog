@@ -14,7 +14,6 @@ import { testDbUrl } from "./src/db/test-db-url.js";
  */
 const sharedTest = {
 	globals: true as const,
-	sequence: { concurrent: false as const },
 	globalSetup: ["./src/db/global-setup.ts"],
 	env: {
 		DATABASE_URL: testDbUrl("questlog_test_core"),

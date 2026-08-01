@@ -18,10 +18,20 @@ describe("T-099 vitest truncate-lock isolation", () => {
 	it("defines a multi-project split so global-setup.test.ts can run without overlapping other core file workers", () => {
 		expect(vitestConfig).toMatch(/projects\s*:/);
 		expect(vitestConfig).toMatch(/global-setup\.test\.ts/);
-		expect(vitestConfig).toMatch(/fileParallelism:\s*false/);
+
+		const truncateLockBlock = vitestConfig.match(
+			/name:\s*"truncate-lock"[\s\S]*?(?=name:\s*"core"|$)/,
+		)?.[0];
+		expect(truncateLockBlock).toBeDefined();
+		expect(truncateLockBlock).toMatch(/fileParallelism:\s*false/);
+		expect(truncateLockBlock).toMatch(/groupOrder:\s*0\b/);
+
 		// Without distinct groupOrder, Vitest runs projects in parallel and the
 		// exclusive truncate locks still collide with the main pool (G-019).
-		expect(vitestConfig).toMatch(/groupOrder/);
+		expect(vitestConfig).toMatch(/name:\s*"core"[\s\S]*?groupOrder:\s*1\b/);
+		expect(vitestConfig).not.toMatch(
+			/name:\s*"core"[\s\S]*?groupOrder:\s*0\b/,
+		);
 	});
 });
 
