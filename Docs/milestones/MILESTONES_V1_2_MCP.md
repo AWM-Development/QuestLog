@@ -84,7 +84,7 @@ This milestone builds the actual instrumentation instead of continuing to guess:
   T-070 (docs-only, 7-line diff) cost ~$3.87 over 136 turns — almost entirely fixed process overhead (full TDD loop, per-file empirical checks), not diff-proportional. Once M-OBS.6's `Complexity tier: S | M | L` field exists on every ticket, S-tier docs/config-only tickets skip `EXECUTOR_ROUTINE.md` Step 4's TDD Red/Green/Refactor requirement (still gated on lint/typecheck/test green) instead of running the identical process every other tier does.
   Exit: see T-084 — `EXECUTOR_ROUTINE.md` Step 4 branches on tier for docs/config-only work; the lint/typecheck/test gate is unconditional regardless of tier.
 
-- [ ] **M-EFFICIENCY.4 — Inline relevant IMPLEMENTATION_NOTES.md sections into ticket bodies** (T-085)
+- [x] **M-EFFICIENCY.4 — Inline relevant IMPLEMENTATION_NOTES.md sections into ticket bodies** (T-085)
   `Docs/IMPLEMENTATION_NOTES.md` is a growing, append-only log that many tickets reference wholesale via `Context files:` even when only one `§` section applies — the executor loads the entire file to find one section, and that cost recurs every turn for the rest of the session. `ticket-writer` instead pastes the relevant section directly into the ticket body (with a heading + date citation for staleness-checking) when only one section is relevant.
   Exit: see T-085 — `ticket-writer/SKILL.md` and `TICKET_SPEC.md` document the new excerpt-and-cite convention; demonstrated against a real historical section.
 

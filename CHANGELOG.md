@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-085
+
+- **`ticket-writer` now inlines a single relevant `IMPLEMENTATION_NOTES.md` § into new tickets** under an optional `## Relevant background` heading (with heading + capture-date citation), instead of listing the whole append-only notes file in `Context files:` when only one section applies. `TICKET_SPEC.md` documents the field and the executor's staleness-check expectation. Whole-file references remain when multiple sections or the file's general shape are genuinely needed. Forward-looking drafting change only — existing tickets are not rewritten.
+
 ### Added — T-056
 
 - **New `update_entity`/`confirm_update_entity` MCP tool pair.** Lets a DM rename an entity, replace its description, or change its type, following the same preview/confirm pattern as `log_session`: `update_entity` previews the proposed before/after field values without persisting anything, and `confirm_update_entity` applies only the fields that were actually provided. Rejects an unresolvable `entityId` (before creating a write request) or an invalid `type`, and cleanly rejects a reused/unknown confirm token — no crashes. `packages/mcp/src/content/onboarding-instructions.ts` now mentions both tools, and their description strings live in `content/tool-descriptions.ts` per T-064's convention.
