@@ -84,7 +84,10 @@ Blocks: none yet — Scope can't honestly be written until Axes 1–3 land
   project so it never overlaps writer files; keep file parallelism for the
   rest of `@questlog/core`. Option 1 (`maxWorkers: 1`) is the fallback if
   Vitest isolation turns out awkward — not the primary approach.
-- **Axis 2 — open.**
+- **Axis 2 — decided: option 1.** No turbo package-concurrency change.
+  Deadlocks are within `@questlog/core`'s own file workers on
+  `questlog_test_core`; post–G-008 package fan-out hits different physical
+  DBs and is not the mechanism.
 - **Axis 3 — open.**
 
 Notes: Evidence from T-075's full turbo runs (not a T-075 product bug):
