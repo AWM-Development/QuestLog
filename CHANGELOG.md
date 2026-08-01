@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-099
+
+- **`@questlog/core` truncate-lock tests no longer share a Vitest file-worker pool with the rest of the package**, closing intermittent `deadlock detected` flakes on `questlog_test_core`. `global-setup.test.ts` runs in its own serial Vitest project; other core tests keep file parallelism. Worktree `QUESTLOG_PG_PORT` is now passed through turbo's `test` / `test:e2e` tasks, and default-port URL unit tests stub that env unset so exporting a worktree port no longer breaks them. Dev/CI-only — no production behavior changed. Resolves gate `G-019`.
+
 ### Added — T-075
 
 - **New `correct_lore` MCP tool (preview half).** Takes correction text plus exactly one of `sourceId` (all that source's non-superseded chunks), `chunkIds` (explicit targets), or `entityId` (attribution only — empty target set). Returns a `write_requests` preview token and payload without marking any chunk superseded. Apply half is T-076 (`confirm_correct_lore`).
