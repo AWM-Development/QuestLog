@@ -63,7 +63,7 @@ export const sourceService = {
 	 * read of that same field.
 	 */
 	async appendContent(db: Database, id: string, content: string) {
-		const existing = await this.getById(db, id);
+		const existing = await this.getByIdUnscoped(db, id);
 		if (existing.status !== "pending") {
 			throw new ValidationError(
 				`Source ${id} is not pending (status: ${existing.status}); cannot append content`,
@@ -95,8 +95,12 @@ export const sourceService = {
 			.orderBy(desc(sources.createdAt));
 	},
 
-	/** Get a single source by ID, throwing NotFoundError if absent. */
-	async getById(db: Database, id: string) {
+	/**
+	 * Get a single source by ID with no campaign scope — trusted-internal
+	 * callers only. MCP tool handlers must use {@link getByIdForCampaign}
+	 * instead (T-068; `.claude/rules/mcp.md`).
+	 */
+	async getByIdUnscoped(db: Database, id: string) {
 		const rows = await db.select().from(sources).where(eq(sources.id, id));
 		if (rows.length === 0) {
 			throw new NotFoundError("Source", id);
@@ -130,7 +134,7 @@ export const sourceService = {
 	) {
 		const set: Record<string, unknown> = { status };
 		if (metadata) {
-			const existing = await this.getById(db, id);
+			const existing = await this.getByIdUnscoped(db, id);
 			set.metadata = { ...(existing.metadata ?? {}), ...metadata };
 		}
 		const rows = await db

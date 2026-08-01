@@ -64,7 +64,7 @@ export const importService = {
 		sourceId: string,
 		options?: ProcessOptions,
 	): Promise<void> {
-		const source = await sourceService.getById(db, sourceId);
+		const source = await sourceService.getByIdUnscoped(db, sourceId);
 
 		try {
 			// --- Extract ---

@@ -81,7 +81,7 @@ async function waitForStatus(
 	const start = Date.now();
 	let lastStatus = "";
 	while (Date.now() - start < timeoutMs) {
-		const source = await sourceService.getById(db, sourceId);
+		const source = await sourceService.getByIdUnscoped(db, sourceId);
 		lastStatus = source.status;
 		if (lastStatus === target || lastStatus === "error") return lastStatus;
 		await new Promise((resolve) => setTimeout(resolve, 20));
@@ -1264,7 +1264,7 @@ describe("ingest_text + get_source_status tools", () => {
 		expect(source.status).toBe("pending");
 
 		// Processing must not have started after a non-final chunk.
-		const stillPending = await sourceService.getById(db, source.id);
+		const stillPending = await sourceService.getByIdUnscoped(db, source.id);
 		expect(stillPending.status).toBe("pending");
 
 		const secondResult = await client.callTool({
