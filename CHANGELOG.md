@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-068
+
+- **Unscoped source lookups are now named `getByIdUnscoped`, and MCP tools are guarded against calling them.** `sourceService.getById` was renamed so trusted-internal callers (tRPC routers, import pipeline) and MCP tool handlers can't silently share the same unscoped lookup — MCP tools must keep using `getByIdForCampaign` (or another campaign-scoped method). A lightweight text-scan test under `packages/mcp/src/tools/` fails the suite if any tool file calls a method ending in `Unscoped`, and `.claude/rules/mcp.md` documents the convention.
+
 ### Added — T-067
 
 - **`ingest_text` can create a new campaign in the same call.** Previously you had to call `create_campaign` first and then pass its id to `ingest_text` separately. Now `ingest_text` accepts `newCampaign` (the same shape as `create_campaign`'s input) as an alternative to `campaignId` — exactly one of the two must be given — and the response includes the new campaign's id alongside the source's, so a document you attach can spin up its own campaign in one step. Closes out M-REMOTE.8 (agent-interaction strategy for MCP-hooked sessions).
