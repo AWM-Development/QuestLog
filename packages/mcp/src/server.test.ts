@@ -1129,6 +1129,7 @@ describe("ingest_text + get_source_status tools", () => {
 	afterEach(async () => {
 		await deleteCampaignTree(db, campaignId);
 		if (otherCampaignId) {
+			await deleteCampaignTree(db, otherCampaignId);
 			await db.delete(campaigns).where(eq(campaigns.id, otherCampaignId));
 		}
 	});
@@ -1428,6 +1429,86 @@ describe("ingest_text + get_source_status tools", () => {
 		const content = result.content as Array<{ type: string; text: string }>;
 		const payload = JSON.parse(content[0]?.text ?? "{}");
 		expect(payload.error.code).toBe("NOT_FOUND");
+	});
+
+	it("creates a new campaign and a source tied to it when called with newCampaign instead of campaignId (T-067)", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				newCampaign: { name: "Brand New Campaign", theme: "fantasy" },
+				title: "Ashfall Primer",
+				content: "Mira Duskwood patrols the Old Road near Ashfall Peak.",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.campaign?.id).toBeDefined();
+		expect(payload.source.id).toBeDefined();
+		expect(payload.source.status).toBe("pending");
+		otherCampaignId = payload.campaign.id;
+
+		const listResult = await client.callTool({
+			name: "list_campaigns",
+			arguments: {},
+		});
+		const listContent = listResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const listed = JSON.parse(listContent[0]?.text ?? "{}");
+		expect(listed.campaigns).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ id: payload.campaign.id }),
+			]),
+		);
+
+		const statusResult = await client.callTool({
+			name: "get_source_status",
+			arguments: {
+				campaignId: payload.campaign.id,
+				sourceId: payload.source.id,
+			},
+		});
+		expect(statusResult.isError).toBeFalsy();
+	});
+
+	it("rejects ingest_text called with both campaignId and newCampaign, or neither, as a structured error (T-067)", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const bothResult = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				newCampaign: { name: "Brand New Campaign", theme: "fantasy" },
+				title: "Ashfall Primer",
+				content: "Some content.",
+			},
+		});
+		expect(bothResult.isError).toBe(true);
+		const bothContent = bothResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		expect(bothContent[0]?.text).toMatch(
+			/Exactly one of campaignId or newCampaign/,
+		);
+
+		const neitherResult = await client.callTool({
+			name: "ingest_text",
+			arguments: { title: "Ashfall Primer", content: "Some content." },
+		});
+		expect(neitherResult.isError).toBe(true);
+		const neitherContent = neitherResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		expect(neitherContent[0]?.text).toMatch(
+			/Exactly one of campaignId or newCampaign/,
+		);
 	});
 });
 
