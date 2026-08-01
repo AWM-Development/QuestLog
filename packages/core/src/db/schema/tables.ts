@@ -208,12 +208,14 @@ export const chunks = pgTable(
 		content: text("content").notNull(),
 		embedding: vector("embedding", 1024),
 		metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
+		status: text("status").notNull().default("active"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
 			.notNull(),
 	},
 	(table) => [
 		index("chunks_campaign_id_idx").using("btree", table.campaignId),
+		index("chunks_status_idx").using("btree", table.status),
 		index("chunks_content_trgm_idx").using(
 			"gin",
 			sql`${table.content} gin_trgm_ops`,

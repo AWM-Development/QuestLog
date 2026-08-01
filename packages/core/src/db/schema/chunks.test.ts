@@ -78,4 +78,38 @@ describe("chunks table", () => {
 
 		expect(inserted.embedding).toBeNull();
 	});
+
+	it('defaults status to "active" when not set on insert', async () => {
+		const campaignRows = await db
+			.insert(campaigns)
+			.values({ name: "Status Default Campaign", theme: "fantasy" })
+			.returning();
+		expect(campaignRows).toHaveLength(1);
+		const campaign = campaignRows[0] as (typeof campaignRows)[number];
+
+		const chunkRows = await db
+			.insert(chunks)
+			.values({
+				campaignId: campaign.id,
+				content: "Canon until superseded.",
+			})
+			.returning();
+		expect(chunkRows).toHaveLength(1);
+		const inserted = chunkRows[0] as (typeof chunkRows)[number];
+
+		const found = await db
+			.select({ status: chunks.status })
+			.from(chunks)
+			.where(eq(chunks.id, inserted.id));
+		expect(found).toHaveLength(1);
+		expect(found[0]?.status).toBe("active");
+	});
+
+	it("has a btree index on status", async () => {
+		const result = await db.execute(sql`
+			SELECT indexname FROM pg_indexes
+			WHERE tablename = 'chunks' AND indexname = 'chunks_status_idx'
+		`);
+		expect(result).toHaveLength(1);
+	});
 });

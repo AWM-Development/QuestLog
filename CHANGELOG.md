@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-074
+
+- **`chunks` now has a `status` column (default `"active"`) plus a `chunks_status_idx` btree index.** Mirrors the existing text-status pattern on `sources`/`sessions` so a chunk can later be soft-superseded without deleting it. Schema + journaled migration only — nothing reads or writes the column yet (T-075/T-076/T-077).
+
 ### Changed — T-068
 
 - **Unscoped source lookups are now named `getByIdUnscoped`, and MCP tools are guarded against calling them.** `sourceService.getById` was renamed so trusted-internal callers (tRPC routers, import pipeline) and MCP tool handlers can't silently share the same unscoped lookup — MCP tools must keep using `getByIdForCampaign` (or another campaign-scoped method). A lightweight text-scan test under `packages/mcp/src/tools/` fails the suite if any tool file calls a method ending in `Unscoped`, and `.claude/rules/mcp.md` documents the convention.

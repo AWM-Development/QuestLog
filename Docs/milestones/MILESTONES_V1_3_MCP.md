@@ -31,7 +31,7 @@ v1.3 closes all three, reusing the one proven pattern already in the codebase fo
 
 ### Tasks
 
-- [ ] **M-CANON.1 — Supersession column on `chunks`** (T-074)
+- [x] **M-CANON.1 — Supersession column on `chunks`** (T-074)
   Add a status-style column to the `chunks` table (pattern-matched against the existing `status` text column on `sources`/`sessions`, per `.claude/rules/db.md`) marking a chunk superseded, plus whatever index it needs for `query_lore`'s filtered queries. Migration + Drizzle schema update in `packages/core/src/db/schema/tables.ts`.
   Exit: migration applies cleanly; a chunk can be marked superseded and queried by that flag.
 
