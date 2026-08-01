@@ -77,6 +77,16 @@ Blocks: none yet — Scope can't honestly be written until Axes 1–3 land
   (serialize-vs-isolate-vs-harden changes what any ticket builds; Axis 3
   may or may not share a ticket). No ticket drafted. Tag after `/ungate`.
 
+## Decisions in progress (2026-08-01, `/ungate` with Alex)
+
+- **Axis 1 — decided: option 2.** Isolate `global-setup.test.ts` (the only
+  mid-suite `LOCK TABLE` holders) onto a serial pool / separate Vitest
+  project so it never overlaps writer files; keep file parallelism for the
+  rest of `@questlog/core`. Option 1 (`maxWorkers: 1`) is the fallback if
+  Vitest isolation turns out awkward — not the primary approach.
+- **Axis 2 — open.**
+- **Axis 3 — open.**
+
 Notes: Evidence from T-075's full turbo runs (not a T-075 product bug):
 
   - Failures hit the shared primary DB `questlog_test_core` (`:5433`),
