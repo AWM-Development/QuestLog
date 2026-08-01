@@ -1,5 +1,5 @@
 import type { SourceStatus } from "@questlog/shared";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, ne } from "drizzle-orm";
 import type { Database } from "../db/index.js";
 import { chunks, sources } from "../db/schema/index.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
@@ -123,6 +123,29 @@ export const sourceService = {
 			throw new NotFoundError("Source", id);
 		}
 		return first(rows);
+	},
+
+	/**
+	 * Campaign-scoped ids of chunks under a source that are not already
+	 * superseded — the target set `correct_lore` previews (T-075 / G-014).
+	 */
+	async listNonSupersededChunkIdsForSource(
+		db: Database,
+		campaignId: string,
+		sourceId: string,
+	): Promise<string[]> {
+		await this.getByIdForCampaign(db, campaignId, sourceId);
+		const rows = await db
+			.select({ id: chunks.id })
+			.from(chunks)
+			.where(
+				and(
+					eq(chunks.sourceId, sourceId),
+					eq(chunks.campaignId, campaignId),
+					ne(chunks.status, "superseded"),
+				),
+			);
+		return rows.map((row) => row.id);
 	},
 
 	/** Update source status, optionally merging metadata. */

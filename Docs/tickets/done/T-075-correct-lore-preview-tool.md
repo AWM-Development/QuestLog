@@ -4,7 +4,6 @@ Milestone ref: Docs/milestones/MILESTONES_V1_3_MCP.md M-CANON.2
 
 Priority: P1
 
-Blocked on: T-074 — must be merged into develop first
 
 Branch: feat/m-canon/t-075-correct-lore-preview-tool
 
