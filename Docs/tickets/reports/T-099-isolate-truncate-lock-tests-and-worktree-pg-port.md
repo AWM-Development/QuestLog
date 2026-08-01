@@ -35,28 +35,62 @@ Per-package Vitest counts from the quiet-suite test log:
 @questlog/observability:test:       Tests  12 passed (12)
 ```
 
-Core suite project isolation (config inspection + live run):
+Core suite project isolation (`pnpm --filter @questlog/core test` — full file list, no elision):
 
 ```
+ RUN  v3.2.4 /Users/alexandermeyer/Documents/Code/QuestLog/tmp/worktrees/T-099/packages/core
  ✓ |truncate-lock| src/db/global-setup.test.ts (6 tests) 399ms
- ...
+ ✓ |core| src/observability/usage-summary.test.ts (12 tests) 4ms
+ ✓ |core| src/services/llm.service.test.ts (18 tests) 5ms
+ ✓ |core| src/observability/capture-usage.test.ts (10 tests) 14ms
+ ✓ |core| src/services/mcp-oauth.service.test.ts (15 tests) 215ms
+ ✓ |core| src/services/search.service.test.ts (7 tests) 152ms
+ ✓ |core| src/services/entity.service.test.ts (21 tests) 248ms
+ ✓ |core| src/services/source.service.test.ts (22 tests) 310ms
+ ✓ |core| src/services/brief.service.test.ts (11 tests) 352ms
+ ✓ |core| src/services/chunking.service.test.ts (8 tests) 5ms
+ ✓ |core| src/db/test-db-url.test.ts (13 tests) 3ms
+ ✓ |core| src/services/session.service.test.ts (15 tests) 373ms
+ ✓ |core| src/services/write-request.service.test.ts (9 tests) 599ms
+ ✓ |core| src/observability/artifact.test.ts (3 tests) 4ms
+ ✓ |core| src/services/context.service.test.ts (16 tests) 831ms
+ ✓ |core| src/services/campaign.service.test.ts (11 tests) 203ms
+ ✓ |core| src/services/embedding.service.test.ts (5 tests) 233ms
+ ✓ |core| src/db/schema/chunks.test.ts (4 tests) 98ms
+ ✓ |core| src/observability/pricing.test.ts (7 tests) 4ms
+ ✓ |core| src/db/schema/session_entities.test.ts (2 tests) 187ms
+ ✓ |core| src/db/schema/campaigns.test.ts (5 tests) 102ms
+ ✓ |core| src/db/vitest-isolation.test.ts (3 tests) 3ms
+ ✓ |core| src/db/index.test.ts (6 tests) 2ms
+ ✓ |core| src/services/entity-schema.test.ts (4 tests) 60ms
+ ✓ |core| src/db/schema/schema.test.ts (3 tests) 53ms
+ ✓ |core| src/db/test-helpers.test.ts (1 test) 2ms
+ ✓ |core| src/services/import.service.test.ts (5 tests) 1321ms
+ ✓ |core| src/services/extraction.service.test.ts (7 tests) 1061ms
  Test Files  28 passed (28)
       Tests  249 passed (249)
+   Start at  13:27:47
+   Duration  3.59s (transform 659ms, setup 0ms, collect 8.32s, tests 6.84s, environment 3ms, prepare 2.56s)
 ```
 
 `QUESTLOG_PG_PORT=5622` (worktree stack) `test-db-url.test.ts`:
 
 ```
+ RUN  v3.2.4 /Users/alexandermeyer/Documents/Code/QuestLog/tmp/worktrees/T-099/packages/core
+
  ✓ |core| src/db/test-db-url.test.ts (13 tests) 3ms
+
  Test Files  1 passed (1)
       Tests  13 passed (13)
+   Start at  13:32:28
+   Duration  322ms (transform 26ms, setup 0ms, collect 11ms, tests 3ms, environment 0ms, prepare 53ms)
 ```
 
 ## Exit condition check
 
 - all tests green, typecheck clean, lint clean — `scripts/run-tests-quiet.sh` output above
-- `packages/core` Vitest config runs `global-setup.test.ts` without overlapping other core files — projects `truncate-lock` (`fileParallelism: false`, `maxWorkers: 1`, `groupOrder: 0`) vs `core` (`groupOrder: 1`); confirmed by config + `|truncate-lock|` / `|core|` prefixes in suite output
-- with `QUESTLOG_PG_PORT` set to non-5433, `test-db-url.test.ts` passes — verified on worktree port `5622`
+- `packages/core` Vitest config runs `global-setup.test.ts` without overlapping other core files — projects `truncate-lock` (`fileParallelism: false`, `maxWorkers: 1`, `groupOrder: 0`) vs `core` (`groupOrder: 1`); confirmed by config + full suite output above showing `|truncate-lock|` first, then every other file under `|core|`
+- with `QUESTLOG_PG_PORT` set to non-5433, `test-db-url.test.ts` passes — verified on worktree port `5622` (output above)
 - `turbo.json` `test` task lists `QUESTLOG_PG_PORT` in `passThroughEnv` — also on `test:e2e`; covered by `vitest-isolation.test.ts`
 - `Docs/IMPLEMENTATION_NOTES.md` T-099 entry records multi-project isolation (not package-wide fallback) and points at G-019
 
@@ -74,7 +108,7 @@ Observations (verbatim):
 
 ## Efficiency notes
 
-Tight S-tier run. G-019 already decided Axis 1 option 2 (multi-project) + Axis 3; first Vitest projects attempt landed without needing the package-wide `maxWorkers: 1` fallback. One environment hiccup provisioning the worktree Postgres migrate path for the non-5433 exit check (first migrate didn't create tables — re-ran with explicit `DATABASE_URL`), plus two mechanical lint/typecheck fixes after the feat commit (Biome line wrap; optional turbo task access).
+Tight S-tier run. G-019 already decided Axis 1 option 2 (multi-project) + Axis 3; first Vitest projects attempt landed without needing the package-wide `maxWorkers: 1` fallback. One environment hiccup provisioning the worktree Postgres migrate path for the non-5433 exit check (first migrate didn't create tables — re-ran with explicit `DATABASE_URL`), plus two mechanical lint/typecheck fixes after the feat commit (Biome line wrap; optional turbo task access). Usage capture skipped (no `CLAUDE_CODE_SESSION_ID` in this Cursor session).
 
 **Retry log:** 2 retries: 2 `mechanical_lint_typecheck` (Biome format on `vitest-isolation.test.ts`; TS18048/TS2532 on `turboJson.tasks.test` access). 0 `genuine_bug_caught_by_test`. 1 `environment_setup` (worktree migrate needed a second pass) — not counted against the ticket iteration cap (exit-condition verification, not a blocked approach on the feature itself).
 
