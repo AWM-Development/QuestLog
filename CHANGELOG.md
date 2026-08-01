@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-075
+
+- **New `correct_lore` MCP tool (preview half).** Takes correction text plus exactly one of `sourceId` (all that source's non-superseded chunks), `chunkIds` (explicit targets), or `entityId` (attribution only — empty target set). Returns a `write_requests` preview token and payload without marking any chunk superseded. Apply half is T-076 (`confirm_correct_lore`).
+
 ### Added — T-074
 
 - **`chunks` now has a `status` column (default `"active"`) plus a `chunks_status_idx` btree index.** Mirrors the existing text-status pattern on `sources`/`sessions` so a chunk can later be soft-superseded without deleting it. Schema + journaled migration only — nothing reads or writes the column yet (T-075/T-076/T-077).
