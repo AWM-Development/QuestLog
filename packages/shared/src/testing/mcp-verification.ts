@@ -43,5 +43,6 @@ export const EXPECTED_TOOLS = [
 	"confirm_log_session",
 	"ingest_text",
 	"get_source_status",
+	"correct_lore",
 	"help",
 ] as const;

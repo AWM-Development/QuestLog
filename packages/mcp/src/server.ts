@@ -2,6 +2,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ONBOARDING_INSTRUCTIONS } from "./content/onboarding-instructions.js";
 import { registerAppendEntityNote } from "./tools/append-entity-note.js";
 import { registerConfirmLogSession } from "./tools/confirm-log-session.js";
+import { registerCorrectLore } from "./tools/correct-lore.js";
 import { registerCreateCampaign } from "./tools/create-campaign.js";
 import { registerCreateEntity } from "./tools/create-entity.js";
 import { registerGetEntity } from "./tools/get-entity.js";
@@ -35,6 +36,7 @@ export function createMcpServer(deps: CreateMcpServerOptions): McpServer {
 	registerConfirmLogSession(server, deps);
 	registerIngestText(server, deps);
 	registerGetSourceStatus(server, deps);
+	registerCorrectLore(server, deps);
 	registerHelp(server);
 
 	return server;
