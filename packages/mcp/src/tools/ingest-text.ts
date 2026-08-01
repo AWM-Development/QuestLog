@@ -1,4 +1,5 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { campaignService } from "@questlog/core/services/campaign.service.js";
 import { importService } from "@questlog/core/services/import.service.js";
 import { sourceService } from "@questlog/core/services/source.service.js";
 import { IngestTextInput } from "@questlog/shared";
@@ -17,18 +18,33 @@ export function registerIngestText(
 			inputSchema: IngestTextInput,
 		},
 		withToolErrors(
-			async ({ campaignId, title, content, sourceId, final = true }) => {
+			async ({
+				campaignId,
+				newCampaign,
+				title,
+				content,
+				sourceId,
+				final = true,
+			}) => {
+				const resolvedCampaignId = newCampaign
+					? (await campaignService.create(db, newCampaign)).id
+					: (campaignId as string);
+
 				const source = sourceId
 					? await (async () => {
 							// appendContent takes a bare sourceId (no campaignId param,
 							// per its ticket-specified signature) — validate ownership
 							// here first so a sourceId from another campaign 404s
 							// instead of silently appending.
-							await sourceService.getByIdForCampaign(db, campaignId, sourceId);
+							await sourceService.getByIdForCampaign(
+								db,
+								resolvedCampaignId,
+								sourceId,
+							);
 							return sourceService.appendContent(db, sourceId, content);
 						})()
 					: await sourceService.createFromText(db, {
-							campaignId,
+							campaignId: resolvedCampaignId,
 							name: title,
 							content,
 						});
@@ -54,6 +70,7 @@ export function registerIngestText(
 						{
 							type: "text",
 							text: JSON.stringify({
+								campaign: newCampaign ? { id: resolvedCampaignId } : undefined,
 								source: { id: source.id, status: source.status },
 							}),
 						},
