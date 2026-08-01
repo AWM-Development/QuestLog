@@ -43,6 +43,8 @@ const EXPECTED_TOOLS = [
 	"get_entity",
 	"create_entity",
 	"append_entity_note",
+	"update_entity",
+	"confirm_update_entity",
 	"log_session",
 	"confirm_log_session",
 	"ingest_text",
@@ -154,7 +156,7 @@ describe("mcp-http routes", () => {
 	});
 
 	describe("POST /mcp — with a valid bearer token", () => {
-		it("completes the initialize handshake and tools/list returns all 13 tools", async () => {
+		it("completes the initialize handshake and tools/list returns all 15 tools", async () => {
 			const accessToken = await getAccessToken();
 
 			const initResponse = await app.inject({

@@ -74,7 +74,7 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   as a v1.3-scoping decision.
   Exit: all three tickets shipped — see each for its own exit condition.
 
-- [ ] **M-REMOTE.9 — `update_entity` MCP tool** (T-056)
+- [x] **M-REMOTE.9 — `update_entity` MCP tool** (T-056)
   Raised during T-032's morning review: `entityService` has `create` and `appendToDescription` but no way to rename an entity, replace its description wholesale, or change its type — M-REMOTE.5 explicitly scoped this out rather than inventing a bigger update surface. Precedent already exists (`campaignService.update`, `conversationService.update`, `sessionService.update` all do generic partial-field updates); this mutates an *existing* row, so per G-001 it needs the `update_entity`/`confirm_update_entity` preview-confirm shape, not a direct write.
   Exit: TBD — drafted via `ticket-writer` from this task.
 

@@ -22,6 +22,12 @@ export const CREATE_ENTITY_DESCRIPTION =
 export const APPEND_ENTITY_NOTE_DESCRIPTION =
 	"Append a note to an existing entity's description, without overwriting its prior content. Direct write — additive only, no preview/confirm needed.";
 
+export const UPDATE_ENTITY_DESCRIPTION =
+	"Preview a change to an existing entity's name, type, or description: returns the proposed before/after field values without persisting anything. Call confirm_update_entity with the returned token to save it.";
+
+export const CONFIRM_UPDATE_ENTITY_DESCRIPTION =
+	"Confirm a previously-previewed update_entity change-set: applies the proposed field changes to the entity.";
+
 export const LOG_SESSION_DESCRIPTION =
 	"Preview a new session log: detects entity mentions in the content and returns the session record plus entity links that would be written, without persisting anything. Call confirm_log_session with the returned token to save it.";
 
