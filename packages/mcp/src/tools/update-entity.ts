@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { entityService } from "@questlog/core/services/entity.service.js";
 import { writeRequestService } from "@questlog/core/services/write-request.service.js";
 import { EntityUpdateInput } from "@questlog/shared";
+import { UPDATE_ENTITY_DESCRIPTION } from "../content/tool-descriptions.js";
 import { withToolErrors } from "./errors.js";
 import type { ToolDeps } from "./types.js";
 
@@ -9,8 +10,7 @@ export function registerUpdateEntity(server: McpServer, { db }: ToolDeps) {
 	server.registerTool(
 		"update_entity",
 		{
-			description:
-				"Preview a change to an existing entity's name, type, or description: returns the proposed before/after field values without persisting anything. Call confirm_update_entity with the returned token to save it.",
+			description: UPDATE_ENTITY_DESCRIPTION,
 			inputSchema: EntityUpdateInput,
 		},
 		withToolErrors(

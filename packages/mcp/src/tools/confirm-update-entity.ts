@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { entityService } from "@questlog/core/services/entity.service.js";
 import { writeRequestService } from "@questlog/core/services/write-request.service.js";
 import { ConfirmUpdateEntityInput } from "@questlog/shared";
+import { CONFIRM_UPDATE_ENTITY_DESCRIPTION } from "../content/tool-descriptions.js";
 import { withToolErrors } from "./errors.js";
 import type { ToolDeps } from "./types.js";
 
@@ -18,8 +19,7 @@ export function registerConfirmUpdateEntity(
 	server.registerTool(
 		"confirm_update_entity",
 		{
-			description:
-				"Confirm a previously-previewed update_entity change-set: applies the proposed field changes to the entity.",
+			description: CONFIRM_UPDATE_ENTITY_DESCRIPTION,
 			inputSchema: ConfirmUpdateEntityInput,
 		},
 		withToolErrors(async ({ token }) => {
