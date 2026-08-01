@@ -2,7 +2,7 @@
 
 Milestone ref: M-EFFICIENCY.4
 
-Priority: P1
+Priority: P0
 
 Branch: feat/m-efficiency/t-085-inline-implementation-notes-sections
 
