@@ -36,8 +36,11 @@ This milestone builds the actual instrumentation instead of continuing to guess:
   A required "Efficiency notes" section in `REPORT_TEMPLATE.md`/`BLOCKED_TEMPLATE.md` where the executor self-reports *why* a run ran long or tight (e.g. superfluous context, pre-existing code needing a fix before the real work could start) — the qualitative half T-046's objective data can't provide on its own.
   Exit: both templates carry the new section; `EXECUTOR_ROUTINE.md` explicitly instructs writing it.
 
-- [ ] **M-OBS.3 — Persist usage/efficiency/report data to a queryable store** (T-053)
+- [x] **M-OBS.3 — Persist usage/efficiency/report data to a queryable store** (T-053)
   Ingest T-046's per-run JSON artifacts, T-047's efficiency notes, **and each ticket's morning/blocked report content** (outcome, what shipped, test evidence, reviewer verdict, "anything Alex must decide") into a real, queryable store — including reviewer-verdict/remediation-pass as structured fields, cache-read ratio, cost-per-changed-line, and blocked-outcome data as a first-class case. Resolved via `G-003`: a separate Neon branch/schema in a new `packages/observability` package, not new tables in `packages/core`.
+
+- [ ] **M-OBS.3b — Wire observability ingestion into the executor routine** (T-095)
+  T-053 built the store and CLI (`ingestUsageArtifact`) but explicitly deferred live-pipeline wiring as a follow-up; no ticket for that follow-up existed until now, so `EXECUTOR_ROUTINE.md` has never actually called it — every ticket's usage/report data has only reached the store via a manual CLI invocation. Wires the CLI into Step 6/7's wrap-up, with the missing/unset-`OBSERVABILITY_DATABASE_URL` case made non-fatal (provisioning the real secret stays Alex's manual step).
 
 - [ ] **M-OBS.4 — API endpoint(s) serving usage/efficiency/report data** (T-054, T-055)
   Read path over M-OBS.3's store — per-ticket and aggregate views (tokens, cost, duration, diff-size correlation, efficiency notes), plus a log/feed endpoint serving report content for browsing (T-054), and syncing PR diff stats (files/lines changed) automatically by ticket id rather than requiring a manual `gh pr list` pull (T-055). Both blocked on T-053's schema landing first.
@@ -52,6 +55,10 @@ This milestone builds the actual instrumentation instead of continuing to guess:
 - [ ] **M-OBS.7 — Cost model config: fully-loaded rate, review-time estimate, human-hour-equivalent by tier** (T-051)
   A small, clearly-labeled-as-assumptions config (`packages/core/src/observability/cost-model.ts`) holding what no transcript can supply: Alex's fully-loaded hourly rate, a default review-time-per-ticket estimate, and human-engineer-hour-equivalents per complexity tier (from M-OBS.6) — plus pure functions computing "total system cost" (agent + reviewer-subagent + review-time cost) and the cost-vs-human-equivalent ratio per tier.
   Exit: both functions unit-tested against fixture inputs; the assumption-vs-measurement distinction is explicit in code comments.
+
+- [x] **M-OBS.8 — Fix `manually_inspected` false-positive detection** (T-096)
+  Investigated 2026-07-31: `summarizeUsage`'s human-message detection (M-OBS.1/T-046) treats any `user`-role transcript turn that isn't a plain string or a `tool_result` block as a human-typed message. In practice, skill/slash-command expansions and interrupt notices also arrive as `user` turns with array content whose blocks are `type: "text"` — so `humanMessageCount` climbs past 1, and `manually_inspected` fires, on nearly every run including fully autonomous ones. Fix the classification instead of removing the field.
+  Exit: `summarizeUsage` correctly excludes framework-injected text-block user turns from `humanMessageCount`; regression tests cover the shapes found in real transcripts (skill-load text, `[Request interrupted by user]`) alongside the existing genuine-human-string case.
 
 **Noted but deferred — not a ticket yet:** a churn/revert ratio (how much AI-generated code gets rewritten within 30 days) was raised as the metric that would answer whether "cheap" is also "durable." Not scoped here because "what counts as churn" (a reverted commit? a >50% line rewrite? a fixed 30-day window?) needs its own design pass first — drafting a ticket without that decision risks exactly the kind of invented scope `TICKET_SPEC.md` warns against. Worth a dedicated `/ungate`-style strategy conversation once the rest of v1.2 is running and there's real data to decide against.
 

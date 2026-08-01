@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { importService } from "@questlog/core/services/import.service.js";
 import { sourceService } from "@questlog/core/services/source.service.js";
 import { IngestTextInput } from "@questlog/shared";
+import { INGEST_TEXT_DESCRIPTION } from "../content/tool-descriptions.js";
 import { withToolErrors } from "./errors.js";
 import type { ToolDeps } from "./types.js";
 
@@ -12,11 +13,7 @@ export function registerIngestText(
 	server.registerTool(
 		"ingest_text",
 		{
-			description:
-				"Create a new knowledge-base source from text or markdown and start processing it (chunking + embedding) in the background. Returns immediately with the source's id and pending status. " +
-				"If the user attaches a document (PDF/DOCX/image) to the conversation, extract its text yourself and call this tool directly - do not ask the user to paste it manually. " +
-				"If writing out the extracted text yourself would take more than roughly a page or two of your own response, don't put it all in one call: split it across multiple calls instead, passing the first call's returned source.id as sourceId on each subsequent call and final: false until the last chunk (final: true, the default, on the last one) so processing only starts once. " +
-				"After the final chunk, proactively call get_source_status to check progress and narrate it to the user.",
+			description: INGEST_TEXT_DESCRIPTION,
 			inputSchema: IngestTextInput,
 		},
 		withToolErrors(

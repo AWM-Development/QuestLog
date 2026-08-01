@@ -14,6 +14,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 - **New `update_entity`/`confirm_update_entity` MCP tool pair.** Lets a DM rename an entity, replace its description, or change its type, following the same preview/confirm pattern as `log_session`: `update_entity` previews the proposed before/after field values without persisting anything, and `confirm_update_entity` applies only the fields that were actually provided. Rejects an unresolvable `entityId` (before creating a write request) or an invalid `type`, and cleanly rejects a reused/unknown confirm token — no crashes.
 
+### Changed — T-064
+
+- **MCP tool `description` strings relocated out of each tool file into one aggregated `packages/mcp/src/content/tool-descriptions.ts`.** Pure text move, no behavioral change: every tool's `server.registerTool(...)` call now imports its description from a shared, single-source-of-truth module instead of carrying it as an inline string literal, extending the same pattern T-033's `onboarding-instructions.ts` started. Dev-experience only — no tool name, schema, or handler behavior changed.
+
+### Fixed — T-060
+
+- **Fixed an intermittent FK-violation race in `packages/core`'s test suite.** `global-setup.test.ts`'s two tests exercising `truncateAllTables` mid-suite could occasionally fail with a foreign-key violation when another concurrently-running test file committed a row in the small window between the truncation's `sources` and `campaigns` deletes — a genuine race, not a flaky assertion (root-caused and deterministically reproduced before landing the fix). Both tests now take an explicit table lock before truncating, blocking concurrent writers instead of racing them; a new regression test guards against reintroducing the race. Dev/CI-only — no production behavior changed.
+
+### Fixed — T-098
+
+- **Remote-sandbox session-start no longer fails silently mid-provision.** `.claude/hooks/session-start.sh`'s remote-only Postgres bootstrap now self-heals an interrupted `dpkg` state before installing (the actual cause of T-056's lost session — a boot-time proxy-CA package, unrelated to QuestLog, left mid-configure), attempts pgvector from the PGDG repo (0.8.x, closing T-016's version gap) before falling back to Ubuntu's 0.6.0 package, and ends with a verification gate that confirms every required extension and test database is actually present and migrated — failing loudly with a specific diagnostic instead of the previous silent, `set -e`-driven death that used to surface 20+ turns later as unexplained test failures. Verified end-to-end on a real Ubuntu 24.04 container (matching the sandbox's actual OS), including both the PGDG-success path (confirmed pgvector `0.8.5`) and the Ubuntu-fallback path (confirmed with `apt.postgresql.org` blackholed). Resolves gate `G-018` — see `Docs/tickets/gated/resolved/G-018-remote-sandbox-db-provisioning-strategy.md` for why a hosted-DB (Neon) alternative was rejected.
+- **The local-worktree branch of the same hook now actually creates its test databases.** Previously it only relied on `docker-compose.yml`'s default `questlog` database and never created `questlog_test_core`/`_server`/`_mcp`/`_observability` — a fresh per-worktree Postgres volume would fail `db:migrate` for every one of them. Fixed with the same explicit `CREATE DATABASE` step `ci.yml`'s own provisioning already uses. Verified against a genuinely fresh volume (fails before the fix, succeeds after, confirmed twice).
+
+### Fixed — T-096
+
+- **`manually_inspected` no longer false-positives on nearly every executor run.** Cost-report human-message detection was miscounting framework-injected transcript turns — skill/slash-command load expansions and interrupt notices — as if Alex had typed them, so almost every run (including fully autonomous overnight ones) showed up flagged as manually inspected. `summarizeUsage` now recognizes those two shapes and excludes them; a real follow-up message from Alex still trips the flag as before.
+
+### Added — T-053
+
+- **New `packages/observability` workspace package holds a queryable store for executor run/report data.** Own Drizzle schema (`ticket_runs`, `ticket_reports`), own migrations, and its own `OBSERVABILITY_DATABASE_URL`-backed connection — deliberately kept independent of `packages/core`'s campaign-data schema (per `G-003`'s resolution). A pure mapping layer converts T-046's `*.usage.json` artifacts and ticket report markdown into insertable rows; upsert helpers are idempotent on `ticket_id`, and a thin CLI (`packages/observability/src/cli.ts`) ingests a given usage-artifact/report pair. No API endpoints or dashboard yet — those are M-OBS.4/M-OBS.5, blocked on this ticket.
+>>>>>>> origin/develop
+
 ### Added — T-050
 
 - **Tickets now carry a `Complexity tier` and a `Strategy-gate flag`.** `TICKET_SPEC.md`'s fixed ticket format gains two new fields under `Milestone ref:`: `Complexity tier: S | M | L`, sized by a documented rubric (single-file/established-pattern vs. multi-file/new-service vs. new-subsystem/cross-cutting), and `Strategy-gate flag: yes | no`, a provenance marker for whether the ticket only became draftable after resolving a 🎨/🧠 gate. `ticket-writer` now assigns both on every future ticket; `REPORT_TEMPLATE.md` and `EXECUTOR_ROUTINE.md`'s Step 7 echo them into the morning report. Lays the groundwork for tier-relative cost/efficiency metrics (M-OBS.3/M-EFFICIENCY.3) without any DB/API/dashboard changes yet.

@@ -53,6 +53,15 @@ function humanTurn(text: string, timestamp: string): string {
 	});
 }
 
+/** A framework-injected user turn (skill/slash-command load, interrupt notice) — array content, `type: "text"`, no `tool_result` block, no human authorship. */
+function injectedTextTurn(text: string, timestamp: string): string {
+	return line({
+		type: "user",
+		timestamp,
+		message: { role: "user", content: [{ type: "text", text }] },
+	});
+}
+
 describe("summarizeUsage", () => {
 	it("sums tokens, computes duration and turn count, and finds turns_to_green", () => {
 		const jsonl = [
@@ -146,6 +155,52 @@ describe("summarizeUsage", () => {
 
 		expect(result.humanMessageCount).toBe(2);
 		expect(result.manuallyInspected).toBe(true);
+	});
+
+	it("does not count a skill/slash-command load expansion as a human message", () => {
+		const jsonl = [
+			humanTurn("/ticket-writer M-OBS.8", "2026-07-27T10:00:00.000Z"),
+			injectedTextTurn(
+				"Base directory for this skill: /Users/alexandermeyer/Documents/Code/QuestLog/.claude/skills/ticket-writer\n\n# Ticket Writer\n\n...",
+				"2026-07-27T10:00:01.000Z",
+			),
+			assistantTurn(
+				{ input_tokens: 100, output_tokens: 50 },
+				"2026-07-27T10:00:05.000Z",
+			),
+		].join("\n");
+
+		const result = summarizeUsage(jsonl);
+
+		expect(result.humanMessageCount).toBe(1);
+		expect(result.manuallyInspected).toBe(false);
+	});
+
+	it("does not count an interrupt notice as a human message", () => {
+		const jsonl = [
+			humanTurn("kick it off", "2026-07-27T10:00:00.000Z"),
+			assistantTurn(
+				{ input_tokens: 100, output_tokens: 50 },
+				"2026-07-27T10:00:05.000Z",
+			),
+			injectedTextTurn(
+				"[Request interrupted by user]",
+				"2026-07-27T10:00:10.000Z",
+			),
+			injectedTextTurn(
+				"[Request interrupted by user for tool use]",
+				"2026-07-27T10:00:15.000Z",
+			),
+			assistantTurn(
+				{ input_tokens: 20, output_tokens: 10 },
+				"2026-07-27T10:00:20.000Z",
+			),
+		].join("\n");
+
+		const result = summarizeUsage(jsonl);
+
+		expect(result.humanMessageCount).toBe(1);
+		expect(result.manuallyInspected).toBe(false);
 	});
 
 	it("prices from the transcript's own ephemeral 5m/1h cache-creation split when present", () => {

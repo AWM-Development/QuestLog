@@ -1,6 +1,7 @@
 import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { TABLES_IN_DELETE_ORDER } from "./global-setup.js";
 import type { Database } from "./index.js";
 import * as schema from "./schema/index.js";
 import {
@@ -55,6 +56,24 @@ export function createTestDb(options?: { max?: number }) {
 		client,
 		close: () => client.end(),
 	};
+}
+
+/**
+ * Blocks (not races) a concurrent write into any of `TABLES_IN_DELETE_ORDER`
+ * while this transaction truncates them. Locked parent-first (reverse of
+ * TABLES_IN_DELETE_ORDER) to match how every other test file in this package
+ * acquires these same tables' locks (campaign row first, then children) —
+ * locking child-first here would instead deadlock against that pattern.
+ * Why: Docs/IMPLEMENTATION_NOTES.md § T-060.
+ */
+export async function lockTruncationTargets(sql: {
+	unsafe: (query: string) => Promise<unknown>;
+}) {
+	const tables = [...TABLES_IN_DELETE_ORDER]
+		.reverse()
+		.map((table) => `"${table}"`)
+		.join(", ");
+	await sql.unsafe(`LOCK TABLE ${tables} IN EXCLUSIVE MODE`);
 }
 
 /**

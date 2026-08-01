@@ -4,6 +4,7 @@ import {
 	contextService,
 } from "@questlog/core/services/context.service.js";
 import { QueryLoreInput } from "@questlog/shared";
+import { QUERY_LORE_DESCRIPTION } from "../content/tool-descriptions.js";
 import { withToolErrors } from "./errors.js";
 import type { ToolDeps } from "./types.js";
 
@@ -14,8 +15,7 @@ export function registerQueryLore(
 	server.registerTool(
 		"query_lore",
 		{
-			description:
-				"Query campaign lore via hybrid vector + keyword search, returning assembled context with source citations and a confidence score.",
+			description: QUERY_LORE_DESCRIPTION,
 			inputSchema: QueryLoreInput,
 		},
 		withToolErrors(async ({ campaignId, query, limit }) => {

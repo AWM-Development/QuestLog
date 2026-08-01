@@ -70,7 +70,7 @@ jobs:
           source scripts/test-db-names.sh
           for dbname in "${TEST_DB_NAMES_CI[@]}"; do
             PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog_test -c "CREATE DATABASE ${dbname}"
-            DATABASE_URL="postgresql://questlog:questlog@localhost:5433/${dbname}" pnpm --filter @questlog/server db:migrate
+            DATABASE_URL="postgresql://questlog:questlog@localhost:5433/${dbname}" eval "$(test_db_migrate_cmd "$dbname")"
           done
 
       # ── Full test suite ───────────────────────────────────────────────────

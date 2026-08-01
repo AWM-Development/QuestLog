@@ -1,0 +1,25 @@
+{
+	"ticket_id": "T-999",
+	"empty_run": false,
+	"session_id": "fixture-session-id",
+	"input_tokens": 100,
+	"output_tokens": 200,
+	"cache_creation_input_tokens": 300,
+	"cache_read_input_tokens": 400,
+	"duration_ms": 12345,
+	"turn_count": 10,
+	"turns_to_green": 7,
+	"human_message_count": 1,
+	"manually_inspected": false,
+	"theoretical_cost_usd": {
+		"applies_rate": "intro",
+		"intro_usd": 1.5,
+		"standard_usd": 2.25
+	},
+	"reviewer_subagent": null,
+	"total_system_cost_usd": {
+		"applies_rate": "intro",
+		"intro_usd": 1.5,
+		"standard_usd": 2.25
+	}
+}
