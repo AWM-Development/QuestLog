@@ -27,12 +27,14 @@ describe("T-099 vitest truncate-lock isolation", () => {
 
 describe("T-099 QUESTLOG_PG_PORT under turbo", () => {
 	it("passes QUESTLOG_PG_PORT through the test task so worktree ports reach Vitest", () => {
-		expect(turboJson.tasks.test.passThroughEnv).toContain("QUESTLOG_PG_PORT");
+		const passThrough = turboJson.tasks.test?.passThroughEnv;
+		expect(passThrough).toBeDefined();
+		expect(passThrough).toContain("QUESTLOG_PG_PORT");
 	});
 
 	it("passes QUESTLOG_PG_PORT through test:e2e (also resolves DB URLs via testDbUrl)", () => {
-		expect(turboJson.tasks["test:e2e"].passThroughEnv).toContain(
-			"QUESTLOG_PG_PORT",
-		);
+		const passThrough = turboJson.tasks["test:e2e"]?.passThroughEnv;
+		expect(passThrough).toBeDefined();
+		expect(passThrough).toContain("QUESTLOG_PG_PORT");
 	});
 });
