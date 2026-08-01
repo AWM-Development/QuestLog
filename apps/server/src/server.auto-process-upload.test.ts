@@ -55,7 +55,7 @@ async function waitForStatus(
 	const start = Date.now();
 	let lastStatus = "";
 	while (Date.now() - start < timeoutMs) {
-		const source = await sourceService.getById(db, sourceId);
+		const source = await sourceService.getByIdUnscoped(db, sourceId);
 		lastStatus = source.status;
 		if (lastStatus === target || lastStatus === "error") return lastStatus;
 		await new Promise((resolve) => setTimeout(resolve, 25));
@@ -141,7 +141,7 @@ describe("autoProcessUploads opt-in", () => {
 
 		// Give any accidental background processing a moment to (not) happen.
 		await new Promise((resolve) => setTimeout(resolve, 100));
-		const current = await sourceService.getById(db, source.id);
+		const current = await sourceService.getByIdUnscoped(db, source.id);
 		expect(current.status).toBe("pending");
 
 		await app.close();

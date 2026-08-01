@@ -43,3 +43,7 @@ Never persist a mutating write from a single call. If a ticket's exit condition 
 ## Error shape
 
 Tool errors return a structured result the MCP client can render (not a thrown exception that kills the connection): at minimum `{ error: { code, message } }`. Reuse the typed errors from `packages/core/src/lib/errors.ts` where the underlying service already throws one — map them the same way `withErrorHandling` does for tRPC, don't invent a parallel error taxonomy.
+
+## Campaign-scoped ID lookups (T-068)
+
+Any `packages/core` service method reachable from an MCP tool handler with untrusted external IDs must take `campaignId` as a mandatory parameter (matching `entityService.getById`) or otherwise scope its own lookup — never look up by bare id alone. If a service also needs an unscoped variant for trusted-internal (tRPC / other-service) callers, suffix that variant's name with `Unscoped` (e.g. `sourceService.getByIdUnscoped`). `packages/mcp/src/tools/*.ts` must never call an `Unscoped` method directly — enforced by `packages/mcp/src/tools/campaign-scoping.test.ts`, not just this convention.

@@ -71,7 +71,7 @@ export const sourceRouter = router({
 				const { action, existingSourceId, newFile } = input;
 
 				if (action === "skip") {
-					return sourceService.getById(ctx.db, existingSourceId);
+					return sourceService.getByIdUnscoped(ctx.db, existingSourceId);
 				}
 
 				if (!newFile) {
