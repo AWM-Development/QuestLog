@@ -6,6 +6,7 @@ import {
 } from "@questlog/core/services/entity.service.js";
 import { writeRequestService } from "@questlog/core/services/write-request.service.js";
 import { LogSessionInput } from "@questlog/shared";
+import { LOG_SESSION_DESCRIPTION } from "../content/tool-descriptions.js";
 import { withToolErrors } from "./errors.js";
 import type { ToolDeps } from "./types.js";
 
@@ -13,8 +14,7 @@ export function registerLogSession(server: McpServer, { db }: ToolDeps) {
 	server.registerTool(
 		"log_session",
 		{
-			description:
-				"Preview a new session log: detects entity mentions in the content and returns the session record plus entity links that would be written, without persisting anything. Call confirm_log_session with the returned token to save it.",
+			description: LOG_SESSION_DESCRIPTION,
 			inputSchema: LogSessionInput,
 		},
 		withToolErrors(
