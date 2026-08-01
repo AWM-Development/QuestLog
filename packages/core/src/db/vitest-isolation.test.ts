@@ -29,9 +29,7 @@ describe("T-099 vitest truncate-lock isolation", () => {
 		// Without distinct groupOrder, Vitest runs projects in parallel and the
 		// exclusive truncate locks still collide with the main pool (G-019).
 		expect(vitestConfig).toMatch(/name:\s*"core"[\s\S]*?groupOrder:\s*1\b/);
-		expect(vitestConfig).not.toMatch(
-			/name:\s*"core"[\s\S]*?groupOrder:\s*0\b/,
-		);
+		expect(vitestConfig).not.toMatch(/name:\s*"core"[\s\S]*?groupOrder:\s*0\b/);
 	});
 });
 
