@@ -894,6 +894,28 @@ describe("update_entity + confirm_update_entity tools", () => {
 		expect(unchanged?.type).toBe("npc");
 	});
 
+	it("rejects a preview with no fields to update before it reaches the service", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "update_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+
+		expect(result.isError).toBe(true);
+
+		const [unchanged] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, entity.id));
+		expect(unchanged?.name).toBe("Mira Duskwood");
+	});
+
 	it("rejects a preview for a bogus entityId before a write request is even created", async () => {
 		const client = await connectedClient(createMockFetch(basisVector(0)));
 		const unknownEntityId = "00000000-0000-0000-0000-000000000000";

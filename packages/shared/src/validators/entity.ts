@@ -28,13 +28,21 @@ export const AppendEntityNoteInput = z.object({
 });
 export type AppendEntityNoteInput = z.infer<typeof AppendEntityNoteInput>;
 
-export const EntityUpdateInput = z.object({
-	campaignId: z.string().uuid(),
-	entityId: z.string().uuid(),
-	name: z.string().min(1).max(200).optional(),
-	type: z.enum(ENTITY_TYPES).optional(),
-	description: z.string().max(2000).optional(),
-});
+export const EntityUpdateInput = z
+	.object({
+		campaignId: z.string().uuid(),
+		entityId: z.string().uuid(),
+		name: z.string().min(1).max(200).optional(),
+		type: z.enum(ENTITY_TYPES).optional(),
+		description: z.string().max(2000).optional(),
+	})
+	.refine(
+		(input) =>
+			input.name !== undefined ||
+			input.type !== undefined ||
+			input.description !== undefined,
+		{ message: "At least one of name, type, or description must be provided" },
+	);
 export type EntityUpdateInput = z.infer<typeof EntityUpdateInput>;
 
 export const ConfirmUpdateEntityInput = z.object({

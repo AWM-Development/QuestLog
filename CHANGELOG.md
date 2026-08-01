@@ -34,7 +34,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 ### Added — T-053
 
 - **New `packages/observability` workspace package holds a queryable store for executor run/report data.** Own Drizzle schema (`ticket_runs`, `ticket_reports`), own migrations, and its own `OBSERVABILITY_DATABASE_URL`-backed connection — deliberately kept independent of `packages/core`'s campaign-data schema (per `G-003`'s resolution). A pure mapping layer converts T-046's `*.usage.json` artifacts and ticket report markdown into insertable rows; upsert helpers are idempotent on `ticket_id`, and a thin CLI (`packages/observability/src/cli.ts`) ingests a given usage-artifact/report pair. No API endpoints or dashboard yet — those are M-OBS.4/M-OBS.5, blocked on this ticket.
->>>>>>> origin/develop
 
 ### Added — T-050
 

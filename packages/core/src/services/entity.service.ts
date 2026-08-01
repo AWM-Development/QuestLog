@@ -310,7 +310,6 @@ export const entityService = {
 	) {
 		const { id, campaignId, ...fields } = input;
 
-		// Build update payload, only including fields that were provided
 		const updateData: Record<string, unknown> = {};
 		if ("name" in fields) updateData.name = fields.name;
 		if ("type" in fields) updateData.type = fields.type;
