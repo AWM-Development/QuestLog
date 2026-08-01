@@ -1130,7 +1130,6 @@ describe("ingest_text + get_source_status tools", () => {
 		await deleteCampaignTree(db, campaignId);
 		if (otherCampaignId) {
 			await deleteCampaignTree(db, otherCampaignId);
-			await db.delete(campaigns).where(eq(campaigns.id, otherCampaignId));
 		}
 	});
 
