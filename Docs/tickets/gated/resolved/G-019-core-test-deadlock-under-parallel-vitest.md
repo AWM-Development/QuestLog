@@ -73,9 +73,9 @@ Open question: Given intermittent `deadlock detected` failures on
   package tests directly inside a worktree," or (c) treat Axis 3 as a
   separate small ticket that can ship independently of the deadlock fix?
 
-Blocks: none yet — Scope can't honestly be written until Axes 1–3 land
-  (serialize-vs-isolate-vs-harden changes what any ticket builds; Axis 3
-  may or may not share a ticket). No ticket drafted. Tag after `/ungate`.
+Blocks: T-099 (`Docs/tickets/in-progress/T-099-isolate-truncate-lock-tests-and-worktree-pg-port.md`)
+  — drafted on resolution; placed in `in-progress/` by Alex's explicit
+  request (normally would land in `queue/`).
 
 ## Decisions in progress (2026-08-01, `/ungate` with Alex)
 
@@ -88,7 +88,9 @@ Blocks: none yet — Scope can't honestly be written until Axes 1–3 land
   Deadlocks are within `@questlog/core`'s own file workers on
   `questlog_test_core`; post–G-008 package fan-out hits different physical
   DBs and is not the mechanism.
-- **Axis 3 — open.**
+- **Axis 3 — decided: option 1.** Add `QUESTLOG_PG_PORT` to turbo
+  `passThroughEnv` **and** fix `test-db-url.test.ts` so default cases stub
+  the env unset — same ticket as Axis 1.
 
 Notes: Evidence from T-075's full turbo runs (not a T-075 product bug):
 
@@ -128,3 +130,21 @@ Notes: Evidence from T-075's full turbo runs (not a T-075 product bug):
     (T-027), or `truncateAllTables` itself for the real pre-suite `setup()`
     call — only the mid-suite test interaction with exclusive locks is in
     play, unless Axis 1 option 4 explicitly reshapes that test design.
+
+## Resolution (2026-08-01)
+
+**Decided with Alex during `/ungate` on `gates/g-019-core-test-deadlock-parallelism`.**
+
+- **Axis 1:** Isolate `packages/core/src/db/global-setup.test.ts` onto a
+  serial Vitest project/pool so its mid-suite `LOCK TABLE` never overlaps
+  other file workers; keep file parallelism for the rest of the package.
+  Package-wide `maxWorkers: 1` is fallback only if isolation proves awkward.
+- **Axis 2:** No turbo package-concurrency change. The deadlock is
+  within-core file workers on `questlog_test_core`, not cross-package.
+- **Axis 3:** Make worktree `QUESTLOG_PG_PORT` first-class under turbo —
+  add it to `passThroughEnv` and stub the env unset in
+  `test-db-url.test.ts`'s hardcoded `:5433` cases — in the **same** ticket
+  as Axis 1.
+
+Ticketed as **T-099**. Full rationale lives here; implementation notes get
+a one-line pointer only.
