@@ -4,9 +4,6 @@ Milestone ref: M-REMOTE.10 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
 Priority: P2
 
-Blocked on: T-088 — must be merged into develop first (adds
-  `entities.status`, `entityService.archive`/`unarchive`)
-
 Branch: feat/m-remote/t-089-mcp-archive-entity-tools
 
 Context files (load ONLY these):
