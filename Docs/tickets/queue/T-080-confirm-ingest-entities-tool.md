@@ -2,7 +2,7 @@
 
 Milestone ref: Docs/milestones/MILESTONES_V1_3_MCP.md M-EXTRACT.2
 
-Priority: P1
+Priority: P0
 
 Branch: feat/m-extract/t-080-confirm-ingest-entities-tool
 
