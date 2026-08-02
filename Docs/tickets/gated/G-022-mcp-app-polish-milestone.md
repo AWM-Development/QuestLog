@@ -2,9 +2,12 @@
 
 Gate type: 🧠 strategy
 
-Milestone ref: none yet — this gate's resolution is what opens whichever
-  milestone comes after v1.4 (e.g. v1.5), the same way v1.4 itself opened
-  from resolving `G-012`.
+Milestone ref: Docs/milestones/MILESTONES_V1_5_MCP.md, Milestone M-POLISH
+  (placeholder — filed 2026-08-02 to reserve the v1.5 slot; this gate's
+  resolution is what writes M-POLISH's real task list). v1.5 also holds
+  a second, unrelated milestone (M-INVENTORY, gated on `G-023`) — see
+  the milestone doc's "Why v1.5 exists" section for why both share a
+  version number.
 
 Opened: 2026-08-02 — filed by agent during G-012's `/ungate` resolution,
   splitting G-012's original two-part open question ("agent-interaction
@@ -30,8 +33,9 @@ Open question: What belongs in the "MCP app polish" milestone — tool-
   v1.4's own scope needed narrowing rather than being answered in one
   pass.
 
-Blocks: none yet — no ticket or milestone task exists to reference this
-  gate; resolving it is itself the act of opening the next milestone.
+Blocks: Docs/milestones/MILESTONES_V1_5_MCP.md Milestone M-POLISH (no
+  tickets exist yet — this gate's resolution is what makes M-POLISH's
+  task list draftable).
 
 Notes: Split out of `G-012` rather than answered in the same `/ungate`
   session, because Alex's resolution there was explicit: scope v1.4 to
