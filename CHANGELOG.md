@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-080
+
+- **`confirm_ingest_entities` MCP tool** completes the M-EXTRACT.2 preview/confirm pair (`ingest_text`, T-079): given the token from `ingest_text`'s staged `entityCandidates`, it creates one entity per candidate via `entityService.create`, all inside a single transaction, and returns the created entity ids. An optional `candidateIndices` array (0-based positions into the staged candidates list) confirms only a subset instead of all-or-nothing, so a caller can skip an over-broad or misdetected candidate rather than create and later archive it. A second confirm against the same token is rejected, mirroring `confirm_log_session`'s existing claim behavior. `entities` gains a nullable `sourceId` FK (to `sources`, migration `0016_normal_guardian.sql`), set on every entity this tool creates, so each satisfies M-EXTRACT.2's exit condition of linking back to the document it was detected in.
+
 ### Added — T-076
 
 - **`confirm_correct_lore` MCP tool** completes the M-CANON preview/confirm pair (`correct_lore`, T-075): given a token from `correct_lore`, it atomically chunks + embeds the correction as new authoritative content and marks every target chunk `superseded`, both inside a single transaction — either both writes land or neither does. Returns the created and superseded chunk ids. A second confirm against the same token is rejected, mirroring `confirm_log_session`'s existing claim behavior. `chunkText`'s `ChunkMeta` gains an explicit third campaign-only anchor variant (no source/session) for corrections that don't originate from an existing source (an `entityId`-only or `chunkIds`-only correction); `correct_lore`'s preview payload now also carries `campaignId`/`sourceId` so confirm can anchor and campaign-scope its writes without trusting anything outside the payload.

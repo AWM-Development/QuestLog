@@ -97,6 +97,7 @@ export const entities = pgTable(
 		campaignId: uuid("campaign_id")
 			.references(() => campaigns.id)
 			.notNull(),
+		sourceId: uuid("source_id").references(() => sources.id),
 		name: text("name").notNull(),
 		type: text("type").notNull(),
 		summary: text("summary"),

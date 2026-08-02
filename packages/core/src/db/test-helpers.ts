@@ -96,7 +96,6 @@ export async function deleteCampaignTree(db: Database, campaignId: string) {
 		.delete(conversations)
 		.where(eq(conversations.campaignId, campaignId));
 	await db.delete(chunks).where(eq(chunks.campaignId, campaignId));
-	await db.delete(sources).where(eq(sources.campaignId, campaignId));
 	await db
 		.delete(writeRequests)
 		.where(eq(writeRequests.campaignId, campaignId));
@@ -113,7 +112,9 @@ export async function deleteCampaignTree(db: Database, campaignId: string) {
 			.delete(sessionEntities)
 			.where(inArray(sessionEntities.sessionId, sessionIds));
 	}
+	// entities.sourceId now FKs to sources (T-080) — must delete before sources.
 	await db.delete(entities).where(eq(entities.campaignId, campaignId));
+	await db.delete(sources).where(eq(sources.campaignId, campaignId));
 	await db.delete(sessions).where(eq(sessions.campaignId, campaignId));
 	await db.delete(campaigns).where(eq(campaigns.id, campaignId));
 }

@@ -330,12 +330,13 @@ export const entityService = {
 	},
 
 	async create(
-		db: Database,
+		db: Database | Transaction,
 		input: {
 			campaignId: string;
 			name: string;
 			type: string;
 			description?: string;
+			sourceId?: string;
 		},
 	) {
 		const rows = await db
@@ -345,6 +346,7 @@ export const entityService = {
 				name: input.name,
 				type: input.type,
 				description: input.description ?? null,
+				sourceId: input.sourceId ?? null,
 			})
 			.returning();
 		const row = rows[0];

@@ -28,6 +28,14 @@ export const IngestTextInput = z
 	});
 export type IngestTextInput = z.infer<typeof IngestTextInput>;
 
+export const ConfirmIngestEntitiesInput = z.object({
+	token: z.string().uuid(),
+	candidateIndices: z.array(z.number().int().min(0)).optional(),
+});
+export type ConfirmIngestEntitiesInput = z.infer<
+	typeof ConfirmIngestEntitiesInput
+>;
+
 export const GetSourceStatusInput = z.object({
 	campaignId: z.string().uuid(),
 	sourceId: z.string().uuid(),
