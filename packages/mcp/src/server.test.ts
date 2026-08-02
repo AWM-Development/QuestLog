@@ -2206,8 +2206,7 @@ describe("ingest_text + get_source_status tools", () => {
 			.where(eq(entities.campaignId, campaignId));
 		expect(entityRows).toHaveLength(0);
 
-		// Let fire-and-forget embedding settle before afterEach's
-		// deleteCampaignTree runs, or the source delete can race chunk inserts.
+		// See the next test for why this await is needed before cleanup.
 		await waitForStatus(payload.source.id, "done");
 	});
 
