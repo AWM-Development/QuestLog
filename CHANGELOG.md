@@ -12,7 +12,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ### Added — T-080
 
-- **`confirm_ingest_entities` MCP tool** completes the M-EXTRACT.2 preview/confirm pair (`ingest_text`, T-079): given the token from `ingest_text`'s staged `entityCandidates`, it creates one entity per candidate via `entityService.create`, all inside a single transaction, and returns the created entity ids. An optional `candidateIndices` array (0-based positions into the staged candidates list) confirms only a subset instead of all-or-nothing, so a caller can skip an over-broad or misdetected candidate rather than create and later archive it. A second confirm against the same token is rejected, mirroring `confirm_log_session`'s existing claim behavior.
+- **`confirm_ingest_entities` MCP tool** completes the M-EXTRACT.2 preview/confirm pair (`ingest_text`, T-079): given the token from `ingest_text`'s staged `entityCandidates`, it creates one entity per candidate via `entityService.create`, all inside a single transaction, and returns the created entity ids. An optional `candidateIndices` array (0-based positions into the staged candidates list) confirms only a subset instead of all-or-nothing, so a caller can skip an over-broad or misdetected candidate rather than create and later archive it. A second confirm against the same token is rejected, mirroring `confirm_log_session`'s existing claim behavior. `entities` gains a nullable `sourceId` FK (to `sources`, migration `0016_normal_guardian.sql`), set on every entity this tool creates, so each satisfies M-EXTRACT.2's exit condition of linking back to the document it was detected in.
 
 ### Added — T-076
 

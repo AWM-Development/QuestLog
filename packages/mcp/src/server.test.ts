@@ -2270,15 +2270,18 @@ describe("confirm_ingest_entities tool (T-080)", () => {
 				"{}",
 		);
 		await waitForStatus(payload.source.id, "done");
-		return payload.entityCandidates as {
-			token: string;
-			candidates: Array<{ name: string; entityType: string }>;
+		return {
+			sourceId: payload.source.id as string,
+			...(payload.entityCandidates as {
+				token: string;
+				candidates: Array<{ name: string; entityType: string }>;
+			}),
 		};
 	}
 
 	it("creates one entity per staged candidate when confirming the full list", async () => {
 		const client = await connectedClient(createMockFetch(basisVector(0)));
-		const { token, candidates } = await stageCandidates(
+		const { token, candidates, sourceId } = await stageCandidates(
 			client,
 			"The party met Vespera Nightveil at dawn. They traveled to Castle Ravenloft by nightfall.",
 		);
@@ -2307,6 +2310,7 @@ describe("confirm_ingest_entities tool (T-080)", () => {
 		);
 		for (const row of entityRows) {
 			expect(entityIds).toContain(row.id);
+			expect(row.sourceId).toBe(sourceId);
 		}
 	});
 

@@ -28,7 +28,7 @@ export function registerConfirmIngestEntities(
 				db,
 				token,
 				async (tx, rawPayload) => {
-					const { campaignId, candidates } =
+					const { campaignId, sourceId, candidates } =
 						rawPayload as IngestEntitiesPayload;
 
 					const selected = candidateIndices
@@ -44,6 +44,7 @@ export function registerConfirmIngestEntities(
 							name: candidate.name,
 							type: candidate.entityType,
 							description: candidate.description,
+							sourceId,
 						});
 						entityIds.push(entity.id);
 					}
