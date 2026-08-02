@@ -2,7 +2,7 @@
 
 Milestone ref: Docs/milestones/MILESTONES_V1_3_MCP.md M-CANON.3
 
-Priority: P1
+Priority: P0
 
 Branch: feat/m-canon/t-076-confirm-correct-lore-tool
 
