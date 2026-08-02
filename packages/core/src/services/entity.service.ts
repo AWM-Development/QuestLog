@@ -191,7 +191,7 @@ export const entityService = {
 		const candidateRows = await db
 			.select({ id: entities.id, name: entities.name, type: entities.type })
 			.from(entities)
-			.where(wordSimilarityCandidateFilter(campaignId, text));
+			.where(wordSimilarityCandidateFilter(campaignId, text, true));
 
 		if (candidateRows.length === 0) return [];
 
