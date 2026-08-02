@@ -1,7 +1,9 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
+import { entityService } from "@questlog/core/services/entity.service.js";
 import { importService } from "@questlog/core/services/import.service.js";
 import { sourceService } from "@questlog/core/services/source.service.js";
+import { writeRequestService } from "@questlog/core/services/write-request.service.js";
 import { IngestTextInput } from "@questlog/shared";
 import { INGEST_TEXT_DESCRIPTION } from "../content/tool-descriptions.js";
 import { withToolErrors } from "./errors.js";
@@ -65,6 +67,27 @@ export function registerIngestText(
 						});
 				}
 
+				const candidates = await entityService.detectCandidates(db, {
+					campaignId: resolvedCampaignId,
+					text: content,
+				});
+				const entityCandidates = candidates.length
+					? {
+							token: (
+								await writeRequestService.createPreview(db, {
+									campaignId: resolvedCampaignId,
+									toolName: "ingest_entities",
+									payload: {
+										campaignId: resolvedCampaignId,
+										sourceId: source.id,
+										candidates,
+									},
+								})
+							).token,
+							candidates,
+						}
+					: null;
+
 				return {
 					content: [
 						{
@@ -72,6 +95,7 @@ export function registerIngestText(
 							text: JSON.stringify({
 								campaign: newCampaign ? { id: resolvedCampaignId } : undefined,
 								source: { id: source.id, status: source.status },
+								entityCandidates,
 							}),
 						},
 					],
