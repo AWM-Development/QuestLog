@@ -2,7 +2,7 @@
 
 Milestone ref: M-PIPELINE.5 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
-Priority: P0
+Priority: P2
 
 Branch: chore/m-pipeline/t-073-ticket-and-gate-id-claim-step
 
