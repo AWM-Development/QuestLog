@@ -32,3 +32,27 @@ test_db_migrate_cmd() {
 			;;
 	esac
 }
+
+# Template-database names for CI's clone-instead-of-replay provisioning
+# (T-086). One template per distinct schema family, not one for all of
+# TEST_DB_NAMES_CI — packages/observability's schema is independent
+# (G-003, see test_db_migrate_cmd above), so cloning it from a
+# core-schema template (or vice versa) would produce the wrong schema.
+# Why: Docs/IMPLEMENTATION_NOTES.md § T-086.
+TEST_DB_TEMPLATE_CORE=questlog_test_template_core
+TEST_DB_TEMPLATE_OBSERVABILITY=questlog_test_template_observability
+TEST_DB_TEMPLATES=("$TEST_DB_TEMPLATE_CORE" "$TEST_DB_TEMPLATE_OBSERVABILITY")
+
+# Maps each test-tier dbname to the template it clones from — mirrors
+# test_db_migrate_cmd's own case split (same schema-family boundary) rather
+# than duplicating that logic with a second, independently-maintained switch.
+test_db_template_name() {
+	case "$1" in
+		"$TEST_DB_NAME_OBSERVABILITY")
+			echo "$TEST_DB_TEMPLATE_OBSERVABILITY"
+			;;
+		*)
+			echo "$TEST_DB_TEMPLATE_CORE"
+			;;
+	esac
+}
