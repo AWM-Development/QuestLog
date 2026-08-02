@@ -1,7 +1,7 @@
 # Ticket Spec
 
 **Location:** `Docs/tickets/TICKET_SPEC.md`
-**Last Updated:** 2026-07-23
+**Last Updated:** 2026-08-01
 **Purpose:** The exact, complete format for every ticket file. `.claude/skills/ticket-writer/SKILL.md` produces tickets in this shape; the nightly executor and the reviewer subagent both assume it. See `Docs/tickets/GATE_SPEC.md` for the companion format used by design/strategy gate-stubs, which feed this pipeline via a ticket's `Gated on:` field.
 
 Every ticket lives at `Docs/tickets/T-###-slug.md` (`###` sequential, zero-padded, never reused across `backlog/`, `queue/`, `in-progress/`, `done/`, `blocked/`, `archive/`) and contains exactly these fields, in this order:
@@ -10,6 +10,10 @@ Every ticket lives at `Docs/tickets/T-###-slug.md` (`###` sequential, zero-padde
 # T-### — <title>
 
 Milestone ref: <Docs/milestones/MILESTONES_V1_MCP.md section, e.g. "M-MCP.1">
+
+Complexity tier: S | M | L   # see field notes for the rubric
+
+Strategy-gate flag: yes | no   # see field notes
 
 Priority: P0 | P1 | P2   # default P1 — see field notes
 
@@ -22,6 +26,11 @@ Branch: feat/<milestone-group>/t-###-<slug>
 Context files (load ONLY these):
   - <explicit file path or PRD §ref — never "the whole PRD" or "the whole service">
   - ...
+
+## Relevant background   # optional — omit unless excerpting one IMPLEMENTATION_NOTES.md §
+excerpted from `Docs/IMPLEMENTATION_NOTES.md` § <heading>, as of <YYYY-MM-DD>
+
+<pasted section text>
 
 Mockup: Docs/mockups/<view>/ | none
 
@@ -45,6 +54,26 @@ Definition of done includes: checkbox flipped in Docs/milestones/MILESTONES_V1_M
 
 ## Field notes
 
+- **Complexity tier** is a rubric, not a vibe, since every other metric this
+  observability system captures (tokens, cost, duration) is only
+  interpretable relative to how big the ticket actually was — a flat
+  average across a 1-file config fix and a 161-file monorepo split is
+  meaningless. Assign exactly one:
+  - **S** — single file or function, an established pattern already used
+    elsewhere in the codebase.
+  - **M** — multiple files, a new service/router pair, or a moderate
+    refactor, still within a well-understood pattern.
+  - **L** — a new subsystem, a cross-cutting change touching many files,
+    or a genuinely unfamiliar pattern for this codebase.
+  `ticket-writer` assigns this at draft time, same as `Priority`.
+- **Strategy-gate flag** is a provenance marker, not a judgment call: `yes`
+  if this ticket's own scope only became draftable after resolving a
+  🎨/🧠 gate (i.e. it previously existed as a `Gated on:` reference, or
+  was drafted directly by `/ungate`); `no` otherwise. It distinguishes
+  "routine ticket" from "ticket that required a real decision to exist" —
+  it does not track whether the ticket *itself* contains a gate (see
+  Step 3's mid-ticket gate handling in `EXECUTOR_ROUTINE.md`, which is a
+  separate concern).
 - **Priority** is a fixed 3-tier field (`P0`, `P1`, `P2`) present on every ticket, defaulting to `P1`. It orders selection *within* whatever's already eligible to run — it never overrides `Blocked on:`/`Gated on:`, which stay absolute gates underneath it (`EXECUTOR_ROUTINE.md` Step 1 sorts by tier first, then falls back to numeric `T-###` id as the tiebreak, preserving the pipeline's existing "oldest first, no cherry-picking" determinism within a tier). Alex sets the tier per ticket during the `ticket-writer` session at draft time — `ticket-writer` proposes `P1` as the default and Alex confirms or overrides before the ticket is filed; it is never inferred automatically. See `Docs/tickets/gated/resolved/G-010-ticket-prioritization-mechanism.md` for the full rationale.
 - **Blocked on** only appears on tickets living in `backlog/` (see Lifecycle
   below). It names the ticket id(s) whose PR must be merged into `develop`
@@ -64,7 +93,8 @@ Definition of done includes: checkbox flipped in Docs/milestones/MILESTONES_V1_M
   fields at once (blocked on a merge *and* a decision); it only reaches
   `queue/` once both are cleared. See `GATE_SPEC.md`'s "Keeping tickets and
   gates in sync" for why this asymmetry is load-bearing, not incidental.
-- **Context files** is the ticket's entire token budget for "what to read besides the ticket itself." If a file isn't listed, the executor shouldn't need it — if it turns out it does, that's a signal the ticket was scoped too tightly and worth noting in the report, not silently working around.
+- **Context files** is the ticket's entire token budget for "what to read besides the ticket itself." If a file isn't listed, the executor shouldn't need it — if it turns out it does, that's a signal the ticket was scoped too tightly and worth noting in the report, not silently working around. When only one `§` section of `Docs/IMPLEMENTATION_NOTES.md` is relevant, `ticket-writer` pastes that section under `## Relevant background` instead of listing the whole file here (see that field below) — keep a whole-file `Context files:` entry only when multiple sections or the file's general shape are genuinely needed.
+- **Relevant background** is optional — present only when a ticket excerpts a specific `Docs/IMPLEMENTATION_NOTES.md` `§` section into the body rather than naming the whole file in `Context files:`. It sits after `Context files:` and before `Scope:` (and before `Mockup:`/`Model:` in the format block). The excerpt must cite the section's exact heading and the capture date (e.g. "excerpted from `Docs/IMPLEMENTATION_NOTES.md` § T-069, as of 2026-07-29"). **Staleness check:** the executor treats the pasted excerpt as its working context and re-checks the live `IMPLEMENTATION_NOTES.md` file only if something about the excerpt looks inconsistent with what it's actually seeing in the codebase — not as a blind trust forever, and not as a mandatory re-read every run.
 - **Branch** is always cut from `develop`, never `main` — `main` is the deployed branch and is never a ticket's base or target. The ticket's PR merges back into `develop`; `develop` → `main` is a separate, manual release step Alex performs when there's something to deploy. Format: `feat/<milestone-group>/t-###-<slug>` — `<milestone-group>` is the milestone family lowercased (e.g. `m-mcp` for any `M-MCP.*` ticket, dropping the numeric suffix — multiple milestones share one group), and the ticket id is prepended to the slug (e.g. `feat/m-mcp/t-002-write-preview-confirm-audit-plumbing`) so a branch or PR can be traced back to its ticket without opening it. See "Branch naming" below for how this fits with ticket-creation branches.
 - **Mockup** replaces a 🎨 gate. A ticket that names a mockup path is not visually gated — the mockup is the answer. A ticket with `Mockup: none` has no visual component at all (most M-MCP tickets, since the milestone has no UI).
 - **Model: sonnet** is fixed. Planning and ticket-writing happen on Fable/Opus; execution never does.

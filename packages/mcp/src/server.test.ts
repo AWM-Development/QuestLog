@@ -9,6 +9,7 @@ import {
 	sessionEntities,
 	sessions,
 	sources,
+	writeRequests,
 } from "@questlog/core/db/schema/index.js";
 import { testDbUrl } from "@questlog/core/db/test-db-url.js";
 import {
@@ -22,6 +23,7 @@ import { sessionService } from "@questlog/core/services/session.service.js";
 import { sourceService } from "@questlog/core/services/source.service.js";
 import { createMemoryStorage } from "@questlog/core/services/storage.service.js";
 import type { FetchFn } from "@questlog/core/services/voyage.client.js";
+import { writeRequestService } from "@questlog/core/services/write-request.service.js";
 import { eq, sql } from "drizzle-orm";
 import postgres from "postgres";
 import {
@@ -81,7 +83,7 @@ async function waitForStatus(
 	const start = Date.now();
 	let lastStatus = "";
 	while (Date.now() - start < timeoutMs) {
-		const source = await sourceService.getById(db, sourceId);
+		const source = await sourceService.getByIdUnscoped(db, sourceId);
 		lastStatus = source.status;
 		if (lastStatus === target || lastStatus === "error") return lastStatus;
 		await new Promise((resolve) => setTimeout(resolve, 20));
@@ -331,6 +333,45 @@ describe("list_entities tool", () => {
 		expect(payload.entities).toHaveLength(1);
 		expect(payload.entities[0].name).toBe("Mira Duskwood");
 	});
+
+	it("excludes archived entities by default and includes them with includeArchived", async () => {
+		const active = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+		const archived = await entityService.create(db, {
+			campaignId,
+			name: "Ashfall Peak",
+			type: "location",
+		});
+		await entityService.archive(db, campaignId, archived.id);
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const defaultResult = await client.callTool({
+			name: "list_entities",
+			arguments: { campaignId },
+		});
+		const defaultContent = defaultResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const defaultPayload = JSON.parse(defaultContent[0]?.text ?? "{}");
+		expect(defaultPayload.entities).toHaveLength(1);
+		expect(defaultPayload.entities[0].id).toBe(active.id);
+
+		const includeResult = await client.callTool({
+			name: "list_entities",
+			arguments: { campaignId, includeArchived: true },
+		});
+		const includeContent = includeResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const includePayload = JSON.parse(includeContent[0]?.text ?? "{}");
+		expect(includePayload.entities).toHaveLength(2);
+	});
 });
 
 describe("list_campaigns tool", () => {
@@ -547,6 +588,60 @@ describe("get_entity tool", () => {
 		const content = result.content as Array<{ type: string; text: string }>;
 		expect(content[0]?.text).toMatch(/Exactly one of entityId or name/);
 	});
+
+	it("returns not-found by name against an archived entity by default, but resolves it with includeArchived", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+		await entityService.archive(db, campaignId, entity.id);
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const defaultResult = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, name: "Mira Duskwood" },
+		});
+		expect(defaultResult.isError).toBe(true);
+		const defaultContent = defaultResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		expect(JSON.parse(defaultContent[0]?.text ?? "{}").error.code).toBe(
+			"NOT_FOUND",
+		);
+
+		const includeResult = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, name: "Mira Duskwood", includeArchived: true },
+		});
+		expect(includeResult.isError).toBeFalsy();
+		const includeContent = includeResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		expect(JSON.parse(includeContent[0]?.text ?? "{}").id).toBe(entity.id);
+	});
+
+	it("resolves an archived entity by entityId regardless of includeArchived", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+		await entityService.archive(db, campaignId, entity.id);
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		expect(JSON.parse(content[0]?.text ?? "{}").id).toBe(entity.id);
+	});
 });
 
 describe("create_entity tool", () => {
@@ -762,6 +857,571 @@ describe("append_entity_note tool", () => {
 		const content = result.content as Array<{ type: string; text: string }>;
 		const payload = JSON.parse(content[0]?.text ?? "{}");
 		expect(payload.error.code).toBe("NOT_FOUND");
+	});
+});
+
+describe("update_entity + confirm_update_entity tools", () => {
+	// confirm_update_entity opens its own db.transaction() (via
+	// writeRequestService.confirm), which does not compose with a raw
+	// BEGIN/ROLLBACK wrapper on the same connection (.claude/rules/backend.md
+	// "Test DB pattern") — use explicit FK-safe cleanup instead.
+	let campaignId: string;
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, campaignId);
+	});
+
+	it("previews the proposed changes without persisting anything", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+			description: "A road warden.",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "update_entity",
+			arguments: {
+				campaignId,
+				entityId: entity.id,
+				name: "Mira Duskwood-Voss",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+
+		expect(payload.token).toBeDefined();
+		expect(payload.preview.before).toMatchObject({
+			name: "Mira Duskwood",
+			description: "A road warden.",
+		});
+		expect(payload.preview.after).toMatchObject({
+			name: "Mira Duskwood-Voss",
+			description: "A road warden.",
+		});
+
+		const [unchanged] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, entity.id));
+		expect(unchanged?.name).toBe("Mira Duskwood");
+	});
+
+	it("persists only the provided fields on confirm, leaving the rest unchanged", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+			description: "A road warden.",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "update_entity",
+			arguments: {
+				campaignId,
+				entityId: entity.id,
+				description: "A road warden turned mercenary.",
+			},
+		});
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token } = JSON.parse(previewContent[0]?.text ?? "{}");
+
+		const confirmResult = await client.callTool({
+			name: "confirm_update_entity",
+			arguments: { token },
+		});
+
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const confirmed = JSON.parse(confirmContent[0]?.text ?? "{}");
+		expect(confirmed.description).toBe("A road warden turned mercenary.");
+		expect(confirmed.name).toBe("Mira Duskwood");
+		expect(confirmed.type).toBe("npc");
+
+		const [updated] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, entity.id));
+		expect(updated?.name).toBe("Mira Duskwood");
+		expect(updated?.description).toBe("A road warden turned mercenary.");
+	});
+
+	it("rejects an invalid type before it reaches the service", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "update_entity",
+			arguments: { campaignId, entityId: entity.id, type: "wizard" },
+		});
+
+		expect(result.isError).toBe(true);
+
+		const [unchanged] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, entity.id));
+		expect(unchanged?.type).toBe("npc");
+	});
+
+	it("rejects a preview with no fields to update before it reaches the service", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "update_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+
+		expect(result.isError).toBe(true);
+
+		const [unchanged] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, entity.id));
+		expect(unchanged?.name).toBe("Mira Duskwood");
+	});
+
+	it("rejects a preview for a bogus entityId before a write request is even created", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const unknownEntityId = "00000000-0000-0000-0000-000000000000";
+
+		const result = await client.callTool({
+			name: "update_entity",
+			arguments: { campaignId, entityId: unknownEntityId, name: "Ghost" },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+	});
+
+	it("returns a well-formed not-found error from confirm_update_entity for a bogus entityId", async () => {
+		// Bypasses update_entity's own fail-fast getById check (see the test
+		// above) to exercise entityService.update's independent not-found guard
+		// inside the confirm transaction — the defense-in-depth path a stale or
+		// hand-crafted token would hit.
+		const unknownEntityId = "00000000-0000-0000-0000-000000000000";
+		const { token } = await writeRequestService.createPreview(db, {
+			campaignId,
+			toolName: "update_entity",
+			payload: {
+				campaignId,
+				entityId: unknownEntityId,
+				fields: { name: "Ghost" },
+			},
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "confirm_update_entity",
+			arguments: { token },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+	});
+
+	it("returns a well-formed not-found error on a second confirm with the same token and does not double-apply", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "update_entity",
+			arguments: { campaignId, entityId: entity.id, name: "Mira Voss" },
+		});
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token } = JSON.parse(previewContent[0]?.text ?? "{}");
+
+		await client.callTool({
+			name: "confirm_update_entity",
+			arguments: { token },
+		});
+		const secondResult = await client.callTool({
+			name: "confirm_update_entity",
+			arguments: { token },
+		});
+
+		expect(secondResult.isError).toBe(true);
+		const secondContent = secondResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const secondPayload = JSON.parse(secondContent[0]?.text ?? "{}");
+		expect(secondPayload.error.code).toBe("NOT_FOUND");
+
+		const [updated] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, entity.id));
+		expect(updated?.name).toBe("Mira Voss");
+	});
+});
+
+describe("archive_entity + confirm_archive_entity tools", () => {
+	// Same nested-transaction concern as update_entity/confirm_update_entity
+	// above — confirm_archive_entity opens its own db.transaction().
+	let campaignId: string;
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, campaignId);
+	});
+
+	it("previews the proposed archive without persisting anything", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "archive_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+
+		expect(payload.token).toBeDefined();
+		expect(payload.preview.before).toMatchObject({ status: "active" });
+		expect(payload.preview.after).toMatchObject({ status: "archived" });
+
+		const [unchanged] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, entity.id));
+		expect(unchanged?.status).toBe("active");
+	});
+
+	it("sets the entity's status to archived on confirm", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "archive_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token } = JSON.parse(previewContent[0]?.text ?? "{}");
+
+		const confirmResult = await client.callTool({
+			name: "confirm_archive_entity",
+			arguments: { token },
+		});
+
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const confirmed = JSON.parse(confirmContent[0]?.text ?? "{}");
+		expect(confirmed.status).toBe("archived");
+
+		const [updated] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, entity.id));
+		expect(updated?.status).toBe("archived");
+	});
+
+	it("rejects a preview for a bogus entityId before a write request is even created", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const unknownEntityId = "00000000-0000-0000-0000-000000000000";
+
+		const result = await client.callTool({
+			name: "archive_entity",
+			arguments: { campaignId, entityId: unknownEntityId },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+	});
+
+	it("returns a well-formed not-found error from confirm_archive_entity for a bogus entityId", async () => {
+		const unknownEntityId = "00000000-0000-0000-0000-000000000000";
+		const { token } = await writeRequestService.createPreview(db, {
+			campaignId,
+			toolName: "archive_entity",
+			payload: { campaignId, entityId: unknownEntityId },
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "confirm_archive_entity",
+			arguments: { token },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+	});
+
+	it("returns a well-formed not-found error on a second confirm with the same token and does not double-apply", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "archive_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token } = JSON.parse(previewContent[0]?.text ?? "{}");
+
+		await client.callTool({
+			name: "confirm_archive_entity",
+			arguments: { token },
+		});
+		const secondResult = await client.callTool({
+			name: "confirm_archive_entity",
+			arguments: { token },
+		});
+
+		expect(secondResult.isError).toBe(true);
+		const secondContent = secondResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const secondPayload = JSON.parse(secondContent[0]?.text ?? "{}");
+		expect(secondPayload.error.code).toBe("NOT_FOUND");
+
+		const [updated] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, entity.id));
+		expect(updated?.status).toBe("archived");
+	});
+});
+
+describe("unarchive_entity + confirm_unarchive_entity tools", () => {
+	// Same nested-transaction concern as update_entity/confirm_update_entity
+	// above — confirm_unarchive_entity opens its own db.transaction().
+	let campaignId: string;
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, campaignId);
+	});
+
+	it("previews the proposed unarchive without persisting anything", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+		await entityService.archive(db, campaignId, entity.id);
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "unarchive_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+
+		expect(payload.token).toBeDefined();
+		expect(payload.preview.before).toMatchObject({ status: "archived" });
+		expect(payload.preview.after).toMatchObject({ status: "active" });
+
+		const [unchanged] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, entity.id));
+		expect(unchanged?.status).toBe("archived");
+	});
+
+	it("sets the entity's status back to active on confirm", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+		await entityService.archive(db, campaignId, entity.id);
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "unarchive_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token } = JSON.parse(previewContent[0]?.text ?? "{}");
+
+		const confirmResult = await client.callTool({
+			name: "confirm_unarchive_entity",
+			arguments: { token },
+		});
+
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const confirmed = JSON.parse(confirmContent[0]?.text ?? "{}");
+		expect(confirmed.status).toBe("active");
+
+		const [updated] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, entity.id));
+		expect(updated?.status).toBe("active");
+	});
+
+	it("rejects a preview for a bogus entityId before a write request is even created", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const unknownEntityId = "00000000-0000-0000-0000-000000000000";
+
+		const result = await client.callTool({
+			name: "unarchive_entity",
+			arguments: { campaignId, entityId: unknownEntityId },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+	});
+
+	it("returns a well-formed not-found error from confirm_unarchive_entity for a bogus entityId", async () => {
+		const unknownEntityId = "00000000-0000-0000-0000-000000000000";
+		const { token } = await writeRequestService.createPreview(db, {
+			campaignId,
+			toolName: "unarchive_entity",
+			payload: { campaignId, entityId: unknownEntityId },
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "confirm_unarchive_entity",
+			arguments: { token },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+	});
+
+	it("returns a well-formed not-found error on a second confirm with the same token and does not double-apply", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+		await entityService.archive(db, campaignId, entity.id);
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "unarchive_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token } = JSON.parse(previewContent[0]?.text ?? "{}");
+
+		await client.callTool({
+			name: "confirm_unarchive_entity",
+			arguments: { token },
+		});
+		const secondResult = await client.callTool({
+			name: "confirm_unarchive_entity",
+			arguments: { token },
+		});
+
+		expect(secondResult.isError).toBe(true);
+		const secondContent = secondResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const secondPayload = JSON.parse(secondContent[0]?.text ?? "{}");
+		expect(secondPayload.error.code).toBe("NOT_FOUND");
+
+		const [updated] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, entity.id));
+		expect(updated?.status).toBe("active");
 	});
 });
 
@@ -1129,7 +1789,7 @@ describe("ingest_text + get_source_status tools", () => {
 	afterEach(async () => {
 		await deleteCampaignTree(db, campaignId);
 		if (otherCampaignId) {
-			await db.delete(campaigns).where(eq(campaigns.id, otherCampaignId));
+			await deleteCampaignTree(db, otherCampaignId);
 		}
 	});
 
@@ -1197,7 +1857,11 @@ describe("ingest_text + get_source_status tools", () => {
 			type: string;
 			text: string;
 		}>;
-		expect(JSON.parse(statusContent[0]?.text ?? "{}").status).toBe("pending");
+		// T-079 made ingest_text run detectCandidates synchronously before
+		// returning, giving the fire-and-forget embed pipeline a small head
+		// start — status may already have advanced past "pending" by the time
+		// this call lands, so assert "in flight", not the exact first stage.
+		expect(JSON.parse(statusContent[0]?.text ?? "{}").status).not.toBe("done");
 
 		await waitForStatus(source.id, "done");
 
@@ -1264,7 +1928,7 @@ describe("ingest_text + get_source_status tools", () => {
 		expect(source.status).toBe("pending");
 
 		// Processing must not have started after a non-final chunk.
-		const stillPending = await sourceService.getById(db, source.id);
+		const stillPending = await sourceService.getByIdUnscoped(db, source.id);
 		expect(stillPending.status).toBe("pending");
 
 		const secondResult = await client.callTool({
@@ -1428,6 +2092,634 @@ describe("ingest_text + get_source_status tools", () => {
 		const content = result.content as Array<{ type: string; text: string }>;
 		const payload = JSON.parse(content[0]?.text ?? "{}");
 		expect(payload.error.code).toBe("NOT_FOUND");
+	});
+
+	it("creates a new campaign and a source tied to it when called with newCampaign instead of campaignId (T-067)", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				newCampaign: { name: "Brand New Campaign", theme: "fantasy" },
+				title: "Ashfall Primer",
+				content: "Mira Duskwood patrols the Old Road near Ashfall Peak.",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.campaign?.id).toBeDefined();
+		expect(payload.source.id).toBeDefined();
+		expect(payload.source.status).toBe("pending");
+		otherCampaignId = payload.campaign.id;
+
+		const listResult = await client.callTool({
+			name: "list_campaigns",
+			arguments: {},
+		});
+		const listContent = listResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const listed = JSON.parse(listContent[0]?.text ?? "{}");
+		expect(listed.campaigns).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ id: payload.campaign.id }),
+			]),
+		);
+
+		const statusResult = await client.callTool({
+			name: "get_source_status",
+			arguments: {
+				campaignId: payload.campaign.id,
+				sourceId: payload.source.id,
+			},
+		});
+		expect(statusResult.isError).toBeFalsy();
+	});
+
+	it("rejects ingest_text called with both campaignId and newCampaign, or neither, as a structured error (T-067)", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const bothResult = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				newCampaign: { name: "Brand New Campaign", theme: "fantasy" },
+				title: "Ashfall Primer",
+				content: "Some content.",
+			},
+		});
+		expect(bothResult.isError).toBe(true);
+		const bothContent = bothResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		expect(bothContent[0]?.text).toMatch(
+			/Exactly one of campaignId or newCampaign/,
+		);
+
+		const neitherResult = await client.callTool({
+			name: "ingest_text",
+			arguments: { title: "Ashfall Primer", content: "Some content." },
+		});
+		expect(neitherResult.isError).toBe(true);
+		const neitherContent = neitherResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		expect(neitherContent[0]?.text).toMatch(
+			/Exactly one of campaignId or newCampaign/,
+		);
+	});
+
+	it("stages entityCandidates as a write_requests preview when content contains a detectable new entity (T-079)", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Ashfall Primer",
+				content: "The party met Vespera Nightveil at the gates.",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.source.id).toBeDefined();
+		expect(payload.entityCandidates.token).toBeTruthy();
+		expect(payload.entityCandidates.candidates).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					name: "Vespera Nightveil",
+					entityType: "npc",
+				}),
+			]),
+		);
+
+		const entityRows = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.campaignId, campaignId));
+		expect(entityRows).toHaveLength(0);
+
+		// See the next test for why this await is needed before cleanup.
+		await waitForStatus(payload.source.id, "done");
+	});
+
+	it("returns entityCandidates: null and stages no write_requests row when content has no detectable candidates (T-079)", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Ashfall Primer",
+				content: "the party rests quietly.",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.entityCandidates).toBeNull();
+
+		const pendingRequests = await db
+			.select()
+			.from(writeRequests)
+			.where(eq(writeRequests.campaignId, campaignId));
+		expect(pendingRequests).toHaveLength(0);
+
+		// Let fire-and-forget embedding settle before afterEach's
+		// deleteCampaignTree runs, or the source delete can race chunk inserts.
+		await waitForStatus(payload.source.id, "done");
+	});
+});
+
+describe("confirm_ingest_entities tool (T-080)", () => {
+	// writeRequestService.confirm opens its own db.transaction(), which does
+	// not compose with a raw BEGIN/ROLLBACK wrapper on the same connection
+	// (.claude/rules/backend.md "Test DB pattern") — use explicit FK-safe
+	// cleanup instead.
+	let campaignId: string;
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, campaignId);
+	});
+
+	async function stageCandidates(client: Client, content: string) {
+		const result = await client.callTool({
+			name: "ingest_text",
+			arguments: { campaignId, title: "Ashfall Primer", content },
+		});
+		const payload = JSON.parse(
+			(result.content as Array<{ type: string; text: string }>)[0]?.text ??
+				"{}",
+		);
+		await waitForStatus(payload.source.id, "done");
+		return {
+			sourceId: payload.source.id as string,
+			...(payload.entityCandidates as {
+				token: string;
+				candidates: Array<{ name: string; entityType: string }>;
+			}),
+		};
+	}
+
+	it("creates one entity per staged candidate when confirming the full list", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const { token, candidates, sourceId } = await stageCandidates(
+			client,
+			"The party met Vespera Nightveil at dawn. They traveled to Castle Ravenloft by nightfall.",
+		);
+		expect(candidates.length).toBe(2);
+
+		const confirmResult = await client.callTool({
+			name: "confirm_ingest_entities",
+			arguments: { token },
+		});
+
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { entityIds } = JSON.parse(confirmContent[0]?.text ?? "{}");
+		expect(entityIds).toHaveLength(2);
+
+		const entityRows = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.campaignId, campaignId));
+		expect(entityRows).toHaveLength(2);
+		expect(entityRows.map((e) => e.name).sort()).toEqual(
+			["Castle Ravenloft", "Vespera Nightveil"].sort(),
+		);
+		for (const row of entityRows) {
+			expect(entityIds).toContain(row.id);
+			expect(row.sourceId).toBe(sourceId);
+		}
+	});
+
+	it("creates only the selected subset of candidates when candidateIndices is given", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const { token, candidates } = await stageCandidates(
+			client,
+			"The party met Vespera Nightveil at dawn. They traveled to Castle Ravenloft by nightfall.",
+		);
+		const vesperaIndex = candidates.findIndex(
+			(c) => c.name === "Vespera Nightveil",
+		);
+		expect(vesperaIndex).toBeGreaterThanOrEqual(0);
+
+		const confirmResult = await client.callTool({
+			name: "confirm_ingest_entities",
+			arguments: { token, candidateIndices: [vesperaIndex] },
+		});
+
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { entityIds } = JSON.parse(confirmContent[0]?.text ?? "{}");
+		expect(entityIds).toHaveLength(1);
+
+		const entityRows = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.campaignId, campaignId));
+		expect(entityRows).toHaveLength(1);
+		expect(entityRows[0]?.name).toBe("Vespera Nightveil");
+	});
+
+	it("returns a structured not-found error on a second confirm with the same token and creates no additional entities", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const { token } = await stageCandidates(
+			client,
+			"The party met Vespera Nightveil at the gates.",
+		);
+
+		await client.callTool({
+			name: "confirm_ingest_entities",
+			arguments: { token },
+		});
+		const secondResult = await client.callTool({
+			name: "confirm_ingest_entities",
+			arguments: { token },
+		});
+
+		expect(secondResult.isError).toBe(true);
+		const secondContent = secondResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { error } = JSON.parse(secondContent[0]?.text ?? "{}");
+		expect(error).toEqual(expect.objectContaining({ code: "NOT_FOUND" }));
+
+		const entityRows = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.campaignId, campaignId));
+		expect(entityRows).toHaveLength(1);
+	});
+});
+
+describe("correct_lore tool (T-075)", () => {
+	// createPreview writes a write_requests row (not a chunk mutation); use
+	// deleteCampaignTree so FK cleanup covers that row too.
+	let campaignId: string;
+	let sourceId: string;
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+
+		const [source] = await db
+			.insert(sources)
+			.values({
+				campaignId,
+				name: "primer.md",
+				type: "paste",
+				status: "done",
+			})
+			.returning();
+		sourceId = source?.id ?? "";
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, campaignId);
+	});
+
+	it("previews a sourceId correction naming every non-superseded chunk, without mutating chunks", async () => {
+		const [activeA, superseded, activeB] = await db
+			.insert(chunks)
+			.values([
+				{
+					campaignId,
+					sourceId,
+					content: "Mira was born in Ashfall.",
+					status: "active",
+				},
+				{
+					campaignId,
+					sourceId,
+					content: "Old wrong fact about Mira.",
+					status: "superseded",
+				},
+				{
+					campaignId,
+					sourceId,
+					content: "Mira patrols the Old Road.",
+					status: "active",
+				},
+			])
+			.returning();
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "correct_lore",
+			arguments: {
+				campaignId,
+				sourceId,
+				correctionText: "Mira was born in Thornwall, not Ashfall.",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+
+		expect(payload.token).toBeDefined();
+		expect(payload.preview.correctionText).toBe(
+			"Mira was born in Thornwall, not Ashfall.",
+		);
+		expect(payload.preview.targetChunkIds).toEqual(
+			expect.arrayContaining([activeA?.id, activeB?.id]),
+		);
+		expect(payload.preview.targetChunkIds).not.toContain(superseded?.id);
+		expect(payload.preview.targetChunkIds).toHaveLength(2);
+		expect(payload.preview.chunkPreview.count).toBeGreaterThan(0);
+		expect(payload.preview.chunkPreview.firstChunkExcerpt).toContain(
+			"Thornwall",
+		);
+
+		const chunkRows = await db
+			.select({ id: chunks.id, status: chunks.status })
+			.from(chunks)
+			.where(eq(chunks.sourceId, sourceId));
+		expect(chunkRows).toHaveLength(3);
+		expect(chunkRows.filter((row) => row.status === "superseded")).toHaveLength(
+			1,
+		);
+		expect(chunkRows.filter((row) => row.status === "active")).toHaveLength(2);
+	});
+
+	it("rejects more than one of entityId/sourceId/chunkIds, or none, before any DB call", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const bothResult = await client.callTool({
+			name: "correct_lore",
+			arguments: {
+				campaignId,
+				sourceId,
+				entityId: "00000000-0000-4000-8000-000000000001",
+				correctionText: "A correction.",
+			},
+		});
+		expect(bothResult.isError).toBe(true);
+		const bothContent = bothResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		expect(bothContent[0]?.text).toMatch(
+			/Exactly one of entityId, sourceId, or chunkIds/,
+		);
+
+		const neitherResult = await client.callTool({
+			name: "correct_lore",
+			arguments: {
+				campaignId,
+				correctionText: "A correction.",
+			},
+		});
+		expect(neitherResult.isError).toBe(true);
+		const neitherContent = neitherResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		expect(neitherContent[0]?.text).toMatch(
+			/Exactly one of entityId, sourceId, or chunkIds/,
+		);
+	});
+
+	it("returns empty targetChunkIds when only entityId is provided (pure addition)", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "correct_lore",
+			arguments: {
+				campaignId,
+				entityId: entity.id,
+				correctionText: "Mira now carries a silver dagger.",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.token).toBeDefined();
+		expect(payload.preview.entityId).toBe(entity.id);
+		expect(payload.preview.targetChunkIds).toEqual([]);
+	});
+});
+
+describe("confirm_correct_lore tool (T-076)", () => {
+	// confirm_correct_lore opens its own db.transaction() (via
+	// writeRequestService.confirm), which does not compose with a raw
+	// BEGIN/ROLLBACK wrapper on the same connection (.claude/rules/backend.md
+	// "Test DB pattern") — use explicit FK-safe cleanup instead.
+	let campaignId: string;
+	let sourceId: string;
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+
+		const [source] = await db
+			.insert(sources)
+			.values({
+				campaignId,
+				name: "primer.md",
+				type: "paste",
+				status: "done",
+			})
+			.returning();
+		sourceId = source?.id ?? "";
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, campaignId);
+	});
+
+	it("atomically creates embedded correction chunks and supersedes every target", async () => {
+		const [activeA, activeB] = await db
+			.insert(chunks)
+			.values([
+				{
+					campaignId,
+					sourceId,
+					content: "Mira was born in Ashfall.",
+					status: "active",
+				},
+				{
+					campaignId,
+					sourceId,
+					content: "Mira patrols the Old Road.",
+					status: "active",
+				},
+			])
+			.returning();
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "correct_lore",
+			arguments: {
+				campaignId,
+				sourceId,
+				correctionText: "Mira was born in Thornwall, not Ashfall.",
+			},
+		});
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token } = JSON.parse(previewContent[0]?.text ?? "{}");
+
+		const confirmResult = await client.callTool({
+			name: "confirm_correct_lore",
+			arguments: { token },
+		});
+
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const confirmed = JSON.parse(confirmContent[0]?.text ?? "{}");
+		expect(confirmed.supersededChunkIds).toEqual(
+			expect.arrayContaining([activeA?.id, activeB?.id]),
+		);
+		expect(confirmed.supersededChunkIds).toHaveLength(2);
+		expect(confirmed.createdChunkIds).toHaveLength(1);
+
+		const supersededRows = await db
+			.select({ id: chunks.id, status: chunks.status })
+			.from(chunks)
+			.where(eq(chunks.id, activeA?.id ?? ""));
+		expect(supersededRows[0]?.status).toBe("superseded");
+
+		const newChunkRows = await db
+			.select()
+			.from(chunks)
+			.where(eq(chunks.id, confirmed.createdChunkIds[0]));
+		expect(newChunkRows[0]?.content).toContain("Thornwall");
+		expect(newChunkRows[0]?.sourceId).toBe(sourceId);
+		expect(newChunkRows[0]?.status).toBe("active");
+		expect(newChunkRows[0]?.embedding).toHaveLength(1024);
+	});
+
+	it("returns a structured not-found error on a second confirm with the same token and does not create a second chunk", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "correct_lore",
+			arguments: {
+				campaignId,
+				sourceId,
+				correctionText: "A correction.",
+			},
+		});
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token } = JSON.parse(previewContent[0]?.text ?? "{}");
+
+		await client.callTool({
+			name: "confirm_correct_lore",
+			arguments: { token },
+		});
+		const secondResult = await client.callTool({
+			name: "confirm_correct_lore",
+			arguments: { token },
+		});
+
+		expect(secondResult.isError).toBe(true);
+		const secondContent = secondResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const secondPayload = JSON.parse(secondContent[0]?.text ?? "{}");
+		expect(secondPayload.error.code).toBe("NOT_FOUND");
+
+		const chunkRows = await db
+			.select()
+			.from(chunks)
+			.where(eq(chunks.campaignId, campaignId));
+		expect(chunkRows).toHaveLength(1);
+	});
+
+	it("creates a campaign-anchored correction chunk with no target supersession when only entityId is provided", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "correct_lore",
+			arguments: {
+				campaignId,
+				entityId: entity.id,
+				correctionText: "Mira now carries a silver dagger.",
+			},
+		});
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token } = JSON.parse(previewContent[0]?.text ?? "{}");
+
+		const confirmResult = await client.callTool({
+			name: "confirm_correct_lore",
+			arguments: { token },
+		});
+
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const confirmed = JSON.parse(confirmContent[0]?.text ?? "{}");
+		expect(confirmed.supersededChunkIds).toEqual([]);
+		expect(confirmed.createdChunkIds).toHaveLength(1);
+
+		const newChunkRows = await db
+			.select()
+			.from(chunks)
+			.where(eq(chunks.id, confirmed.createdChunkIds[0]));
+		expect(newChunkRows[0]?.content).toContain("silver dagger");
+		expect(newChunkRows[0]?.sourceId).toBeNull();
+		expect(newChunkRows[0]?.sessionId).toBeNull();
 	});
 });
 

@@ -1,0 +1,25 @@
+{
+  "ticket_id": "T-038",
+  "empty_run": false,
+  "session_id": "49fefa83-78ce-4abd-b322-b9e1f6a265ed",
+  "input_tokens": 352,
+  "output_tokens": 78977,
+  "cache_creation_input_tokens": 298048,
+  "cache_read_input_tokens": 21472593,
+  "duration_ms": 725068,
+  "turn_count": 176,
+  "turns_to_green": 119,
+  "human_message_count": 2,
+  "manually_inspected": true,
+  "theoretical_cost_usd": {
+    "applies_rate": "intro",
+    "intro_usd": 6.2771846,
+    "standard_usd": 9.415776900000001
+  },
+  "reviewer_subagent": null,
+  "total_system_cost_usd": {
+    "applies_rate": "intro",
+    "intro_usd": 6.2771846,
+    "standard_usd": 9.415776900000001
+  }
+}

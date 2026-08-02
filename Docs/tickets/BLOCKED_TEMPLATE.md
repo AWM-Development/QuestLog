@@ -40,6 +40,25 @@ renamed entity as an update or a new record?" or "The Voyage API is returning
 403 for voyage-4-lite in CI but not locally — do you want to check the repo
 secret, or should I fall back to voyage-3?">
 
+## Efficiency notes
+
+<Self-report, in your own words, why this run burned its full iteration cap
+before giving up — the kind of thing only the agent doing the work can
+know. This is the qualitative half of the observability system T-046's
+hook/schema/JSON artifact provides the quantitative half of (tokens, cost,
+duration) — don't duplicate T-046's mechanics here, just narrate. E.g.:
+- "given superfluous frontend context on a backend-only ticket"
+- "had to refactor a non-standard existing pattern before the new
+  implementation could proceed"
+
+**Retry log:** for each of the approaches attempted above, record a cause
+category and a total count:
+- `environment_setup` — a DB/config/tooling problem, not the ticket's own logic
+- `mechanical_lint_typecheck` — a lint/typecheck failure, not a test failure
+- `genuine_bug_caught_by_test` — the test suite correctly caught a real logic error
+
+e.g. "3 retries: 1 environment_setup, 2 genuine_bug_caught_by_test."
+
 ## Branch state
 
 - Branch: <name>

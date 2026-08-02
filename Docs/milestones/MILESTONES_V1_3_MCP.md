@@ -19,7 +19,7 @@ v1.3 closes all three, reusing the one proven pattern already in the codebase fo
 - `G-015` (`Docs/tickets/gated/resolved/G-015-auto-entity-extraction-design.md`) — extraction runs automatically inline with every `ingest_text` call; extracted entities are staged and confirmed via a `confirm_log_session`-style flow, not auto-created; post-confirm review uses existing `list_entities`/`get_entity`, no new UI; same `ENTITY_TYPES` taxonomy as manual authoring. Ticketed as M-EXTRACT.
 - `G-016` (`Docs/tickets/gated/resolved/G-016-lore-seeded-entity-creation-design.md`) — `create_entity` runs a synchronous lore search before writing; below-threshold matches attach as suggestions rather than being discarded; provenance stored as `metadata.seededFrom`; a user-supplied description is never overwritten, only appended alongside a seeded draft; conflicting sources are surfaced separately rather than auto-resolved; default auto-seed confidence threshold `0.7`, implemented as a tunable constant. Ticketed as M-SEED.
 
-**Open gates:** none introduced by this milestone. `G-006` (`Docs/tickets/gated/G-006-entity-delete-archive-semantics.md`, still open) is a soft dependency for M-EXTRACT.3's cleanup/re-extraction path — not a hard blocker for the milestone's core scope.
+**Open gates:** none introduced by this milestone. `G-006` (`Docs/tickets/gated/resolved/G-006-entity-delete-archive-semantics.md`, resolved 2026-07-30 — soft-archive as a hide mechanism, not a "narratively dead" marker) was a soft dependency for M-EXTRACT.3's cleanup/re-extraction path; T-088/T-089/T-090 (`Docs/milestones/MILESTONES_V1_1_MCP.md` M-REMOTE.10) now cover that path once merged.
 
 ---
 
@@ -31,19 +31,19 @@ v1.3 closes all three, reusing the one proven pattern already in the codebase fo
 
 ### Tasks
 
-- [ ] **M-CANON.1 — Supersession column on `chunks`** (T-074)
+- [x] **M-CANON.1 — Supersession column on `chunks`** (T-074)
   Add a status-style column to the `chunks` table (pattern-matched against the existing `status` text column on `sources`/`sessions`, per `.claude/rules/db.md`) marking a chunk superseded, plus whatever index it needs for `query_lore`'s filtered queries. Migration + Drizzle schema update in `packages/core/src/db/schema/tables.ts`.
   Exit: migration applies cleanly; a chunk can be marked superseded and queried by that flag.
 
-- [ ] **M-CANON.2 — `correct_lore` tool (preview half)** (T-075)
+- [x] **M-CANON.2 — `correct_lore` tool (preview half)** (T-075)
   A new MCP tool taking a correction statement plus a reference to what it supersedes (entity id, source id, or explicit chunk id(s)). Computes a preview payload — the new correction content plus which existing chunk(s) it will mark superseded — and creates it via `write_requests` (`writeRequestService.createPreview`), per `G-001`'s resolved rule that mutating existing data requires preview/confirm.
   Exit: calling the tool returns a preview token and a human-readable summary of what will change, without mutating anything yet.
 
-- [ ] **M-CANON.3 — `confirm_correct_lore` tool (apply half)** (T-076)
+- [x] **M-CANON.3 — `confirm_correct_lore` tool (apply half)** (T-076)
   Mirrors `confirm_log_session`'s atomic claim + apply: claims the `write_requests` row, then in one transaction chunks/embeds the correction as new authoritative content and marks the referenced chunk(s) superseded (M-CANON.1's column).
   Exit: confirming a preview atomically applies both the new content and the supersession flag; a second confirm attempt on the same token is rejected (claimed).
 
-- [ ] **M-CANON.4 — Exclude superseded chunks from `query_lore` by default** (T-077)
+- [x] **M-CANON.4 — Exclude superseded chunks from `query_lore` by default** (T-077)
   Thread the supersession filter into both halves of hybrid search: `search.service.ts`'s vector search and `context.service.ts`'s pg_trgm keyword search, both currently filtering only on `campaignId`.
   Exit: a `query_lore` call after a confirmed correction no longer surfaces the superseded chunk's text; the correction's new content does surface.
 
@@ -61,16 +61,16 @@ M-CANON.1 has no dependency and can ship first. M-CANON.2 depends on M-CANON.1's
 
 ### Tasks
 
-- [ ] **M-EXTRACT.1 — Entity-candidate detection over ingested text** (T-078)
+- [x] **M-EXTRACT.1 — Entity-candidate detection over ingested text** (T-078)
   Reuse/extend `log_session`'s entity-detection logic (span/candidate detection against free text) to run against `ingest_text`'s document content instead of session-log content. Candidates are typed against the existing `ENTITY_TYPES` taxonomy (`npc`, `location`, `faction`, `item`, `arc`) — no new types.
   Exit: given ingested text containing recognizable entity mentions, detection produces a candidate list (name, type, proposed description snippet, source span) matching `log_session`'s existing candidate shape.
 
-- [ ] **M-EXTRACT.2 — Stage extraction candidates via `write_requests`, confirm tool** (T-079, T-080)
+- [x] **M-EXTRACT.2 — Stage extraction candidates via `write_requests`, confirm tool** (T-079, T-080)
   `ingest_text`'s response includes M-EXTRACT.1's candidate list in its preview payload (alongside the existing chunk/embed preview) with a confirm token. A confirm step — extending `confirm_log_session`'s pattern (`confirm_ingest_text`, or shared preview plumbing if `ingest_text` and `log_session` converge — implementation detail for the ticket, not decided here) atomically creates the confirmed entities via `entityService` and links them to the source, inside one transaction.
   Exit: confirming an `ingest_text` preview creates exactly the confirmed candidate entities (not auto-created before confirm); each created entity links to its source document.
 
 - [ ] **M-EXTRACT.3 — Mark extracted entities as machine-proposed for review** (T-081)
-  Extracted entities carry a `metadata` marker (e.g. `extractedFrom: sourceId`) distinguishing them from manually authored ones, so Alex can identify and refine them via existing `list_entities`/`get_entity` review — no new UI. Note: iterating on extraction specificity (wrong granularity, duplicate/near-duplicate entities) may want entity deletion, which depends on `G-006` (open, entity delete/archive semantics) — this task ships without it; deletion-based cleanup is blocked separately on `G-006` resolving.
+  Extracted entities carry a `metadata` marker (e.g. `extractedFrom: sourceId`) distinguishing them from manually authored ones, so Alex can identify and refine them via existing `list_entities`/`get_entity` review — no new UI. Note: iterating on extraction specificity (wrong granularity, duplicate/near-duplicate entities) may want entity archival, now covered by T-088/T-089/T-090 (`G-006` resolved 2026-07-30 — soft-archive as a hide mechanism) — this task ships without waiting on those, since they're independent tickets, not a hard blocker.
   Exit: a created entity's metadata records which source/extraction produced it; `get_entity`/`list_entities` surface that marker in their existing output shape.
 
 ### Ordering constraint

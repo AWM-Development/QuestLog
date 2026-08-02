@@ -22,12 +22,21 @@ export type { SourceSchemaType } from "./source.js";
 export { SearchSourcesInput } from "./search.js";
 export {
 	AppendEntityNoteInput,
+	ArchiveEntityInput,
+	ConfirmArchiveEntityInput,
+	ConfirmUnarchiveEntityInput,
+	ConfirmUpdateEntityInput,
 	EntityCreateInput,
 	EntityDetectSpansInput,
+	EntityUpdateInput,
 	GetEntityInput,
 	ListEntitiesInput,
+	UnarchiveEntityInput,
 } from "./entity.js";
 export {
+	ConfirmCorrectLoreInput,
+	ConfirmIngestEntitiesInput,
+	CorrectLoreInput,
 	GetSourceStatusInput,
 	IngestTextInput,
 	PrepBriefInput,

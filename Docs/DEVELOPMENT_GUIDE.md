@@ -167,7 +167,7 @@ This isn't optional or aspirational — it's the process. The benefit for a lear
 | Layer | What to Test | Tool | Location |
 |---|---|---|---|
 | **Unit** | Services, utilities, pure functions, Zod schemas | Vitest | `*.test.ts` next to source file |
-| **Integration** | tRPC routers with real DB, RAG pipeline wiring — external APIs (Voyage, Anthropic) mocked via injected `fetchFn`/client | Vitest + test DB | `*.integration.test.ts` next to source file |
+| **Integration** | tRPC routers with real DB, RAG pipeline wiring — external APIs (Voyage, Anthropic) mocked via injected `fetchFn`/client | Vitest + test DB | `*.test.ts` next to source file (no separate suffix — see note below) |
 | **Real-API E2E** | Full pipeline against a real DB *and* the real external API (e.g. Voyage embeddings) — proves retrieval quality, not just wiring. Skips (not fails) when the relevant API key is absent (`describe.skipIf(!process.env.VOYAGE_API_KEY)`). Runs in CI on push to `main` and on-demand via `workflow_dispatch`, not on every PR (`.github/workflows/e2e-release-check.yml`) — see `Docs/IMPLEMENTATION_NOTES.md` §Embedding for why it's decoupled from the PR gate | Vitest + test DB + real API key | `*.e2e.test.ts` next to source file |
 | **Component** | React components in isolation | Vitest + Testing Library | `*.test.tsx` next to component |
 | **Browser E2E** | Critical user flows (import → chat → get answer) | Playwright (later) | `e2e/` directory |
@@ -191,12 +191,13 @@ This isn't optional or aspirational — it's the process. The benefit for a lear
 
 ### Test File Convention
 
+Unit and integration tests share the same `*.test.ts` suffix — there is no separate `.integration.test.ts` tier; every vitest config already runs both in the same default tier, splitting out only `*.e2e.test.ts` (real DB + real external API).
+
 ```
-# Unit tests live next to source
+# Unit and integration tests both live next to source, same suffix
 services/
   ├── import.service.ts
-  ├── import.service.test.ts          # Unit tests
-  └── import.service.integration.test.ts  # Integration tests
+  └── import.service.test.ts          # Unit and/or integration tests
 
 # Component tests live next to component
 components/

@@ -31,7 +31,7 @@ import type { AppRouter } from "../src/routers/_app.js";
 // Derived from the schema barrel/migrate.ts rather than hand-copied — a
 // hardcoded list here would be a third copy of information Drizzle already
 // owns (packages/core/src/db/schema/tables.ts is the source of truth; a
-// hardcoded copy in packages/core/src/db/schema/schema.integration.test.ts
+// hardcoded copy in packages/core/src/db/schema/schema.test.ts
 // had already silently drifted before this was written). Adding/renaming a
 // table or extension never requires touching this file.
 const EXPECTED_TABLES = Object.values(schema)

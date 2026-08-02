@@ -1,8 +1,15 @@
+import { ENTITY_TYPES, type EntityType } from "@questlog/shared";
 import { and, eq, sql } from "drizzle-orm";
 import type { Database, Transaction } from "../db/index.js";
 import { entities } from "../db/schema/index.js";
 import { NotFoundError } from "../lib/errors.js";
 import { first } from "../lib/utils.js";
+import {
+	findProperNounSpans,
+	guessEntityType,
+	rangesOverlap,
+	tokenizeWords,
+} from "./entity-candidate-detection.service.js";
 
 export interface EntitySpan {
 	entityId: string;
@@ -14,22 +21,30 @@ export interface EntitySpan {
 	candidates: { id: string; name: string }[];
 }
 
+/** A proposed new entity from free text — not yet linked to a DB row. */
+export interface EntityCandidateProposal {
+	name: string;
+	entityType: EntityType;
+	description: string;
+	startIndex: number;
+	endIndex: number;
+}
+
 interface DetectSpansInput {
 	campaignId: string;
 	text: string;
 	dismissedEntityTexts?: string[];
 }
 
+interface DetectCandidatesInput {
+	campaignId: string;
+	text: string;
+}
+
 interface EntityCandidate {
 	id: string;
 	name: string;
 	type: string;
-}
-
-interface TextToken {
-	word: string;
-	start: number;
-	end: number;
 }
 
 /**
@@ -40,30 +55,20 @@ interface TextToken {
  * pattern of a raw `sql` fragment embedded inside the query builder rather
  * than a fully raw execute call.
  */
-function wordSimilarityCandidateFilter(campaignId: string, query: string) {
+function wordSimilarityCandidateFilter(
+	campaignId: string,
+	query: string,
+	excludeArchived = false,
+) {
 	return and(
 		eq(entities.campaignId, campaignId),
 		sql`word_similarity(${entities.name}, ${query}) > 0.15`,
+		excludeArchived ? eq(entities.status, "active") : undefined,
 	);
 }
 
 function escapeRegex(s: string): string {
 	return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function tokenizeWords(text: string): TextToken[] {
-	const tokens: TextToken[] = [];
-	const regex = /\S+/g;
-	let result = regex.exec(text);
-	while (result !== null) {
-		tokens.push({
-			word: result[0],
-			start: result.index,
-			end: result.index + result[0].length,
-		});
-		result = regex.exec(text);
-	}
-	return tokens;
 }
 
 function findExactPositions(
@@ -186,7 +191,7 @@ export const entityService = {
 		const candidateRows = await db
 			.select({ id: entities.id, name: entities.name, type: entities.type })
 			.from(entities)
-			.where(wordSimilarityCandidateFilter(campaignId, text));
+			.where(wordSimilarityCandidateFilter(campaignId, text, true));
 
 		if (candidateRows.length === 0) return [];
 
@@ -275,13 +280,63 @@ export const entityService = {
 		return spans.sort((a, b) => a.startIndex - b.startIndex);
 	},
 
-	async create(
+	async detectCandidates(
 		db: Database,
+		{ campaignId, text }: DetectCandidatesInput,
+	): Promise<EntityCandidateProposal[]> {
+		if (!text.trim()) return [];
+
+		const existingSpans = await entityService.detectSpans(db, {
+			campaignId,
+			text,
+		});
+		const covered = existingSpans.map((s) => ({
+			start: s.startIndex,
+			end: s.endIndex,
+		}));
+
+		const proposals: EntityCandidateProposal[] = [];
+		const seenNames = new Set<string>();
+		for (const span of findProperNounSpans(text)) {
+			if (covered.some((c) => rangesOverlap(c, span))) continue;
+
+			// Same name mentioned more than once in one document proposes only
+			// once, keyed off its first (earliest) occurrence — otherwise a
+			// document mentioning "Vespera Nightveil" twice would stage two
+			// candidates for confirmation instead of one.
+			if (seenNames.has(span.name)) continue;
+			seenNames.add(span.name);
+
+			const entityType = guessEntityType(text, {
+				startIndex: span.start,
+				endIndex: span.end,
+				name: span.name,
+			});
+			if (!(ENTITY_TYPES as readonly string[]).includes(entityType)) continue;
+
+			proposals.push({
+				name: span.name,
+				entityType,
+				description: extractExcerpt(text, {
+					startIndex: span.start,
+					endIndex: span.end,
+				}),
+				startIndex: span.start,
+				endIndex: span.end,
+			});
+		}
+
+		return proposals;
+	},
+
+	async create(
+		db: Database | Transaction,
 		input: {
 			campaignId: string;
 			name: string;
 			type: string;
 			description?: string;
+			sourceId?: string;
 		},
 	) {
 		const rows = await db
@@ -291,6 +346,7 @@ export const entityService = {
 				name: input.name,
 				type: input.type,
 				description: input.description ?? null,
+				sourceId: input.sourceId ?? null,
 			})
 			.returning();
 		const row = rows[0];
@@ -298,14 +354,60 @@ export const entityService = {
 		return row;
 	},
 
-	async list(db: Database, campaignId: string, type?: string) {
+	async update(
+		db: Database | Transaction,
+		input: {
+			id: string;
+			campaignId: string;
+			name?: string;
+			type?: string;
+			description?: string;
+		},
+	) {
+		const { id, campaignId, ...fields } = input;
+
+		const updateData: Record<string, unknown> = {};
+		if ("name" in fields) updateData.name = fields.name;
+		if ("type" in fields) updateData.type = fields.type;
+		if ("description" in fields) updateData.description = fields.description;
+
+		if (Object.keys(updateData).length === 0) {
+			const rows = await db
+				.select()
+				.from(entities)
+				.where(and(eq(entities.id, id), eq(entities.campaignId, campaignId)));
+			const row = rows[0];
+			if (!row) throw new NotFoundError("Entity", id);
+			return row;
+		}
+
+		const rows = await db
+			.update(entities)
+			.set(updateData)
+			.where(and(eq(entities.id, id), eq(entities.campaignId, campaignId)))
+			.returning();
+
+		if (rows.length === 0) {
+			throw new NotFoundError("Entity", id);
+		}
+		return first(rows);
+	},
+
+	async list(
+		db: Database,
+		campaignId: string,
+		type?: string,
+		includeArchived = false,
+	) {
 		return db
 			.select()
 			.from(entities)
 			.where(
-				type
-					? and(eq(entities.campaignId, campaignId), eq(entities.type, type))
-					: eq(entities.campaignId, campaignId),
+				and(
+					eq(entities.campaignId, campaignId),
+					type ? eq(entities.type, type) : undefined,
+					includeArchived ? undefined : eq(entities.status, "active"),
+				),
 			);
 	},
 
@@ -321,11 +423,16 @@ export const entityService = {
 		return row;
 	},
 
-	async getByName(db: Database, campaignId: string, name: string) {
+	async getByName(
+		db: Database,
+		campaignId: string,
+		name: string,
+		includeArchived = false,
+	) {
 		const candidateRows = await db
 			.select()
 			.from(entities)
-			.where(wordSimilarityCandidateFilter(campaignId, name));
+			.where(wordSimilarityCandidateFilter(campaignId, name, !includeArchived));
 
 		let best: { row: (typeof candidateRows)[number]; score: number } | null =
 			null;
@@ -338,6 +445,40 @@ export const entityService = {
 		if (!best) throw new NotFoundError("Entity", name);
 
 		return best.row;
+	},
+
+	async archive(
+		db: Database | Transaction,
+		campaignId: string,
+		entityId: string,
+	) {
+		const rows = await db
+			.update(entities)
+			.set({ status: "archived" })
+			.where(
+				and(eq(entities.id, entityId), eq(entities.campaignId, campaignId)),
+			)
+			.returning();
+		const row = rows[0];
+		if (!row) throw new NotFoundError("Entity", entityId);
+		return row;
+	},
+
+	async unarchive(
+		db: Database | Transaction,
+		campaignId: string,
+		entityId: string,
+	) {
+		const rows = await db
+			.update(entities)
+			.set({ status: "active" })
+			.where(
+				and(eq(entities.id, entityId), eq(entities.campaignId, campaignId)),
+			)
+			.returning();
+		const row = rows[0];
+		if (!row) throw new NotFoundError("Entity", entityId);
+		return row;
 	},
 
 	async countByCampaign(db: Database, campaignId: string): Promise<number> {

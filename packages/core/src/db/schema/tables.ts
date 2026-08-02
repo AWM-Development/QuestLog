@@ -97,6 +97,7 @@ export const entities = pgTable(
 		campaignId: uuid("campaign_id")
 			.references(() => campaigns.id)
 			.notNull(),
+		sourceId: uuid("source_id").references(() => sources.id),
 		name: text("name").notNull(),
 		type: text("type").notNull(),
 		summary: text("summary"),
@@ -105,6 +106,7 @@ export const entities = pgTable(
 			.$type<Record<string, unknown>>()
 			.default({}),
 		dmNotes: text("dm_notes"),
+		status: text("status").notNull().default("active"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
 			.notNull(),
@@ -208,12 +210,14 @@ export const chunks = pgTable(
 		content: text("content").notNull(),
 		embedding: vector("embedding", 1024),
 		metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
+		status: text("status").notNull().default("active"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
 			.notNull(),
 	},
 	(table) => [
 		index("chunks_campaign_id_idx").using("btree", table.campaignId),
+		index("chunks_status_idx").using("btree", table.status),
 		index("chunks_content_trgm_idx").using(
 			"gin",
 			sql`${table.content} gin_trgm_ops`,

@@ -2,7 +2,7 @@
  * T-000 — real end-to-end retrieval proof.
  *
  * Unlike search.service.test.ts (synthetic basis-vector embeddings, mocked
- * fetch) and search.integration.test.ts (mocked search service entirely),
+ * fetch) and routers/search.test.ts (mocked search service entirely),
  * this test uses the REAL Voyage API against a permanent fixture
  * (test-fixtures/ashfall-primer.md) and proves the full path:
  *
@@ -46,7 +46,7 @@ async function waitForStatus(
 	const start = Date.now();
 	let lastStatus = "";
 	while (Date.now() - start < timeoutMs) {
-		const source = await sourceService.getById(db, sourceId);
+		const source = await sourceService.getByIdUnscoped(db, sourceId);
 		lastStatus = source.status;
 		if (lastStatus === target || lastStatus === "error") return lastStatus;
 		await new Promise((resolve) => setTimeout(resolve, 100));

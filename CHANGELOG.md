@@ -10,6 +10,123 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-08-02
+
+### Added — T-080
+
+- **`confirm_ingest_entities` MCP tool** completes the M-EXTRACT.2 preview/confirm pair (`ingest_text`, T-079): given the token from `ingest_text`'s staged `entityCandidates`, it creates one entity per candidate via `entityService.create`, all inside a single transaction, and returns the created entity ids. An optional `candidateIndices` array (0-based positions into the staged candidates list) confirms only a subset instead of all-or-nothing, so a caller can skip an over-broad or misdetected candidate rather than create and later archive it. A second confirm against the same token is rejected, mirroring `confirm_log_session`'s existing claim behavior. `entities` gains a nullable `sourceId` FK (to `sources`, migration `0016_normal_guardian.sql`), set on every entity this tool creates, so each satisfies M-EXTRACT.2's exit condition of linking back to the document it was detected in.
+
+### Added — T-076
+
+- **`confirm_correct_lore` MCP tool** completes the M-CANON preview/confirm pair (`correct_lore`, T-075): given a token from `correct_lore`, it atomically chunks + embeds the correction as new authoritative content and marks every target chunk `superseded`, both inside a single transaction — either both writes land or neither does. Returns the created and superseded chunk ids. A second confirm against the same token is rejected, mirroring `confirm_log_session`'s existing claim behavior. `chunkText`'s `ChunkMeta` gains an explicit third campaign-only anchor variant (no source/session) for corrections that don't originate from an existing source (an `entityId`-only or `chunkIds`-only correction); `correct_lore`'s preview payload now also carries `campaignId`/`sourceId` so confirm can anchor and campaign-scope its writes without trusting anything outside the payload.
+
+### Added — T-079
+
+- **`ingest_text` now stages detected entity candidates as a `write_requests` preview.** Every `ingest_text` call runs T-078's `entityService.detectCandidates` against the ingested text and, when it finds at least one new NPC/location/faction/item/arc, stages the candidate list via `writeRequestService.createPreview` (`toolName: "ingest_entities"`). The tool's response gains `entityCandidates: { token, candidates } | null` alongside the existing `source` field — `null` when no candidates were found, with no `write_requests` row created in that case. The existing source/chunk direct-write path and fire-and-forget embedding are unchanged. Confirming the staged candidates (creating the entities) is a separate tool, T-080, not yet built.
+
+### Fixed — T-073
+
+- **`ticket-writer` and `/ungate`'s ticket/gate-id allocation now claim their `T-###`/`G-###` number by commit-and-push before drafting**, closing the same collision class that hit `G-012`/`G-013` (two concurrent sessions independently scanning for "next free number" and picking the same one). `GATE_SPEC.md`'s new "Claiming a number" section is the canonical definition both gate-stub filers (`ticket-writer` step 3, the executor's mid-ticket gate-filing step) reference; `ticket-writer` step 6 gets the same claim-then-draft instructions inline for `T-###`. `scripts/sim-claim-step.sh` demonstrates the collision and the fix side-by-side. Docs/process-only — no application code changed.
+
+### Fixed — T-090
+
+- **`log_session`'s auto-linking (`detectSpans`) no longer surfaces archived entities.** An archived entity sharing a name with an active one no longer appears as an ambiguous candidate — only the active entity matches; a session mentioning solely an archived entity's name now produces zero spans. No opt-in flag, since this is automatic detection during session logging, not a user-invoked search — an unarchive is required to make a hidden entity linkable again. `log_session`'s preview and `confirm_log_session`'s persisted links both inherit this for free, since neither runs its own candidate query. This closes out M-REMOTE.10 (T-088, T-089, T-090).
+
+### Changed — T-086
+
+- **CI runtime: cross-run Turborepo cache persistence + template-database provisioning.** `ci.yml`/`e2e-release-check.yml` now persist `.turbo/cache` across runs via `actions/cache@v5` (keyed on `pnpm-lock.yaml` plus every first-party `.ts`/`.tsx`/`tsconfig*.json`, with a lockfile-only restore-key fallback), so `lint`/`typecheck`/`build` cache-hit when a run's inputs match a prior run's — `ci.yml` also gained a `pnpm turbo build` step, needed to actually exercise that cache path. Test-tier database provisioning now migrates once per schema family into a template database (`questlog_test_template_core` / `questlog_test_template_observability`) and clones the rest via `CREATE DATABASE ... TEMPLATE` instead of replaying a full migration per database — down from 4 full migration runs to 2 templated migrations + 4 near-instant clones. `test:e2e` stays uncached (`turbo.json`'s `cache: false`); `test` itself has no such override and does cache, replaying a prior real-DB result when its content hash is unchanged.
+
+### Added — T-089
+
+- **`archive_entity`/`unarchive_entity` MCP tools**, each with its own preview/confirm pair (`confirm_archive_entity`/`confirm_unarchive_entity`), exposing T-088's `entityService.archive`/`unarchive`. Mirrors `update_entity`/`confirm_update_entity`'s shape exactly: preview returns a before/after `status` change-set and a token without persisting anything; confirm applies the status change inside `writeRequestService.confirm`'s transaction. A bogus `entityId` 404s at preview (fail-fast) and again at confirm (defense-in-depth against a hand-crafted token); an already-consumed or unknown token 404s without double-applying. Excluding archived entities from `log_session`'s auto-linking (T-090) is the last piece before M-REMOTE.10 closes out.
+
+### Changed — T-085
+
+- **`ticket-writer` now inlines a single relevant `IMPLEMENTATION_NOTES.md` § into new tickets** under an optional `## Relevant background` heading (with heading + capture-date citation), instead of listing the whole append-only notes file in `Context files:` when only one section applies. `TICKET_SPEC.md` documents the field and the executor's staleness-check expectation. Whole-file references remain when multiple sections or the file's general shape are genuinely needed. Forward-looking drafting change only — existing tickets are not rewritten.
+
+### Added — T-088
+
+- **Entities can now be soft-archived.** `entities` gains a `status` column (mirroring `campaigns.status`) plus `entityService.archive`/`unarchive`, both scoped to the owning campaign. Archived entities drop out of `entityService.list` and `getByName`'s fuzzy name search by default; an `includeArchived` flag opts back in, and is now wired through the `list_entities`/`get_entity` MCP tools and their input validators. `getById` (explicit id lookup) and `detectSpans` (`log_session` auto-linking) are unaffected — an archived entity still resolves directly by id and still auto-links during session logging, since archive is a hide-a-mistake mechanism, not a "this is narratively dead" marker (`G-006`). No MCP tools to flip the flag yet — that's T-089; excluding archived entities from `detectSpans` specifically is T-090.
+
+### Added — T-078
+
+- **`entityService.detectCandidates` proposes brand-new entities from free text.** For proper-noun-like capitalized spans not already matched by `detectSpans`, it returns a name, an `ENTITY_TYPES` guess (npc/location/faction/item/arc from surrounding cue words and name suffixes), a description snippet via `extractExcerpt`, and the source span. Heuristic only — no NLP/LLM dependency. Wiring into `ingest_text` is T-079.
+- **Fix:** `detectCandidates` no longer proposes duplicate candidates when the same new name is mentioned more than once in the same ingested text — same-name spans now collapse to a single candidate, keyed on the first occurrence.
+- **Refactor:** pure span-detection/classification logic moved out of `entity.service.ts` into a new `entity-candidate-detection.service.ts`, following the existing `chunking.service.ts` precedent for DB-free `*.service.ts` files. No behavior change.
+
+### Fixed — T-077
+
+- **`query_lore` no longer surfaces superseded chunks.** Both legs of hybrid search — `search.service.ts`'s vector search and `context.service.ts`'s pg_trgm keyword search — now filter out chunks with `status = "superseded"` (added by T-074), matching the same convention already used by `correct_lore`'s preview lookup. A correction confirmed via `confirm_correct_lore` (T-076) is no longer contradicted by the old text it replaced still showing up in query results. No new flag to re-include superseded chunks — out of scope per `G-014`.
+
+### Changed — T-099
+
+- **`@questlog/core` truncate-lock tests no longer share a Vitest file-worker pool with the rest of the package**, closing intermittent `deadlock detected` flakes on `questlog_test_core`. `global-setup.test.ts` runs in its own serial Vitest project; other core tests keep file parallelism. Worktree `QUESTLOG_PG_PORT` is now passed through turbo's `test` / `test:e2e` tasks, and default-port URL unit tests stub that env unset so exporting a worktree port no longer breaks them. Dev/CI-only — no production behavior changed. Resolves gate `G-019`.
+
+### Added — T-075
+
+- **New `correct_lore` MCP tool (preview half).** Takes correction text plus exactly one of `sourceId` (all that source's non-superseded chunks), `chunkIds` (explicit targets), or `entityId` (attribution only — empty target set). Returns a `write_requests` preview token and payload without marking any chunk superseded. Apply half is T-076 (`confirm_correct_lore`).
+
+### Added — T-056
+
+- **New `update_entity`/`confirm_update_entity` MCP tool pair.** Lets a DM rename an entity, replace its description, or change its type, following the same preview/confirm pattern as `log_session`: `update_entity` previews the proposed before/after field values without persisting anything, and `confirm_update_entity` applies only the fields that were actually provided. Rejects an unresolvable `entityId` (before creating a write request) or an invalid `type`, and cleanly rejects a reused/unknown confirm token — no crashes. `packages/mcp/src/content/onboarding-instructions.ts` now mentions both tools, and their description strings live in `content/tool-descriptions.ts` per T-064's convention.
+
+### Added — T-074
+
+- **`chunks` now has a `status` column (default `"active"`) plus a `chunks_status_idx` btree index.** Mirrors the existing text-status pattern on `sources`/`sessions` so a chunk can later be soft-superseded without deleting it. Schema + journaled migration only — nothing reads or writes the column yet (T-075/T-076/T-077).
+
+### Changed — T-068
+
+- **Unscoped source lookups are now named `getByIdUnscoped`, and MCP tools are guarded against calling them.** `sourceService.getById` was renamed so trusted-internal callers (tRPC routers, import pipeline) and MCP tool handlers can't silently share the same unscoped lookup — MCP tools must keep using `getByIdForCampaign` (or another campaign-scoped method). A lightweight text-scan test under `packages/mcp/src/tools/` fails the suite if any tool file calls a method ending in `Unscoped`, and `.claude/rules/mcp.md` documents the convention.
+
+### Added — T-067
+
+- **`ingest_text` can create a new campaign in the same call.** Previously you had to call `create_campaign` first and then pass its id to `ingest_text` separately. Now `ingest_text` accepts `newCampaign` (the same shape as `create_campaign`'s input) as an alternative to `campaignId` — exactly one of the two must be given — and the response includes the new campaign's id alongside the source's, so a document you attach can spin up its own campaign in one step. Closes out M-REMOTE.8 (agent-interaction strategy for MCP-hooked sessions).
+
+### Changed — T-064
+
+- **MCP tool `description` strings relocated out of each tool file into one aggregated `packages/mcp/src/content/tool-descriptions.ts`.** Pure text move, no behavioral change: every tool's `server.registerTool(...)` call now imports its description from a shared, single-source-of-truth module instead of carrying it as an inline string literal, extending the same pattern T-033's `onboarding-instructions.ts` started. Dev-experience only — no tool name, schema, or handler behavior changed.
+
+### Fixed — T-060
+
+- **Fixed an intermittent FK-violation race in `packages/core`'s test suite.** `global-setup.test.ts`'s two tests exercising `truncateAllTables` mid-suite could occasionally fail with a foreign-key violation when another concurrently-running test file committed a row in the small window between the truncation's `sources` and `campaigns` deletes — a genuine race, not a flaky assertion (root-caused and deterministically reproduced before landing the fix). Both tests now take an explicit table lock before truncating, blocking concurrent writers instead of racing them; a new regression test guards against reintroducing the race. Dev/CI-only — no production behavior changed.
+
+### Fixed — T-098
+
+- **Remote-sandbox session-start no longer fails silently mid-provision.** `.claude/hooks/session-start.sh`'s remote-only Postgres bootstrap now self-heals an interrupted `dpkg` state before installing (the actual cause of T-056's lost session — a boot-time proxy-CA package, unrelated to QuestLog, left mid-configure), attempts pgvector from the PGDG repo (0.8.x, closing T-016's version gap) before falling back to Ubuntu's 0.6.0 package, and ends with a verification gate that confirms every required extension and test database is actually present and migrated — failing loudly with a specific diagnostic instead of the previous silent, `set -e`-driven death that used to surface 20+ turns later as unexplained test failures. Verified end-to-end on a real Ubuntu 24.04 container (matching the sandbox's actual OS), including both the PGDG-success path (confirmed pgvector `0.8.5`) and the Ubuntu-fallback path (confirmed with `apt.postgresql.org` blackholed). Resolves gate `G-018` — see `Docs/tickets/gated/resolved/G-018-remote-sandbox-db-provisioning-strategy.md` for why a hosted-DB (Neon) alternative was rejected.
+- **The local-worktree branch of the same hook now actually creates its test databases.** Previously it only relied on `docker-compose.yml`'s default `questlog` database and never created `questlog_test_core`/`_server`/`_mcp`/`_observability` — a fresh per-worktree Postgres volume would fail `db:migrate` for every one of them. Fixed with the same explicit `CREATE DATABASE` step `ci.yml`'s own provisioning already uses. Verified against a genuinely fresh volume (fails before the fix, succeeds after, confirmed twice).
+
+### Fixed — T-096
+
+- **`manually_inspected` no longer false-positives on nearly every executor run.** Cost-report human-message detection was miscounting framework-injected transcript turns — skill/slash-command load expansions and interrupt notices — as if Alex had typed them, so almost every run (including fully autonomous overnight ones) showed up flagged as manually inspected. `summarizeUsage` now recognizes those two shapes and excludes them; a real follow-up message from Alex still trips the flag as before.
+
+### Added — T-053
+
+- **New `packages/observability` workspace package holds a queryable store for executor run/report data.** Own Drizzle schema (`ticket_runs`, `ticket_reports`), own migrations, and its own `OBSERVABILITY_DATABASE_URL`-backed connection — deliberately kept independent of `packages/core`'s campaign-data schema (per `G-003`'s resolution). A pure mapping layer converts T-046's `*.usage.json` artifacts and ticket report markdown into insertable rows; upsert helpers are idempotent on `ticket_id`, and a thin CLI (`packages/observability/src/cli.ts`) ingests a given usage-artifact/report pair. No API endpoints or dashboard yet — those are M-OBS.4/M-OBS.5, blocked on this ticket.
+
+### Added — T-050
+
+- **Tickets now carry a `Complexity tier` and a `Strategy-gate flag`.** `TICKET_SPEC.md`'s fixed ticket format gains two new fields under `Milestone ref:`: `Complexity tier: S | M | L`, sized by a documented rubric (single-file/established-pattern vs. multi-file/new-service vs. new-subsystem/cross-cutting), and `Strategy-gate flag: yes | no`, a provenance marker for whether the ticket only became draftable after resolving a 🎨/🧠 gate. `ticket-writer` now assigns both on every future ticket; `REPORT_TEMPLATE.md` and `EXECUTOR_ROUTINE.md`'s Step 7 echo them into the morning report. Lays the groundwork for tier-relative cost/efficiency metrics (M-OBS.3/M-EFFICIENCY.3) without any DB/API/dashboard changes yet.
+
+### Added — T-047
+
+- **Morning reports now carry a required "Efficiency notes" section.** `REPORT_TEMPLATE.md` and `BLOCKED_TEMPLATE.md` both add a section where the executor self-reports, in its own words, why a run ran long or stayed tight — plus a structured retry log categorizing each Red/Green retry as `environment_setup`, `mechanical_lint_typecheck`, or `genuine_bug_caught_by_test`. This is the qualitative complement to T-046's objective token/cost/duration data. `EXECUTOR_ROUTINE.md` Step 6/7 now reference writing it explicitly.
+
+### Changed — T-094
+
+- **Retired the `.integration.test.ts` naming tier.** All 13 files using that suffix are renamed to plain `*.test.ts` — every vitest config already ran both in the same default tier (splitting out only `*.e2e.test.ts`), so the suffix signaled nothing a config or contributor could rely on. Test conventions docs (`.claude/rules/backend.md`, `.claude/skills/tdd-loop/SKILL.md`, `Docs/DEVELOPMENT_GUIDE.md`) now state plainly that unit and integration tests share one suffix. Resolves gate `G-009` — see `Docs/tickets/gated/resolved/G-009-integration-test-suffix-retire-or-enforce.md` for the full decision.
+
+### Changed — T-093
+
+- **Dropped TypeScript composite project references repo-wide in favor of plain `tsc --noEmit`.** No tsconfig sets `composite: true` or a `references` array anymore — cross-package imports resolve entirely through each package's existing `paths` aliases, which is all that ever made them resolve. Nothing outside `tsc -b` itself consumed the emitted `dist/**`/`.typecheck-out/**` output, and the emit was the root cause of two live bugs: a concurrent-write race between `packages/core`'s and `packages/mcp`'s `tsc -b` runs (`turbo.json`'s `typecheck` task has no `dependsOn`, live-hit in PR #95/T-052), and `apps/server/tsconfig.json`'s `outDir` colliding with its esbuild bundle output. Both are now structurally impossible rather than coordinated around. Resolves gate `G-007` — see `Docs/tickets/gated/resolved/G-007-drop-typescript-composite-project-references.md` for the full decision.
+
+### Fixed — T-038
+
+- **The MCP OAuth passphrase check is now constant-time.** `/authorize` was comparing the submitted passphrase with a plain `!==`, which can leak timing information about the real `MCP_ACCESS_PASSPHRASE`. It now hashes both sides and compares with `crypto.timingSafeEqual`. Found during a security review of the remote-MCP surface (full report: `Docs/tickets/reports/T-038-security-review-remote-mcp-surface.md`); no other severe findings.
+
+### Added — T-087
+
+- **Stale ticket worktrees now get cleaned up automatically instead of accumulating forever.** `scripts/reap-worktree.sh <name> [--force]` tears down a worktree's per-worktree Postgres stack (if any) and removes the git worktree itself, refusing (unless `--force`d) when the worktree has uncommitted changes so nothing in-progress is ever silently discarded. The nightly executor's pre-flight (`EXECUTOR_ROUTINE.md` Step 1) now sweeps every worktree under `tmp/worktrees/` before picking a ticket, reaping any whose branch has an actually-merged PR and leaving everything else untouched — no more manual disk/Docker cleanup after a ticket ships.
+
 ## [1.1.0] - 2026-07-30
 
 ### Added — T-037

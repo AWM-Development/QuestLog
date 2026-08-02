@@ -155,6 +155,34 @@ describe("entityService.detectSpans", () => {
 		expect(spans[0]?.matchType).toBe("ambiguous");
 		expect(spans[0]?.candidates.length).toBeGreaterThanOrEqual(2);
 	});
+
+	it("excludes an archived entity sharing a name with an active one — only the active entity appears", async () => {
+		const active = await insertEntity(campaignId, "Strahd", "npc");
+		const archived = await insertEntity(campaignId, "Strahd", "npc");
+		await entityService.archive(db, campaignId, archived.id);
+		const text = "Strahd loomed over the village";
+		const spans = await entityService.detectSpans(db, {
+			campaignId,
+			text,
+			dismissedEntityTexts: [],
+		});
+		expect(spans).toHaveLength(1);
+		expect(spans[0]?.matchType).toBe("confirmed");
+		expect(spans[0]?.entityId).toBe(active.id);
+		expect(spans[0]?.candidates).toEqual([]);
+	});
+
+	it("produces zero spans when the text mentions only an archived entity", async () => {
+		const archived = await insertEntity(campaignId, "Strahd", "npc");
+		await entityService.archive(db, campaignId, archived.id);
+		const text = "Strahd appeared at the gate";
+		const spans = await entityService.detectSpans(db, {
+			campaignId,
+			text,
+			dismissedEntityTexts: [],
+		});
+		expect(spans).toEqual([]);
+	});
 });
 
 describe("entityService.getById", () => {
@@ -200,6 +228,14 @@ describe("entityService.getById", () => {
 			entityService.getById(db, campaignId, entity.id),
 		).rejects.toThrow(NotFoundError);
 	});
+
+	it("still returns an archived entity's full row, unfiltered", async () => {
+		const entity = await insertEntity(campaignId, "Strahd");
+		await entityService.archive(db, campaignId, entity.id);
+		const found = await entityService.getById(db, campaignId, entity.id);
+		expect(found.id).toBe(entity.id);
+		expect(found.status).toBe("archived");
+	});
 });
 
 describe("entityService.getByName", () => {
@@ -236,6 +272,21 @@ describe("entityService.getByName", () => {
 			entityService.getByName(db, campaignId, "Zzyzx Nonexistent"),
 		).rejects.toThrow(NotFoundError);
 	});
+
+	it("does not match an archived entity by default", async () => {
+		const entity = await insertEntity(campaignId, "Strahd");
+		await entityService.archive(db, campaignId, entity.id);
+		await expect(
+			entityService.getByName(db, campaignId, "Strahd"),
+		).rejects.toThrow(NotFoundError);
+	});
+
+	it("matches an archived entity when includeArchived is true", async () => {
+		const entity = await insertEntity(campaignId, "Strahd");
+		await entityService.archive(db, campaignId, entity.id);
+		const found = await entityService.getByName(db, campaignId, "Strahd", true);
+		expect(found.id).toBe(entity.id);
+	});
 });
 
 describe("entityService.list with type filter", () => {
@@ -267,6 +318,98 @@ describe("entityService.list with type filter", () => {
 		const results = await entityService.list(db, campaignId, "npc");
 		expect(results).toHaveLength(1);
 		expect(results[0]?.name).toBe("Strahd");
+	});
+
+	it("excludes archived entities by default", async () => {
+		const active = await insertEntity(campaignId, "Strahd", "npc");
+		const archived = await insertEntity(campaignId, "Castle Ravenloft");
+		await entityService.archive(db, campaignId, archived.id);
+
+		const results = await entityService.list(db, campaignId);
+		expect(results).toHaveLength(1);
+		expect(results[0]?.id).toBe(active.id);
+	});
+
+	it("includes archived entities when includeArchived is true", async () => {
+		const active = await insertEntity(campaignId, "Strahd", "npc");
+		const archived = await insertEntity(campaignId, "Castle Ravenloft");
+		await entityService.archive(db, campaignId, archived.id);
+
+		const results = await entityService.list(db, campaignId, undefined, true);
+		expect(results).toHaveLength(2);
+		expect(results.map((r) => r.id).sort()).toEqual(
+			[active.id, archived.id].sort(),
+		);
+	});
+});
+
+describe("entityService.archive / unarchive", () => {
+	let campaignId: string;
+
+	beforeEach(async () => {
+		await db.execute(sql`BEGIN`);
+		const campaign = await campaignService.create(db, {
+			name: "Test Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await db.execute(sql`ROLLBACK`);
+	});
+
+	it("sets status to archived, scoped to the campaign", async () => {
+		const entity = await insertEntity(campaignId, "Strahd");
+		const archived = await entityService.archive(db, campaignId, entity.id);
+		expect(archived.status).toBe("archived");
+	});
+
+	it("throws NotFoundError archiving a bogus entityId", async () => {
+		await expect(
+			entityService.archive(
+				db,
+				campaignId,
+				"00000000-0000-0000-0000-000000000000",
+			),
+		).rejects.toThrow(NotFoundError);
+	});
+
+	it("throws NotFoundError archiving an entity from a different campaign", async () => {
+		const otherCampaign = await campaignService.create(db, {
+			name: "Other Campaign",
+			theme: "fantasy",
+		});
+		const entity = await insertEntity(otherCampaign.id, "Strahd");
+		await expect(
+			entityService.archive(db, campaignId, entity.id),
+		).rejects.toThrow(NotFoundError);
+	});
+
+	it("sets status back to active", async () => {
+		const entity = await insertEntity(campaignId, "Strahd");
+		await entityService.archive(db, campaignId, entity.id);
+		const unarchived = await entityService.unarchive(db, campaignId, entity.id);
+		expect(unarchived.status).toBe("active");
+	});
+
+	it("throws NotFoundError unarchiving a bogus entityId", async () => {
+		await expect(
+			entityService.unarchive(
+				db,
+				campaignId,
+				"00000000-0000-0000-0000-000000000000",
+			),
+		).rejects.toThrow(NotFoundError);
+	});
+
+	it("leaves other entities/campaigns untouched", async () => {
+		const target = await insertEntity(campaignId, "Strahd");
+		const other = await insertEntity(campaignId, "Ireena");
+		await entityService.archive(db, campaignId, target.id);
+
+		const untouched = await entityService.getById(db, campaignId, other.id);
+		expect(untouched.status).toBe("active");
 	});
 });
 
@@ -349,5 +492,98 @@ describe("extractExcerpt", () => {
 		const excerpt = extractExcerpt(text, { startIndex, endIndex });
 
 		expect(excerpt).toBe("Mira Duskwood met the party at the gates.");
+	});
+});
+
+describe("entityService.detectCandidates", () => {
+	let campaignId: string;
+
+	beforeEach(async () => {
+		await db.execute(sql`BEGIN`);
+		const campaign = await campaignService.create(db, {
+			name: "Test Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await db.execute(sql`ROLLBACK`);
+	});
+
+	it("proposes an NPC candidate from an unrecognized proper noun in an NPC-shaped sentence", async () => {
+		const text = "The party met Vespera Nightveil at the gates.";
+		const candidates = await entityService.detectCandidates(db, {
+			campaignId,
+			text,
+		});
+
+		const vespera = candidates.find((c) => c.name === "Vespera Nightveil");
+		expect(vespera).toBeDefined();
+		expect(vespera?.entityType).toBe("npc");
+		expect(vespera?.description.length).toBeGreaterThan(0);
+		expect(vespera?.description).toContain("Vespera Nightveil");
+		expect(vespera?.startIndex).toBe(text.indexOf("Vespera Nightveil"));
+		expect(vespera?.endIndex).toBe(
+			text.indexOf("Vespera Nightveil") + "Vespera Nightveil".length,
+		);
+	});
+
+	it("returns zero candidates when every proper noun is already covered by detectSpans", async () => {
+		await insertEntity(campaignId, "Strahd", "npc");
+		await insertEntity(campaignId, "Castle Ravenloft", "location");
+		const text = "Strahd rules from Castle Ravenloft.";
+		const candidates = await entityService.detectCandidates(db, {
+			campaignId,
+			text,
+		});
+		expect(candidates).toEqual([]);
+	});
+
+	it("collapses repeated mentions of the same new name into a single candidate", async () => {
+		const text =
+			"The party met Vespera Nightveil at dawn. Later, Vespera Nightveil wielded a dagger.";
+		const candidates = await entityService.detectCandidates(db, {
+			campaignId,
+			text,
+		});
+
+		const matches = candidates.filter((c) => c.name === "Vespera Nightveil");
+		expect(matches).toHaveLength(1);
+		expect(matches[0]?.startIndex).toBe(text.indexOf("Vespera Nightveil"));
+	});
+
+	it("proposes one candidate of each ENTITY_TYPES value from fixture text", async () => {
+		const text = [
+			"The party met Vespera Nightveil at dawn.",
+			"They traveled to Castle Ravenloft by nightfall.",
+			"They joined the Ironfang Clan thereafter.",
+			"Vespera Nightveil wielded the Sunblade of Ashara.",
+			"This began the Shadow Prophecy in earnest.",
+		].join(" ");
+
+		const candidates = await entityService.detectCandidates(db, {
+			campaignId,
+			text,
+		});
+
+		const byType = Object.fromEntries(
+			candidates.map((c) => [c.entityType, c]),
+		) as Record<string, (typeof candidates)[number]>;
+
+		expect(byType.npc?.name).toMatch(/Vespera/);
+		expect(byType.location?.name).toMatch(/Ravenloft|Castle/);
+		expect(byType.faction?.name).toMatch(/Ironfang|Clan/);
+		expect(byType.item?.name).toMatch(/Sunblade|Ashara/);
+		expect(byType.arc?.name).toMatch(/Shadow|Prophecy/);
+
+		for (const candidate of candidates) {
+			expect(candidate.description.length).toBeGreaterThan(0);
+			expect(candidate.startIndex).toBeGreaterThanOrEqual(0);
+			expect(candidate.endIndex).toBeGreaterThan(candidate.startIndex);
+			expect(text.slice(candidate.startIndex, candidate.endIndex)).toBe(
+				candidate.name,
+			);
+		}
 	});
 });

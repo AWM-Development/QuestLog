@@ -9,10 +9,12 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
     },
-    "test": {},
+    "test": {
+      "passThroughEnv": ["QUESTLOG_PG_PORT"]
+    },
     "test:e2e": {
       "cache": false,
-      "passThroughEnv": ["ANTHROPIC_API_KEY", "VOYAGE_API_KEY"]
+      "passThroughEnv": ["ANTHROPIC_API_KEY", "VOYAGE_API_KEY", "QUESTLOG_PG_PORT"]
     },
     "lint": {},
     "typecheck": {}

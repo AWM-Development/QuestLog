@@ -1,7 +1,14 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ONBOARDING_INSTRUCTIONS } from "./content/onboarding-instructions.js";
 import { registerAppendEntityNote } from "./tools/append-entity-note.js";
+import { registerArchiveEntity } from "./tools/archive-entity.js";
+import { registerConfirmArchiveEntity } from "./tools/confirm-archive-entity.js";
+import { registerConfirmCorrectLore } from "./tools/confirm-correct-lore.js";
+import { registerConfirmIngestEntities } from "./tools/confirm-ingest-entities.js";
 import { registerConfirmLogSession } from "./tools/confirm-log-session.js";
+import { registerConfirmUnarchiveEntity } from "./tools/confirm-unarchive-entity.js";
+import { registerConfirmUpdateEntity } from "./tools/confirm-update-entity.js";
+import { registerCorrectLore } from "./tools/correct-lore.js";
 import { registerCreateCampaign } from "./tools/create-campaign.js";
 import { registerCreateEntity } from "./tools/create-entity.js";
 import { registerGetEntity } from "./tools/get-entity.js";
@@ -14,6 +21,8 @@ import { registerLogSession } from "./tools/log-session.js";
 import { registerPrepBrief } from "./tools/prep-brief.js";
 import { registerQueryLore } from "./tools/query-lore.js";
 import type { ToolDeps } from "./tools/types.js";
+import { registerUnarchiveEntity } from "./tools/unarchive-entity.js";
+import { registerUpdateEntity } from "./tools/update-entity.js";
 
 export type CreateMcpServerOptions = ToolDeps;
 
@@ -31,10 +40,19 @@ export function createMcpServer(deps: CreateMcpServerOptions): McpServer {
 	registerGetEntity(server, deps);
 	registerCreateEntity(server, deps);
 	registerAppendEntityNote(server, deps);
+	registerUpdateEntity(server, deps);
+	registerConfirmUpdateEntity(server, deps);
+	registerArchiveEntity(server, deps);
+	registerConfirmArchiveEntity(server, deps);
+	registerUnarchiveEntity(server, deps);
+	registerConfirmUnarchiveEntity(server, deps);
 	registerLogSession(server, deps);
 	registerConfirmLogSession(server, deps);
 	registerIngestText(server, deps);
+	registerConfirmIngestEntities(server, deps);
 	registerGetSourceStatus(server, deps);
+	registerCorrectLore(server, deps);
+	registerConfirmCorrectLore(server, deps);
 	registerHelp(server);
 
 	return server;

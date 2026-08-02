@@ -15,11 +15,11 @@ export const TABLES_IN_DELETE_ORDER = [
 	"messages",
 	"conversations",
 	"chunks",
-	"sources",
 	"write_requests",
 	"entity_relationships",
 	"session_entities",
 	"entities",
+	"sources",
 	"sessions",
 	"campaigns",
 ];

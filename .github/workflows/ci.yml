@@ -30,17 +30,36 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # ── Turborepo local cache ────────────────────────────────────────────
+      # Persists .turbo/cache (gitignored, turbo's on-disk task cache) across
+      # runs so lint/typecheck/build cache-hit when their inputs haven't
+      # changed. test:e2e stays uncached — turbo.json marks it cache:false.
+      # test itself has no such override, so turbo caches it too and will
+      # replay a prior run's real-DB result when the task hash is unchanged;
+      # that's only safe because the hash covers all first-party inputs, so
+      # a replay only ever fires when nothing that could change the DB-backed
+      # result actually changed. Restore-keys fallback (lockfile hash only)
+      # so a source-only miss still restores the last cacheable state instead
+      # of starting fully cold. Why: Docs/tickets/T-086.
+      - name: Restore Turborepo cache
+        uses: actions/cache@v5
+        with:
+          path: .turbo/cache
+          key: turbo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'biome.json', 'tsconfig.base.json', 'apps/**/*.ts', 'apps/**/*.tsx', 'apps/**/tsconfig*.json', 'packages/**/*.ts', 'packages/**/*.tsx', 'packages/**/tsconfig*.json') }}
+          restore-keys: |
+            turbo-${{ runner.os }}-
 
       # ── Lint ──────────────────────────────────────────────────────────────
       - name: Lint
@@ -49,6 +68,10 @@ jobs:
       # ── Typecheck ─────────────────────────────────────────────────────────
       - name: Typecheck
         run: pnpm turbo typecheck
+
+      # ── Build ─────────────────────────────────────────────────────────────
+      - name: Build
+        run: pnpm turbo build
 
       # ── Guard: no test.only or test.skip ─────────────────────────────────
       - name: Check for test.only / test.skip
@@ -63,14 +86,25 @@ jobs:
           echo "✅ No test.only or test.skip found."
 
       # ── Provision and migrate every test-tier database ──────────────────
-      # One generic loop over scripts/test-db-names.sh's TEST_DB_NAMES_CI.
-      # Why: Docs/IMPLEMENTATION_NOTES.md § T-071 (also § T-027).
+      # Migrate once per schema family into a template database, then clone
+      # every test-tier database from its matching template instead of
+      # replaying the full migration set per database. Postgres refuses to
+      # clone a template with open connections — each migrate command's own
+      # tool closes its connection on exit (migrate.ts's `client.end()`), so
+      # by the time the CREATE DATABASE ... TEMPLATE loop below starts, both
+      # templates are already connection-free. Why: Docs/tickets/T-086,
+      # Docs/IMPLEMENTATION_NOTES.md § T-071 (also § T-027).
       - name: Provision and migrate test-tier databases
         run: |
           source scripts/test-db-names.sh
+          for template in "${TEST_DB_TEMPLATES[@]}"; do
+            PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog_test -c "CREATE DATABASE ${template}"
+          done
+          DATABASE_URL="postgresql://questlog:questlog@localhost:5433/${TEST_DB_TEMPLATE_CORE}" eval "$(test_db_migrate_cmd "$TEST_DB_NAME_CORE")"
+          DATABASE_URL="postgresql://questlog:questlog@localhost:5433/${TEST_DB_TEMPLATE_OBSERVABILITY}" eval "$(test_db_migrate_cmd "$TEST_DB_NAME_OBSERVABILITY")"
           for dbname in "${TEST_DB_NAMES_CI[@]}"; do
-            PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog_test -c "CREATE DATABASE ${dbname}"
-            DATABASE_URL="postgresql://questlog:questlog@localhost:5433/${dbname}" pnpm --filter @questlog/server db:migrate
+            template="$(test_db_template_name "$dbname")"
+            PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog_test -c "CREATE DATABASE ${dbname} TEMPLATE ${template}"
           done
 
       # ── Full test suite ───────────────────────────────────────────────────
@@ -88,7 +122,7 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -130,7 +164,7 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -175,7 +209,7 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -200,7 +234,7 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -261,7 +295,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install and run actionlint
         run: |

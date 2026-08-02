@@ -1,6 +1,7 @@
 import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { TABLES_IN_DELETE_ORDER } from "./global-setup.js";
 import type { Database } from "./index.js";
 import * as schema from "./schema/index.js";
 import {
@@ -58,6 +59,24 @@ export function createTestDb(options?: { max?: number }) {
 }
 
 /**
+ * Blocks (not races) a concurrent write into any of `TABLES_IN_DELETE_ORDER`
+ * while this transaction truncates them. Locked parent-first (reverse of
+ * TABLES_IN_DELETE_ORDER) to match how every other test file in this package
+ * acquires these same tables' locks (campaign row first, then children) —
+ * locking child-first here would instead deadlock against that pattern.
+ * Why: Docs/IMPLEMENTATION_NOTES.md § T-060.
+ */
+export async function lockTruncationTargets(sql: {
+	unsafe: (query: string) => Promise<unknown>;
+}) {
+	const tables = [...TABLES_IN_DELETE_ORDER]
+		.reverse()
+		.map((table) => `"${table}"`)
+		.join(", ");
+	await sql.unsafe(`LOCK TABLE ${tables} IN EXCLUSIVE MODE`);
+}
+
+/**
  * Deletes a campaign and all rows that reference it (FK-safe order).
  *
  * Prefer this over `ROLLBACK` when tests exercise code that opens its own
@@ -77,7 +96,6 @@ export async function deleteCampaignTree(db: Database, campaignId: string) {
 		.delete(conversations)
 		.where(eq(conversations.campaignId, campaignId));
 	await db.delete(chunks).where(eq(chunks.campaignId, campaignId));
-	await db.delete(sources).where(eq(sources.campaignId, campaignId));
 	await db
 		.delete(writeRequests)
 		.where(eq(writeRequests.campaignId, campaignId));
@@ -94,7 +112,9 @@ export async function deleteCampaignTree(db: Database, campaignId: string) {
 			.delete(sessionEntities)
 			.where(inArray(sessionEntities.sessionId, sessionIds));
 	}
+	// entities.sourceId now FKs to sources (T-080) — must delete before sources.
 	await db.delete(entities).where(eq(entities.campaignId, campaignId));
+	await db.delete(sources).where(eq(sources.campaignId, campaignId));
 	await db.delete(sessions).where(eq(sessions.campaignId, campaignId));
 	await db.delete(campaigns).where(eq(campaigns.id, campaignId));
 }

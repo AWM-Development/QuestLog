@@ -28,7 +28,7 @@ export const importRouter = router({
 	getSource: procedure
 		.input(GetSourceInput)
 		.query(({ ctx, input }) =>
-			withErrorHandling(() => sourceService.getById(ctx.db, input.id)),
+			withErrorHandling(() => sourceService.getByIdUnscoped(ctx.db, input.id)),
 		),
 
 	listSources: procedure

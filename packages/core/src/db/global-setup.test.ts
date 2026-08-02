@@ -1,8 +1,12 @@
 import { afterAll, afterEach, describe, expect, it, vi } from "vitest";
 import type { TestProject } from "vitest/node";
-import { setup, truncateAllTables } from "./global-setup.js";
+import {
+	TABLES_IN_DELETE_ORDER,
+	setup,
+	truncateAllTables,
+} from "./global-setup.js";
 import { FAKE_HOSTED_DB_URL, testDbUrl } from "./test-db-url.js";
-import { createTestDb } from "./test-helpers.js";
+import { createTestDb, lockTruncationTargets } from "./test-helpers.js";
 
 class RollbackForTest extends Error {}
 
@@ -36,12 +40,14 @@ describe("global-setup", () => {
 
 	it("cleans up an orphaned write_requests row instead of throwing an FK violation on campaigns", async () => {
 		// Runs inside BEGIN/ROLLBACK (forced by throwing RollbackForTest below)
-		// so the real truncation never commits — safe under Vitest's default
-		// file-level parallelism, since other concurrently-running test files
-		// never observe these deletes. Uses tx.unsafe() with bound parameters
-		// (not tagged templates) because TypeScript's Omit — used to derive
-		// TransactionSql from Sql — drops call signatures, so `tx`\`...\` alone
-		// doesn't typecheck even though it works at runtime.
+		// so the real truncation never commits, and the explicit lock below
+		// blocks (rather than races) any concurrently-running test file that
+		// commits a referencing row mid-truncation — see lockTruncationTargets'
+		// definition in test-helpers.ts for the FK-violation race this guards
+		// against. Uses tx.unsafe() with bound parameters (not tagged
+		// templates) because TypeScript's
+		// Omit — used to derive TransactionSql from Sql — drops call signatures,
+		// so `tx`\`...\` alone doesn't typecheck even though it works at runtime.
 		await expect(
 			client.begin(async (tx) => {
 				const campaignRows = await tx.unsafe<{ id: string }[]>(
@@ -55,6 +61,7 @@ describe("global-setup", () => {
 					[campaignId, "log_session", "{}"],
 				);
 
+				await lockTruncationTargets(tx);
 				await expect(truncateAllTables(tx)).resolves.not.toThrow();
 
 				const campaignCountRows = await tx.unsafe<{ count: number }[]>(
@@ -102,6 +109,7 @@ describe("global-setup", () => {
 					[sessionId, entityId, "confirmed"],
 				);
 
+				await lockTruncationTargets(tx);
 				await expect(truncateAllTables(tx)).resolves.not.toThrow();
 
 				const linkCountRows = await tx.unsafe<{ count: number }[]>(
@@ -113,6 +121,74 @@ describe("global-setup", () => {
 				throw new RollbackForTest();
 			}),
 		).rejects.toThrow(RollbackForTest);
+	});
+
+	it("blocks (rather than races) a concurrent insert into a referencing table while truncating", async () => {
+		const race = createTestDb();
+		let racePromise: Promise<number> | undefined;
+		const sourcesIndex = TABLES_IN_DELETE_ORDER.indexOf("sources");
+
+		try {
+			await expect(
+				client.begin(async (tx) => {
+					await tx.unsafe(
+						"INSERT INTO campaigns (name, theme) VALUES ($1, $2) RETURNING id",
+						["Lock Test Campaign", "fantasy"],
+					);
+
+					await lockTruncationTargets(tx);
+
+					// Walk the delete order in two phases instead of one atomic
+					// truncateAllTables(tx) call, so the concurrent insert below
+					// lands deterministically in the exact window that produced
+					// the production flake: after "sources" is cleared but before
+					// "campaigns" is (Docs/tickets/T-060-fix-global-setup-truncate-race.md).
+					for (let i = 0; i <= sourcesIndex; i++) {
+						await tx.unsafe(`DELETE FROM "${TABLES_IN_DELETE_ORDER[i]}"`);
+					}
+
+					// Deliberately not awaited: with the lock held, this can't
+					// complete until this transaction ends, so awaiting it here
+					// would deadlock this transaction against itself.
+					racePromise = (async () => {
+						const start = Date.now();
+						const otherCampaignRows = await race.client.unsafe<
+							{ id: string }[]
+						>(
+							"INSERT INTO campaigns (name, theme) VALUES ($1, $2) RETURNING id",
+							["Concurrent Campaign", "fantasy"],
+						);
+						const otherCampaignId = (otherCampaignRows[0] as { id: string }).id;
+						await race.client.unsafe(
+							"INSERT INTO sources (campaign_id, name, type, status) VALUES ($1, $2, $3, $4)",
+							[otherCampaignId, "race.txt", "text", "ready"],
+						);
+						return Date.now() - start;
+					})();
+
+					// Give the concurrent insert a moment to actually attempt (and,
+					// with the lock held, block).
+					await new Promise((resolve) => setTimeout(resolve, 300));
+
+					for (
+						let i = sourcesIndex + 1;
+						i < TABLES_IN_DELETE_ORDER.length;
+						i++
+					) {
+						await tx.unsafe(`DELETE FROM "${TABLES_IN_DELETE_ORDER[i]}"`);
+					}
+
+					throw new RollbackForTest();
+				}),
+			).rejects.toThrow(RollbackForTest);
+
+			const elapsedMs = await racePromise;
+			// Proves the insert was actually blocked by the lock, not just fast —
+			// it only completes once the transaction above rolls back and releases it.
+			expect(elapsedMs).toBeGreaterThanOrEqual(250);
+		} finally {
+			await race.close();
+		}
 	});
 
 	it("does not silently skip the rest of the delete order when a single table is missing (vs. the whole database being missing)", async () => {

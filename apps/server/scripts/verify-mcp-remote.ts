@@ -1,9 +1,12 @@
-import { createHash, randomBytes } from "node:crypto";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { db } from "@questlog/core/db/index.js";
 import { deleteCampaignTree } from "@questlog/core/db/test-helpers.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
+import {
+	makePkcePair,
+	withTimeout,
+} from "@questlog/shared/testing/mcp-verification.js";
 
 // The automatable half of T-034 (Docs/tickets/in-progress/T-034-deploy-connect-claude-project.md):
 // exercises the full remote MCP flow — discover -> register -> authorize ->
@@ -18,29 +21,8 @@ const CALL_TIMEOUT_MS = 15_000;
 const SOURCE_POLL_TIMEOUT_MS = 60_000;
 const SOURCE_POLL_INTERVAL_MS = 2_000;
 
-function withTimeout<T>(promise: Promise<T>, label: string): Promise<T> {
-	return Promise.race([
-		promise,
-		new Promise<T>((_, reject) => {
-			setTimeout(
-				() =>
-					reject(new Error(`Timed out after ${CALL_TIMEOUT_MS}ms: ${label}`)),
-				CALL_TIMEOUT_MS,
-			);
-		}),
-	]);
-}
-
 function sleep(ms: number) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function makePkcePair() {
-	const codeVerifier = randomBytes(32).toString("base64url");
-	const codeChallenge = createHash("sha256")
-		.update(codeVerifier)
-		.digest("base64url");
-	return { codeVerifier, codeChallenge };
 }
 
 /** Caller must have already checked `result.isError` (see callRaw). */
@@ -173,10 +155,18 @@ async function main() {
 			name: "questlog-mcp-verify-remote",
 			version: "0.0.0",
 		});
-		await withTimeout(client.connect(transport), "MCP initialize handshake");
+		await withTimeout(
+			client.connect(transport),
+			"MCP initialize handshake",
+			CALL_TIMEOUT_MS,
+		);
 		console.log(`Initialize handshake succeeded against ${baseUrl}/mcp`);
 
-		const { tools } = await withTimeout(client.listTools(), "tools/list");
+		const { tools } = await withTimeout(
+			client.listTools(),
+			"tools/list",
+			CALL_TIMEOUT_MS,
+		);
 		const names = tools.map((tool) => tool.name).sort();
 		console.log(`Server reported ${names.length} tool(s): ${names.join(", ")}`);
 
@@ -193,6 +183,7 @@ async function main() {
 			const result = (await withTimeout(
 				activeClient.callTool({ name, arguments: args }),
 				`tools/call ${name}`,
+				CALL_TIMEOUT_MS,
 			)) as {
 				content: Array<{ type: string; text?: string }>;
 				isError?: boolean;

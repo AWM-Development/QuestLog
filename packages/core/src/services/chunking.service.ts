@@ -14,12 +14,23 @@ const MAX_WORDS = 1000;
 /** Pattern that identifies a section boundary: heading or double-newline. */
 const SECTION_BOUNDARY = /\n(?=#{1,6}\s)|\n{2,}/;
 
+// Correction chunks (T-076) can be anchored to a source (sourceId form),
+// or stand alone (chunkIds/entityId form, where no existing source/session
+// row applies) — the third variant keeps that case explicit in the
+// discriminated union rather than silently loosening both fields to
+// optional.
 export type ChunkMeta = { campaignId: string } & (
 	| { sourceId: string; sessionId?: undefined }
 	| { sessionId: string; sourceId?: undefined }
+	| { sourceId?: undefined; sessionId?: undefined }
 );
 
 export type TextChunk = { content: string; position: number } & ChunkMeta;
+
+/** Builds source-anchored or campaign-only `ChunkMeta`, depending on whether `sourceId` is present. */
+export function chunkMetaFor(campaignId: string, sourceId?: string): ChunkMeta {
+	return sourceId ? { campaignId, sourceId } : { campaignId };
+}
 
 /**
  * Split text into semantically-bounded chunks.

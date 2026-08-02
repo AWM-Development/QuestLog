@@ -17,13 +17,13 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 - **CI/CD scope:** the existing fast, local-Postgres, ephemeral-per-run PR-gate test suite stays exactly as it is (it truncates all tables every run — pointing it at a real branch would destroy real dev data). A **separate**, additive post-merge smoke-test workflow covers verification against real infrastructure instead.
 - **Audit scope:** covers both technical architecture/security rigor and outside-reviewer presentation quality ("portfolio ready" — both, per Alex).
 
-**Open gates:** `G-006` (`Docs/tickets/gated/G-006-entity-delete-archive-semantics.md`) — whether removing an entity should be a soft-archive (new `archived`/`status` column, mirroring `campaigns`) or a hard delete (mirroring `sources`), and whether references from `session_entities`/`entity_relationships` should cascade or block the removal — blocking M-REMOTE.10. Filed 2026-07-26, raised by Alex during T-032's morning review.
-
-`G-012` (`Docs/tickets/gated/G-012-v1-3-interaction-philosophy-and-mcp-polish-milestone.md`) — whether a future milestone should cover a standing, cross-tool agent-interaction philosophy plus broader MCP app polish, and what exactly belongs in it — blocks nothing yet. Filed 2026-07-28, raised by Alex during G-005's `/ungate` resolution. The v1.3 slot itself was claimed directly by Alex on 2026-07-29 for canon correction & automatic entity extraction (`G-014`/`G-015`, see `Docs/milestones/MILESTONES_V1_3_MCP.md`); resolving `G-012` now opens whatever milestone comes after v1.3.
+**Open gates:** `G-012` (`Docs/tickets/gated/G-012-v1-3-interaction-philosophy-and-mcp-polish-milestone.md`) — whether a future milestone should cover a standing, cross-tool agent-interaction philosophy plus broader MCP app polish, and what exactly belongs in it — blocks nothing yet. Filed 2026-07-28, raised by Alex during G-005's `/ungate` resolution. The v1.3 slot itself was claimed directly by Alex on 2026-07-29 for canon correction & automatic entity extraction (`G-014`/`G-015`, see `Docs/milestones/MILESTONES_V1_3_MCP.md`); resolving `G-012` now opens whatever milestone comes after v1.3.
 
 `G-001` (`Docs/tickets/gated/resolved/G-001-write-tool-preview-confirm-scope.md`) — whether `.claude/rules/mcp.md`'s preview/confirm/audit requirement applies to every MCP write tool or only ones mutating existing data, blocking M-REMOTE.4 and M-REMOTE.5 — was resolved via `/ungate` on 2026-07-22 (narrow reading: preview/confirm applies to mutations of existing data, not additive-only writes). Both tasks' `Gated on:` tags below are cleared accordingly.
 
 `G-005` (`Docs/tickets/gated/resolved/G-005-agent-mcp-interaction-strategy.md`) — how a DM interacts with QuestLog through an MCP-connected Claude session end-to-end: attaching documents, creating a new campaign, proactive status-polling narration, and the broader instructions strategy — was resolved via `/ungate` on 2026-07-28 (attachments/status-polling: T-065; campaign creation: T-066/T-067; broader interaction-philosophy question split out to a new gate, `G-012`, as its own v1.3-scoping decision). M-REMOTE.8's `Gated on:` tag below is cleared accordingly.
+
+`G-006` (`Docs/tickets/gated/resolved/G-006-entity-delete-archive-semantics.md`) — whether removing an entity should be a soft-archive or a hard delete, and how references from `session_entities`/`entity_relationships` should be handled — was resolved via `/ungate` on 2026-07-30 (soft-archive, new `entities.status` column mirroring `campaigns`; no cascade/block logic needed since the row never disappears; an unarchive path is required). Refined the same day: archive is a **hide** mechanism for a mistaken entity/note, not a way to mark something narratively dead — a killed NPC or abandoned location stays active/searchable. So an archived entity is excluded from every name-based/fuzzy lookup by default (opt-in `includeArchived` flag to see it), not just default listings; explicit id-based lookup and writes remain unaffected. M-REMOTE.10's tag below is cleared accordingly: schema + read-filtering is T-088 (`queue/`), the MCP archive/unarchive tool pair is T-089 (`backlog/`, blocked on T-088), and excluding archived entities from `log_session`'s auto-linking is T-090 (`backlog/`, blocked on T-088).
 
 ---
 
@@ -62,7 +62,7 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 - [ ] **M-REMOTE.7 — Deploy + connect a real Claude Project + full remote test pass** (T-034)
   Deploy the above to dev, connect it as a real Claude.ai Custom Connector in an actual Project, re-run the v1 test plan (this session's table) against the remote transport end-to-end, then repeat for prod. **The Custom Connector setup itself is an Alex-only action** — it happens inside Alex's own Claude.ai account and cannot be scripted.
 
-- [ ] **M-REMOTE.8 — Agent-interaction strategy for MCP-hooked sessions** (T-065, T-066, T-067)
+- [x] **M-REMOTE.8 — Agent-interaction strategy for MCP-hooked sessions** (T-065, T-066, T-067)
   Resolved via `/ungate` on 2026-07-28 (`G-005`): no new MCP transport for
   attachments — Claude already reads attached documents natively in the
   conversation, so `ingest_text` gains multi-call chunked ingestion
@@ -74,13 +74,13 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   as a v1.3-scoping decision.
   Exit: all three tickets shipped — see each for its own exit condition.
 
-- [ ] **M-REMOTE.9 — `update_entity` MCP tool** (T-056)
+- [x] **M-REMOTE.9 — `update_entity` MCP tool** (T-056)
   Raised during T-032's morning review: `entityService` has `create` and `appendToDescription` but no way to rename an entity, replace its description wholesale, or change its type — M-REMOTE.5 explicitly scoped this out rather than inventing a bigger update surface. Precedent already exists (`campaignService.update`, `conversationService.update`, `sessionService.update` all do generic partial-field updates); this mutates an *existing* row, so per G-001 it needs the `update_entity`/`confirm_update_entity` preview-confirm shape, not a direct write.
   Exit: TBD — drafted via `ticket-writer` from this task.
 
-- [ ] **M-REMOTE.10 — Entity delete/archive MCP tool** (Gated on: G-006)
-  Raised during T-032's morning review, alongside M-REMOTE.9. Unlike the update case, this isn't just an implementation gap: the `entities` table has no `archived`/`status` column at all (unlike `campaigns`/`sources`, which do soft-delete), and `entities` is referenced by `session_entities`/`entity_relationships` with no `onDelete` behavior specified — so a real product decision is needed on soft-archive (schema migration) vs. hard delete, and cascade-delete vs. block-if-referenced, before scope can be written. See `G-006` for the open question.
-  Exit: TBD — depends on `/ungate`'s resolution.
+- [x] **M-REMOTE.10 — Entity delete/archive MCP tool** (T-088, T-089, T-090)
+  Raised during T-032's morning review, alongside M-REMOTE.9. Resolved via `/ungate` (G-006, 2026-07-30, refined same day): soft-archive as a **hide** mechanism for a mistaken entity/note — not for something narratively dead, which stays active/searchable. `entities.status` mirrors `campaigns`; no cascade/block logic needed since `session_entities`/`entity_relationships` rows keep resolving against an archived entity as before. An archived entity is excluded from every name-based/fuzzy lookup (`list`, `getByName`, `detectSpans`) by default — opt-in `includeArchived` flag where a user-facing search makes sense (`list_entities`, `get_entity`-by-name); no flag on `detectSpans` since that's automatic linking, not a user-invoked search. Explicit id-based lookup (`get_entity`-by-id) and writes (`append_entity_note`) are unaffected. Split into three tickets: T-088 (schema + service read-filtering), T-089 (MCP `archive_entity`/`unarchive_entity` preview/confirm tool pairs, blocked on T-088), T-090 (exclude archived entities from `log_session` auto-linking, blocked on T-088).
+  Exit: T-088, T-089, and T-090 all ship.
 
 ---
 
@@ -125,17 +125,17 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   Resolved via `/ungate` (`G-008`, second axis, added during `T-069`'s ticket-writing): each worktree runs its own Postgres container on its own port rather than per-worktree database names inside a shared instance — sidesteps a per-worktree DB lifecycle (create/migrate/reap) entirely; reaping is `docker compose down`. Local-only; CI is untouched (isolated service container per run already). Blocked on `T-069`'s worktree convention landing first.
   Exit: see T-072.
 
-- [ ] **M-PIPELINE.5 — Claim step for ticket/gate id allocation** (T-073)
+- [x] **M-PIPELINE.5 — Claim step for ticket/gate id allocation** (T-073)
   Raised during T-069's ticket-writing session, not fixed there — same bug class as the `G-012`/`G-013` collision (`G-013`'s Renumbered note), but for a different shared resource. `ticket-writer` step 6's `T-###` numbering and `/ungate`'s `G-###` gate-stub numbering are both look-then-act: scan every lifecycle directory, take the next free number, with nothing committed in between that a second concurrent session would see. Fix is the same principle as `T-069`'s claim-by-push, applied to a number instead of a branch: commit a placeholder file at the chosen id immediately, before doing the rest of the drafting work. No real dependency on `T-069`'s own code — different files, doesn't need worktree isolation to work — so it isn't blocked on it landing first.
   Exit: see T-073.
 
-- [ ] **M-PIPELINE.6 — CI pipeline runtime optimization: cross-run turbo cache persistence + template-database provisioning** (T-086)
+- [x] **M-PIPELINE.6 — CI pipeline runtime optimization: cross-run turbo cache persistence + template-database provisioning** (T-086)
   Surfaced during a `/morning-review` of T-071 plus a follow-up benchmarking discussion, not by a PRD section. Two independent gaps found in `ci.yml`/`e2e-release-check.yml`'s current runtime: **(a)** Turborepo's local task cache (the same one that already shows `>>> FULL TURBO` hits locally across repeated `pnpm lint`/`typecheck`/`build` runs) is never persisted between separate CI runs — each run starts cold and recomputes every task regardless of whether the relevant package's inputs actually changed since the last run on that branch. **(b)** T-071's per-test-tier provisioning loop (`scripts/test-db-names.sh`'s `TEST_DB_NAMES_CI`) runs a full `pnpm --filter @questlog/server db:migrate` replay once per database, serially — the same schema gets built from scratch N times when a single migrated template database, cloned via Postgres's `CREATE DATABASE ... TEMPLATE`, would produce identical schemas near-instantly per clone.
+  Exit: see T-086.
 
-- [ ] **M-PIPELINE.7 — Automated worktree + per-worktree Postgres stack reaping** (T-087)
+- [x] **M-PIPELINE.7 — Automated worktree + per-worktree Postgres stack reaping** (T-087)
   Surfaced during a `/morning-review` of T-072, not by a PRD section. `T-069` established `tmp/worktrees/T-###/` and never wired anything to remove one — `Docs/IMPLEMENTATION_NOTES.md` § T-069's own follow-up fix (T-070) already found this live: a worktree routinely still sits on disk right after its PR lands, since nothing ever runs `git worktree remove` on it. `T-072` compounds this: a finished worktree now also leaves a running `docker compose` stack (its own Postgres container, volume, and network) behind, not just inert files — an accumulating resource cost, not merely disk clutter. Both are reaped by the same trigger (a worktree's branch has a merged PR), so this covers them as one lifecycle fix rather than two separate ones, per `T-072`'s own report ("Anything Alex must decide").
   Exit: see T-087.
-  Exit: see T-086.
 
 ---
 
@@ -148,7 +148,7 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 - [ ] **M-AUDIT.1 — Extend `T-017`'s scope to cover v1.1** (T-017, amended in place)
   `T-017` (architecture & pattern audit) already existed in the backlog, already unblocked (its trigger condition — the M-MCP hardening backlog being in `done/` — was already satisfied). Amended to also cover the M-REMOTE and M-CICD additions once they ship, rather than filing a duplicate. Stays interactive/Alex-present, never auto-promoted — unchanged from its original design.
 
-- [ ] **M-AUDIT.2 — Security review of the new remote-MCP surface** (T-038)
+- [x] **M-AUDIT.2 — Security review of the new remote-MCP surface** (T-038)
   The OAuth shim, the new HTTP transport, the existing (currently unauthenticated) `POST /api/campaigns/:id/sources/upload` REST endpoint now sitting behind the same public Fly apps, and the new GitHub Actions secrets M-CICD.2/M-CICD.3 introduce. Produces a written report + follow-up tickets for anything found, same shape as T-017. Severe findings follow the Blocked Protocol rather than being remediated unilaterally.
 
 - [ ] **M-AUDIT.3 — Scalability-into-v2 review** (T-039)

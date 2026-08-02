@@ -1,0 +1,11 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"lib": ["ES2022"],
+		"paths": {
+			"@questlog/core": ["../../packages/core/src"],
+			"@questlog/core/*": ["../../packages/core/src/*"]
+		}
+	},
+	"include": ["src"]
+}

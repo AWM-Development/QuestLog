@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
+import { chunks } from "../db/schema/index.js";
 import { createTestDb } from "../db/test-helpers.js";
 import { NotFoundError } from "../lib/errors.js";
 import { campaignService } from "./campaign.service.js";
@@ -160,7 +161,7 @@ describe("sourceService", () => {
 		});
 	});
 
-	describe("getById", () => {
+	describe("getByIdUnscoped", () => {
 		it("returns the source when it exists", async () => {
 			const created = await sourceService.create(db, {
 				campaignId,
@@ -170,14 +171,14 @@ describe("sourceService", () => {
 				hash: "deadbeef",
 			});
 
-			const found = await sourceService.getById(db, created.id);
+			const found = await sourceService.getByIdUnscoped(db, created.id);
 			expect(found.id).toBe(created.id);
 			expect(found.name).toBe("test.md");
 		});
 
 		it("throws NotFoundError for non-existent id", async () => {
 			const fakeId = "00000000-0000-0000-0000-000000000000";
-			await expect(sourceService.getById(db, fakeId)).rejects.toThrow(
+			await expect(sourceService.getByIdUnscoped(db, fakeId)).rejects.toThrow(
 				NotFoundError,
 			);
 		});
@@ -319,9 +320,9 @@ describe("sourceService", () => {
 
 			await sourceService.delete(db, created.id);
 
-			await expect(sourceService.getById(db, created.id)).rejects.toThrow(
-				NotFoundError,
-			);
+			await expect(
+				sourceService.getByIdUnscoped(db, created.id),
+			).rejects.toThrow(NotFoundError);
 		});
 
 		it("does not throw when deleting a non-existent source (idempotent)", async () => {
@@ -350,12 +351,80 @@ describe("sourceService", () => {
 			});
 
 			// Old source should be gone
-			await expect(sourceService.getById(db, old.id)).rejects.toThrow(
+			await expect(sourceService.getByIdUnscoped(db, old.id)).rejects.toThrow(
 				NotFoundError,
 			);
 			// New source should exist with new hash
 			expect(replacement.hash).toBe("new-hash");
 			expect(replacement.sizeBytes).toBe(2000);
+		});
+	});
+
+	describe("listNonSupersededChunkIdsForSource", () => {
+		it("returns active chunk ids for the source and excludes superseded ones", async () => {
+			const source = await sourceService.create(db, {
+				campaignId,
+				name: "canon.md",
+				type: "paste",
+				sizeBytes: null,
+				hash: null,
+			});
+
+			const [activeA, superseded, activeB] = await db
+				.insert(chunks)
+				.values([
+					{
+						campaignId,
+						sourceId: source.id,
+						content: "Active A",
+						status: "active",
+					},
+					{
+						campaignId,
+						sourceId: source.id,
+						content: "Superseded",
+						status: "superseded",
+					},
+					{
+						campaignId,
+						sourceId: source.id,
+						content: "Active B",
+						status: "active",
+					},
+				])
+				.returning();
+
+			const ids = await sourceService.listNonSupersededChunkIdsForSource(
+				db,
+				campaignId,
+				source.id,
+			);
+
+			expect(ids).toEqual(expect.arrayContaining([activeA?.id, activeB?.id]));
+			expect(ids).not.toContain(superseded?.id);
+			expect(ids).toHaveLength(2);
+		});
+
+		it("throws NotFoundError when the source belongs to another campaign", async () => {
+			const other = await campaignService.create(db, {
+				name: "Other",
+				theme: "sci-fi",
+			});
+			const source = await sourceService.create(db, {
+				campaignId: other.id,
+				name: "theirs.md",
+				type: "paste",
+				sizeBytes: null,
+				hash: null,
+			});
+
+			await expect(
+				sourceService.listNonSupersededChunkIdsForSource(
+					db,
+					campaignId,
+					source.id,
+				),
+			).rejects.toThrow(NotFoundError);
 		});
 	});
 });

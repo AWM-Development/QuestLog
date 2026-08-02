@@ -1,14 +1,10 @@
 {
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
-		"composite": true,
-		"outDir": "./dist",
-		"rootDir": "./src",
 		"lib": ["ES2022"],
 		"paths": {
 			"@questlog/shared": ["../../packages/shared/src"]
 		}
 	},
-	"include": ["src"],
-	"references": [{ "path": "../../packages/shared" }]
+	"include": ["src"]
 }

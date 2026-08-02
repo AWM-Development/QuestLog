@@ -6,15 +6,46 @@ import { testDbUrl } from "./src/db/test-db-url.js";
  * `*.e2e.test.ts` (real DB + real Voyage API) is excluded here — it has its
  * own config (vitest.e2e.config.ts) and its own script (`test:e2e`), run on
  * a schedule rather than every PR. See Docs/IMPLEMENTATION_NOTES.md.
+ *
+ * Two projects (T-099 / G-019): `global-setup.test.ts` holds mid-suite
+ * exclusive truncate locks; it must not overlap other core file workers.
+ * Distinct `sequence.groupOrder` keeps the projects from running in parallel
+ * with each other (Vitest's default). Why: Docs/IMPLEMENTATION_NOTES.md § T-099.
  */
+const sharedTest = {
+	globals: true as const,
+	globalSetup: ["./src/db/global-setup.ts"],
+	env: {
+		DATABASE_URL: testDbUrl("questlog_test_core"),
+	},
+};
+
 export default defineConfig({
 	test: {
-		globals: true,
-		sequence: { concurrent: false },
-		globalSetup: ["./src/db/global-setup.ts"],
-		exclude: [...configDefaults.exclude, "**/*.e2e.test.ts"],
-		env: {
-			DATABASE_URL: testDbUrl("questlog_test_core"),
-		},
+		projects: [
+			{
+				test: {
+					...sharedTest,
+					name: "truncate-lock",
+					include: ["src/db/global-setup.test.ts"],
+					exclude: [...configDefaults.exclude, "**/*.e2e.test.ts"],
+					fileParallelism: false,
+					maxWorkers: 1,
+					sequence: { concurrent: false, groupOrder: 0 },
+				},
+			},
+			{
+				test: {
+					...sharedTest,
+					name: "core",
+					exclude: [
+						...configDefaults.exclude,
+						"**/*.e2e.test.ts",
+						"**/global-setup.test.ts",
+					],
+					sequence: { concurrent: false, groupOrder: 1 },
+				},
+			},
+		],
 	},
 });
