@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Fixed — T-073
+
+- **`ticket-writer` and `/ungate`'s ticket/gate-id allocation now claim their `T-###`/`G-###` number by commit-and-push before drafting**, closing the same collision class that hit `G-012`/`G-013` (two concurrent sessions independently scanning for "next free number" and picking the same one). `GATE_SPEC.md`'s new "Claiming a number" section is the canonical definition both gate-stub filers (`ticket-writer` step 3, the executor's mid-ticket gate-filing step) reference; `ticket-writer` step 6 gets the same claim-then-draft instructions inline for `T-###`. `scripts/sim-claim-step.sh` demonstrates the collision and the fix side-by-side. Docs/process-only — no application code changed.
+
 ### Fixed — T-090
 
 - **`log_session`'s auto-linking (`detectSpans`) no longer surfaces archived entities.** An archived entity sharing a name with an active one no longer appears as an ambiguous candidate — only the active entity matches; a session mentioning solely an archived entity's name now produces zero spans. No opt-in flag, since this is automatic detection during session logging, not a user-invoked search — an unarchive is required to make a hidden entity linkable again. `log_session`'s preview and `confirm_log_session`'s persisted links both inherit this for free, since neither runs its own candidate query. This closes out M-REMOTE.10 (T-088, T-089, T-090).
