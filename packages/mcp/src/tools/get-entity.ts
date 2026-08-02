@@ -12,10 +12,15 @@ export function registerGetEntity(server: McpServer, { db }: ToolDeps) {
 			description: GET_ENTITY_DESCRIPTION,
 			inputSchema: GetEntityInput,
 		},
-		withToolErrors(async ({ campaignId, entityId, name }) => {
+		withToolErrors(async ({ campaignId, entityId, name, includeArchived }) => {
 			const entity = entityId
 				? await entityService.getById(db, campaignId, entityId)
-				: await entityService.getByName(db, campaignId, name as string);
+				: await entityService.getByName(
+						db,
+						campaignId,
+						name as string,
+						includeArchived,
+					);
 			return {
 				content: [{ type: "text", text: JSON.stringify(entity) }],
 			};

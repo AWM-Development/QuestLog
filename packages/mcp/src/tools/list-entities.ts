@@ -12,8 +12,13 @@ export function registerListEntities(server: McpServer, { db }: ToolDeps) {
 			description: LIST_ENTITIES_DESCRIPTION,
 			inputSchema: ListEntitiesInput,
 		},
-		withToolErrors(async ({ campaignId, type }) => {
-			const entities = await entityService.list(db, campaignId, type);
+		withToolErrors(async ({ campaignId, type, includeArchived }) => {
+			const entities = await entityService.list(
+				db,
+				campaignId,
+				type,
+				includeArchived,
+			);
 			return {
 				content: [{ type: "text", text: JSON.stringify({ entities }) }],
 			};

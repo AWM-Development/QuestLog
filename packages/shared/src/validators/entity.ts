@@ -19,6 +19,7 @@ export type EntityCreateInput = z.infer<typeof EntityCreateInput>;
 export const ListEntitiesInput = z.object({
 	campaignId: z.string().uuid(),
 	type: z.enum(ENTITY_TYPES).optional(),
+	includeArchived: z.boolean().optional(),
 });
 export type ListEntitiesInput = z.infer<typeof ListEntitiesInput>;
 
@@ -55,6 +56,7 @@ export const GetEntityInput = z
 		campaignId: z.string().uuid(),
 		entityId: z.string().uuid().optional(),
 		name: z.string().min(1).optional(),
+		includeArchived: z.boolean().optional(),
 	})
 	.refine((input) => Boolean(input.entityId) !== Boolean(input.name), {
 		message: "Exactly one of entityId or name must be provided",
