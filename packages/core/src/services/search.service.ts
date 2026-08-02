@@ -3,7 +3,7 @@
  * filtered by campaignId using pgvector cosine distance (<=>).
  */
 
-import { eq, sql } from "drizzle-orm";
+import { and, eq, ne, sql } from "drizzle-orm";
 import type { Database } from "../db/index.js";
 import { chunks, sources } from "../db/schema/index.js";
 import { type FetchFn, callVoyageEmbeddings } from "./voyage.client.js";
@@ -73,7 +73,9 @@ export const searchService = {
 			})
 			.from(chunks)
 			.leftJoin(sources, eq(chunks.sourceId, sources.id))
-			.where(eq(chunks.campaignId, campaignId))
+			.where(
+				and(eq(chunks.campaignId, campaignId), ne(chunks.status, "superseded")),
+			)
 			.orderBy(sql`${chunks.embedding} <=> ${vectorLiteral}::vector`)
 			.limit(limit);
 
