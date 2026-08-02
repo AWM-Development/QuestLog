@@ -125,7 +125,7 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   Resolved via `/ungate` (`G-008`, second axis, added during `T-069`'s ticket-writing): each worktree runs its own Postgres container on its own port rather than per-worktree database names inside a shared instance — sidesteps a per-worktree DB lifecycle (create/migrate/reap) entirely; reaping is `docker compose down`. Local-only; CI is untouched (isolated service container per run already). Blocked on `T-069`'s worktree convention landing first.
   Exit: see T-072.
 
-- [ ] **M-PIPELINE.5 — Claim step for ticket/gate id allocation** (T-073)
+- [x] **M-PIPELINE.5 — Claim step for ticket/gate id allocation** (T-073)
   Raised during T-069's ticket-writing session, not fixed there — same bug class as the `G-012`/`G-013` collision (`G-013`'s Renumbered note), but for a different shared resource. `ticket-writer` step 6's `T-###` numbering and `/ungate`'s `G-###` gate-stub numbering are both look-then-act: scan every lifecycle directory, take the next free number, with nothing committed in between that a second concurrent session would see. Fix is the same principle as `T-069`'s claim-by-push, applied to a number instead of a branch: commit a placeholder file at the chosen id immediately, before doing the rest of the drafting work. No real dependency on `T-069`'s own code — different files, doesn't need worktree isolation to work — so it isn't blocked on it landing first.
   Exit: see T-073.
 

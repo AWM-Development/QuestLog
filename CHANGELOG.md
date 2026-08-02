@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Fixed — T-073
+
+- **`ticket-writer` and `/ungate`'s ticket/gate-id allocation now claim their `T-###`/`G-###` number by commit-and-push before drafting**, closing the same collision class that hit `G-012`/`G-013` (two concurrent sessions independently scanning for "next free number" and picking the same one). `GATE_SPEC.md`'s new "Claiming a number" section is the canonical definition both gate-stub filers (`ticket-writer` step 3, the executor's mid-ticket gate-filing step) reference; `ticket-writer` step 6 gets the same claim-then-draft instructions inline for `T-###`. `scripts/sim-claim-step.sh` demonstrates the collision and the fix side-by-side. Docs/process-only — no application code changed.
+
 ### Added — T-089
 
 - **`archive_entity`/`unarchive_entity` MCP tools**, each with its own preview/confirm pair (`confirm_archive_entity`/`confirm_unarchive_entity`), exposing T-088's `entityService.archive`/`unarchive`. Mirrors `update_entity`/`confirm_update_entity`'s shape exactly: preview returns a before/after `status` change-set and a token without persisting anything; confirm applies the status change inside `writeRequestService.confirm`'s transaction. A bogus `entityId` 404s at preview (fail-fast) and again at confirm (defense-in-depth against a hand-crafted token); an already-consumed or unknown token 404s without double-applying. Excluding archived entities from `log_session`'s auto-linking (T-090) is the last piece before M-REMOTE.10 closes out.
