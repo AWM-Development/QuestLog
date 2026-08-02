@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Fixed — T-090
+
+- **`log_session`'s auto-linking (`detectSpans`) no longer surfaces archived entities.** An archived entity sharing a name with an active one no longer appears as an ambiguous candidate — only the active entity matches; a session mentioning solely an archived entity's name now produces zero spans. No opt-in flag, since this is automatic detection during session logging, not a user-invoked search — an unarchive is required to make a hidden entity linkable again. `log_session`'s preview and `confirm_log_session`'s persisted links both inherit this for free, since neither runs its own candidate query. This closes out M-REMOTE.10 (T-088, T-089, T-090).
+
 ## [1.1.1] - 2026-08-02
 
 ### Changed — T-086
