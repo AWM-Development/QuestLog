@@ -24,14 +24,17 @@ export function registerCorrectLore(server: McpServer, { db }: ToolDeps) {
 						)
 					: (chunkIds ?? []);
 
-				// Anchor preview chunk count/excerpt to a placeholder — real
-				// correction chunks only exist after confirm (T-076).
-				const previewChunks = chunkText(correctionText, {
-					sessionId: "preview",
-					campaignId,
-				});
+				const previewChunks = sourceId
+					? chunkText(correctionText, { campaignId, sourceId })
+					: chunkText(correctionText, { campaignId });
 
+				// campaignId/sourceId ride on the payload (not just the
+				// write_requests row's own campaignId column) because confirm's
+				// applyFn only ever sees the payload — T-076 needs both to anchor
+				// and campaign-scope the chunks it creates/supersedes.
 				const payload = {
+					campaignId,
+					sourceId: sourceId ?? null,
 					correctionText,
 					entityId: entityId ?? null,
 					targetChunkIds,

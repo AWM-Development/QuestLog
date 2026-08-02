@@ -34,6 +34,7 @@ export {
 	UnarchiveEntityInput,
 } from "./entity.js";
 export {
+	ConfirmCorrectLoreInput,
 	CorrectLoreInput,
 	GetSourceStatusInput,
 	IngestTextInput,
