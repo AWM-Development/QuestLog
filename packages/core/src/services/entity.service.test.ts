@@ -155,6 +155,34 @@ describe("entityService.detectSpans", () => {
 		expect(spans[0]?.matchType).toBe("ambiguous");
 		expect(spans[0]?.candidates.length).toBeGreaterThanOrEqual(2);
 	});
+
+	it("excludes an archived entity sharing a name with an active one — only the active entity appears", async () => {
+		const active = await insertEntity(campaignId, "Strahd", "npc");
+		const archived = await insertEntity(campaignId, "Strahd", "npc");
+		await entityService.archive(db, campaignId, archived.id);
+		const text = "Strahd loomed over the village";
+		const spans = await entityService.detectSpans(db, {
+			campaignId,
+			text,
+			dismissedEntityTexts: [],
+		});
+		expect(spans).toHaveLength(1);
+		expect(spans[0]?.matchType).toBe("confirmed");
+		expect(spans[0]?.entityId).toBe(active.id);
+		expect(spans[0]?.candidates).toEqual([]);
+	});
+
+	it("produces zero spans when the text mentions only an archived entity", async () => {
+		const archived = await insertEntity(campaignId, "Strahd", "npc");
+		await entityService.archive(db, campaignId, archived.id);
+		const text = "Strahd appeared at the gate";
+		const spans = await entityService.detectSpans(db, {
+			campaignId,
+			text,
+			dismissedEntityTexts: [],
+		});
+		expect(spans).toEqual([]);
+	});
 });
 
 describe("entityService.getById", () => {
