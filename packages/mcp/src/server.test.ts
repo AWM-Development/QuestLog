@@ -9,6 +9,7 @@ import {
 	sessionEntities,
 	sessions,
 	sources,
+	writeRequests,
 } from "@questlog/core/db/schema/index.js";
 import { testDbUrl } from "@questlog/core/db/test-db-url.js";
 import {
@@ -1856,7 +1857,11 @@ describe("ingest_text + get_source_status tools", () => {
 			type: string;
 			text: string;
 		}>;
-		expect(JSON.parse(statusContent[0]?.text ?? "{}").status).toBe("pending");
+		// T-079 made ingest_text run detectCandidates synchronously before
+		// returning, giving the fire-and-forget embed pipeline a small head
+		// start — status may already have advanced past "pending" by the time
+		// this call lands, so assert "in flight", not the exact first stage.
+		expect(JSON.parse(statusContent[0]?.text ?? "{}").status).not.toBe("done");
 
 		await waitForStatus(source.id, "done");
 
@@ -2167,6 +2172,70 @@ describe("ingest_text + get_source_status tools", () => {
 		expect(neitherContent[0]?.text).toMatch(
 			/Exactly one of campaignId or newCampaign/,
 		);
+	});
+
+	it("stages entityCandidates as a write_requests preview when content contains a detectable new entity (T-079)", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Ashfall Primer",
+				content: "The party met Vespera Nightveil at the gates.",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.source.id).toBeDefined();
+		expect(payload.entityCandidates.token).toBeTruthy();
+		expect(payload.entityCandidates.candidates).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({
+					name: "Vespera Nightveil",
+					entityType: "npc",
+				}),
+			]),
+		);
+
+		const entityRows = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.campaignId, campaignId));
+		expect(entityRows).toHaveLength(0);
+
+		// See the next test for why this await is needed before cleanup.
+		await waitForStatus(payload.source.id, "done");
+	});
+
+	it("returns entityCandidates: null and stages no write_requests row when content has no detectable candidates (T-079)", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Ashfall Primer",
+				content: "the party rests quietly.",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.entityCandidates).toBeNull();
+
+		const pendingRequests = await db
+			.select()
+			.from(writeRequests)
+			.where(eq(writeRequests.campaignId, campaignId));
+		expect(pendingRequests).toHaveLength(0);
+
+		// Let fire-and-forget embedding settle before afterEach's
+		// deleteCampaignTree runs, or the source delete can race chunk inserts.
+		await waitForStatus(payload.source.id, "done");
 	});
 });
 

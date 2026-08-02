@@ -4,6 +4,12 @@
 
 **Last Updated:** 2026-08-02
 
+## T-079 — `ingest_text` entity-candidate staging (2026-08-02)
+
+**Making `detectCandidates` synchronous inside `ingest_text` (per the ticket's own scope) gives the fire-and-forget embed pipeline a small head start.** Awaiting `entityService.detectCandidates` before the tool returns delays the response just enough that a subsequent `get_source_status` call can observe a later stage than `"pending"` (e.g. `"extracting"`) — confirmed flaky-then-consistent across repeated runs, not a one-off. Fixed the pre-existing `server.test.ts` assertion to check `status !== "done"` (still in flight) instead of the exact first stage; `source.status` returned directly by `ingest_text` itself is unaffected (captured at creation time) and still asserts `"pending"` exactly.
+
+**Milestone checkbox for M-EXTRACT.2 stays unflipped.** That checkbox covers `(T-079, T-080)` together — `TICKET_SPEC.md`'s "ticketed and done are independent axes" note means a multi-ticket milestone item flips only once every contributing ticket lands. T-080 (the confirm tool) is still pending.
+
 ## Component directory organization (M4.5 polish, 2026-04-24)
 
 ### Why by-kind over the original primitives/feedback/layout split

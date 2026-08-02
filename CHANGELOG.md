@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-079
+
+- **`ingest_text` now stages detected entity candidates as a `write_requests` preview.** Every `ingest_text` call runs T-078's `entityService.detectCandidates` against the ingested text and, when it finds at least one new NPC/location/faction/item/arc, stages the candidate list via `writeRequestService.createPreview` (`toolName: "ingest_entities"`). The tool's response gains `entityCandidates: { token, candidates } | null` alongside the existing `source` field — `null` when no candidates were found, with no `write_requests` row created in that case. The existing source/chunk direct-write path and fire-and-forget embedding are unchanged. Confirming the staged candidates (creating the entities) is a separate tool, T-080, not yet built.
+
 ### Fixed — T-073
 
 - **`ticket-writer` and `/ungate`'s ticket/gate-id allocation now claim their `T-###`/`G-###` number by commit-and-push before drafting**, closing the same collision class that hit `G-012`/`G-013` (two concurrent sessions independently scanning for "next free number" and picking the same one). `GATE_SPEC.md`'s new "Claiming a number" section is the canonical definition both gate-stub filers (`ticket-writer` step 3, the executor's mid-ticket gate-filing step) reference; `ticket-writer` step 6 gets the same claim-then-draft instructions inline for `T-###`. `scripts/sim-claim-step.sh` demonstrates the collision and the fix side-by-side. Docs/process-only — no application code changed.
