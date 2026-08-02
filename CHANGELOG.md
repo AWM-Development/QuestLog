@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Fixed — T-090
+
+- **`log_session`'s auto-linking (`detectSpans`) no longer surfaces archived entities.** An archived entity sharing a name with an active one no longer appears as an ambiguous candidate — only the active entity matches; a session mentioning solely an archived entity's name now produces zero spans. No opt-in flag, since this is automatic detection during session logging, not a user-invoked search — an unarchive is required to make a hidden entity linkable again. `log_session`'s preview and `confirm_log_session`'s persisted links both inherit this for free, since neither runs its own candidate query. This closes out M-REMOTE.10 (T-088, T-089, T-090).
+
 ### Added — T-089
 
 - **`archive_entity`/`unarchive_entity` MCP tools**, each with its own preview/confirm pair (`confirm_archive_entity`/`confirm_unarchive_entity`), exposing T-088's `entityService.archive`/`unarchive`. Mirrors `update_entity`/`confirm_update_entity`'s shape exactly: preview returns a before/after `status` change-set and a token without persisting anything; confirm applies the status change inside `writeRequestService.confirm`'s transaction. A bogus `entityId` 404s at preview (fail-fast) and again at confirm (defense-in-depth against a hand-crafted token); an already-consumed or unknown token 404s without double-applying. Excluding archived entities from `log_session`'s auto-linking (T-090) is the last piece before M-REMOTE.10 closes out.
