@@ -330,7 +330,7 @@ export const entityService = {
 	},
 
 	async create(
-		db: Database,
+		db: Database | Transaction,
 		input: {
 			campaignId: string;
 			name: string;

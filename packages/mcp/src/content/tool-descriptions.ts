@@ -52,7 +52,10 @@ export const INGEST_TEXT_DESCRIPTION =
 	"If the user attaches a document (PDF/DOCX/image) to the conversation, extract its text yourself and call this tool directly - do not ask the user to paste it manually. " +
 	"If writing out the extracted text yourself would take more than roughly a page or two of your own response, don't put it all in one call: split it across multiple calls instead, passing the first call's returned source.id as sourceId on each subsequent call and final: false until the last chunk (final: true, the default, on the last one) so processing only starts once. " +
 	"After the final chunk, proactively call get_source_status to check progress and narrate it to the user. " +
-	"The response also includes entityCandidates: a staged proposal of new NPCs/locations/factions/items/arcs detected in the ingested text (null if none were found). Review entityCandidates.candidates with the user and, if they want them created, call the confirm tool with entityCandidates.token.";
+	"The response also includes entityCandidates: a staged proposal of new NPCs/locations/factions/items/arcs detected in the ingested text (null if none were found). Review entityCandidates.candidates with the user and, if they want them created, call confirm_ingest_entities with entityCandidates.token.";
+
+export const CONFIRM_INGEST_ENTITIES_DESCRIPTION =
+	"Confirm a staged entityCandidates proposal from ingest_text: creates one entity per candidate. Pass candidateIndices (the 0-based positions of the candidates array returned by ingest_text) to create only a subset - omit it to create every staged candidate. Returns the created entity ids.";
 
 export const GET_SOURCE_STATUS_DESCRIPTION =
 	"Check the processing status of a source created via ingest_text (or file upload): pending, extracting, chunking, embedding, done, or error.";

@@ -35,6 +35,7 @@ export {
 } from "./entity.js";
 export {
 	ConfirmCorrectLoreInput,
+	ConfirmIngestEntitiesInput,
 	CorrectLoreInput,
 	GetSourceStatusInput,
 	IngestTextInput,

@@ -2239,6 +2239,141 @@ describe("ingest_text + get_source_status tools", () => {
 	});
 });
 
+describe("confirm_ingest_entities tool (T-080)", () => {
+	// writeRequestService.confirm opens its own db.transaction(), which does
+	// not compose with a raw BEGIN/ROLLBACK wrapper on the same connection
+	// (.claude/rules/backend.md "Test DB pattern") — use explicit FK-safe
+	// cleanup instead.
+	let campaignId: string;
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, campaignId);
+	});
+
+	async function stageCandidates(client: Client, content: string) {
+		const result = await client.callTool({
+			name: "ingest_text",
+			arguments: { campaignId, title: "Ashfall Primer", content },
+		});
+		const payload = JSON.parse(
+			(result.content as Array<{ type: string; text: string }>)[0]?.text ??
+				"{}",
+		);
+		await waitForStatus(payload.source.id, "done");
+		return payload.entityCandidates as {
+			token: string;
+			candidates: Array<{ name: string; entityType: string }>;
+		};
+	}
+
+	it("creates one entity per staged candidate when confirming the full list", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const { token, candidates } = await stageCandidates(
+			client,
+			"The party met Vespera Nightveil at dawn. They traveled to Castle Ravenloft by nightfall.",
+		);
+		expect(candidates.length).toBe(2);
+
+		const confirmResult = await client.callTool({
+			name: "confirm_ingest_entities",
+			arguments: { token },
+		});
+
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { entityIds } = JSON.parse(confirmContent[0]?.text ?? "{}");
+		expect(entityIds).toHaveLength(2);
+
+		const entityRows = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.campaignId, campaignId));
+		expect(entityRows).toHaveLength(2);
+		expect(entityRows.map((e) => e.name).sort()).toEqual(
+			["Castle Ravenloft", "Vespera Nightveil"].sort(),
+		);
+		for (const row of entityRows) {
+			expect(entityIds).toContain(row.id);
+		}
+	});
+
+	it("creates only the selected subset of candidates when candidateIndices is given", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const { token, candidates } = await stageCandidates(
+			client,
+			"The party met Vespera Nightveil at dawn. They traveled to Castle Ravenloft by nightfall.",
+		);
+		const vesperaIndex = candidates.findIndex(
+			(c) => c.name === "Vespera Nightveil",
+		);
+		expect(vesperaIndex).toBeGreaterThanOrEqual(0);
+
+		const confirmResult = await client.callTool({
+			name: "confirm_ingest_entities",
+			arguments: { token, candidateIndices: [vesperaIndex] },
+		});
+
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { entityIds } = JSON.parse(confirmContent[0]?.text ?? "{}");
+		expect(entityIds).toHaveLength(1);
+
+		const entityRows = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.campaignId, campaignId));
+		expect(entityRows).toHaveLength(1);
+		expect(entityRows[0]?.name).toBe("Vespera Nightveil");
+	});
+
+	it("returns a structured not-found error on a second confirm with the same token and creates no additional entities", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const { token } = await stageCandidates(
+			client,
+			"The party met Vespera Nightveil at the gates.",
+		);
+
+		await client.callTool({
+			name: "confirm_ingest_entities",
+			arguments: { token },
+		});
+		const secondResult = await client.callTool({
+			name: "confirm_ingest_entities",
+			arguments: { token },
+		});
+
+		expect(secondResult.isError).toBe(true);
+		const secondContent = secondResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { error } = JSON.parse(secondContent[0]?.text ?? "{}");
+		expect(error).toEqual(expect.objectContaining({ code: "NOT_FOUND" }));
+
+		const entityRows = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.campaignId, campaignId));
+		expect(entityRows).toHaveLength(1);
+	});
+});
+
 describe("correct_lore tool (T-075)", () => {
 	// createPreview writes a write_requests row (not a chunk mutation); use
 	// deleteCampaignTree so FK cleanup covers that row too.

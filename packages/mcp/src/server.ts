@@ -4,6 +4,7 @@ import { registerAppendEntityNote } from "./tools/append-entity-note.js";
 import { registerArchiveEntity } from "./tools/archive-entity.js";
 import { registerConfirmArchiveEntity } from "./tools/confirm-archive-entity.js";
 import { registerConfirmCorrectLore } from "./tools/confirm-correct-lore.js";
+import { registerConfirmIngestEntities } from "./tools/confirm-ingest-entities.js";
 import { registerConfirmLogSession } from "./tools/confirm-log-session.js";
 import { registerConfirmUnarchiveEntity } from "./tools/confirm-unarchive-entity.js";
 import { registerConfirmUpdateEntity } from "./tools/confirm-update-entity.js";
@@ -48,6 +49,7 @@ export function createMcpServer(deps: CreateMcpServerOptions): McpServer {
 	registerLogSession(server, deps);
 	registerConfirmLogSession(server, deps);
 	registerIngestText(server, deps);
+	registerConfirmIngestEntities(server, deps);
 	registerGetSourceStatus(server, deps);
 	registerCorrectLore(server, deps);
 	registerConfirmCorrectLore(server, deps);
