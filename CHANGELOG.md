@@ -10,6 +10,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-08-02
+
 ### Added — T-080
 
 - **`confirm_ingest_entities` MCP tool** completes the M-EXTRACT.2 preview/confirm pair (`ingest_text`, T-079): given the token from `ingest_text`'s staged `entityCandidates`, it creates one entity per candidate via `entityService.create`, all inside a single transaction, and returns the created entity ids. An optional `candidateIndices` array (0-based positions into the staged candidates list) confirms only a subset instead of all-or-nothing, so a caller can skip an over-broad or misdetected candidate rather than create and later archive it. A second confirm against the same token is rejected, mirroring `confirm_log_session`'s existing claim behavior. `entities` gains a nullable `sourceId` FK (to `sources`, migration `0016_normal_guardian.sql`), set on every entity this tool creates, so each satisfies M-EXTRACT.2's exit condition of linking back to the document it was detected in.
@@ -29,8 +31,6 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 ### Fixed — T-090
 
 - **`log_session`'s auto-linking (`detectSpans`) no longer surfaces archived entities.** An archived entity sharing a name with an active one no longer appears as an ambiguous candidate — only the active entity matches; a session mentioning solely an archived entity's name now produces zero spans. No opt-in flag, since this is automatic detection during session logging, not a user-invoked search — an unarchive is required to make a hidden entity linkable again. `log_session`'s preview and `confirm_log_session`'s persisted links both inherit this for free, since neither runs its own candidate query. This closes out M-REMOTE.10 (T-088, T-089, T-090).
-
-## [1.1.1] - 2026-08-02
 
 ### Changed — T-086
 
