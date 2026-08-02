@@ -1,5 +1,8 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { chunkText } from "@questlog/core/services/chunking.service.js";
+import {
+	chunkMetaFor,
+	chunkText,
+} from "@questlog/core/services/chunking.service.js";
 import { sourceService } from "@questlog/core/services/source.service.js";
 import { writeRequestService } from "@questlog/core/services/write-request.service.js";
 import { CorrectLoreInput } from "@questlog/shared";
@@ -24,9 +27,10 @@ export function registerCorrectLore(server: McpServer, { db }: ToolDeps) {
 						)
 					: (chunkIds ?? []);
 
-				const previewChunks = sourceId
-					? chunkText(correctionText, { campaignId, sourceId })
-					: chunkText(correctionText, { campaignId });
+				const previewChunks = chunkText(
+					correctionText,
+					chunkMetaFor(campaignId, sourceId),
+				);
 
 				// campaignId/sourceId ride on the payload (not just the
 				// write_requests row's own campaignId column) because confirm's

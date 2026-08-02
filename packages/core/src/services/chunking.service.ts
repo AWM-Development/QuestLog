@@ -27,6 +27,11 @@ export type ChunkMeta = { campaignId: string } & (
 
 export type TextChunk = { content: string; position: number } & ChunkMeta;
 
+/** Builds source-anchored or campaign-only `ChunkMeta`, depending on whether `sourceId` is present. */
+export function chunkMetaFor(campaignId: string, sourceId?: string): ChunkMeta {
+	return sourceId ? { campaignId, sourceId } : { campaignId };
+}
+
 /**
  * Split text into semantically-bounded chunks.
  * Returns an empty array for empty/whitespace-only input.

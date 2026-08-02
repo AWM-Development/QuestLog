@@ -1,6 +1,9 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { chunks } from "@questlog/core/db/schema/index.js";
-import { chunkText } from "@questlog/core/services/chunking.service.js";
+import {
+	chunkMetaFor,
+	chunkText,
+} from "@questlog/core/services/chunking.service.js";
 import { embedChunks } from "@questlog/core/services/embedding.service.js";
 import { writeRequestService } from "@questlog/core/services/write-request.service.js";
 import { ConfirmCorrectLoreInput } from "@questlog/shared";
@@ -36,9 +39,10 @@ export function registerConfirmCorrectLore(
 					const { campaignId, sourceId, correctionText, targetChunkIds } =
 						rawPayload as CorrectLorePayload;
 
-					const textChunks = sourceId
-						? chunkText(correctionText, { campaignId, sourceId })
-						: chunkText(correctionText, { campaignId });
+					const textChunks = chunkText(
+						correctionText,
+						chunkMetaFor(campaignId, sourceId ?? undefined),
+					);
 					const createdChunkIds = await embedChunks(tx, textChunks, {
 						fetchFn,
 					});
