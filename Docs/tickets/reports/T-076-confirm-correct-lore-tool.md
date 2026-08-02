@@ -70,3 +70,8 @@ Most of the run went into re-establishing context the rejected Cursor PR had alr
 ## Anything Alex must decide
 
 Reviewer's minor observation on `confirm-correct-lore.ts:58` (`supersededChunkIds` echoes the payload's list rather than the update's actual `RETURNING` set) is a reasonable follow-up if desired, but not required for this ticket's exit condition — the update itself is correctly campaign-scoped, so no cross-campaign mutation is possible; only the response's accuracy in a forged/cross-campaign-id edge case is at stake.
+
+## Post-ship follow-ups (added during morning review, 2026-08-02)
+
+- **DRY cleanup applied directly to this branch:** the `sourceId ? chunkText(...) : chunkText(...)` ternary was duplicated verbatim in `correct-lore.ts` and `confirm-correct-lore.ts` — consolidated into a new `chunkMetaFor(campaignId, sourceId)` helper in `chunking.service.ts`. Lint/typecheck/full `core`+`mcp` test suites re-verified green after the change.
+- **`G-023` filed** (`Docs/tickets/gated/G-023-superseded-lore-history-visibility.md`, 🧠 strategy gate): superseded lore is fully hidden from `query_lore` (T-077) and there's currently no way to see it again — no tool, no UI. Explicitly a polish follow-up per Alex, not urgent, possibly v1.5-scoped once that milestone opens. Not blocking anything in M-CANON (all four tasks shipped); resolve via `/ungate` when ready.
