@@ -49,3 +49,41 @@ Notes: Split out of G-005 rather than answered inline there, because
   resolution, T-033's shipped `instructions`/`help` tool stays the
   answer for now — this gate covers whatever comes after it, deliberately
   left open rather than pre-scoped.
+
+## Resolution (2026-08-02)
+
+Alex scoped this gate narrowly: **interaction philosophy only**, not the
+broader "MCP app polish" set of concerns named in the original Open
+question. The two facets are separable — philosophy is a single,
+answerable policy decision; polish is a grab-bag that needs its own
+scoping pass with concrete examples of what's actually rough. Rather than
+force both into one session, the polish half was split out to a new
+gate-stub, **G-022** (`Docs/tickets/gated/G-022-mcp-app-polish-milestone.md`),
+left open for a future `/ungate` run.
+
+**Interaction philosophy**, resolved as a three-axis policy:
+1. **Confirmation narration** — any tool description for a tool with a
+   paired `confirm_*` tool must instruct the model to summarize the
+   proposed change to the user in plain language before calling confirm.
+2. **Proactive status-checking** — any tool description for a tool
+   starting async background work must instruct the model to proactively
+   poll its status tool and narrate progress, generalizing `ingest_text`'s
+   existing pattern (`get_source_status`) into a standing rule rather than
+   a one-off.
+3. **Error tone** — one shared sentence in `ONBOARDING_INSTRUCTIONS`
+   (not repeated per tool description) instructing the model to translate
+   a tool's `{ error: { code, message } }` result into a plain,
+   non-alarming explanation with a suggested next step, instead of
+   relaying raw JSON.
+
+This opened a new milestone, `Docs/milestones/MILESTONES_V1_4_MCP.md`
+(v1.4 — Agent-Interaction Philosophy), with one milestone group,
+`M-INTERACT`: M-INTERACT.1 writes the policy into `.claude/rules/mcp.md`
+plus the error-tone sentence into `ONBOARDING_INSTRUCTIONS`; M-INTERACT.2
+(blocked on M-INTERACT.1's merge) retrofits every existing write-tool
+description in `packages/mcp/src/content/tool-descriptions.ts` for
+compliance.
+
+**Tickets drafted:** T-100 (`queue/`), T-101 (`backlog/`, blocked on
+T-100). **Follow-on gate filed:** G-022. **CLAUDE.md** updated to add
+`MILESTONES_V1_4_MCP.md` to the task-source pointer map.

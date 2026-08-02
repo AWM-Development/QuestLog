@@ -1,8 +1,15 @@
+import { ENTITY_TYPES, type EntityType } from "@questlog/shared";
 import { and, eq, sql } from "drizzle-orm";
 import type { Database, Transaction } from "../db/index.js";
 import { entities } from "../db/schema/index.js";
 import { NotFoundError } from "../lib/errors.js";
 import { first } from "../lib/utils.js";
+import {
+	findProperNounSpans,
+	guessEntityType,
+	rangesOverlap,
+	tokenizeWords,
+} from "./entity-candidate-detection.service.js";
 
 export interface EntitySpan {
 	entityId: string;
@@ -14,22 +21,30 @@ export interface EntitySpan {
 	candidates: { id: string; name: string }[];
 }
 
+/** A proposed new entity from free text — not yet linked to a DB row. */
+export interface EntityCandidateProposal {
+	name: string;
+	entityType: EntityType;
+	description: string;
+	startIndex: number;
+	endIndex: number;
+}
+
 interface DetectSpansInput {
 	campaignId: string;
 	text: string;
 	dismissedEntityTexts?: string[];
 }
 
+interface DetectCandidatesInput {
+	campaignId: string;
+	text: string;
+}
+
 interface EntityCandidate {
 	id: string;
 	name: string;
 	type: string;
-}
-
-interface TextToken {
-	word: string;
-	start: number;
-	end: number;
 }
 
 /**
@@ -54,21 +69,6 @@ function wordSimilarityCandidateFilter(
 
 function escapeRegex(s: string): string {
 	return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function tokenizeWords(text: string): TextToken[] {
-	const tokens: TextToken[] = [];
-	const regex = /\S+/g;
-	let result = regex.exec(text);
-	while (result !== null) {
-		tokens.push({
-			word: result[0],
-			start: result.index,
-			end: result.index + result[0].length,
-		});
-		result = regex.exec(text);
-	}
-	return tokens;
 }
 
 function findExactPositions(
@@ -278,6 +278,55 @@ export const entityService = {
 		}
 
 		return spans.sort((a, b) => a.startIndex - b.startIndex);
+	},
+
+	async detectCandidates(
+		db: Database,
+		{ campaignId, text }: DetectCandidatesInput,
+	): Promise<EntityCandidateProposal[]> {
+		if (!text.trim()) return [];
+
+		const existingSpans = await entityService.detectSpans(db, {
+			campaignId,
+			text,
+		});
+		const covered = existingSpans.map((s) => ({
+			start: s.startIndex,
+			end: s.endIndex,
+		}));
+
+		const proposals: EntityCandidateProposal[] = [];
+		const seenNames = new Set<string>();
+		for (const span of findProperNounSpans(text)) {
+			if (covered.some((c) => rangesOverlap(c, span))) continue;
+
+			// Same name mentioned more than once in one document proposes only
+			// once, keyed off its first (earliest) occurrence — otherwise a
+			// document mentioning "Vespera Nightveil" twice would stage two
+			// candidates for confirmation instead of one.
+			if (seenNames.has(span.name)) continue;
+			seenNames.add(span.name);
+
+			const entityType = guessEntityType(text, {
+				startIndex: span.start,
+				endIndex: span.end,
+				name: span.name,
+			});
+			if (!(ENTITY_TYPES as readonly string[]).includes(entityType)) continue;
+
+			proposals.push({
+				name: span.name,
+				entityType,
+				description: extractExcerpt(text, {
+					startIndex: span.start,
+					endIndex: span.end,
+				}),
+				startIndex: span.start,
+				endIndex: span.end,
+			});
+		}
+
+		return proposals;
 	},
 
 	async create(

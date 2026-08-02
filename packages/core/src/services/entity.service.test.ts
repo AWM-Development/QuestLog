@@ -466,3 +466,96 @@ describe("extractExcerpt", () => {
 		expect(excerpt).toBe("Mira Duskwood met the party at the gates.");
 	});
 });
+
+describe("entityService.detectCandidates", () => {
+	let campaignId: string;
+
+	beforeEach(async () => {
+		await db.execute(sql`BEGIN`);
+		const campaign = await campaignService.create(db, {
+			name: "Test Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await db.execute(sql`ROLLBACK`);
+	});
+
+	it("proposes an NPC candidate from an unrecognized proper noun in an NPC-shaped sentence", async () => {
+		const text = "The party met Vespera Nightveil at the gates.";
+		const candidates = await entityService.detectCandidates(db, {
+			campaignId,
+			text,
+		});
+
+		const vespera = candidates.find((c) => c.name === "Vespera Nightveil");
+		expect(vespera).toBeDefined();
+		expect(vespera?.entityType).toBe("npc");
+		expect(vespera?.description.length).toBeGreaterThan(0);
+		expect(vespera?.description).toContain("Vespera Nightveil");
+		expect(vespera?.startIndex).toBe(text.indexOf("Vespera Nightveil"));
+		expect(vespera?.endIndex).toBe(
+			text.indexOf("Vespera Nightveil") + "Vespera Nightveil".length,
+		);
+	});
+
+	it("returns zero candidates when every proper noun is already covered by detectSpans", async () => {
+		await insertEntity(campaignId, "Strahd", "npc");
+		await insertEntity(campaignId, "Castle Ravenloft", "location");
+		const text = "Strahd rules from Castle Ravenloft.";
+		const candidates = await entityService.detectCandidates(db, {
+			campaignId,
+			text,
+		});
+		expect(candidates).toEqual([]);
+	});
+
+	it("collapses repeated mentions of the same new name into a single candidate", async () => {
+		const text =
+			"The party met Vespera Nightveil at dawn. Later, Vespera Nightveil wielded a dagger.";
+		const candidates = await entityService.detectCandidates(db, {
+			campaignId,
+			text,
+		});
+
+		const matches = candidates.filter((c) => c.name === "Vespera Nightveil");
+		expect(matches).toHaveLength(1);
+		expect(matches[0]?.startIndex).toBe(text.indexOf("Vespera Nightveil"));
+	});
+
+	it("proposes one candidate of each ENTITY_TYPES value from fixture text", async () => {
+		const text = [
+			"The party met Vespera Nightveil at dawn.",
+			"They traveled to Castle Ravenloft by nightfall.",
+			"They joined the Ironfang Clan thereafter.",
+			"Vespera Nightveil wielded the Sunblade of Ashara.",
+			"This began the Shadow Prophecy in earnest.",
+		].join(" ");
+
+		const candidates = await entityService.detectCandidates(db, {
+			campaignId,
+			text,
+		});
+
+		const byType = Object.fromEntries(
+			candidates.map((c) => [c.entityType, c]),
+		) as Record<string, (typeof candidates)[number]>;
+
+		expect(byType.npc?.name).toMatch(/Vespera/);
+		expect(byType.location?.name).toMatch(/Ravenloft|Castle/);
+		expect(byType.faction?.name).toMatch(/Ironfang|Clan/);
+		expect(byType.item?.name).toMatch(/Sunblade|Ashara/);
+		expect(byType.arc?.name).toMatch(/Shadow|Prophecy/);
+
+		for (const candidate of candidates) {
+			expect(candidate.description.length).toBeGreaterThan(0);
+			expect(candidate.startIndex).toBeGreaterThanOrEqual(0);
+			expect(candidate.endIndex).toBeGreaterThan(candidate.startIndex);
+			expect(text.slice(candidate.startIndex, candidate.endIndex)).toBe(
+				candidate.name,
+			);
+		}
+	});
+});

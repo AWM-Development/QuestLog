@@ -61,7 +61,7 @@ M-CANON.1 has no dependency and can ship first. M-CANON.2 depends on M-CANON.1's
 
 ### Tasks
 
-- [ ] **M-EXTRACT.1 — Entity-candidate detection over ingested text** (T-078)
+- [x] **M-EXTRACT.1 — Entity-candidate detection over ingested text** (T-078)
   Reuse/extend `log_session`'s entity-detection logic (span/candidate detection against free text) to run against `ingest_text`'s document content instead of session-log content. Candidates are typed against the existing `ENTITY_TYPES` taxonomy (`npc`, `location`, `faction`, `item`, `arc`) — no new types.
   Exit: given ingested text containing recognizable entity mentions, detection produces a candidate list (name, type, proposed description snippet, source span) matching `log_session`'s existing candidate shape.
 
