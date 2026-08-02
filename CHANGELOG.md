@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-088
+
+- **Entities can now be soft-archived.** `entities` gains a `status` column (mirroring `campaigns.status`) plus `entityService.archive`/`unarchive`, both scoped to the owning campaign. Archived entities drop out of `entityService.list` and `getByName`'s fuzzy name search by default; an `includeArchived` flag opts back in, and is now wired through the `list_entities`/`get_entity` MCP tools and their input validators. `getById` (explicit id lookup) and `detectSpans` (`log_session` auto-linking) are unaffected — an archived entity still resolves directly by id and still auto-links during session logging, since archive is a hide-a-mistake mechanism, not a "this is narratively dead" marker (`G-006`). No MCP tools to flip the flag yet — that's T-089; excluding archived entities from `detectSpans` specifically is T-090.
+
 ### Fixed — T-077
 
 - **`query_lore` no longer surfaces superseded chunks.** Both legs of hybrid search — `search.service.ts`'s vector search and `context.service.ts`'s pg_trgm keyword search — now filter out chunks with `status = "superseded"` (added by T-074), matching the same convention already used by `correct_lore`'s preview lookup. A correction confirmed via `confirm_correct_lore` (T-076) is no longer contradicted by the old text it replaced still showing up in query results. No new flag to re-include superseded chunks — out of scope per `G-014`.
