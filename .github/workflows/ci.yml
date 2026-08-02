@@ -30,11 +30,11 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: pnpm
@@ -45,13 +45,16 @@ jobs:
       # ── Turborepo local cache ────────────────────────────────────────────
       # Persists .turbo/cache (gitignored, turbo's on-disk task cache) across
       # runs so lint/typecheck/build cache-hit when their inputs haven't
-      # changed. test/test:e2e stay uncached — turbo.json marks test:e2e
-      # cache:false and test's real-DB side effects make it correctly
-      # uncacheable regardless of turbo.json. Restore-keys fallback (lockfile
-      # hash only) so a source-only miss still restores the last cacheable
-      # state instead of starting fully cold. Why: Docs/tickets/T-086.
+      # changed. test:e2e stays uncached — turbo.json marks it cache:false.
+      # test itself has no such override, so turbo caches it too and will
+      # replay a prior run's real-DB result when the task hash is unchanged;
+      # that's only safe because the hash covers all first-party inputs, so
+      # a replay only ever fires when nothing that could change the DB-backed
+      # result actually changed. Restore-keys fallback (lockfile hash only)
+      # so a source-only miss still restores the last cacheable state instead
+      # of starting fully cold. Why: Docs/tickets/T-086.
       - name: Restore Turborepo cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .turbo/cache
           key: turbo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'biome.json', 'tsconfig.base.json', 'apps/**/*.ts', 'apps/**/*.tsx', 'apps/**/tsconfig*.json', 'packages/**/*.ts', 'packages/**/*.tsx', 'packages/**/tsconfig*.json') }}
@@ -119,7 +122,7 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -161,7 +164,7 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -206,7 +209,7 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -231,7 +234,7 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -292,7 +295,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install and run actionlint
         run: |

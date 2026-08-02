@@ -54,13 +54,13 @@ jobs:
       VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           ref: ${{ inputs.ref || github.ref }}
 
       - uses: pnpm/action-setup@v4
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 20
           cache: pnpm
@@ -75,7 +75,7 @@ jobs:
       # divergence if a future change adds one of those tasks to this
       # workflow. Why: Docs/tickets/T-086.
       - name: Restore Turborepo cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .turbo/cache
           key: turbo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'biome.json', 'tsconfig.base.json', 'apps/**/*.ts', 'apps/**/*.tsx', 'apps/**/tsconfig*.json', 'packages/**/*.ts', 'packages/**/*.tsx', 'packages/**/tsconfig*.json') }}
