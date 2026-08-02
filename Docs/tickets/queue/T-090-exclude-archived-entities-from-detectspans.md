@@ -2,11 +2,7 @@
 
 Milestone ref: M-REMOTE.10 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
-Priority: P2
-
-Blocked on: T-088 — must be merged into develop first (adds
-  `entities.status` and parameterizes `wordSimilarityCandidateFilter` by
-  status)
+Priority: P0
 
 Branch: feat/m-remote/t-090-exclude-archived-entities-detectspans
 
