@@ -55,10 +55,15 @@ interface EntityCandidate {
  * pattern of a raw `sql` fragment embedded inside the query builder rather
  * than a fully raw execute call.
  */
-function wordSimilarityCandidateFilter(campaignId: string, query: string) {
+function wordSimilarityCandidateFilter(
+	campaignId: string,
+	query: string,
+	excludeArchived = false,
+) {
 	return and(
 		eq(entities.campaignId, campaignId),
 		sql`word_similarity(${entities.name}, ${query}) > 0.15`,
+		excludeArchived ? eq(entities.status, "active") : undefined,
 	);
 }
 
@@ -386,14 +391,21 @@ export const entityService = {
 		return first(rows);
 	},
 
-	async list(db: Database, campaignId: string, type?: string) {
+	async list(
+		db: Database,
+		campaignId: string,
+		type?: string,
+		includeArchived = false,
+	) {
 		return db
 			.select()
 			.from(entities)
 			.where(
-				type
-					? and(eq(entities.campaignId, campaignId), eq(entities.type, type))
-					: eq(entities.campaignId, campaignId),
+				and(
+					eq(entities.campaignId, campaignId),
+					type ? eq(entities.type, type) : undefined,
+					includeArchived ? undefined : eq(entities.status, "active"),
+				),
 			);
 	},
 
@@ -409,11 +421,16 @@ export const entityService = {
 		return row;
 	},
 
-	async getByName(db: Database, campaignId: string, name: string) {
+	async getByName(
+		db: Database,
+		campaignId: string,
+		name: string,
+		includeArchived = false,
+	) {
 		const candidateRows = await db
 			.select()
 			.from(entities)
-			.where(wordSimilarityCandidateFilter(campaignId, name));
+			.where(wordSimilarityCandidateFilter(campaignId, name, !includeArchived));
 
 		let best: { row: (typeof candidateRows)[number]; score: number } | null =
 			null;
@@ -426,6 +443,32 @@ export const entityService = {
 		if (!best) throw new NotFoundError("Entity", name);
 
 		return best.row;
+	},
+
+	async archive(db: Database, campaignId: string, entityId: string) {
+		const rows = await db
+			.update(entities)
+			.set({ status: "archived" })
+			.where(
+				and(eq(entities.id, entityId), eq(entities.campaignId, campaignId)),
+			)
+			.returning();
+		const row = rows[0];
+		if (!row) throw new NotFoundError("Entity", entityId);
+		return row;
+	},
+
+	async unarchive(db: Database, campaignId: string, entityId: string) {
+		const rows = await db
+			.update(entities)
+			.set({ status: "active" })
+			.where(
+				and(eq(entities.id, entityId), eq(entities.campaignId, campaignId)),
+			)
+			.returning();
+		const row = rows[0];
+		if (!row) throw new NotFoundError("Entity", entityId);
+		return row;
 	},
 
 	async countByCampaign(db: Database, campaignId: string): Promise<number> {

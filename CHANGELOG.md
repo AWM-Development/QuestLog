@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-088
+
+- **Entities can now be soft-archived.** `entities` gains a `status` column (mirroring `campaigns.status`) plus `entityService.archive`/`unarchive`, both scoped to the owning campaign. Archived entities drop out of `entityService.list` and `getByName`'s fuzzy name search by default; an `includeArchived` flag opts back in, and is now wired through the `list_entities`/`get_entity` MCP tools and their input validators. `getById` (explicit id lookup) and `detectSpans` (`log_session` auto-linking) are unaffected — an archived entity still resolves directly by id and still auto-links during session logging, since archive is a hide-a-mistake mechanism, not a "this is narratively dead" marker (`G-006`). No MCP tools to flip the flag yet — that's T-089; excluding archived entities from `detectSpans` specifically is T-090.
+
 ### Added — T-078
 
 - **`entityService.detectCandidates` proposes brand-new entities from free text.** For proper-noun-like capitalized spans not already matched by `detectSpans`, it returns a name, an `ENTITY_TYPES` guess (npc/location/faction/item/arc from surrounding cue words and name suffixes), a description snippet via `extractExcerpt`, and the source span. Heuristic only — no NLP/LLM dependency. Wiring into `ingest_text` is T-079.
