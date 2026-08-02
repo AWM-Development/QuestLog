@@ -445,7 +445,11 @@ export const entityService = {
 		return best.row;
 	},
 
-	async archive(db: Database, campaignId: string, entityId: string) {
+	async archive(
+		db: Database | Transaction,
+		campaignId: string,
+		entityId: string,
+	) {
 		const rows = await db
 			.update(entities)
 			.set({ status: "archived" })
@@ -458,7 +462,11 @@ export const entityService = {
 		return row;
 	},
 
-	async unarchive(db: Database, campaignId: string, entityId: string) {
+	async unarchive(
+		db: Database | Transaction,
+		campaignId: string,
+		entityId: string,
+	) {
 		const rows = await db
 			.update(entities)
 			.set({ status: "active" })

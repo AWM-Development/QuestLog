@@ -28,6 +28,18 @@ export const UPDATE_ENTITY_DESCRIPTION =
 export const CONFIRM_UPDATE_ENTITY_DESCRIPTION =
 	"Confirm a previously-previewed update_entity change-set: applies the proposed field changes to the entity.";
 
+export const ARCHIVE_ENTITY_DESCRIPTION =
+	"Preview archiving an existing entity: hides it from default listings and lookups without deleting it or marking it narratively dead. Returns the proposed status change without persisting anything. Call confirm_archive_entity with the returned token to save it.";
+
+export const CONFIRM_ARCHIVE_ENTITY_DESCRIPTION =
+	"Confirm a previously-previewed archive_entity change: sets the entity's status to archived.";
+
+export const UNARCHIVE_ENTITY_DESCRIPTION =
+	"Preview restoring a previously archived entity to active status. Returns the proposed status change without persisting anything. Call confirm_unarchive_entity with the returned token to save it.";
+
+export const CONFIRM_UNARCHIVE_ENTITY_DESCRIPTION =
+	"Confirm a previously-previewed unarchive_entity change: sets the entity's status back to active.";
+
 export const LOG_SESSION_DESCRIPTION =
 	"Preview a new session log: detects entity mentions in the content and returns the session record plus entity links that would be written, without persisting anything. Call confirm_log_session with the returned token to save it.";
 

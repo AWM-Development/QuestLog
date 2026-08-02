@@ -51,6 +51,32 @@ export const ConfirmUpdateEntityInput = z.object({
 });
 export type ConfirmUpdateEntityInput = z.infer<typeof ConfirmUpdateEntityInput>;
 
+export const ArchiveEntityInput = z.object({
+	campaignId: z.string().uuid(),
+	entityId: z.string().uuid(),
+});
+export type ArchiveEntityInput = z.infer<typeof ArchiveEntityInput>;
+
+export const ConfirmArchiveEntityInput = z.object({
+	token: z.string().uuid(),
+});
+export type ConfirmArchiveEntityInput = z.infer<
+	typeof ConfirmArchiveEntityInput
+>;
+
+export const UnarchiveEntityInput = z.object({
+	campaignId: z.string().uuid(),
+	entityId: z.string().uuid(),
+});
+export type UnarchiveEntityInput = z.infer<typeof UnarchiveEntityInput>;
+
+export const ConfirmUnarchiveEntityInput = z.object({
+	token: z.string().uuid(),
+});
+export type ConfirmUnarchiveEntityInput = z.infer<
+	typeof ConfirmUnarchiveEntityInput
+>;
+
 export const GetEntityInput = z
 	.object({
 		campaignId: z.string().uuid(),
