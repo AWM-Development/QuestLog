@@ -1907,6 +1907,160 @@ describe("correct_lore tool (T-075)", () => {
 	});
 });
 
+describe("confirm_correct_lore tool (T-076)", () => {
+	// confirm opens its own db.transaction() via writeRequestService.confirm —
+	// use deleteCampaignTree, same as confirm_log_session / correct_lore.
+	let campaignId: string;
+	let sourceId: string;
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+
+		const [source] = await db
+			.insert(sources)
+			.values({
+				campaignId,
+				name: "primer.md",
+				type: "paste",
+				status: "done",
+			})
+			.returning();
+		sourceId = source?.id ?? "";
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, campaignId);
+	});
+
+	it("atomically creates embedded correction chunks and supersedes every target", async () => {
+		const [activeA, activeB] = await db
+			.insert(chunks)
+			.values([
+				{
+					campaignId,
+					sourceId,
+					content: "Mira was born in Ashfall.",
+					status: "active",
+				},
+				{
+					campaignId,
+					sourceId,
+					content: "Mira patrols the Old Road.",
+					status: "active",
+				},
+			])
+			.returning();
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "correct_lore",
+			arguments: {
+				campaignId,
+				sourceId,
+				correctionText: "Mira was born in Thornwall, not Ashfall.",
+			},
+		});
+		expect(previewResult.isError).toBeFalsy();
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token, preview } = JSON.parse(previewContent[0]?.text ?? "{}");
+		expect(preview.targetChunkIds).toEqual(
+			expect.arrayContaining([activeA?.id, activeB?.id]),
+		);
+
+		const confirmResult = await client.callTool({
+			name: "confirm_correct_lore",
+			arguments: { token },
+		});
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const confirmed = JSON.parse(confirmContent[0]?.text ?? "{}");
+
+		expect(confirmed.createdChunkIds).toEqual(
+			expect.arrayContaining([expect.any(String)]),
+		);
+		expect(confirmed.createdChunkIds.length).toBeGreaterThan(0);
+		expect(confirmed.supersededChunkIds).toEqual(
+			expect.arrayContaining([activeA?.id, activeB?.id]),
+		);
+		expect(confirmed.supersededChunkIds).toHaveLength(2);
+
+		const sourceRows = await db
+			.select({
+				id: chunks.id,
+				status: chunks.status,
+				content: chunks.content,
+			})
+			.from(chunks)
+			.where(eq(chunks.sourceId, sourceId));
+
+		const superseded = sourceRows.filter((row) => row.status === "superseded");
+		const active = sourceRows.filter((row) => row.status === "active");
+		expect(superseded.map((row) => row.id).sort()).toEqual(
+			[activeA?.id, activeB?.id].sort(),
+		);
+		expect(active.length).toBeGreaterThan(0);
+		expect(active.some((row) => row.content.includes("Thornwall"))).toBe(true);
+		expect(
+			confirmed.createdChunkIds.every((id: string) =>
+				active.some((row) => row.id === id),
+			),
+		).toBe(true);
+	});
+
+	it("rejects a second confirm against the same token", async () => {
+		await db.insert(chunks).values({
+			campaignId,
+			sourceId,
+			content: "Mira was born in Ashfall.",
+			status: "active",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "correct_lore",
+			arguments: {
+				campaignId,
+				sourceId,
+				correctionText: "Mira was born in Thornwall.",
+			},
+		});
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token } = JSON.parse(previewContent[0]?.text ?? "{}");
+
+		await client.callTool({
+			name: "confirm_correct_lore",
+			arguments: { token },
+		});
+		const secondResult = await client.callTool({
+			name: "confirm_correct_lore",
+			arguments: { token },
+		});
+
+		expect(secondResult.isError).toBe(true);
+		const secondContent = secondResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const secondPayload = JSON.parse(secondContent[0]?.text ?? "{}");
+		expect(secondPayload.error.code).toBe("NOT_FOUND");
+	});
+});
+
 describe("global-setup DB truncation wiring (T-052)", () => {
 	// Proves the fix end-to-end via a real, fresh Vitest invocation of this
 	// package's own vitest.config.ts (the only way to exercise Vitest's

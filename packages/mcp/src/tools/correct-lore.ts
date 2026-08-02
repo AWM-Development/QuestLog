@@ -32,8 +32,10 @@ export function registerCorrectLore(server: McpServer, { db }: ToolDeps) {
 				});
 
 				const payload = {
+					campaignId,
 					correctionText,
 					entityId: entityId ?? null,
+					sourceId: sourceId ?? null,
 					targetChunkIds,
 					chunkPreview: {
 						count: previewChunks.length,

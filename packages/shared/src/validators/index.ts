@@ -30,6 +30,7 @@ export {
 	ListEntitiesInput,
 } from "./entity.js";
 export {
+	ConfirmCorrectLoreInput,
 	CorrectLoreInput,
 	GetSourceStatusInput,
 	IngestTextInput,

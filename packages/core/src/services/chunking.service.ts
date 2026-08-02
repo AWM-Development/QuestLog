@@ -14,10 +14,11 @@ const MAX_WORDS = 1000;
 /** Pattern that identifies a section boundary: heading or double-newline. */
 const SECTION_BOUNDARY = /\n(?=#{1,6}\s)|\n{2,}/;
 
-export type ChunkMeta = { campaignId: string } & (
-	| { sourceId: string; sessionId?: undefined }
-	| { sessionId: string; sourceId?: undefined }
-);
+export type ChunkMeta = {
+	campaignId: string;
+	sourceId?: string;
+	sessionId?: string;
+};
 
 export type TextChunk = { content: string; position: number } & ChunkMeta;
 

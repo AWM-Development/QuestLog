@@ -28,8 +28,10 @@ export async function embedChunks(
 	db: Database | Transaction,
 	textChunks: TextChunk[],
 	options?: EmbedOptions,
-): Promise<void> {
-	if (textChunks.length === 0) return;
+): Promise<string[]> {
+	if (textChunks.length === 0) return [];
+
+	const createdIds: string[] = [];
 
 	for (let i = 0; i < textChunks.length; i += BATCH_SIZE) {
 		const batch = textChunks.slice(i, i + BATCH_SIZE);
@@ -45,7 +47,7 @@ export async function embedChunks(
 			console.warn(
 				"[embedding] VOYAGE_API_KEY not set — skipping embedding. Chunks will not be stored.",
 			);
-			return;
+			return createdIds;
 		}
 
 		const insertValues = batch.map((chunk, batchIndex) => {
@@ -63,6 +65,14 @@ export async function embedChunks(
 			};
 		});
 
-		await db.insert(chunks).values(insertValues);
+		const inserted = await db
+			.insert(chunks)
+			.values(insertValues)
+			.returning({ id: chunks.id });
+		for (const row of inserted) {
+			createdIds.push(row.id);
+		}
 	}
+
+	return createdIds;
 }

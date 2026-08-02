@@ -46,5 +46,6 @@ export const EXPECTED_TOOLS = [
 	"ingest_text",
 	"get_source_status",
 	"correct_lore",
+	"confirm_correct_lore",
 	"help",
 ] as const;
