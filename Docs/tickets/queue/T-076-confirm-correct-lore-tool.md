@@ -4,8 +4,6 @@ Milestone ref: Docs/milestones/MILESTONES_V1_3_MCP.md M-CANON.3
 
 Priority: P1
 
-Blocked on: T-075 — must be merged into develop first
-
 Branch: feat/m-canon/t-076-confirm-correct-lore-tool
 
 Context files (load ONLY these):
