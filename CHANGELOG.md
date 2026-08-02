@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Fixed — T-077
+
+- **`query_lore` no longer surfaces superseded chunks.** Both legs of hybrid search — `search.service.ts`'s vector search and `context.service.ts`'s pg_trgm keyword search — now filter out chunks with `status = "superseded"` (added by T-074), matching the same convention already used by `correct_lore`'s preview lookup. A correction confirmed via `confirm_correct_lore` (T-076) is no longer contradicted by the old text it replaced still showing up in query results. No new flag to re-include superseded chunks — out of scope per `G-014`.
+
 ### Changed — T-099
 
 - **`@questlog/core` truncate-lock tests no longer share a Vitest file-worker pool with the rest of the package**, closing intermittent `deadlock detected` flakes on `questlog_test_core`. `global-setup.test.ts` runs in its own serial Vitest project; other core tests keep file parallelism. Worktree `QUESTLOG_PG_PORT` is now passed through turbo's `test` / `test:e2e` tasks, and default-port URL unit tests stub that env unset so exporting a worktree port no longer breaks them. Dev/CI-only — no production behavior changed. Resolves gate `G-019`.
