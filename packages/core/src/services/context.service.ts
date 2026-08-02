@@ -27,7 +27,7 @@
  *     embedding drifts from the query.
  */
 
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, ne, sql } from "drizzle-orm";
 import type { Database } from "../db/index.js";
 import {
 	campaigns,
@@ -191,6 +191,7 @@ async function keywordSearch(
 			.where(
 				and(
 					eq(chunks.campaignId, campaignId),
+					ne(chunks.status, "superseded"),
 					sql`${chunks.content} % ${query}`,
 					sql`similarity(${chunks.content}, ${query}) > ${CONTEXT_CONFIG.keywordSearchThreshold}`,
 				),

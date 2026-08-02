@@ -179,6 +179,38 @@ describe("searchService", () => {
 		}
 	});
 
+	it("excludes superseded chunks even when equally relevant to an active chunk", async () => {
+		await db.insert(chunks).values([
+			{
+				campaignId,
+				sourceId,
+				content: "The tower is guarded by a griffon.",
+				embedding: basisVector(0),
+				metadata: { position: 0 },
+				status: "active",
+			},
+			{
+				campaignId,
+				sourceId,
+				content: "The tower is guarded by a griffon.",
+				embedding: basisVector(0),
+				metadata: { position: 1 },
+				status: "superseded",
+			},
+		]);
+
+		const mockFetch = createMockQueryFetch(basisVector(0));
+
+		const results = await searchService.search(db, {
+			campaignId,
+			query: "griffon",
+			limit: 10,
+			fetchFn: mockFetch,
+		});
+
+		expect(results).toHaveLength(1);
+	});
+
 	it("scopes results to campaignId (cross-campaign isolation)", async () => {
 		// Create a second campaign
 		const otherCampaign = await campaignService.create(db, {

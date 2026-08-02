@@ -449,6 +449,49 @@ describe("contextService", () => {
 	});
 
 	// -----------------------------------------------------------------------
+	// Test: superseded chunks excluded from both hybrid-search legs
+	// -----------------------------------------------------------------------
+	it("excludes a superseded chunk even when equally relevant on both search legs", async () => {
+		// Same content and embedding on both rows — equally relevant via vector
+		// AND keyword (trgm) search — so only the status filter can tell them
+		// apart. Without the fix on both search.service.ts and
+		// context.service.ts's keywordSearch, this would return 2 citations
+		// (different chunk ids merge as distinct entries, not deduped).
+		await db.insert(chunks).values([
+			{
+				campaignId,
+				sourceId,
+				content: "The Amber Temple holds ancient dark secrets.",
+				embedding: basisVector(0),
+				metadata: { position: 0 },
+				status: "active",
+			},
+			{
+				campaignId,
+				sourceId,
+				content: "The Amber Temple holds ancient dark secrets.",
+				embedding: basisVector(0),
+				metadata: { position: 1 },
+				status: "superseded",
+			},
+		]);
+
+		const mockFetch = createMockFetch(basisVector(0));
+
+		const result = await contextService.assemble(db, {
+			query: "Amber Temple dark secrets",
+			campaignId,
+			fetchFn: mockFetch,
+		});
+
+		expect(result.citations).toHaveLength(1);
+		const occurrences = (
+			result.text.match(/The Amber Temple holds ancient dark secrets/g) ?? []
+		).length;
+		expect(occurrences).toBe(1);
+	});
+
+	// -----------------------------------------------------------------------
 	// Test 9: top-k 40 — greedy packer limits inclusions to token budget
 	// -----------------------------------------------------------------------
 	it("limits included chunks to token budget even when 40 candidates are retrieved", async () => {
