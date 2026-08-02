@@ -105,6 +105,7 @@ export const entities = pgTable(
 			.$type<Record<string, unknown>>()
 			.default({}),
 		dmNotes: text("dm_notes"),
+		status: text("status").notNull().default("active"),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
 			.notNull(),
