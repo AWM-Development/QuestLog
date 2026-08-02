@@ -129,13 +129,13 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   Raised during T-069's ticket-writing session, not fixed there — same bug class as the `G-012`/`G-013` collision (`G-013`'s Renumbered note), but for a different shared resource. `ticket-writer` step 6's `T-###` numbering and `/ungate`'s `G-###` gate-stub numbering are both look-then-act: scan every lifecycle directory, take the next free number, with nothing committed in between that a second concurrent session would see. Fix is the same principle as `T-069`'s claim-by-push, applied to a number instead of a branch: commit a placeholder file at the chosen id immediately, before doing the rest of the drafting work. No real dependency on `T-069`'s own code — different files, doesn't need worktree isolation to work — so it isn't blocked on it landing first.
   Exit: see T-073.
 
-- [ ] **M-PIPELINE.6 — CI pipeline runtime optimization: cross-run turbo cache persistence + template-database provisioning** (T-086)
+- [x] **M-PIPELINE.6 — CI pipeline runtime optimization: cross-run turbo cache persistence + template-database provisioning** (T-086)
   Surfaced during a `/morning-review` of T-071 plus a follow-up benchmarking discussion, not by a PRD section. Two independent gaps found in `ci.yml`/`e2e-release-check.yml`'s current runtime: **(a)** Turborepo's local task cache (the same one that already shows `>>> FULL TURBO` hits locally across repeated `pnpm lint`/`typecheck`/`build` runs) is never persisted between separate CI runs — each run starts cold and recomputes every task regardless of whether the relevant package's inputs actually changed since the last run on that branch. **(b)** T-071's per-test-tier provisioning loop (`scripts/test-db-names.sh`'s `TEST_DB_NAMES_CI`) runs a full `pnpm --filter @questlog/server db:migrate` replay once per database, serially — the same schema gets built from scratch N times when a single migrated template database, cloned via Postgres's `CREATE DATABASE ... TEMPLATE`, would produce identical schemas near-instantly per clone.
+  Exit: see T-086.
 
 - [x] **M-PIPELINE.7 — Automated worktree + per-worktree Postgres stack reaping** (T-087)
   Surfaced during a `/morning-review` of T-072, not by a PRD section. `T-069` established `tmp/worktrees/T-###/` and never wired anything to remove one — `Docs/IMPLEMENTATION_NOTES.md` § T-069's own follow-up fix (T-070) already found this live: a worktree routinely still sits on disk right after its PR lands, since nothing ever runs `git worktree remove` on it. `T-072` compounds this: a finished worktree now also leaves a running `docker compose` stack (its own Postgres container, volume, and network) behind, not just inert files — an accumulating resource cost, not merely disk clutter. Both are reaped by the same trigger (a worktree's branch has a merged PR), so this covers them as one lifecycle fix rather than two separate ones, per `T-072`'s own report ("Anything Alex must decide").
   Exit: see T-087.
-  Exit: see T-086.
 
 ---
 
