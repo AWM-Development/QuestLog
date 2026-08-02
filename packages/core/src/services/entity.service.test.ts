@@ -200,6 +200,14 @@ describe("entityService.getById", () => {
 			entityService.getById(db, campaignId, entity.id),
 		).rejects.toThrow(NotFoundError);
 	});
+
+	it("still returns an archived entity's full row, unfiltered", async () => {
+		const entity = await insertEntity(campaignId, "Strahd");
+		await entityService.archive(db, campaignId, entity.id);
+		const found = await entityService.getById(db, campaignId, entity.id);
+		expect(found.id).toBe(entity.id);
+		expect(found.status).toBe("archived");
+	});
 });
 
 describe("entityService.getByName", () => {
@@ -236,6 +244,21 @@ describe("entityService.getByName", () => {
 			entityService.getByName(db, campaignId, "Zzyzx Nonexistent"),
 		).rejects.toThrow(NotFoundError);
 	});
+
+	it("does not match an archived entity by default", async () => {
+		const entity = await insertEntity(campaignId, "Strahd");
+		await entityService.archive(db, campaignId, entity.id);
+		await expect(
+			entityService.getByName(db, campaignId, "Strahd"),
+		).rejects.toThrow(NotFoundError);
+	});
+
+	it("matches an archived entity when includeArchived is true", async () => {
+		const entity = await insertEntity(campaignId, "Strahd");
+		await entityService.archive(db, campaignId, entity.id);
+		const found = await entityService.getByName(db, campaignId, "Strahd", true);
+		expect(found.id).toBe(entity.id);
+	});
 });
 
 describe("entityService.list with type filter", () => {
@@ -267,6 +290,98 @@ describe("entityService.list with type filter", () => {
 		const results = await entityService.list(db, campaignId, "npc");
 		expect(results).toHaveLength(1);
 		expect(results[0]?.name).toBe("Strahd");
+	});
+
+	it("excludes archived entities by default", async () => {
+		const active = await insertEntity(campaignId, "Strahd", "npc");
+		const archived = await insertEntity(campaignId, "Castle Ravenloft");
+		await entityService.archive(db, campaignId, archived.id);
+
+		const results = await entityService.list(db, campaignId);
+		expect(results).toHaveLength(1);
+		expect(results[0]?.id).toBe(active.id);
+	});
+
+	it("includes archived entities when includeArchived is true", async () => {
+		const active = await insertEntity(campaignId, "Strahd", "npc");
+		const archived = await insertEntity(campaignId, "Castle Ravenloft");
+		await entityService.archive(db, campaignId, archived.id);
+
+		const results = await entityService.list(db, campaignId, undefined, true);
+		expect(results).toHaveLength(2);
+		expect(results.map((r) => r.id).sort()).toEqual(
+			[active.id, archived.id].sort(),
+		);
+	});
+});
+
+describe("entityService.archive / unarchive", () => {
+	let campaignId: string;
+
+	beforeEach(async () => {
+		await db.execute(sql`BEGIN`);
+		const campaign = await campaignService.create(db, {
+			name: "Test Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await db.execute(sql`ROLLBACK`);
+	});
+
+	it("sets status to archived, scoped to the campaign", async () => {
+		const entity = await insertEntity(campaignId, "Strahd");
+		const archived = await entityService.archive(db, campaignId, entity.id);
+		expect(archived.status).toBe("archived");
+	});
+
+	it("throws NotFoundError archiving a bogus entityId", async () => {
+		await expect(
+			entityService.archive(
+				db,
+				campaignId,
+				"00000000-0000-0000-0000-000000000000",
+			),
+		).rejects.toThrow(NotFoundError);
+	});
+
+	it("throws NotFoundError archiving an entity from a different campaign", async () => {
+		const otherCampaign = await campaignService.create(db, {
+			name: "Other Campaign",
+			theme: "fantasy",
+		});
+		const entity = await insertEntity(otherCampaign.id, "Strahd");
+		await expect(
+			entityService.archive(db, campaignId, entity.id),
+		).rejects.toThrow(NotFoundError);
+	});
+
+	it("sets status back to active", async () => {
+		const entity = await insertEntity(campaignId, "Strahd");
+		await entityService.archive(db, campaignId, entity.id);
+		const unarchived = await entityService.unarchive(db, campaignId, entity.id);
+		expect(unarchived.status).toBe("active");
+	});
+
+	it("throws NotFoundError unarchiving a bogus entityId", async () => {
+		await expect(
+			entityService.unarchive(
+				db,
+				campaignId,
+				"00000000-0000-0000-0000-000000000000",
+			),
+		).rejects.toThrow(NotFoundError);
+	});
+
+	it("leaves other entities/campaigns untouched", async () => {
+		const target = await insertEntity(campaignId, "Strahd");
+		const other = await insertEntity(campaignId, "Ireena");
+		await entityService.archive(db, campaignId, target.id);
+
+		const untouched = await entityService.getById(db, campaignId, other.id);
+		expect(untouched.status).toBe("active");
 	});
 });
 

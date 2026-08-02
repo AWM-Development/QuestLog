@@ -332,6 +332,45 @@ describe("list_entities tool", () => {
 		expect(payload.entities).toHaveLength(1);
 		expect(payload.entities[0].name).toBe("Mira Duskwood");
 	});
+
+	it("excludes archived entities by default and includes them with includeArchived", async () => {
+		const active = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+		const archived = await entityService.create(db, {
+			campaignId,
+			name: "Ashfall Peak",
+			type: "location",
+		});
+		await entityService.archive(db, campaignId, archived.id);
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const defaultResult = await client.callTool({
+			name: "list_entities",
+			arguments: { campaignId },
+		});
+		const defaultContent = defaultResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const defaultPayload = JSON.parse(defaultContent[0]?.text ?? "{}");
+		expect(defaultPayload.entities).toHaveLength(1);
+		expect(defaultPayload.entities[0].id).toBe(active.id);
+
+		const includeResult = await client.callTool({
+			name: "list_entities",
+			arguments: { campaignId, includeArchived: true },
+		});
+		const includeContent = includeResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const includePayload = JSON.parse(includeContent[0]?.text ?? "{}");
+		expect(includePayload.entities).toHaveLength(2);
+	});
 });
 
 describe("list_campaigns tool", () => {
@@ -547,6 +586,60 @@ describe("get_entity tool", () => {
 		expect(result.isError).toBe(true);
 		const content = result.content as Array<{ type: string; text: string }>;
 		expect(content[0]?.text).toMatch(/Exactly one of entityId or name/);
+	});
+
+	it("returns not-found by name against an archived entity by default, but resolves it with includeArchived", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+		await entityService.archive(db, campaignId, entity.id);
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const defaultResult = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, name: "Mira Duskwood" },
+		});
+		expect(defaultResult.isError).toBe(true);
+		const defaultContent = defaultResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		expect(JSON.parse(defaultContent[0]?.text ?? "{}").error.code).toBe(
+			"NOT_FOUND",
+		);
+
+		const includeResult = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, name: "Mira Duskwood", includeArchived: true },
+		});
+		expect(includeResult.isError).toBeFalsy();
+		const includeContent = includeResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		expect(JSON.parse(includeContent[0]?.text ?? "{}").id).toBe(entity.id);
+	});
+
+	it("resolves an archived entity by entityId regardless of includeArchived", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+		await entityService.archive(db, campaignId, entity.id);
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		expect(JSON.parse(content[0]?.text ?? "{}").id).toBe(entity.id);
 	});
 });
 
