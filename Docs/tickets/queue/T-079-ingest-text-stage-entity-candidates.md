@@ -4,8 +4,6 @@ Milestone ref: Docs/milestones/MILESTONES_V1_3_MCP.md M-EXTRACT.2
 
 Priority: P1
 
-Blocked on: T-078 — must be merged into develop first
-
 Branch: feat/m-extract/t-079-ingest-text-stage-entity-candidates
 
 Context files (load ONLY these):
