@@ -55,3 +55,8 @@ export const CorrectLoreInput = z
 		},
 	);
 export type CorrectLoreInput = z.infer<typeof CorrectLoreInput>;
+
+export const ConfirmCorrectLoreInput = z.object({
+	token: z.string().uuid(),
+});
+export type ConfirmCorrectLoreInput = z.infer<typeof ConfirmCorrectLoreInput>;

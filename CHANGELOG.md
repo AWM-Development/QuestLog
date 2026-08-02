@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-076
+
+- **`confirm_correct_lore` MCP tool** completes the M-CANON preview/confirm pair (`correct_lore`, T-075): given a token from `correct_lore`, it atomically chunks + embeds the correction as new authoritative content and marks every target chunk `superseded`, both inside a single transaction — either both writes land or neither does. Returns the created and superseded chunk ids. A second confirm against the same token is rejected, mirroring `confirm_log_session`'s existing claim behavior. `chunkText`'s `ChunkMeta` gains an explicit third campaign-only anchor variant (no source/session) for corrections that don't originate from an existing source (an `entityId`-only or `chunkIds`-only correction); `correct_lore`'s preview payload now also carries `campaignId`/`sourceId` so confirm can anchor and campaign-scope its writes without trusting anything outside the payload.
+
 ### Added — T-079
 
 - **`ingest_text` now stages detected entity candidates as a `write_requests` preview.** Every `ingest_text` call runs T-078's `entityService.detectCandidates` against the ingested text and, when it finds at least one new NPC/location/faction/item/arc, stages the candidate list via `writeRequestService.createPreview` (`toolName: "ingest_entities"`). The tool's response gains `entityCandidates: { token, candidates } | null` alongside the existing `source` field — `null` when no candidates were found, with no `write_requests` row created in that case. The existing source/chunk direct-write path and fire-and-forget embedding are unchanged. Confirming the staged candidates (creating the entities) is a separate tool, T-080, not yet built.
