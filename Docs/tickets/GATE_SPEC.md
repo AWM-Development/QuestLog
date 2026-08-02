@@ -4,7 +4,7 @@
 **Last Updated:** 2026-07-23
 **Purpose:** The exact format for a gate-stub — a placeholder for work that's blocked on a human decision (🎨 design or 🧠 strategy), not on a code dependency. `.claude/skills/ticket-writer/SKILL.md` and `EXECUTOR_ROUTINE.md` both file these; `.claude/skills/ungate/SKILL.md` (the `/ungate` command) is the only thing that resolves them. See `TICKET_SPEC.md`'s `Gated on:` field for how a ticket references one.
 
-Every gate-stub lives at `Docs/tickets/gated/G-###-slug.md` (`###` sequential, zero-padded, never reused — its own sequence, separate from tickets' `T-###`, since a gate-stub isn't yet an executable unit of work and shouldn't consume a ticket number before it becomes one) and contains exactly these fields, in this order:
+Every gate-stub lives at `Docs/tickets/gated/G-###-slug.md` (`###` sequential, zero-padded, never reused — its own sequence, separate from tickets' `T-###`, since a gate-stub isn't yet an executable unit of work and shouldn't consume a ticket number before it becomes one — see "Claiming a number" below for how a filer picks `###` without colliding with a concurrent session) and contains exactly these fields, in this order:
 
 ```markdown
 # G-### — <title>
@@ -37,6 +37,10 @@ Notes: <anything already surfaced — options considered, partial
 - **Context files** is the same discipline as a ticket's — the whole point of deferring this to a dedicated `/ungate` session is that it gets Alex's full attention on just this decision, not a grab-bag of "whatever's related."
 - **Open question** must be a single, answerable question — same bar as `BLOCKED_TEMPLATE.md`'s "Exact question for Alex." "Should we support OCR?" is not answerable; "local Tesseract vs. hosted API, given a cost ceiling of $X/mo" is.
 - **Blocks** is what `/ungate` uses to find everything it needs to unblock on resolution — every milestone task and every ticket carrying a matching `Gated on: G-###` should be named here. `ticket-writer` and the executor are responsible for keeping this list current when they file or update a gate-stub; `/ungate` also sweeps independently (see "Keeping tickets and gates in sync" below) as a safety net against a missed reference. Every milestone task named here also carries a matching `(Gated on: G-###)` tag on its own line in the milestone doc — see `TICKET_SPEC.md`'s "Milestone-doc annotations" for the full convention and `/ungate`'s obligation to clear that tag on resolution.
+
+## Claiming a number
+
+Filing a gate-stub is otherwise a look-then-act operation — scan every existing `G-###` file across `gated/` and `gated/resolved/`, take the highest number, use the next one — with nothing in between to stop two concurrent sessions computing the same number (the exact `G-012`/`G-013` collision — see `gated/resolved/G-013-documentation-duplication-reduction-strategy.md`'s Renumbered note). Fix: **claim the number immediately upon choosing it**, before drafting any of the gate-stub's real content. Commit a placeholder file at `Docs/tickets/gated/G-###-slug.md` containing only the header line (`# G-### — <working title>`), then fill in the rest of the fields in place and commit again once the gate-stub is complete. A second session's scan, run any time after the placeholder commit, sees it on disk and picks the next number instead of colliding. If the drafting session is abandoned before finishing, the placeholder is harmless — a near-empty file, easily overwritten by whoever picks the number up for real, or cleaned up by hand. Both filing sites — `ticket-writer` step 3 and the executor's `EXECUTOR_ROUTINE.md` Step 3 — follow this convention; neither hardcodes its own copy.
 
 ## Lifecycle
 
