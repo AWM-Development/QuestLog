@@ -2,7 +2,7 @@
 
 Milestone ref: M-PIPELINE.6 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
-Priority: P2
+Priority: P0
 
 Branch: chore/m-pipeline/t-086-ci-pipeline-runtime-optimization
 
