@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-076
+
+- **New `confirm_correct_lore` MCP tool (apply half).** Confirms a `correct_lore` preview token: in one transaction, chunks and embeds the correction as new authoritative content and marks every target chunk `superseded`. Returns the created and superseded chunk ids. A second confirm against the same token is rejected (same claim semantics as `confirm_log_session`). Completes the M-CANON preview→confirm pair with T-075.
+
 ### Fixed — T-077
 
 - **`query_lore` no longer surfaces superseded chunks.** Both legs of hybrid search — `search.service.ts`'s vector search and `context.service.ts`'s pg_trgm keyword search — now filter out chunks with `status = "superseded"` (added by T-074), matching the same convention already used by `correct_lore`'s preview lookup. A correction confirmed via `confirm_correct_lore` (T-076) is no longer contradicted by the old text it replaced still showing up in query results. No new flag to re-include superseded chunks — out of scope per `G-014`.

@@ -39,7 +39,7 @@ v1.3 closes all three, reusing the one proven pattern already in the codebase fo
   A new MCP tool taking a correction statement plus a reference to what it supersedes (entity id, source id, or explicit chunk id(s)). Computes a preview payload — the new correction content plus which existing chunk(s) it will mark superseded — and creates it via `write_requests` (`writeRequestService.createPreview`), per `G-001`'s resolved rule that mutating existing data requires preview/confirm.
   Exit: calling the tool returns a preview token and a human-readable summary of what will change, without mutating anything yet.
 
-- [ ] **M-CANON.3 — `confirm_correct_lore` tool (apply half)** (T-076)
+- [x] **M-CANON.3 — `confirm_correct_lore` tool (apply half)** (T-076)
   Mirrors `confirm_log_session`'s atomic claim + apply: claims the `write_requests` row, then in one transaction chunks/embeds the correction as new authoritative content and marks the referenced chunk(s) superseded (M-CANON.1's column).
   Exit: confirming a preview atomically applies both the new content and the supersession flag; a second confirm attempt on the same token is rejected (claimed).
 
