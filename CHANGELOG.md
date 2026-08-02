@@ -10,6 +10,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-08-02
+
 ### Changed — T-086
 
 - **CI runtime: cross-run Turborepo cache persistence + template-database provisioning.** `ci.yml`/`e2e-release-check.yml` now persist `.turbo/cache` across runs via `actions/cache@v5` (keyed on `pnpm-lock.yaml` plus every first-party `.ts`/`.tsx`/`tsconfig*.json`, with a lockfile-only restore-key fallback), so `lint`/`typecheck`/`build` cache-hit when a run's inputs match a prior run's — `ci.yml` also gained a `pnpm turbo build` step, needed to actually exercise that cache path. Test-tier database provisioning now migrates once per schema family into a template database (`questlog_test_template_core` / `questlog_test_template_observability`) and clones the rest via `CREATE DATABASE ... TEMPLATE` instead of replaying a full migration per database — down from 4 full migration runs to 2 templated migrations + 4 near-instant clones. `test:e2e` stays uncached (`turbo.json`'s `cache: false`); `test` itself has no such override and does cache, replaying a prior real-DB result when its content hash is unchanged.
