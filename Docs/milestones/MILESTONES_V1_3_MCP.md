@@ -35,7 +35,7 @@ v1.3 closes all three, reusing the one proven pattern already in the codebase fo
   Add a status-style column to the `chunks` table (pattern-matched against the existing `status` text column on `sources`/`sessions`, per `.claude/rules/db.md`) marking a chunk superseded, plus whatever index it needs for `query_lore`'s filtered queries. Migration + Drizzle schema update in `packages/core/src/db/schema/tables.ts`.
   Exit: migration applies cleanly; a chunk can be marked superseded and queried by that flag.
 
-- [ ] **M-CANON.2 — `correct_lore` tool (preview half)** (T-075)
+- [x] **M-CANON.2 — `correct_lore` tool (preview half)** (T-075)
   A new MCP tool taking a correction statement plus a reference to what it supersedes (entity id, source id, or explicit chunk id(s)). Computes a preview payload — the new correction content plus which existing chunk(s) it will mark superseded — and creates it via `write_requests` (`writeRequestService.createPreview`), per `G-001`'s resolved rule that mutating existing data requires preview/confirm.
   Exit: calling the tool returns a preview token and a human-readable summary of what will change, without mutating anything yet.
 
@@ -43,7 +43,7 @@ v1.3 closes all three, reusing the one proven pattern already in the codebase fo
   Mirrors `confirm_log_session`'s atomic claim + apply: claims the `write_requests` row, then in one transaction chunks/embeds the correction as new authoritative content and marks the referenced chunk(s) superseded (M-CANON.1's column).
   Exit: confirming a preview atomically applies both the new content and the supersession flag; a second confirm attempt on the same token is rejected (claimed).
 
-- [ ] **M-CANON.4 — Exclude superseded chunks from `query_lore` by default** (T-077)
+- [x] **M-CANON.4 — Exclude superseded chunks from `query_lore` by default** (T-077)
   Thread the supersession filter into both halves of hybrid search: `search.service.ts`'s vector search and `context.service.ts`'s pg_trgm keyword search, both currently filtering only on `campaignId`.
   Exit: a `query_lore` call after a confirmed correction no longer surfaces the superseded chunk's text; the correction's new content does surface.
 
@@ -61,7 +61,7 @@ M-CANON.1 has no dependency and can ship first. M-CANON.2 depends on M-CANON.1's
 
 ### Tasks
 
-- [ ] **M-EXTRACT.1 — Entity-candidate detection over ingested text** (T-078)
+- [x] **M-EXTRACT.1 — Entity-candidate detection over ingested text** (T-078)
   Reuse/extend `log_session`'s entity-detection logic (span/candidate detection against free text) to run against `ingest_text`'s document content instead of session-log content. Candidates are typed against the existing `ENTITY_TYPES` taxonomy (`npc`, `location`, `faction`, `item`, `arc`) — no new types.
   Exit: given ingested text containing recognizable entity mentions, detection produces a candidate list (name, type, proposed description snippet, source span) matching `log_session`'s existing candidate shape.
 

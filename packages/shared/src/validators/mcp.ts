@@ -33,3 +33,25 @@ export const GetSourceStatusInput = z.object({
 	sourceId: z.string().uuid(),
 });
 export type GetSourceStatusInput = z.infer<typeof GetSourceStatusInput>;
+
+export const CorrectLoreInput = z
+	.object({
+		campaignId: z.string().uuid(),
+		correctionText: z.string().min(1),
+		entityId: z.string().uuid().optional(),
+		sourceId: z.string().uuid().optional(),
+		chunkIds: z.array(z.string().uuid()).min(1).optional(),
+	})
+	.refine(
+		(input) => {
+			const forms = [input.entityId, input.sourceId, input.chunkIds].filter(
+				(value) => value !== undefined,
+			);
+			return forms.length === 1;
+		},
+		{
+			message:
+				"Exactly one of entityId, sourceId, or chunkIds must be provided",
+		},
+	);
+export type CorrectLoreInput = z.infer<typeof CorrectLoreInput>;

@@ -11,13 +11,19 @@ describe("testDbUrl", () => {
 		vi.unstubAllEnvs();
 	});
 
-	it("builds a local Postgres connection string for the given database name", () => {
+	it("builds a local Postgres connection string defaulting to 5433 when QUESTLOG_PG_PORT is unset", () => {
+		// Stub unset so a worktree QUESTLOG_PG_PORT export cannot break this
+		// assertion — Docs/IMPLEMENTATION_NOTES.md § T-099.
+		vi.stubEnv("QUESTLOG_PG_PORT", undefined);
+
 		expect(testDbUrl("questlog_test")).toBe(
 			"postgresql://questlog:questlog@localhost:5433/questlog_test",
 		);
 	});
 
 	it("swaps in a different database name without changing host/port/credentials", () => {
+		vi.stubEnv("QUESTLOG_PG_PORT", undefined);
+
 		expect(testDbUrl("questlog_test_mcp")).toBe(
 			"postgresql://questlog:questlog@localhost:5433/questlog_test_mcp",
 		);
@@ -28,14 +34,6 @@ describe("testDbUrl", () => {
 
 		expect(testDbUrl("questlog_test")).toBe(
 			"postgresql://questlog:questlog@localhost:5501/questlog_test",
-		);
-	});
-
-	it("falls back to 5433 when QUESTLOG_PG_PORT is unset", () => {
-		vi.stubEnv("QUESTLOG_PG_PORT", undefined);
-
-		expect(testDbUrl("questlog_test")).toBe(
-			"postgresql://questlog:questlog@localhost:5433/questlog_test",
 		);
 	});
 
