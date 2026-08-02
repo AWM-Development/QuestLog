@@ -43,7 +43,7 @@ v1.3 closes all three, reusing the one proven pattern already in the codebase fo
   Mirrors `confirm_log_session`'s atomic claim + apply: claims the `write_requests` row, then in one transaction chunks/embeds the correction as new authoritative content and marks the referenced chunk(s) superseded (M-CANON.1's column).
   Exit: confirming a preview atomically applies both the new content and the supersession flag; a second confirm attempt on the same token is rejected (claimed).
 
-- [ ] **M-CANON.4 — Exclude superseded chunks from `query_lore` by default** (T-077)
+- [x] **M-CANON.4 — Exclude superseded chunks from `query_lore` by default** (T-077)
   Thread the supersession filter into both halves of hybrid search: `search.service.ts`'s vector search and `context.service.ts`'s pg_trgm keyword search, both currently filtering only on `campaignId`.
   Exit: a `query_lore` call after a confirmed correction no longer surfaces the superseded chunk's text; the correction's new content does surface.
 
