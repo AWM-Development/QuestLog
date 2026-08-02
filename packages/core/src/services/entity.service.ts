@@ -566,8 +566,16 @@ export const entityService = {
 		}));
 
 		const proposals: EntityCandidateProposal[] = [];
+		const seenNames = new Set<string>();
 		for (const span of findProperNounSpans(text)) {
 			if (covered.some((c) => rangesOverlap(c, span))) continue;
+
+			// Same name mentioned more than once in one document proposes only
+			// once, keyed off its first (earliest) occurrence — otherwise a
+			// document mentioning "Vespera Nightveil" twice would stage two
+			// candidates for confirmation instead of one.
+			if (seenNames.has(span.name)) continue;
+			seenNames.add(span.name);
 
 			const entityType = guessEntityType(text, {
 				startIndex: span.start,

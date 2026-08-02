@@ -397,6 +397,19 @@ describe("entityService.detectCandidates", () => {
 		expect(candidates).toEqual([]);
 	});
 
+	it("collapses repeated mentions of the same new name into a single candidate", async () => {
+		const text =
+			"The party met Vespera Nightveil at dawn. Later, Vespera Nightveil wielded a dagger.";
+		const candidates = await entityService.detectCandidates(db, {
+			campaignId,
+			text,
+		});
+
+		const matches = candidates.filter((c) => c.name === "Vespera Nightveil");
+		expect(matches).toHaveLength(1);
+		expect(matches[0]?.startIndex).toBe(text.indexOf("Vespera Nightveil"));
+	});
+
 	it("proposes one candidate of each ENTITY_TYPES value from fixture text", async () => {
 		const text = [
 			"The party met Vespera Nightveil at dawn.",
