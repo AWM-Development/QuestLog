@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-076
+
+- **`confirm_correct_lore` MCP tool** completes the M-CANON preview/confirm pair (`correct_lore`, T-075): given a token from `correct_lore`, it atomically chunks + embeds the correction as new authoritative content and marks every target chunk `superseded`, both inside a single transaction — either both writes land or neither does. Returns the created and superseded chunk ids. A second confirm against the same token is rejected, mirroring `confirm_log_session`'s existing claim behavior. `chunkText`'s `ChunkMeta` gains an explicit third campaign-only anchor variant (no source/session) for corrections that don't originate from an existing source (an `entityId`-only or `chunkIds`-only correction); `correct_lore`'s preview payload now also carries `campaignId`/`sourceId` so confirm can anchor and campaign-scope its writes without trusting anything outside the payload.
+
 ### Fixed — T-073
 
 - **`ticket-writer` and `/ungate`'s ticket/gate-id allocation now claim their `T-###`/`G-###` number by commit-and-push before drafting**, closing the same collision class that hit `G-012`/`G-013` (two concurrent sessions independently scanning for "next free number" and picking the same one). `GATE_SPEC.md`'s new "Claiming a number" section is the canonical definition both gate-stub filers (`ticket-writer` step 3, the executor's mid-ticket gate-filing step) reference; `ticket-writer` step 6 gets the same claim-then-draft instructions inline for `T-###`. `scripts/sim-claim-step.sh` demonstrates the collision and the fix side-by-side. Docs/process-only — no application code changed.
