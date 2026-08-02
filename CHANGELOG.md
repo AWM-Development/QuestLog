@@ -14,6 +14,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 - **`entityService.detectCandidates` proposes brand-new entities from free text.** For proper-noun-like capitalized spans not already matched by `detectSpans`, it returns a name, an `ENTITY_TYPES` guess (npc/location/faction/item/arc from surrounding cue words and name suffixes), a description snippet via `extractExcerpt`, and the source span. Heuristic only — no NLP/LLM dependency. Wiring into `ingest_text` is T-079.
 - **Fix:** `detectCandidates` no longer proposes duplicate candidates when the same new name is mentioned more than once in the same ingested text — same-name spans now collapse to a single candidate, keyed on the first occurrence.
+- **Refactor:** pure span-detection/classification logic moved out of `entity.service.ts` into a new `entity-candidate-detection.service.ts`, following the existing `chunking.service.ts` precedent for DB-free `*.service.ts` files. No behavior change.
 
 ### Changed — T-099
 
