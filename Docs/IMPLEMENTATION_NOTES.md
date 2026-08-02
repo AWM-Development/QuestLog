@@ -2,7 +2,7 @@
 
 **Purpose:** Non-obvious decisions and gotchas that aren't derivable from reading the code. Read at the start of every session. Add an entry when you make a non-obvious decision. Retired entries: `Docs/IMPLEMENTATION_NOTES_ARCHIVE.md`.
 
-**Last Updated:** 2026-07-31
+**Last Updated:** 2026-08-02
 
 ## Component directory organization (M4.5 polish, 2026-04-24)
 
@@ -922,3 +922,7 @@ The ticket Scope describes `entityId` as an optional attribution tag that can ac
 ## T-099 — Isolate truncate-lock tests + worktree `QUESTLOG_PG_PORT` under turbo (2026-08-01)
 
 Shipped G-019's resolution: Vitest **multi-project** isolation (not the package-wide `maxWorkers: 1` fallback). `packages/core/vitest.config.ts` runs `global-setup.test.ts` alone in project `truncate-lock` (`fileParallelism: false` / `maxWorkers: 1`, `sequence.groupOrder: 0`) and the rest of the package in project `core` (`groupOrder: 1`). Distinct `groupOrder` is required — without it Vitest runs projects in parallel and the exclusive truncate locks still collide with writer files. Also: `QUESTLOG_PG_PORT` on turbo `test` / `test:e2e` `passThroughEnv`, and `test-db-url.test.ts` stubs the env unset for hardcoded `:5433` cases. Full rationale: `Docs/tickets/gated/resolved/G-019-core-test-deadlock-under-parallel-vitest.md`.
+
+## T-089 — `archive_entity`/`unarchive_entity` MCP tools (2026-08-02)
+
+**`entityService.archive`/`unarchive` widened from `db: Database` to `db: Database | Transaction`.** T-088 added both methods typed against `Database` only. `confirm_archive_entity`/`confirm_unarchive_entity` must apply the status change inside `writeRequestService.confirm`'s own `db.transaction()` callback (`.claude/rules/mcp.md`'s preview/confirm/audit rule for mutations of existing rows) — that callback hands the apply function a `Transaction`, not a `Database`, and `Transaction` is missing `$client` so it doesn't structurally satisfy `Database`. This is the same problem `entityService.update` already solved by accepting the union; `archive`/`unarchive` just hadn't needed it yet. Type-only widening, no logic change, confirmed by `reviewer` as in-scope despite the ticket's own "no change to `entityService.archive`/`unarchive`" out-of-scope line — that line was about behavior, not the parameter type needed to call them from inside a transaction.

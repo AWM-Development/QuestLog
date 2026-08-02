@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-089
+
+- **`archive_entity`/`unarchive_entity` MCP tools**, each with its own preview/confirm pair (`confirm_archive_entity`/`confirm_unarchive_entity`), exposing T-088's `entityService.archive`/`unarchive`. Mirrors `update_entity`/`confirm_update_entity`'s shape exactly: preview returns a before/after `status` change-set and a token without persisting anything; confirm applies the status change inside `writeRequestService.confirm`'s transaction. A bogus `entityId` 404s at preview (fail-fast) and again at confirm (defense-in-depth against a hand-crafted token); an already-consumed or unknown token 404s without double-applying. Excluding archived entities from `log_session`'s auto-linking (T-090) is the last piece before M-REMOTE.10 closes out.
+
 ### Changed — T-085
 
 - **`ticket-writer` now inlines a single relevant `IMPLEMENTATION_NOTES.md` § into new tickets** under an optional `## Relevant background` heading (with heading + capture-date citation), instead of listing the whole append-only notes file in `Context files:` when only one section applies. `TICKET_SPEC.md` documents the field and the executor's staleness-check expectation. Whole-file references remain when multiple sections or the file's general shape are genuinely needed. Forward-looking drafting change only — existing tickets are not rewritten.
