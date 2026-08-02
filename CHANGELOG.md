@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-085
+
+- **`ticket-writer` now inlines a single relevant `IMPLEMENTATION_NOTES.md` § into new tickets** under an optional `## Relevant background` heading (with heading + capture-date citation), instead of listing the whole append-only notes file in `Context files:` when only one section applies. `TICKET_SPEC.md` documents the field and the executor's staleness-check expectation. Whole-file references remain when multiple sections or the file's general shape are genuinely needed. Forward-looking drafting change only — existing tickets are not rewritten.
+
 ### Added — T-088
 
 - **Entities can now be soft-archived.** `entities` gains a `status` column (mirroring `campaigns.status`) plus `entityService.archive`/`unarchive`, both scoped to the owning campaign. Archived entities drop out of `entityService.list` and `getByName`'s fuzzy name search by default; an `includeArchived` flag opts back in, and is now wired through the `list_entities`/`get_entity` MCP tools and their input validators. `getById` (explicit id lookup) and `detectSpans` (`log_session` auto-linking) are unaffected — an archived entity still resolves directly by id and still auto-links during session logging, since archive is a hide-a-mistake mechanism, not a "this is narratively dead" marker (`G-006`). No MCP tools to flip the flag yet — that's T-089; excluding archived entities from `detectSpans` specifically is T-090.
