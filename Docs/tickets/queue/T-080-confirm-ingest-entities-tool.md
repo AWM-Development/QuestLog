@@ -4,8 +4,6 @@ Milestone ref: Docs/milestones/MILESTONES_V1_3_MCP.md M-EXTRACT.2
 
 Priority: P1
 
-Blocked on: T-079 — must be merged into develop first
-
 Branch: feat/m-extract/t-080-confirm-ingest-entities-tool
 
 Context files (load ONLY these):
