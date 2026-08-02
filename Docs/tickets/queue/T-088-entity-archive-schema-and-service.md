@@ -2,7 +2,7 @@
 
 Milestone ref: M-REMOTE.10 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
-Priority: P2
+Priority: P0
 
 Branch: feat/m-remote/t-088-entity-archive-schema-and-service
 
