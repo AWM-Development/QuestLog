@@ -1,4 +1,4 @@
-# G-023 — Surfacing superseded-lore history to the user
+# G-025 — Surfacing superseded-lore history to the user
 
 Gate type: 🧠 strategy
 
@@ -45,6 +45,14 @@ Notes: Surfaced during Alex's morning-review of T-076's PR, when asked
   gate does not assume or create one; `/ungate`'s resolution should decide
   which milestone doc (existing or new) the resulting ticket(s) land in.
   Related but distinct from `G-022` (broader "MCP app polish" milestone,
-  still unresolved) — worth checking at `/ungate` time on G-023 whether it
+  still unresolved) — worth checking at `/ungate` time on G-025 whether it
   should simply fold into whatever G-022 resolves to, rather than opening
   a separate milestone slot.
+
+Renumbered 2026-08-02: originally filed as `G-023`, colliding with a
+  separately-filed, already-merged `G-023-inventory-management-design.md`
+  that `Docs/milestones/MILESTONES_V1_5_MCP.md` references directly by that
+  id. Renumbered to the next free id (`G-025`, after `G-024` — filed on the
+  same branch, same session) rather than renumbering the already-referenced
+  one — same resolution precedent as `G-012`/`G-013` in
+  `Docs/tickets/gated/G-013-documentation-duplication-reduction-strategy.md`.
