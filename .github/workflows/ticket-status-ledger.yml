@@ -94,9 +94,14 @@ jobs:
       # branches — not a failure, just nothing for this ledger to record.
       - name: Extract ticket id
         id: ticket
+        env:
+          # steps.pr.outputs.branch is derived from PR-author-controlled data
+          # (the head branch name) — kept out of the inline script body via
+          # env, same as Resolve PR details' own EVENT_PR_BRANCH handling,
+          # not just at the first hop where the untrusted value enters.
+          BRANCH: ${{ steps.pr.outputs.branch }}
         run: |
           set -euo pipefail
-          BRANCH="${{ steps.pr.outputs.branch }}"
           if [[ "$BRANCH" =~ ^feat/[^/]+/t-([0-9]+)- ]]; then
             echo "ticket_id=T-${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
             echo "found=true" >> "$GITHUB_OUTPUT"
@@ -153,9 +158,15 @@ jobs:
 
       - name: Log dry-run result (no commit)
         if: steps.ticket.outputs.found == 'true' && steps.mode.outputs.dry_run == 'true'
+        env:
+          # ENTRY is JSON built from the same untrusted branch/mergedAt
+          # values as BRANCH above — JSON-encoding doesn't escape a literal
+          # single quote, so echo '${{ }}' directly would let one break out
+          # of the shell string. Routed through env for the same reason.
+          ENTRY: ${{ steps.compute.outputs.entry }}
         run: |
           echo "🧪 dry_run — would upsert into $LEDGER_PATH:"
-          echo '${{ steps.compute.outputs.entry }}' | jq .
+          echo "$ENTRY" | jq .
           echo "Ledger would change: ${{ steps.compute.outputs.changed }}"
 
       - name: Commit ledger update to develop
