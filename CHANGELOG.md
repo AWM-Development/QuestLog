@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-110
+
+- **New CI job "Gate Guard"** fails a PR whose diff introduces or leaves a ticket file (under `Docs/tickets/{queue,backlog,in-progress,done}/`) carrying an unresolved `Gated on: G-###` (the referenced gate still open under `Docs/tickets/gated/`), or a `Blocked on: T-###` naming a ticket with no file under `Docs/tickets/done/` yet. A ticket that drops the line as part of the same diff (a normal promotion) is unaffected — the check reads the file's landing state, not its history. A `Gated on:` reference that's already resolved and moved to `Docs/tickets/gated/resolved/` warns instead of failing (a sync-bug signal for Alex, not a hard stop). Reusable logic lives in `packages/core/src/ci/gate-guard.ts`; `scripts/ci-gate-guard.sh` is the same entry point a future pre-flight wiring (T-115) will call locally before a run even opens a PR.
+
 ## [1.1.1] - 2026-08-02
 
 ### Added — T-080
