@@ -77,3 +77,26 @@ Notes: Raised alongside, not in place of, a separate working theory Alex
   `IMPLEMENTATION_NOTES.md` § T-034; the same paragraph appearing again
   verbatim in a source file and a test file was the actual excess, not
   the length of the original explanation itself.
+
+## Resolution (2026-08-03)
+
+Decided in `/ungate` session with Alex: adopt the cite-not-restate rule as
+proposed in the Open question above. Once a piece of rationale is captured
+in full in `IMPLEMENTATION_NOTES.md`, tickets and reports may still restate
+it in full (point-in-time records — same exemption `TICKET_SPEC.md` already
+gives `done/`/`archive/`/`reports/`), but rule files (`.claude/rules/*.md`,
+`CLAUDE.md` itself), code comments, and future tickets referencing the same
+fix must cite it with a one-line pointer instead of restating it.
+
+Enforcement: `reviewer.md`'s existing per-diff check is sufficient — Alex
+opted not to add a new periodic sweep skill parallel to
+`archive-implementation-notes`. Check 6 gets extended (not replaced) to also
+flag a diff that restates `IMPLEMENTATION_NOTES.md` rationale outside the
+diff itself, in a code comment, rule file, or new ticket, even at a single
+call site — closing the gap that let the `trustProxy` incident happen (the
+duplicate lived across `IMPLEMENTATION_NOTES.md` and two other files, not
+within one diff's multiple call sites, which is all today's check 6 covers).
+
+Ticketed as **T-104**
+(`Docs/tickets/queue/T-104-cite-not-restate-implementation-notes-rationale.md`),
+Priority P1.
