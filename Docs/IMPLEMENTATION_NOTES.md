@@ -2,7 +2,7 @@
 
 **Purpose:** Non-obvious decisions and gotchas that aren't derivable from reading the code. Read at the start of every session. Add an entry when you make a non-obvious decision. Retired entries: `Docs/IMPLEMENTATION_NOTES_ARCHIVE.md`.
 
-**Last Updated:** 2026-08-02
+**Last Updated:** 2026-08-03
 
 ## G-020 — Pipeline audit: portability + CI-enforced invariants (2026-08-02)
 
@@ -968,3 +968,6 @@ Shipped G-019's resolution: Vitest **multi-project** isolation (not the package-
 **`entityService.create` widened from `db: Database` to `db: Database | Transaction`**, the same fix T-089 already made for `archive`/`unarchive`: `confirm_ingest_entities` creates entities inside `writeRequestService.confirm`'s own `db.transaction()` callback, which hands the apply function a `Transaction`, and `Transaction` doesn't structurally satisfy `Database` (missing `$client`). Type-only widening, no logic change.
 
 **`entities.sourceId` (nullable FK → `sources.id`, migration `0016_normal_guardian.sql`) added after this ticket first shipped without it**, closing a gap against M-EXTRACT.2's own exit condition ("each created entity links to its source document") that the ticket's Scope text never actually named — `confirm-ingest-entities.ts` already had `sourceId` sitting unused in its destructured `IngestEntitiesPayload` since T-079 staged it, just never passed it to `entityService.create`. Fixed by threading it through. This also forced a delete-order fix: `TABLES_IN_DELETE_ORDER` (`global-setup.ts`) and `deleteCampaignTree` (`test-helpers.ts`) both deleted `sources` before `entities`, which now violates the new FK — `entities` must delete before `sources` in both.
+
+## G-021 — Entity-extraction algorithm quality: LLM-based, not heuristic (2026-08-03)
+Full rationale on `Docs/tickets/gated/resolved/G-021-entity-extraction-algorithm-quality.md`. The one thing worth carrying here: **before building any LLM-backed feature, check for a reusable structured-call pattern first** (T-118 establishes it) rather than each feature rolling its own Anthropic SDK plumbing — the same one-client-per-vendor discipline `voyage.client.ts` already enforces for embeddings. T-078's heuristic (`entity-candidate-detection.service.ts`) is superseded by T-119 but deliberately left in place, not deleted, until the LLM path has run in production long enough to trust.
