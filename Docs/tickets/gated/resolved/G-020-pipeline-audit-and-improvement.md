@@ -190,3 +190,103 @@ Notes: Findings from the 2026-08-02 investigation session, recorded so the
   under autonomous execution are precisely the ones with machine-checkable
   exit conditions. If that holds, enforcement work is worth doing on its
   own merits and independently of Q1's outcome.
+
+## Resolution (2026-08-02)
+
+Resolved with Alex, out of numeric order (this gate was worked ahead of the
+still-open `G-013`/`G-017` — a deliberate one-time deviation from
+`/ungate`'s "always earliest" rule, at Alex's explicit direction, not a
+change to that rule going forward).
+
+**Comparison set (Q3).** Three reference points, researched live in this
+session: (1) **spec-driven development / GitHub's `spec-kit`** — the
+converged industry shape is `Specify → Plan → Tasks → Implement`, with an
+`AGENTS.md` "constitution" at the repo root (a cross-tool convention, not a
+single vendor's), and EARS-syntax acceptance criteria ("WHEN X, the system
+SHALL Y"). QuestLog's ticket format is a collapsed version of the same idea
+— one file carries spec+plan+tasks — and its `Exit condition:` field is
+already EARS-adjacent in spirit, if not syntax. (2) **Devin's playbooks +
+cloud fan-out** — reusable prompt templates for recurring job shapes, and
+multiple parallel cloud sessions per repo rather than one sequential runner;
+Cognition reports ~75% unsupervised completion on SWE-bench-style tasks.
+(3) **Machine-enforced agent policy** — the 2026 multi-agent governance
+literature has converged on not trusting an agent's own report of what it
+did, verifying invariants in CI/at the platform layer instead. This is a
+one-off written report (same shape as `T-038`'s security review), recorded
+here rather than as a separate doc — no standing-practice mechanism is
+being built now; revisit only if a recurring need for re-running this
+comparison shows up.
+
+**Where QuestLog already exceeds the comparison set:** the observability
+system (`M-OBS`) — per-ticket dollar cost broken down by cache-write/read
+tier, complexity-tier normalization, a reviewer-subagent cost split,
+human-hour-equivalent modeling — is more granular than anything found
+published in the spec-kit or Devin ecosystems. The gate/ticket split
+(routine work vs. 🎨/🧠 decisions, each with its own durable, auditable
+lifecycle) is cleaner than spec-kit's single transient `clarify` step.
+
+**Where it's behind, and this gate's actual resolution:**
+
+- **Q1 (portability) — full commitment.** `AGENTS.md` becomes the canonical
+  constitution (`T-105`); the one real runner coupling
+  (`CLAUDE_PROJECT_DIR`, Notes §2) gets a safe default (`T-104`);
+  `EXECUTOR_ROUTINE.md` grows a "Runners" section rather than forking per
+  runner (`T-106`, Q1(c)); `TICKET_SPEC.md`'s `Model:` field generalizes to
+  `Runner:` + `Model:` (`T-107`, Q1(b)); the observability store gains a
+  `runner` dimension (`T-108`) and a `RunnerCostAdapter` interface
+  (`T-109`) — the harder half Notes §3 flagged, done now rather than
+  deferred, per Alex's "full commitment" call.
+- **Q2 (instruction → invariant) — build the full candidate set.** All five
+  candidates from the Open question section get tickets: gate guard
+  (`T-110`, `P0` — cheapest and highest-value, directly the failure mode
+  that opened this gate), scope guard (`T-111`), report-completeness
+  validation (`T-112`), exit-condition evidence recomputation (`T-113` —
+  scoped to not duplicate the already-queued `T-055`'s diff-stat sync), and
+  the red-check TDD-as-CI-job (`T-114`, explicitly the most novel/highest-risk
+  candidate, scoped conservatively). All become required status checks on
+  `develop`; `T-115` (blocked on all five) wires the same logic into the
+  executor's own pre-flight so a run fails fast locally rather than only at
+  PR time — the red-check is deliberately excluded from pre-flight, since
+  it needs a completed diff to run against. Alex's framing: don't treat
+  this as "pick the top 1-2," build the backlog now so the micro-ticket
+  pipeline can iterate on it over time regardless of what gets prioritized
+  first.
+- **Q4 (surface expansion) — all five candidates logged as roadmap, none
+  ticketed yet.** Second runner as a parallel execution lane, Slack
+  delivery, an external tracker as a mirror (never a replacement for
+  `Docs/tickets/` as canonical), automated review bots alongside the
+  `reviewer` subagent, and CI-event-driven triggers. Recorded in
+  `MILESTONES_V1_1_MCP.md`'s M-PIPELINE "Future candidates" note rather than
+  drafted — Alex's call was to put all five on record, not narrow to a
+  subset now.
+- **Q5 (sequencing/ownership) — extends `M-PIPELINE` in `MILESTONES_V1_1_MCP.md`**
+  (M-PIPELINE.8–19), not a new milestone doc — confirmed explicitly with
+  Alex after an initial round of drafting, since M-PIPELINE only exists in
+  that file and "extend M-PIPELINE" necessarily means editing it there.
+  Drift found in Notes §4 (`lineup.md`'s stale search, the PR-template/
+  routine conflict, the dead `/code-review` reference) is **not** separately
+  ticketed here — each is a one-line fix better caught by whatever Q2
+  enforcement job would have caught it going forward (the doc-sync-style
+  guards), rather than three throwaway tickets; flagged here so it isn't
+  lost, and low-cost enough for anyone to fix opportunistically.
+
+**Letter grade on the pipeline as it stands (Alex's ask, not part of the
+formal Q1–Q5 decision, recorded here for the record):** **B+.** Strong
+engineering craftsmanship — TDD discipline, real concurrency safety
+(worktree isolation + claim-by-push mutex), and observability more granular
+than the public comparison set. Held back a full grade from A-/A by exactly
+this gate's Q2 finding: every rule in the routine is enforced by the agent
+choosing to follow prose, not verified by CI — the specific gap the 2026
+governance literature treats as load-bearing for autonomous pipelines.
+Expected to move to A-/A once the Q2 tickets land, since the underlying
+design was already sound; it just wasn't checked.
+
+**Addendum (2026-08-02, same session):** Alex asked for Q4's five roadmap
+candidates to actually be gated rather than left as prose. Filed
+`G-026` (second runner lane), `G-027` (Slack + external tracker, grouped),
+`G-028` (review bots), `G-029` (CI-event triggers) — each blocking a new
+milestone, `M-ROBUST` (`Docs/milestones/MILESTONES_V1_6_MCP.md`, not
+`v1.5` — that slot was already reserved for `G-022`/`G-023` before this
+session, an existing-file collision caught before it overwrote anything).
+`MILESTONES_V1_1_MCP.md`'s "Future candidates" note updated to point at
+the real gates instead of bare prose.
