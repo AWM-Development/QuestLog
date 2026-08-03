@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-116
+
+- **Merge-triggered ticket-status ledger.** A new GitHub Action (`.github/workflows/ticket-status-ledger.yml`) fires when a `feat/<group>/t-###-<slug>` branch merges into `develop` and records `{ ticketId, prNumber, branch, mergedAt }` into `Docs/tickets/.merge-ledger.json`. The nightly executor's pre-flight (`EXECUTOR_ROUTINE.md` Step 1) now reads this ledger first and only falls back to a narrow, per-candidate live GitHub check for anything the ledger doesn't resolve, replacing every run's full paginated PR-history scan and full branch listing with a small file read in the common case. Also supports `workflow_dispatch` with `pr_number`/`dry_run` inputs for on-demand (re-)ledgering of an already-merged PR.
+
 ## [1.1.1] - 2026-08-02
 
 ### Added — T-080
