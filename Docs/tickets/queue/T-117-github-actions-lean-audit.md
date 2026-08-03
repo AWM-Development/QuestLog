@@ -1,4 +1,4 @@
-# T-104 — Audit GitHub Actions workflows for lean-ness ahead of M-1.1 gates
+# T-117 — Audit GitHub Actions workflows for lean-ness ahead of M-1.1 gates
 
 Milestone ref: M-EFFICIENCY.7 (`Docs/milestones/MILESTONES_V1_2_MCP.md`)
 
@@ -8,7 +8,7 @@ Strategy-gate flag: no
 
 Priority: P0
 
-Branch: feat/m-efficiency/t-104-github-actions-lean-audit
+Branch: feat/m-efficiency/t-117-github-actions-lean-audit
 
 Context files (load ONLY these):
   - .github/workflows/ci.yml
@@ -28,7 +28,7 @@ Scope:
   it — and wants this cleaned up *before* Milestone 1.1 starts adding
   real enforcement gates on top of it, not after. Produce a single
   markdown deliverable at
-  `Docs/tickets/reports/T-104-github-actions-lean-audit.md` auditing all
+  `Docs/tickets/reports/T-117-github-actions-lean-audit.md` auditing all
   four workflow files for unneeded steps, duplication, and drift.
   **Recommendations only — see Out of scope.** At minimum, address:
 
@@ -91,7 +91,7 @@ Exit condition (machine-checkable):
   - `git diff` (or `git status`) shows zero changes under
     `.github/workflows/` — this ticket's diff is additive-only, one new
     file under `Docs/tickets/reports/`
-  - `Docs/tickets/reports/T-104-github-actions-lean-audit.md` exists and
+  - `Docs/tickets/reports/T-117-github-actions-lean-audit.md` exists and
     names all four workflow files (`ci.yml`, `e2e-release-check.yml`,
     `smoke-test-dev.yml`, `smoke-test-prod.yml`) by filename at least
     once each

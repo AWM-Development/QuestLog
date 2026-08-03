@@ -1,4 +1,4 @@
-# T-103 — PR-merge GitHub Action as ticket-status source of truth
+# T-116 — PR-merge GitHub Action as ticket-status source of truth
 
 Milestone ref: M-EFFICIENCY.6 (`Docs/milestones/MILESTONES_V1_2_MCP.md`)
 
@@ -8,7 +8,7 @@ Strategy-gate flag: no
 
 Priority: P0
 
-Branch: feat/m-efficiency/t-103-pr-merge-status-ledger-action
+Branch: feat/m-efficiency/t-116-pr-merge-status-ledger-action
 
 Context files (load ONLY these):
   - Docs/tickets/EXECUTOR_ROUTINE.md (Steps 0, 1, 2, 6, 7 — Step 1 is
