@@ -280,3 +280,13 @@ choosing to follow prose, not verified by CI — the specific gap the 2026
 governance literature treats as load-bearing for autonomous pipelines.
 Expected to move to A-/A once the Q2 tickets land, since the underlying
 design was already sound; it just wasn't checked.
+
+**Addendum (2026-08-02, same session):** Alex asked for Q4's five roadmap
+candidates to actually be gated rather than left as prose. Filed
+`G-026` (second runner lane), `G-027` (Slack + external tracker, grouped),
+`G-028` (review bots), `G-029` (CI-event triggers) — each blocking a new
+milestone, `M-ROBUST` (`Docs/milestones/MILESTONES_V1_6_MCP.md`, not
+`v1.5` — that slot was already reserved for `G-022`/`G-023` before this
+session, an existing-file collision caught before it overwrote anything).
+`MILESTONES_V1_1_MCP.md`'s "Future candidates" note updated to point at
+the real gates instead of bare prose.

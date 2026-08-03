@@ -192,17 +192,13 @@ resolution (`Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md
   So a run fails fast locally (Step 1) rather than only at PR time, per `G-020` Q2's "whether the same logic also runs as a pre-flight." Blocked on T-110, T-111, T-112, T-113, T-114.
   Exit: see T-115.
 
-**Future candidates (not ticketed) — `G-020` Q4, all five logged as roadmap
-candidates rather than picking a subset:** a second runner as a parallel
-execution lane (Devin cloud fan-out, one machine per ticket — the claim-push
-mutex from `M-PIPELINE.1` already makes this safe); Slack delivery of
-`/lineup`, blocked-run alerts, and possibly `/ungate` prompts; an external
-ticket tracker (Linear/Jira) as a *mirror* of `Docs/tickets/`, never a
-replacement for it as canonical; automated review bots as a second opinion
-alongside the `reviewer` subagent; and CI-event-driven triggers (a `develop`
-merge re-running the promotion sweep, CI red opening a fix session) to
-complement the time-based scheduler. See `G-020`'s resolution for the full
-rationale on each; ticket only once one is actually prioritized.
+**`G-020` Q4 follow-through — now gated, not just logged as prose.** All five
+candidates raised here were subsequently filed as real gate-stubs
+(`G-026`–`G-029`, Slack and the external tracker grouped under one gate)
+blocking a new milestone, `M-ROBUST` (`Docs/milestones/MILESTONES_V1_6_MCP.md`)
+— see that doc for the full task list and each gate's own Open question.
+Nothing here is ticketed yet; `/ungate` resolves each gate in its own
+session before `M-ROBUST`'s tasks get real Scope/Exit-condition fields.
 
 ---
 
