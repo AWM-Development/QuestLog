@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-117
+
+- **GitHub Actions lean-ness audit** (`Docs/tickets/reports/T-117-github-actions-lean-audit.md`) — recommendations-only review of all four workflow files (`ci.yml`, `e2e-release-check.yml`, `smoke-test-dev.yml`, `smoke-test-prod.yml`) ahead of Milestone 1.1's real enforcement gates. Flags cross-workflow step duplication (Turborepo cache restore, test-DB provisioning, checkout/pnpm/node/install preamble), `@v4`/`@v5` action-version drift with no documented reason, several warning-only checks that can never actually fail a PR, and a handful of smaller sprawl items — each tagged `keep | consolidate | remove | tighten`. No workflow files changed by this ticket; follow-up tickets are Alex's call.
+
 ## [1.1.1] - 2026-08-02
 
 ### Added — T-080
