@@ -225,7 +225,7 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Check for unresolved Gated on: / unmet Blocked on:
+      - name: "Check for unresolved Gated on: / unmet Blocked on:"
         run: scripts/ci-gate-guard.sh origin/${{ github.base_ref }}
 
   # ── Mockup Guard ──────────────────────────────────────────────────────────
