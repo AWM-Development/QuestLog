@@ -1,7 +1,7 @@
 # Ticket Spec
 
 **Location:** `Docs/tickets/TICKET_SPEC.md`
-**Last Updated:** 2026-08-01
+**Last Updated:** 2026-08-03
 **Purpose:** The exact, complete format for every ticket file. `.claude/skills/ticket-writer/SKILL.md` produces tickets in this shape; the nightly executor and the reviewer subagent both assume it. See `Docs/tickets/GATE_SPEC.md` for the companion format used by design/strategy gate-stubs, which feed this pipeline via a ticket's `Gated on:` field.
 
 Every ticket lives at `Docs/tickets/T-###-slug.md` (`###` sequential, zero-padded, never reused across `backlog/`, `queue/`, `in-progress/`, `done/`, `blocked/`, `archive/`) and contains exactly these fields, in this order:
@@ -193,10 +193,24 @@ moments: when its PR merges (straight from `queue/` to `done/` in one shot —
 `in-progress/` on `develop` is essentially never populated in practice), or
 never, if it was blocked. **A ticket sitting in `queue/` on `develop` can
 therefore already be shipped-and-under-review, previously blocked, or
-genuinely untouched — the directory alone doesn't tell you which.** The
-executor's pre-flight resolves this per-candidate-ticket by checking the
-named branch and PR state before deciding to pick up, resume, or skip it
-(`EXECUTOR_ROUTINE.md` Step 1).
+genuinely untouched — the directory alone doesn't tell you which.**
+
+The executor's pre-flight resolves this per candidate ticket, but not with a
+uniform live GitHub check for every run (`EXECUTOR_ROUTINE.md` Step 1,
+rewritten by T-116/`M-EFFICIENCY.6`). A merge-triggered GitHub Action
+(`.github/workflows/ticket-status-ledger.yml`) writes `{ ticketId, prNumber,
+branch, mergedAt }` into `Docs/tickets/.merge-ledger.json` the moment a
+`feat/<group>/t-###-<slug>` branch merges, so the pre-flight can resolve the
+already-merged case for free by reading one small file instead of re-deriving
+it from GitHub's full PR history every night. The ledger is deliberately not
+the whole story, though — it only ever fires on merge, so it has nothing to
+say about an open PR or a branch someone else has actively claimed. For any
+candidate the ledger doesn't resolve, the pre-flight falls back to a narrow,
+per-candidate live check scoped to that one ticket's `Branch:` field (a
+head-filtered PR query plus a single-ref branch-existence check), not a
+full-repo scan — cheap because it only ever runs for the handful of
+candidates actually reached before a pick. See `Docs/IMPLEMENTATION_NOTES.md`
+§ T-116 for the ledger's exact format and the Action's design.
 
 ### Unblocking a blocked ticket
 
