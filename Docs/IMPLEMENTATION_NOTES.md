@@ -4,6 +4,10 @@
 
 **Last Updated:** 2026-08-02
 
+## G-020 — Pipeline audit: portability + CI-enforced invariants (2026-08-02)
+
+**`AGENTS.md` (once `T-105` lands) is the canonical constitution; `CLAUDE.md` is a thin pointer, not a duplicate.** Full rationale, the competitive-landscape research behind the decision, and the CI-enforcement candidate list: `Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md` § Resolution.
+
 ## T-079 — `ingest_text` entity-candidate staging (2026-08-02)
 
 **Making `detectCandidates` synchronous inside `ingest_text` (per the ticket's own scope) gives the fire-and-forget embed pipeline a small head start.** Awaiting `entityService.detectCandidates` before the tool returns delays the response just enough that a subsequent `get_source_status` call can observe a later stage than `"pending"` (e.g. `"extracting"`) — confirmed flaky-then-consistent across repeated runs, not a one-off. Fixed the pre-existing `server.test.ts` assertion to check `status !== "done"` (still in flight) instead of the exact first stage; `source.status` returned directly by `ingest_text` itself is unaffected (captured at creation time) and still asserts `"pending"` exactly.

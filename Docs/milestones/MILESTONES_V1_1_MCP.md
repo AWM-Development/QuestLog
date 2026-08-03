@@ -137,6 +137,73 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   Surfaced during a `/morning-review` of T-072, not by a PRD section. `T-069` established `tmp/worktrees/T-###/` and never wired anything to remove one — `Docs/IMPLEMENTATION_NOTES.md` § T-069's own follow-up fix (T-070) already found this live: a worktree routinely still sits on disk right after its PR lands, since nothing ever runs `git worktree remove` on it. `T-072` compounds this: a finished worktree now also leaves a running `docker compose` stack (its own Postgres container, volume, and network) behind, not just inert files — an accumulating resource cost, not merely disk clutter. Both are reaped by the same trigger (a worktree's branch has a merged PR), so this covers them as one lifecycle fix rather than two separate ones, per `T-072`'s own report ("Anything Alex must decide").
   Exit: see T-087.
 
+**The tasks below (M-PIPELINE.8–19) extend this milestone per `G-020`'s
+resolution (`Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md`)
+— runner-agnosticism (Q1) and CI-enforced invariants (Q2). Two groups:**
+
+*Runner-agnosticism (Q1 — full commitment):*
+
+- [ ] **M-PIPELINE.8 — Runner-neutral `CLAUDE_PROJECT_DIR` default** (T-104)
+  `scripts/worktree-postgres-env.sh:7` and `.claude/hooks/session-start.sh:54` both hard-require `CLAUDE_PROJECT_DIR` with no fallback; under a runner that doesn't export it, a partial recovery (only the `cd` line fixed) silently reintroduces the `T-071`/`T-072`/`T-099` shared-Postgres collision instead of failing loudly. `G-020` Notes §2.
+  Exit: see T-104.
+
+- [ ] **M-PIPELINE.9 — Adopt `AGENTS.md` as the canonical constitution** (T-105)
+  `CLAUDE.md` becomes a thin pointer to `AGENTS.md`, which carries the actual runner-neutral content (Principles, Commands, Pointer map, Hard rules) — the cross-tool convention every non-Claude runner checks for by default, per `G-020`'s Q3 research. `G-020` Notes §1 ("the routine is already portable by accident of good design") — this closes the one deliberate naming gap.
+  Exit: see T-105.
+
+- [ ] **M-PIPELINE.10 — `EXECUTOR_ROUTINE.md` "Runners" section** (T-106)
+  Names which steps are Claude-Code-specific (the `Model: sonnet` field, hook-based usage capture) vs. runner-neutral, per `G-020` Q1(c) — a short section, not a per-runner fork of the routine. Blocked on T-105 (references `AGENTS.md`).
+  Exit: see T-106.
+
+- [ ] **M-PIPELINE.11 — Generalize `TICKET_SPEC.md`'s `Model:` field to `Runner:` + `Model:`** (T-107)
+  Per `G-020` Q1(b): `Runner: claude-code | devin`, with `Model:` only meaningful when `Runner: claude-code`. Updates `TICKET_SPEC.md` and `ticket-writer`'s field-filling step.
+  Exit: see T-107.
+
+- [ ] **M-PIPELINE.12 — `runner` dimension on `ticket_runs`** (T-108)
+  Nullable `runner` column (backfilled `'claude-code'` for existing rows), the established placeholder-column pattern (`packages/observability/src/schema/tables.ts`'s existing `complexityTier`/`filesChanged` columns). Schema-only — no adapter yet. `G-020` Notes §3.
+  Exit: see T-108.
+
+- [ ] **M-PIPELINE.13 — Runner-neutral cost adapter interface** (T-109)
+  A `RunnerCostAdapter` interface with Claude Code's existing transcript-based implementation as the reference case; a real Devin/ACU implementation is deferred until a second runner actually executes a ticket, per `G-020` Notes §3's honest options ("a `runner` dimension with per-runner views... `T-051`'s human-hour-equivalent model is runner-neutral and survives either way"). Blocked on T-108.
+  Exit: see T-109.
+
+*CI-enforced invariants (Q2 — all candidates, per Alex's call to build out the full backlog):*
+
+- [ ] **M-PIPELINE.14 — CI gate guard: fail a PR whose ticket carries an unresolved `Gated on:`/unmet `Blocked on:`** (T-110)
+  The cheapest, highest-value check per `G-020` Q2 — directly the failure mode the Devin investigation session surfaced (skipped strategy-review stops). Required status check on `develop`.
+  Exit: see T-110.
+
+- [ ] **M-PIPELINE.15 — CI scope guard: diff confined to the ticket's declared `Context files:`, `Docs/mockups/` untouched, base is `develop`** (T-111)
+  Exit: see T-111.
+
+- [ ] **M-PIPELINE.16 — CI report-completeness validator against `REPORT_TEMPLATE.md`** (T-112)
+  No placeholder text, required sections present, test-evidence block contains real runner output rather than a "tests pass" claim.
+  Exit: see T-112.
+
+- [ ] **M-PIPELINE.17 — Exit-condition evidence recomputation** (T-113)
+  CI cross-checks the report's "Exit condition check" section against the diff itself (referenced test files actually exist and were touched) rather than trusting the agent's prose. Distinct from the already-queued `T-055` (PR diff-stat sync, a mechanical stat sync, not a claims check) — see T-113's own Context files for the boundary.
+  Exit: see T-113.
+
+- [ ] **M-PIPELINE.18 — Red-check CI job: a PR's new tests must fail against `develop`'s pre-change implementation** (T-114)
+  TDD enforced as a CI job, not a written rule — `G-020` Q2's most novel and highest-risk candidate. Scoped conservatively: identify new/changed test files via the PR diff, run only those against a temporary checkout of `develop`'s source, require at least one failure.
+  Exit: see T-114.
+
+- [ ] **M-PIPELINE.19 — Wire the enforcement guards into the executor's own pre-flight** (T-115)
+  So a run fails fast locally (Step 1) rather than only at PR time, per `G-020` Q2's "whether the same logic also runs as a pre-flight." Blocked on T-110, T-111, T-112, T-113, T-114.
+  Exit: see T-115.
+
+**Future candidates (not ticketed) — `G-020` Q4, all five logged as roadmap
+candidates rather than picking a subset:** a second runner as a parallel
+execution lane (Devin cloud fan-out, one machine per ticket — the claim-push
+mutex from `M-PIPELINE.1` already makes this safe); Slack delivery of
+`/lineup`, blocked-run alerts, and possibly `/ungate` prompts; an external
+ticket tracker (Linear/Jira) as a *mirror* of `Docs/tickets/`, never a
+replacement for it as canonical; automated review bots as a second opinion
+alongside the `reviewer` subagent; and CI-event-driven triggers (a `develop`
+merge re-running the promotion sweep, CI red opening a fix session) to
+complement the time-based scheduler. See `G-020`'s resolution for the full
+rationale on each; ticket only once one is actually prioritized.
+
 ---
 
 ## Milestone M-AUDIT: Portfolio & Architecture Audit
