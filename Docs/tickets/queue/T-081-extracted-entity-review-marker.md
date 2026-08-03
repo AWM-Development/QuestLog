@@ -4,8 +4,6 @@ Milestone ref: Docs/milestones/MILESTONES_V1_3_MCP.md M-EXTRACT.3
 
 Priority: P1
 
-Blocked on: T-080 — must be merged into develop first
-
 Branch: feat/m-extract/t-081-extracted-entity-review-marker
 
 Context files (load ONLY these):
