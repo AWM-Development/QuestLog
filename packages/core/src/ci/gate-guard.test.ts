@@ -17,8 +17,9 @@ function deps(overrides: Partial<GateGuardDeps>): GateGuardDeps {
 
 describe("parseGatedOn", () => {
 	it("extracts the gate id from a Gated on: line", () => {
-		expect(parseGatedOn("Priority: P1\n\nGated on: G-017 — must be resolved\n"))
-			.toBe("G-017");
+		expect(
+			parseGatedOn("Priority: P1\n\nGated on: G-017 — must be resolved\n"),
+		).toBe("G-017");
 	});
 
 	it("returns null when there is no Gated on: line", () => {
@@ -29,7 +30,9 @@ describe("parseGatedOn", () => {
 describe("parseBlockedOn", () => {
 	it("extracts every ticket id from a Blocked on: line", () => {
 		expect(
-			parseBlockedOn("Priority: P1\n\nBlocked on: T-054, T-055 — must be merged\n"),
+			parseBlockedOn(
+				"Priority: P1\n\nBlocked on: T-054, T-055 — must be merged\n",
+			),
 		).toEqual(["T-054", "T-055"]);
 	});
 
@@ -53,12 +56,13 @@ describe("runGateGuard", () => {
 					path === "Docs/tickets/backlog/T-200-example.md"
 						? "Priority: P1\n\nGated on: G-099 — must be resolved via /ungate first\n"
 						: null,
-				listDir: (path) => (path === "Docs/tickets/gated" ? ["G-099-example.md"] : []),
+				listDir: (path) =>
+					path === "Docs/tickets/gated" ? ["G-099-example.md"] : [],
 			}),
 		);
 		expect(result.ok).toBe(false);
 		expect(result.failures).toHaveLength(1);
-		expect(result.failures[0].message).toMatch(/G-099/);
+		expect(result.failures[0]?.message).toMatch(/G-099/);
 	});
 
 	it("passes the same ticket once its Gated on: line is removed as part of the diff", () => {
@@ -69,7 +73,8 @@ describe("runGateGuard", () => {
 					path === "Docs/tickets/queue/T-200-example.md"
 						? "Priority: P1\n\nBranch: feat/x\n"
 						: null,
-				listDir: (path) => (path === "Docs/tickets/gated" ? ["G-099-example.md"] : []),
+				listDir: (path) =>
+					path === "Docs/tickets/gated" ? ["G-099-example.md"] : [],
 			}),
 		);
 		expect(result.ok).toBe(true);
@@ -88,7 +93,7 @@ describe("runGateGuard", () => {
 		);
 		expect(result.ok).toBe(false);
 		expect(result.failures).toHaveLength(1);
-		expect(result.failures[0].message).toMatch(/T-999/);
+		expect(result.failures[0]?.message).toMatch(/T-999/);
 	});
 
 	it("passes a Blocked on: line naming a real ticket id already in done/", () => {
@@ -122,7 +127,7 @@ describe("runGateGuard", () => {
 		expect(result.ok).toBe(true);
 		expect(result.failures).toEqual([]);
 		expect(result.warnings).toHaveLength(1);
-		expect(result.warnings[0].message).toMatch(/G-020/);
+		expect(result.warnings[0]?.message).toMatch(/G-020/);
 	});
 
 	it("ignores non-ticket files in the diff", () => {

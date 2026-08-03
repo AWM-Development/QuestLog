@@ -12,12 +12,12 @@ const TICKET_FILE_ID_RE = /^(T-\d+)-/;
 
 export function parseGatedOn(content: string): string | null {
 	const match = content.match(GATE_ID_RE);
-	return match ? match[1] : null;
+	return match?.[1] ?? null;
 }
 
 export function parseBlockedOn(content: string): string[] {
 	const match = content.match(BLOCKED_ON_LINE_RE);
-	if (!match) return [];
+	if (!match?.[1]) return [];
 	return match[1].match(TICKET_ID_RE) ?? [];
 }
 
@@ -41,11 +41,15 @@ export interface GateGuardDeps {
 	listDir: (path: string) => string[];
 }
 
-function idsFromDir(deps: GateGuardDeps, dir: string, idRe: RegExp): Set<string> {
+function idsFromDir(
+	deps: GateGuardDeps,
+	dir: string,
+	idRe: RegExp,
+): Set<string> {
 	const ids = new Set<string>();
 	for (const name of deps.listDir(dir)) {
-		const match = name.match(idRe);
-		if (match) ids.add(match[1]);
+		const id = name.match(idRe)?.[1];
+		if (id) ids.add(id);
 	}
 	return ids;
 }
@@ -55,13 +59,21 @@ export function runGateGuard(deps: GateGuardDeps): GateGuardResult {
 	const failures: GateGuardIssue[] = [];
 	const warnings: GateGuardIssue[] = [];
 
-	const unresolvedGateIds = idsFromDir(deps, "Docs/tickets/gated", GATE_FILE_ID_RE);
+	const unresolvedGateIds = idsFromDir(
+		deps,
+		"Docs/tickets/gated",
+		GATE_FILE_ID_RE,
+	);
 	const resolvedGateIds = idsFromDir(
 		deps,
 		"Docs/tickets/gated/resolved",
 		GATE_FILE_ID_RE,
 	);
-	const doneTicketIds = idsFromDir(deps, "Docs/tickets/done", TICKET_FILE_ID_RE);
+	const doneTicketIds = idsFromDir(
+		deps,
+		"Docs/tickets/done",
+		TICKET_FILE_ID_RE,
+	);
 
 	for (const path of deps.listChangedFiles()) {
 		if (!TICKET_FILE_RE.test(path)) continue;
@@ -109,10 +121,14 @@ function resolveRepoRoot(): string {
 }
 
 function gitDiffChangedFiles(repoRoot: string, baseRef: string): string[] {
-	const output = execFileSync("git", ["diff", "--name-only", `${baseRef}...HEAD`], {
-		encoding: "utf-8",
-		cwd: repoRoot,
-	});
+	const output = execFileSync(
+		"git",
+		["diff", "--name-only", `${baseRef}...HEAD`],
+		{
+			encoding: "utf-8",
+			cwd: repoRoot,
+		},
+	);
 	return output.split("\n").filter((line) => line.length > 0);
 }
 
@@ -143,7 +159,9 @@ function printResult(result: GateGuardResult): void {
 		console.error(`❌ ${failure.ticketPath}: ${failure.message}`);
 	}
 	if (result.ok) {
-		console.log("✅ Gate guard passed — no unresolved Gated on:/unmet Blocked on: found.");
+		console.log(
+			"✅ Gate guard passed — no unresolved Gated on:/unmet Blocked on: found.",
+		);
 	}
 }
 
