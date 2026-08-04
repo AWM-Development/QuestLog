@@ -169,7 +169,7 @@ resolution (`Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md
 
 *CI-enforced invariants (Q2 — all candidates, per Alex's call to build out the full backlog):*
 
-- [ ] **M-PIPELINE.14 — CI gate guard: fail a PR whose ticket carries an unresolved `Gated on:`/unmet `Blocked on:`** (T-110)
+- [x] **M-PIPELINE.14 — CI gate guard: fail a PR whose ticket carries an unresolved `Gated on:`/unmet `Blocked on:`** (T-110)
   The cheapest, highest-value check per `G-020` Q2 — directly the failure mode the Devin investigation session surfaced (skipped strategy-review stops). Required status check on `develop`.
   Exit: see T-110.
 

@@ -1,0 +1,14 @@
+[
+  {
+    "ticketId": "T-110",
+    "prNumber": 179,
+    "branch": "feat/m-pipeline/t-110-ci-gate-guard",
+    "mergedAt": "2026-08-04T23:36:10Z"
+  },
+  {
+    "ticketId": "T-116",
+    "prNumber": 182,
+    "branch": "feat/m-efficiency/t-116-pr-merge-status-ledger-action",
+    "mergedAt": "2026-08-04T23:29:41Z"
+  }
+]
