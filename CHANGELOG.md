@@ -10,6 +10,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-125
+
+- **Remote-sandbox base image build script** (`infra/session-bootstrap.Dockerfile`, `infra/README.md`) pre-installs `postgresql-16-pgvector` via the PGDG channel, matching `session-start.sh`'s own version preference — once the Claude Code Remote environment is pointed at the built image (an Alex-only environment-configuration step, documented but not performed by this ticket), the hook's existing `dpkg -s postgresql-16-pgvector` check finds the package already present and skips its apt-get/PGDG install block entirely.
+- **`session-start.sh`'s remote-sandbox branch now fast-paths its per-package `db:migrate` loop** — before running the loop, it checks every `TEST_DB_NAMES` database against the same existence/extensions/migration criteria the end-of-run verification gate already enforces, and skips straight to that gate (with a logged reason) when every database already qualifies. A genuinely fresh or partially-migrated database still runs the full loop unchanged.
+- **`infra/README.md` documents pnpm's observed warm-cache install behavior** as a named background fact (verified via this ticket's own session, not assumed), plus a regression note: a future base-image or provisioning change that doesn't also carry pnpm's store/`node_modules` forward would silently reintroduce a cold `pnpm install`.
+
 ### Added — T-081
 
 - **Entities created via `confirm_ingest_entities` are now marked as machine-extracted.** Each such entity gets `attributes.extractedFrom` set to the id of the source it was detected from, so a reviewer can tell an auto-extracted entity apart from a manually created one. `get_entity` and `list_entities` already return the full entity row, so both surface the marker with no response-shape change. Completes M-EXTRACT.3.
