@@ -2,7 +2,11 @@
 
 **Purpose:** Non-obvious decisions and gotchas that aren't derivable from reading the code. Read at the start of every session. Add an entry when you make a non-obvious decision. Retired entries: `Docs/IMPLEMENTATION_NOTES_ARCHIVE.md`.
 
-**Last Updated:** 2026-08-03
+**Last Updated:** 2026-08-04
+
+## T-081 — Mark extracted entities as machine-proposed for review (2026-08-04)
+
+**`entities.metadata.extractedFrom` (as the ticket described it) doesn't exist — `entities.attributes` is the actual pre-existing jsonb column, and that's what `confirm_ingest_entities` now sets `extractedFrom` on.** The ticket's own context-files note said "confirm before assuming, and reuse it rather than adding a new column"; `packages/core/src/db/schema/tables.ts` has no `metadata` column on `entities`, only `attributes` (default `{}`, previously unused by any code path). No migration needed since the column already exists. `get_entity`/`list_entities` already round-trip the full row via Drizzle's default `select()`/`returning()`, so both surface `attributes.extractedFrom` with no response-shape change. M-SEED.1's milestone text (`MILESTONES_V1_3_MCP.md` M-SEED.1) already anticipated this and calls it "the same column T-081 uses for `extractedFrom`" — future tickets writing to this column should keep using `attributes`, not introduce a `metadata` column that doesn't exist.
 
 ## G-020 — Pipeline audit: portability + CI-enforced invariants (2026-08-02)
 

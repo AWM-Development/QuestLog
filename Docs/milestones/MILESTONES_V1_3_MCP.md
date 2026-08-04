@@ -70,7 +70,7 @@ M-CANON.1 has no dependency and can ship first. M-CANON.2 depends on M-CANON.1's
   `ingest_text`'s response includes M-EXTRACT.1's candidate list in its preview payload (alongside the existing chunk/embed preview) with a confirm token. A confirm step — extending `confirm_log_session`'s pattern (`confirm_ingest_text`, or shared preview plumbing if `ingest_text` and `log_session` converge — implementation detail for the ticket, not decided here) atomically creates the confirmed entities via `entityService` and links them to the source, inside one transaction.
   Exit: confirming an `ingest_text` preview creates exactly the confirmed candidate entities (not auto-created before confirm); each created entity links to its source document.
 
-- [ ] **M-EXTRACT.3 — Mark extracted entities as machine-proposed for review** (T-081)
+- [x] **M-EXTRACT.3 — Mark extracted entities as machine-proposed for review** (T-081)
   Extracted entities carry a `metadata` marker (e.g. `extractedFrom: sourceId`) distinguishing them from manually authored ones, so Alex can identify and refine them via existing `list_entities`/`get_entity` review — no new UI. Note: iterating on extraction specificity (wrong granularity, duplicate/near-duplicate entities) may want entity archival, now covered by T-088/T-089/T-090 (`G-006` resolved 2026-07-30 — soft-archive as a hide mechanism) — this task ships without waiting on those, since they're independent tickets, not a hard blocker.
   Exit: a created entity's metadata records which source/extraction produced it; `get_entity`/`list_entities` surface that marker in their existing output shape.
 
