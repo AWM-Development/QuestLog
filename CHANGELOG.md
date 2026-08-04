@@ -14,6 +14,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 - **Entities created via `confirm_ingest_entities` are now marked as machine-extracted.** Each such entity gets `attributes.extractedFrom` set to the id of the source it was detected from, so a reviewer can tell an auto-extracted entity apart from a manually created one. `get_entity` and `list_entities` already return the full entity row, so both surface the marker with no response-shape change. Completes M-EXTRACT.3.
 
+### Added — T-082
+
+- **`contextService.searchChunks(db, { campaignId, query, limit, fetchFn })`** extracts `assemble`'s hybrid vector + keyword search, merge, and recency re-ranking steps into a standalone helper that returns ranked chunks without requiring a `conversationId` or paying for token-budget trimming and formatted context text. `assemble` now calls this helper internally instead of duplicating the logic, so there's exactly one implementation; its existing public behavior and return shape are unchanged. Lays the groundwork for T-083's lore-seeded `create_entity`, which needs ranked candidate chunks outside of a conversation.
+
 ### Added — T-117
 
 - **GitHub Actions lean-ness audit** (`Docs/tickets/reports/T-117-github-actions-lean-audit.md`) — recommendations-only review of all four workflow files (`ci.yml`, `e2e-release-check.yml`, `smoke-test-dev.yml`, `smoke-test-prod.yml`) ahead of Milestone 1.1's real enforcement gates. Flags cross-workflow step duplication (Turborepo cache restore, test-DB provisioning, checkout/pnpm/node/install preamble), `@v4`/`@v5` action-version drift with no documented reason, several warning-only checks that can never actually fail a PR, and a handful of smaller sprawl items — each tagged `keep | consolidate | remove | tighten`. No workflow files changed by this ticket; follow-up tickets are Alex's call.

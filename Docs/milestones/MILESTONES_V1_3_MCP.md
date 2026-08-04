@@ -96,7 +96,7 @@ M-EXTRACT.1 has no dependency on M-CANON and can ship independently. M-EXTRACT.2
 
 ### Tasks
 
-- [ ] **M-SEED.1 — Lightweight chunk-search helper** (T-082)
+- [x] **M-SEED.1 — Lightweight chunk-search helper** (T-082)
   `contextService.assemble` (`context.service.ts`) does full context assembly — campaign metadata, entities, conversation history, budget trimming — which is overkill and requires a `conversationId` this feature doesn't have. Extract a narrower entry point (e.g. `contextService.searchChunks(db, { campaignId, query, limit, fetchFn })`) that runs the same hybrid vector + keyword search and `mergeSearchResults`/recency re-ranking, returning ranked `SearchResult[]` with per-chunk scores, without the rest of `assemble`'s budget/formatting machinery.
   Exit: given the same query/campaign, `searchChunks`' ranked chunk order and scores match what `assemble` would select into its chunk section, without requiring a `conversationId` or producing formatted context text.
 
