@@ -29,6 +29,8 @@ Reply with exactly four sections, in this order:
 
 ## 1. Cost
 
+Lead with the ticket's **Complexity tier** (from the ticket file's `Complexity tier:` field — `XS`/`S`/`M`/`L`) so the cost/turn numbers below have a size-appropriate baseline: a $16 bill on an `L` ticket and the same figure on an `XS` ticket mean very different things. If the PR isn't ticket-shaped (no ticket file), say so instead of guessing a tier.
+
 If a `T-###.usage.json` exists, report from it: total tokens (input/output/cache-write/cache-read), wall-clock duration, turn count, `turns_to_green`, and theoretical cost — lead with whichever of `intro_usd`/`standard_usd` the artifact's `applies_rate` says actually applied, and mention the other for reference. If `reviewer_subagent` is non-null, show its cost separately alongside `total_system_cost_usd`. If `manually_inspected` is `true`, say so explicitly and note the cost/turn-count reflects a session Alex interrupted, not a clean autonomous run — don't present it as representative without that caveat. If no usage artifact exists for this ticket, say so plainly (e.g. "no usage artifact — this PR predates the usage-capture hook") rather than omitting the section or fabricating numbers.
 
 ## 2. Morning report
