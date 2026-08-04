@@ -2,8 +2,6 @@
 
 Milestone ref: M-OBS.5
 
-Complexity tier: L
-
 Priority: P2
 
 Blocked on: T-054, T-055 — must be merged into develop first
