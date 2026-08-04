@@ -1,0 +1,197 @@
+name: Ticket Status Ledger
+
+# Push-based replacement for EXECUTOR_ROUTINE.md Step 1's per-run full PR/
+# branch history scan (T-116, M-EFFICIENCY.6). Fires once, at merge time,
+# and records { ticketId, prNumber, branch, mergedAt } into
+# Docs/tickets/.merge-ledger.json so most nightly runs can resolve an
+# already-merged candidate from one small file instead of re-deriving it
+# from GitHub's full PR history every night. See Docs/IMPLEMENTATION_NOTES.md
+# § T-116 for the ledger format and the empirical contents:write outcome.
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [develop]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: PR number to (re-)ledger — must already be merged
+        required: true
+        type: string
+      dry_run:
+        description: Log the entry that would be written without committing
+        required: false
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+# Serializes concurrent runs (two merges landing close together) so two
+# ledger-writing pushes never race each other — queued, not canceled, since
+# every run's write matters.
+concurrency:
+  group: ticket-status-ledger
+  cancel-in-progress: false
+
+env:
+  LEDGER_PATH: Docs/tickets/.merge-ledger.json
+
+jobs:
+  update-ledger:
+    name: Update ticket-status ledger
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: develop
+
+      # ── Resolve PR number, head branch, and merge timestamp ─────────────
+      # pull_request(closed)'s event payload is synchronous with the merge
+      # and trustworthy (unlike a REST listing's `merged` boolean — see
+      # EXECUTOR_ROUTINE.md Step 1's warehouse-rule note). workflow_dispatch
+      # only has a PR number, so it looks the rest up via `gh pr view` and
+      # hard-fails if that PR isn't actually merged — this path exists to
+      # validate the ledger against a real merge, not to ledger an open PR.
+      - name: Resolve PR details
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          DISPATCH_PR_NUMBER: ${{ inputs.pr_number }}
+          # Untrusted (PR author-controlled) — kept out of the inline script
+          # body and only ever read via env, per actionlint's script-
+          # injection guidance.
+          EVENT_PR_NUMBER: ${{ github.event.pull_request.number }}
+          EVENT_PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          EVENT_PR_MERGED_AT: ${{ github.event.pull_request.merged_at }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            PR_NUMBER="$DISPATCH_PR_NUMBER"
+            PR_JSON=$(gh pr view "$PR_NUMBER" --json state,mergedAt,headRefName)
+            STATE=$(echo "$PR_JSON" | jq -r '.state')
+            if [ "$STATE" != "MERGED" ]; then
+              echo "❌ PR #$PR_NUMBER is not merged (state: $STATE) — nothing to ledger."
+              exit 1
+            fi
+            BRANCH=$(echo "$PR_JSON" | jq -r '.headRefName')
+            MERGED_AT=$(echo "$PR_JSON" | jq -r '.mergedAt')
+          else
+            PR_NUMBER="$EVENT_PR_NUMBER"
+            BRANCH="$EVENT_PR_BRANCH"
+            MERGED_AT="$EVENT_PR_MERGED_AT"
+          fi
+          {
+            echo "pr_number=$PR_NUMBER"
+            echo "branch=$BRANCH"
+            echo "merged_at=$MERGED_AT"
+          } >> "$GITHUB_OUTPUT"
+
+      # ── Extract the ticket id from the branch name ───────────────────────
+      # Only feat/<group>/t-###-<slug> branches (TICKET_SPEC.md's Branch
+      # field format) name a ticket. Most merges to develop are ticket-
+      # creation (`tickets/*`), gate (`gates/*`), or ad hoc chore/fix
+      # branches — not a failure, just nothing for this ledger to record.
+      - name: Extract ticket id
+        id: ticket
+        env:
+          # steps.pr.outputs.branch is derived from PR-author-controlled data
+          # (the head branch name) — kept out of the inline script body via
+          # env, same as Resolve PR details' own EVENT_PR_BRANCH handling,
+          # not just at the first hop where the untrusted value enters.
+          BRANCH: ${{ steps.pr.outputs.branch }}
+        run: |
+          set -euo pipefail
+          if [[ "$BRANCH" =~ ^feat/[^/]+/t-([0-9]+)- ]]; then
+            echo "ticket_id=T-${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+            echo "found=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ℹ️ Branch '$BRANCH' doesn't match feat/<group>/t-###-<slug> — no ticket to ledger."
+            echo "found=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Resolve dry-run mode
+        id: mode
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "dry_run=${{ inputs.dry_run }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "dry_run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ── Idempotent upsert (computed, not yet written) ────────────────────
+      # Filters out any existing entry for this ticket id, then appends the
+      # fresh one — running this twice for the same PR produces the exact
+      # same file, never a duplicate entry.
+      - name: Compute updated ledger
+        if: steps.ticket.outputs.found == 'true'
+        id: compute
+        env:
+          TICKET_ID: ${{ steps.ticket.outputs.ticket_id }}
+          PR_NUMBER: ${{ steps.pr.outputs.pr_number }}
+          BRANCH: ${{ steps.pr.outputs.branch }}
+          MERGED_AT: ${{ steps.pr.outputs.merged_at }}
+        run: |
+          set -euo pipefail
+          if [ ! -f "$LEDGER_PATH" ]; then
+            echo "[]" > "$LEDGER_PATH"
+          fi
+
+          ENTRY=$(jq -n \
+            --arg ticketId "$TICKET_ID" \
+            --argjson prNumber "$PR_NUMBER" \
+            --arg branch "$BRANCH" \
+            --arg mergedAt "$MERGED_AT" \
+            '{ticketId: $ticketId, prNumber: $prNumber, branch: $branch, mergedAt: $mergedAt}')
+
+          jq --argjson entry "$ENTRY" \
+            '[.[] | select(.ticketId != $entry.ticketId)] + [$entry] | sort_by(.ticketId)' \
+            "$LEDGER_PATH" > /tmp/ledger-updated.json
+
+          if diff -q <(jq -S . "$LEDGER_PATH") <(jq -S . /tmp/ledger-updated.json) > /dev/null; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "entry=$(echo "$ENTRY" | jq -c .)" >> "$GITHUB_OUTPUT"
+
+      - name: Log dry-run result (no commit)
+        if: steps.ticket.outputs.found == 'true' && steps.mode.outputs.dry_run == 'true'
+        env:
+          # ENTRY is JSON built from the same untrusted branch/mergedAt
+          # values as BRANCH above — JSON-encoding doesn't escape a literal
+          # single quote, so echo '${{ }}' directly would let one break out
+          # of the shell string. Routed through env for the same reason.
+          ENTRY: ${{ steps.compute.outputs.entry }}
+        run: |
+          echo "🧪 dry_run — would upsert into $LEDGER_PATH:"
+          echo "$ENTRY" | jq .
+          echo "Ledger would change: ${{ steps.compute.outputs.changed }}"
+
+      - name: Commit ledger update to develop
+        if: steps.ticket.outputs.found == 'true' && steps.mode.outputs.dry_run != 'true' && steps.compute.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          cp /tmp/ledger-updated.json "$LEDGER_PATH"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "$LEDGER_PATH"
+          git commit -m "chore: record ${{ steps.ticket.outputs.ticket_id }} merge in ledger [skip ci]"
+
+          for attempt in 1 2 3; do
+            if git push origin HEAD:develop; then
+              echo "✅ Pushed ledger update (attempt $attempt)."
+              exit 0
+            fi
+            echo "⚠️ Push rejected (attempt $attempt) — pulling and retrying."
+            git pull --rebase origin develop
+          done
+          echo "❌ Failed to push ledger update after 3 attempts."
+          exit 1
+
+      - name: Ledger already up to date
+        if: steps.ticket.outputs.found == 'true' && steps.mode.outputs.dry_run != 'true' && steps.compute.outputs.changed == 'false'
+        run: echo "ℹ️ Ledger already has an identical entry for ${{ steps.ticket.outputs.ticket_id }} — nothing to commit."

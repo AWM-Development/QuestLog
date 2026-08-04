@@ -14,6 +14,22 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 - **New CI job "Gate Guard"** fails a PR whose diff introduces or leaves a ticket file (under `Docs/tickets/{queue,backlog,in-progress,done}/`) carrying an unresolved `Gated on: G-###` (the referenced gate still open under `Docs/tickets/gated/`), or a `Blocked on: T-###` naming a ticket with no file under `Docs/tickets/done/` yet. A ticket that drops the line as part of the same diff (a normal promotion) is unaffected — the check reads the file's landing state, not its history. A `Gated on:` reference that's already resolved and moved to `Docs/tickets/gated/resolved/` warns instead of failing (a sync-bug signal for Alex, not a hard stop). Reusable logic lives in `packages/core/src/ci/gate-guard.ts`; `scripts/ci-gate-guard.sh` is the same entry point a future pre-flight wiring (T-115) will call locally before a run even opens a PR.
 
+### Added — T-116
+
+- **Merge-triggered ticket-status ledger.** A new GitHub Action (`.github/workflows/ticket-status-ledger.yml`) fires when a `feat/<group>/t-###-<slug>` branch merges into `develop` and records `{ ticketId, prNumber, branch, mergedAt }` into `Docs/tickets/.merge-ledger.json`. The nightly executor's pre-flight (`EXECUTOR_ROUTINE.md` Step 1) now reads this ledger first and only falls back to a narrow, per-candidate live GitHub check for anything the ledger doesn't resolve, replacing every run's full paginated PR-history scan and full branch listing with a small file read in the common case. Also supports `workflow_dispatch` with `pr_number`/`dry_run` inputs for on-demand (re-)ledgering of an already-merged PR.
+
+### Added — T-081
+
+- **Entities created via `confirm_ingest_entities` are now marked as machine-extracted.** Each such entity gets `attributes.extractedFrom` set to the id of the source it was detected from, so a reviewer can tell an auto-extracted entity apart from a manually created one. `get_entity` and `list_entities` already return the full entity row, so both surface the marker with no response-shape change. Completes M-EXTRACT.3.
+
+### Added — T-082
+
+- **`contextService.searchChunks(db, { campaignId, query, limit, fetchFn })`** extracts `assemble`'s hybrid vector + keyword search, merge, and recency re-ranking steps into a standalone helper that returns ranked chunks without requiring a `conversationId` or paying for token-budget trimming and formatted context text. `assemble` now calls this helper internally instead of duplicating the logic, so there's exactly one implementation; its existing public behavior and return shape are unchanged. Lays the groundwork for T-083's lore-seeded `create_entity`, which needs ranked candidate chunks outside of a conversation.
+
+### Added — T-117
+
+- **GitHub Actions lean-ness audit** (`Docs/tickets/reports/T-117-github-actions-lean-audit.md`) — recommendations-only review of all four workflow files (`ci.yml`, `e2e-release-check.yml`, `smoke-test-dev.yml`, `smoke-test-prod.yml`) ahead of Milestone 1.1's real enforcement gates. Flags cross-workflow step duplication (Turborepo cache restore, test-DB provisioning, checkout/pnpm/node/install preamble), `@v4`/`@v5` action-version drift with no documented reason, several warning-only checks that can never actually fail a PR, and a handful of smaller sprawl items — each tagged `keep | consolidate | remove | tighten`. No workflow files changed by this ticket; follow-up tickets are Alex's call.
+
 ## [1.1.1] - 2026-08-02
 
 ### Added — T-080

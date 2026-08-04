@@ -18,6 +18,7 @@ v1.3 closes all three, reusing the one proven pattern already in the codebase fo
 - `G-014` (`Docs/tickets/gated/resolved/G-014-lore-correction-supersession-design.md`) — a new dedicated `correct_lore` tool (not an extension of `append_entity_note`/`ingest_text`); superseded chunks get a soft-supersede flag excluded from default `query_lore` results, not hard-deleted; goes through `write_requests` preview/confirm per `G-001`'s resolved mutation rule. Ticketed as M-CANON.
 - `G-015` (`Docs/tickets/gated/resolved/G-015-auto-entity-extraction-design.md`) — extraction runs automatically inline with every `ingest_text` call; extracted entities are staged and confirmed via a `confirm_log_session`-style flow, not auto-created; post-confirm review uses existing `list_entities`/`get_entity`, no new UI; same `ENTITY_TYPES` taxonomy as manual authoring. Ticketed as M-EXTRACT.
 - `G-016` (`Docs/tickets/gated/resolved/G-016-lore-seeded-entity-creation-design.md`) — `create_entity` runs a synchronous lore search before writing; below-threshold matches attach as suggestions rather than being discarded; provenance stored as `metadata.seededFrom`; a user-supplied description is never overwritten, only appended alongside a seeded draft; conflicting sources are surfaced separately rather than auto-resolved; default auto-seed confidence threshold `0.7`, implemented as a tunable constant. Ticketed as M-SEED.
+- `G-021` (`Docs/tickets/gated/resolved/G-021-entity-extraction-algorithm-quality.md`) — T-078's heuristic (capitalization + hardcoded connector/stopword lists + regex-ladder classification) is replaced with a single structured LLM call per document, matching the investment already made in `query_lore`'s hybrid search; a genuinely unclassifiable candidate gets a distinct `"unclassified"` value on the candidate-proposal shape (not on `ENTITY_TYPES` itself) surfaced at confirm time, instead of silently defaulting to `npc`. A foundational pattern ticket lands first so the Anthropic structured-call plumbing is reusable by future LLM features, not rebuilt per feature. Ticketed as new M-EXTRACT.4/M-EXTRACT.5.
 
 **Open gates:** none introduced by this milestone. `G-006` (`Docs/tickets/gated/resolved/G-006-entity-delete-archive-semantics.md`, resolved 2026-07-30 — soft-archive as a hide mechanism, not a "narratively dead" marker) was a soft dependency for M-EXTRACT.3's cleanup/re-extraction path; T-088/T-089/T-090 (`Docs/milestones/MILESTONES_V1_1_MCP.md` M-REMOTE.10) now cover that path once merged.
 
@@ -69,13 +70,21 @@ M-CANON.1 has no dependency and can ship first. M-CANON.2 depends on M-CANON.1's
   `ingest_text`'s response includes M-EXTRACT.1's candidate list in its preview payload (alongside the existing chunk/embed preview) with a confirm token. A confirm step — extending `confirm_log_session`'s pattern (`confirm_ingest_text`, or shared preview plumbing if `ingest_text` and `log_session` converge — implementation detail for the ticket, not decided here) atomically creates the confirmed entities via `entityService` and links them to the source, inside one transaction.
   Exit: confirming an `ingest_text` preview creates exactly the confirmed candidate entities (not auto-created before confirm); each created entity links to its source document.
 
-- [ ] **M-EXTRACT.3 — Mark extracted entities as machine-proposed for review** (T-081)
+- [x] **M-EXTRACT.3 — Mark extracted entities as machine-proposed for review** (T-081)
   Extracted entities carry a `metadata` marker (e.g. `extractedFrom: sourceId`) distinguishing them from manually authored ones, so Alex can identify and refine them via existing `list_entities`/`get_entity` review — no new UI. Note: iterating on extraction specificity (wrong granularity, duplicate/near-duplicate entities) may want entity archival, now covered by T-088/T-089/T-090 (`G-006` resolved 2026-07-30 — soft-archive as a hide mechanism) — this task ships without waiting on those, since they're independent tickets, not a hard blocker.
   Exit: a created entity's metadata records which source/extraction produced it; `get_entity`/`list_entities` surface that marker in their existing output shape.
 
+- [ ] **M-EXTRACT.4 — Reusable LLM structured-extraction call pattern** (T-118)
+  T-078's Out-of-scope line deferred any LLM-based extraction as "a bigger design question not resolved in `G-015`" — `G-021` resolves it. Before rewriting extraction itself, establish one reusable, DI-testable structured-output call to Claude (tool-use/JSON-schema-constrained), following the one-client-per-vendor precedent `voyage.client.ts` already sets, so this and future LLM features share a pattern instead of each rolling its own Anthropic SDK plumbing.
+  Exit: a mocked-client unit test proves the new function returns a parsed, typed result from a fixture schema and throws `LlmApiError` on malformed output; nothing wired into extraction yet.
+
+- [ ] **M-EXTRACT.5 — LLM-based entity-candidate detection & classification** (T-119)
+  Replace `entityService.detectCandidates`'s internal heuristic (`findProperNounSpans`/`guessEntityType`) with a single structured call via M-EXTRACT.4's pattern, keeping `detectCandidates`'s existing signature and contract with `ingest-text.ts`/`confirm-ingest-entities.ts` unchanged. Candidate proposals gain an `"unclassified"` value (on the candidate-proposal shape only, not `ENTITY_TYPES`) for genuinely ambiguous spans; `confirm-ingest-entities.ts` requires a real type override for any unclassified candidate before creating it, instead of silently defaulting to `npc`.
+  Exit: a mocked-client fixture test proves `detectCandidates` returns LLM-produced candidates; confirming an `"unclassified"` candidate without an override type is rejected, with one it creates the entity at the supplied type; text fully covered by `detectSpans` still produces zero new-entity candidates.
+
 ### Ordering constraint
 
-M-EXTRACT.1 has no dependency on M-CANON and can ship independently. M-EXTRACT.2 depends on M-EXTRACT.1's candidate shape existing. M-EXTRACT.3 depends on M-EXTRACT.2 (entities must exist before they can be marked/reviewed) but is otherwise independent of M-CANON's tasks — M-CANON and M-EXTRACT have no cross-dependency and can run in parallel.
+M-EXTRACT.1 has no dependency on M-CANON and can ship independently. M-EXTRACT.2 depends on M-EXTRACT.1's candidate shape existing. M-EXTRACT.3 depends on M-EXTRACT.2 (entities must exist before they can be marked/reviewed) but is otherwise independent of M-CANON's tasks — M-CANON and M-EXTRACT have no cross-dependency and can run in parallel. M-EXTRACT.4 has no dependency on M-EXTRACT.1–.3 and can ship independently (it doesn't touch `detectCandidates` itself). M-EXTRACT.5 depends on M-EXTRACT.4's function existing, and rewrites M-EXTRACT.1's internals — it must land after M-EXTRACT.1 but has no ordering dependency on M-EXTRACT.2/.3 beyond needing the same `EntityCandidateProposal` contract they already consume.
 
 ---
 
@@ -87,7 +96,7 @@ M-EXTRACT.1 has no dependency on M-CANON and can ship independently. M-EXTRACT.2
 
 ### Tasks
 
-- [ ] **M-SEED.1 — Lightweight chunk-search helper** (T-082)
+- [x] **M-SEED.1 — Lightweight chunk-search helper** (T-082)
   `contextService.assemble` (`context.service.ts`) does full context assembly — campaign metadata, entities, conversation history, budget trimming — which is overkill and requires a `conversationId` this feature doesn't have. Extract a narrower entry point (e.g. `contextService.searchChunks(db, { campaignId, query, limit, fetchFn })`) that runs the same hybrid vector + keyword search and `mergeSearchResults`/recency re-ranking, returning ranked `SearchResult[]` with per-chunk scores, without the rest of `assemble`'s budget/formatting machinery.
   Exit: given the same query/campaign, `searchChunks`' ranked chunk order and scores match what `assemble` would select into its chunk section, without requiring a `conversationId` or producing formatted context text.
 
