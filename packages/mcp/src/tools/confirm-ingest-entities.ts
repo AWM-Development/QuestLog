@@ -45,6 +45,7 @@ export function registerConfirmIngestEntities(
 							type: candidate.entityType,
 							description: candidate.description,
 							sourceId,
+							attributes: { extractedFrom: sourceId },
 						});
 						entityIds.push(entity.id);
 					}

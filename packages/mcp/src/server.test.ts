@@ -334,6 +334,28 @@ describe("list_entities tool", () => {
 		expect(payload.entities[0].name).toBe("Mira Duskwood");
 	});
 
+	it("surfaces attributes set on each entity (e.g. extractedFrom, T-081)", async () => {
+		await entityService.create(db, {
+			campaignId,
+			name: "Vespera Nightveil",
+			type: "npc",
+			attributes: { extractedFrom: "00000000-0000-0000-0000-000000000000" },
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "list_entities",
+			arguments: { campaignId },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.entities[0].attributes).toEqual({
+			extractedFrom: "00000000-0000-0000-0000-000000000000",
+		});
+	});
+
 	it("excludes archived entities by default and includes them with includeArchived", async () => {
 		const active = await entityService.create(db, {
 			campaignId,
@@ -507,6 +529,28 @@ describe("get_entity tool", () => {
 		const payload = JSON.parse(content[0]?.text ?? "{}");
 		expect(payload.id).toBe(entity.id);
 		expect(payload.name).toBe("Mira Duskwood");
+	});
+
+	it("surfaces attributes set on the entity (e.g. extractedFrom, T-081)", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Vespera Nightveil",
+			type: "npc",
+			attributes: { extractedFrom: "00000000-0000-0000-0000-000000000000" },
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.attributes).toEqual({
+			extractedFrom: "00000000-0000-0000-0000-000000000000",
+		});
 	});
 
 	it("returns the correct entity by name with a deliberate typo via fuzzy match", async () => {
@@ -2311,6 +2355,7 @@ describe("confirm_ingest_entities tool (T-080)", () => {
 		for (const row of entityRows) {
 			expect(entityIds).toContain(row.id);
 			expect(row.sourceId).toBe(sourceId);
+			expect(row.attributes).toEqual({ extractedFrom: sourceId });
 		}
 	});
 
