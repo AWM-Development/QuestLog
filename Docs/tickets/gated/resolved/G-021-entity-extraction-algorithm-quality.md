@@ -72,3 +72,42 @@ Notes: This gate originally carried a third sub-question — whether the
   is not the same claim as "the algorithm is good enough," and this gate
   exists to force that distinction to a real decision rather than let it
   default silently.
+
+## Resolution (2026-08-03)
+
+**1. Algorithm sophistication ceiling — replace the heuristic with LLM-based
+extraction (Option B), not incremental patching (Option A) or a hybrid
+(Option C).** `ingest_text` is a low-frequency, per-document call already
+running through an async pipeline the caller polls (`get_source_status`) —
+neither the cost (fractions of a cent per document, nowhere near
+chat/search-path volume) nor the latency case that would favor keeping a
+free heuristic actually holds here. The heuristic's ceiling is structural,
+not a maintenance gap: padding `CAPITALIZED_STOPWORDS`/`NAME_CONNECTORS`
+converges on reimplementing a POS tagger by hand, and "X and Y" merging two
+adjacent names is a miss no list size fixes. Matches the standard
+`query_lore`'s hybrid search already received, per the product's core
+premise.
+
+Alex specifically wants a **foundational ticket first** establishing the
+project's reusable LLM-integration pattern (evaluate the existing
+`llm.service.ts` Anthropic SDK setup, extend or restructure it as needed)
+so this pattern is available consistently for future LLM features, not
+rebuilt ad hoc per feature — same role `voyage.client.ts` already plays for
+embeddings. That ticket lands before the extraction rewrite itself.
+
+**2. Unclassified fallback — add a distinct `"unclassified"` bucket**,
+surfaced at confirm time rather than silently defaulting to `npc`. Falls
+out naturally as an LLM classification output. Implementation choice made
+during ticket drafting: kept off `ENTITY_TYPES` itself (the taxonomy
+`create_entity` also validates against for manual authoring) and modeled
+instead as a value local to the candidate-proposal shape, with
+`confirm-ingest-entities.ts` requiring a real type override per-candidate
+before creating an entity flagged unclassified.
+
+Ticketed as new M-EXTRACT.4 (T-118, foundational LLM pattern — `queue/`)
+and M-EXTRACT.5 (T-119, LLM-based candidate detection/classification,
+`Blocked on: T-118` — `backlog/`). T-078's heuristic
+(`entity-candidate-detection.service.ts`) is left in place but unused by
+`detectCandidates` once T-119 ships — removing it is explicitly out of
+scope for T-119, deferred to a future cleanup ticket once the LLM path has
+run in production long enough to trust.

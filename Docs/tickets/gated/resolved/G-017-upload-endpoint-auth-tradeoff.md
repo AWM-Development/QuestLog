@@ -30,3 +30,16 @@ Notes: Practical exploitability is low today (campaign ids are
   this milestone introduced — pre-existing since the upload endpoint was
   first built — but worth Alex's explicit call rather than a silent pass,
   per T-038's scope item 4.
+
+## Resolution (2026-08-03)
+
+Close both endpoints, reusing `/mcp`'s existing bearer-token scheme
+(`requireBearerToken`, `apps/server/src/routes/mcp-http.routes.ts:32`)
+rather than something lighter — consistency with the one auth pattern
+this codebase already has outweighs building a second, weaker scheme
+for same-origin browser calls. `T-092` (moved to `queue/`) carries the
+mechanical fix: add a `preHandler` invoking `requireBearerToken` to both
+routes in `apps/server/src/server.ts`, update existing tests to send a
+valid token, and add rejection tests for missing/invalid tokens. No
+broader web-app auth/session story is in scope — that stays v2, per
+`CLAUDE.md`.
