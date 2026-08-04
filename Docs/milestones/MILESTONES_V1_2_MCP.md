@@ -80,7 +80,7 @@ This milestone builds the actual instrumentation instead of continuing to guess:
   `EXECUTOR_ROUTINE.md` Step 3 currently has no instruction against reading a ticket's `Context files:` one at a time across multiple assistant turns — each additional turn re-sends the entire growing conversation history (the dominant cost driver identified in the planning session's real-run audit: ~98% of total tokens in a sampled run were cache-read overhead from repeated context resends). Where the full file list is already known up front (every ticket's `Context files:` field, by construction), instruct the executor to issue all of those `Read` calls as parallel tool calls within a single assistant turn instead.
   Exit: `EXECUTOR_ROUTINE.md` Step 3 explicitly instructs single-turn parallel reads for the ticket's known Context files list.
 
-- [ ] **M-EFFICIENCY.3 — Gate executor process weight on ticket Complexity tier** (T-084)
+- [x] **M-EFFICIENCY.3 — Gate executor process weight on ticket Complexity tier** (T-084)
   T-070 (docs-only, 7-line diff) cost ~$3.87 over 136 turns — almost entirely fixed process overhead (full TDD loop, per-file empirical checks), not diff-proportional. Once M-OBS.6's `Complexity tier: S | M | L` field exists on every ticket, S-tier docs/config-only tickets skip `EXECUTOR_ROUTINE.md` Step 4's TDD Red/Green/Refactor requirement (still gated on lint/typecheck/test green) instead of running the identical process every other tier does.
   Exit: see T-084 — `EXECUTOR_ROUTINE.md` Step 4 branches on tier for docs/config-only work; the lint/typecheck/test gate is unconditional regardless of tier.
 

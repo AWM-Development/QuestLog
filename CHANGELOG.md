@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-084
+
+- **The nightly executor no longer runs a full TDD Red/Green/Refactor cycle on docs/config-only work.** `EXECUTOR_ROUTINE.md` Step 4 now branches on a ticket's `Complexity tier` field: an S-tier ticket whose Scope names only `.md`/config files skips the red-phase ceremony and runs a single end-of-work `pnpm lint && pnpm typecheck && pnpm test` pass instead of looping it per checkpoint — the same regression gate every tier still has to clear, just not repeated for a change with no meaningful "failing test" to write. M/L-tier tickets, and any S-tier ticket that touches application code, are unaffected. `TICKET_SPEC.md`'s Complexity tier field notes now document this as a consequence of the tier, not just its observability purpose.
+
 ### Added — T-110
 
 - **New CI job "Gate Guard"** fails a PR whose diff introduces or leaves a ticket file (under `Docs/tickets/{queue,backlog,in-progress,done}/`) carrying an unresolved `Gated on: G-###` (the referenced gate still open under `Docs/tickets/gated/`), or a `Blocked on: T-###` naming a ticket with no file under `Docs/tickets/done/` yet. A ticket that drops the line as part of the same diff (a normal promotion) is unaffected — the check reads the file's landing state, not its history. A `Gated on:` reference that's already resolved and moved to `Docs/tickets/gated/resolved/` warns instead of failing (a sync-bug signal for Alex, not a hard stop). Reusable logic lives in `packages/core/src/ci/gate-guard.ts`; `scripts/ci-gate-guard.sh` is the same entry point a future pre-flight wiring (T-115) will call locally before a run even opens a PR.
