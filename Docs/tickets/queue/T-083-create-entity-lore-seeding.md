@@ -4,8 +4,6 @@ Milestone ref: Docs/milestones/MILESTONES_V1_3_MCP.md M-SEED.2
 
 Priority: P1
 
-Blocked on: T-082 — must be merged into develop first
-
 Branch: feat/m-seed/t-083-create-entity-lore-seeding
 
 Context files (load ONLY these):
