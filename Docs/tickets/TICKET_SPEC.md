@@ -1,7 +1,7 @@
 # Ticket Spec
 
 **Location:** `Docs/tickets/TICKET_SPEC.md`
-**Last Updated:** 2026-08-01
+**Last Updated:** 2026-08-03
 **Purpose:** The exact, complete format for every ticket file. `.claude/skills/ticket-writer/SKILL.md` produces tickets in this shape; the nightly executor and the reviewer subagent both assume it. See `Docs/tickets/GATE_SPEC.md` for the companion format used by design/strategy gate-stubs, which feed this pipeline via a ticket's `Gated on:` field.
 
 Every ticket lives at `Docs/tickets/T-###-slug.md` (`###` sequential, zero-padded, never reused across `backlog/`, `queue/`, `in-progress/`, `done/`, `blocked/`, `archive/`) and contains exactly these fields, in this order:
@@ -99,7 +99,7 @@ Definition of done includes: checkbox flipped in Docs/milestones/MILESTONES_V1_M
 - **Mockup** replaces a 🎨 gate. A ticket that names a mockup path is not visually gated — the mockup is the answer. A ticket with `Mockup: none` has no visual component at all (most M-MCP tickets, since the milestone has no UI).
 - **Model: sonnet** is fixed. Planning and ticket-writing happen on Fable/Opus; execution never does.
 - **Out of scope** exists because "while I'm here" is the most common way a 5-hour ticket becomes a 12-hour one. Name the adjacent temptations explicitly.
-- **Exit condition** must be checkable without human judgment — a script, a test assertion, a specific query against a specific fixture. "Looks right" is not an exit condition.
+- **Exit condition** must be checkable without human judgment — a script, a test assertion, a specific query against a specific fixture. "Looks right" is not an exit condition. **If a condition depends on the live behavior of an artifact this same ticket creates but that doesn't exist yet where the check would need to run** (e.g. a GitHub Action's `workflow_dispatch` — only invocable once the workflow file is already on the repo's default branch, not on a feature branch or even post-merge to `develop` — or any other check that needs the artifact live on infrastructure this PR hasn't reached) — mark it explicitly as deferred rather than phrasing it as directly checkable now: name what can be verified pre-merge (local harness, static checks, dry-run logic against a hand-built fixture) and what the executor should document instead (a manual verification plan for Alex, run once the artifact is actually live). This isn't about anticipating every possible platform quirk — it's about not making the executor spend turns empirically rediscovering a structural limitation the ticket-writer could have named up front. `T-116` hit exactly this with `workflow_dispatch`'s default-branch requirement (`Docs/IMPLEMENTATION_NOTES.md` § T-116).
 - **Iteration cap** is per-ticket, not per-checkpoint. Three failed distinct approaches on any single blocking failure triggers `Docs/tickets/BLOCKED_TEMPLATE.md`, not three attempts per test.
 - **Definition of done** is fixed across every ticket — it's the closing checklist, not something the ticket-writer customizes.
 
@@ -193,10 +193,24 @@ moments: when its PR merges (straight from `queue/` to `done/` in one shot —
 `in-progress/` on `develop` is essentially never populated in practice), or
 never, if it was blocked. **A ticket sitting in `queue/` on `develop` can
 therefore already be shipped-and-under-review, previously blocked, or
-genuinely untouched — the directory alone doesn't tell you which.** The
-executor's pre-flight resolves this per-candidate-ticket by checking the
-named branch and PR state before deciding to pick up, resume, or skip it
-(`EXECUTOR_ROUTINE.md` Step 1).
+genuinely untouched — the directory alone doesn't tell you which.**
+
+The executor's pre-flight resolves this per candidate ticket, but not with a
+uniform live GitHub check for every run (`EXECUTOR_ROUTINE.md` Step 1,
+rewritten by T-116/`M-EFFICIENCY.6`). A merge-triggered GitHub Action
+(`.github/workflows/ticket-status-ledger.yml`) writes `{ ticketId, prNumber,
+branch, mergedAt }` into `Docs/tickets/.merge-ledger.json` the moment a
+`feat/<group>/t-###-<slug>` branch merges, so the pre-flight can resolve the
+already-merged case for free by reading one small file instead of re-deriving
+it from GitHub's full PR history every night. The ledger is deliberately not
+the whole story, though — it only ever fires on merge, so it has nothing to
+say about an open PR or a branch someone else has actively claimed. For any
+candidate the ledger doesn't resolve, the pre-flight falls back to a narrow,
+per-candidate live check scoped to that one ticket's `Branch:` field (a
+head-filtered PR query plus a single-ref branch-existence check), not a
+full-repo scan — cheap because it only ever runs for the handful of
+candidates actually reached before a pick. See `Docs/IMPLEMENTATION_NOTES.md`
+§ T-116 for the ledger's exact format and the Action's design.
 
 ### Unblocking a blocked ticket
 
