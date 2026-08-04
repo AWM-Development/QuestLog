@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-110
+
+- **New CI job "Gate Guard"** fails a PR whose diff introduces or leaves a ticket file (under `Docs/tickets/{queue,backlog,in-progress,done}/`) carrying an unresolved `Gated on: G-###` (the referenced gate still open under `Docs/tickets/gated/`), or a `Blocked on: T-###` naming a ticket with no file under `Docs/tickets/done/` yet. A ticket that drops the line as part of the same diff (a normal promotion) is unaffected — the check reads the file's landing state, not its history. A `Gated on:` reference that's already resolved and moved to `Docs/tickets/gated/resolved/` warns instead of failing (a sync-bug signal for Alex, not a hard stop). Reusable logic lives in `packages/core/src/ci/gate-guard.ts`; `scripts/ci-gate-guard.sh` is the same entry point a future pre-flight wiring (T-115) will call locally before a run even opens a PR.
+
 ### Added — T-116
 
 - **Merge-triggered ticket-status ledger.** A new GitHub Action (`.github/workflows/ticket-status-ledger.yml`) fires when a `feat/<group>/t-###-<slug>` branch merges into `develop` and records `{ ticketId, prNumber, branch, mergedAt }` into `Docs/tickets/.merge-ledger.json`. The nightly executor's pre-flight (`EXECUTOR_ROUTINE.md` Step 1) now reads this ledger first and only falls back to a narrow, per-candidate live GitHub check for anything the ledger doesn't resolve, replacing every run's full paginated PR-history scan and full branch listing with a small file read in the common case. Also supports `workflow_dispatch` with `pr_number`/`dry_run` inputs for on-demand (re-)ledgering of an already-merged PR.

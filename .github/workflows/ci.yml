@@ -198,6 +198,36 @@ jobs:
             echo "✅ Migration guard passed — no schema changes detected."
           fi
 
+  # ── Gate Guard ─────────────────────────────────────────────────────────────
+  # Fails a PR whose diff introduces or leaves a ticket file carrying an
+  # unresolved `Gated on:` or an unmet `Blocked on:` — the machine-checked
+  # version of the invariant CLAUDE.md/EXECUTOR_ROUTINE.md already state in
+  # prose. Logic lives in packages/core/src/ci/gate-guard.ts (unit-tested
+  # there); scripts/ci-gate-guard.sh is the same reusable entry point T-115's
+  # pre-flight wiring will call. Why: Docs/tickets/gated/resolved/G-020.
+  gate-guard:
+    name: Gate Guard
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: "Check for unresolved Gated on: / unmet Blocked on:"
+        run: scripts/ci-gate-guard.sh origin/${{ github.base_ref }}
+
   # ── Mockup Guard ──────────────────────────────────────────────────────────
   # Docs/mockups/ is generated manually in Claude Design during planning
   # sessions and is read-only to agents (see Docs/mockups/README.md). A
