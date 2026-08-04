@@ -44,8 +44,6 @@ export const ticketRuns = pgTable(
 		durationMs: integer("duration_ms").notNull(),
 		turnCount: integer("turn_count").notNull(),
 		turnsToGreen: integer("turns_to_green"),
-		humanMessageCount: integer("human_message_count").notNull(),
-		manuallyInspected: boolean("manually_inspected").notNull(),
 		appliesRate: text("applies_rate").notNull(),
 		theoreticalCostIntroUsd: numeric("theoretical_cost_intro_usd", {
 			precision: 12,

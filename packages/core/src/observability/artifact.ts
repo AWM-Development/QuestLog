@@ -32,8 +32,6 @@ export interface UsageArtifact extends TokenTotalsArtifactFields {
 	duration_ms: number;
 	turn_count: number;
 	turns_to_green: number | null;
-	human_message_count: number;
-	manually_inspected: boolean;
 	theoretical_cost_usd: CostArtifact;
 	reviewer_subagent: ReviewerSubagentArtifact | null;
 	total_system_cost_usd: CostArtifact;
@@ -90,8 +88,6 @@ export function buildUsageArtifact(params: {
 		duration_ms: params.main.durationMs,
 		turn_count: params.main.turnCount,
 		turns_to_green: params.main.turnsToGreen,
-		human_message_count: params.main.humanMessageCount,
-		manually_inspected: params.main.manuallyInspected,
 		theoretical_cost_usd: mainCostArtifact,
 		reviewer_subagent: reviewerArtifact,
 		total_system_cost_usd: totalCostArtifact,
