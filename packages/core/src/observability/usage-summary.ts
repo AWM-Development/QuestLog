@@ -12,8 +12,6 @@ export interface UsageSummary extends TokenTotals {
 	durationMs: number;
 	turnCount: number;
 	turnsToGreen: number | null;
-	humanMessageCount: number;
-	manuallyInspected: boolean;
 }
 
 interface TranscriptUsagePayload {
@@ -70,35 +68,6 @@ function extractToolResultText(content: unknown[]): string | null {
 	return null;
 }
 
-// The harness injects non-human `user`-role turns as array content with a
-// bare `type: "text"` block (no `tool_result`) — skill/slash-command load
-// expansions and interrupt notices are the two confirmed shapes (found in
-// this project's own transcripts; see Docs/IMPLEMENTATION_NOTES.md § T-096).
-// Neither is a human typing a message, so both must be excluded from
-// humanMessageCount or manually_inspected false-positives on nearly every run.
-const INTERRUPT_NOTICE_PATTERN = /^\[Request interrupted by user.*\]$/;
-const SKILL_LOAD_PREAMBLE = "Base directory for this skill:";
-
-/** True if a `type: "text"` user-turn block is harness-injected rather than something Alex actually typed. */
-function isInjectedTextBlock(text: string): boolean {
-	const trimmed = text.trim();
-	return (
-		INTERRUPT_NOTICE_PATTERN.test(trimmed) ||
-		trimmed.startsWith(SKILL_LOAD_PREAMBLE)
-	);
-}
-
-/** True if a user-turn's content array is a single harness-injected text block, not a human-typed message. */
-function isInjectedTextTurn(content: unknown[]): boolean {
-	if (content.length !== 1) return false;
-	const block = content[0];
-	if (!block || typeof block !== "object") return false;
-	const { type, text } = block as { type?: unknown; text?: unknown };
-	return (
-		type === "text" && typeof text === "string" && isInjectedTextBlock(text)
-	);
-}
-
 // scripts/run-tests-quiet.sh (T-048) prints exactly these three lines on a
 // fully-passing lint+typecheck+test run, and "FAIL" only on a failing stage —
 // this is the signature a tool_result's captured stdout must match to count
@@ -124,7 +93,7 @@ export function addTokenTotals(a: TokenTotals, b: TokenTotals): TokenTotals {
 	};
 }
 
-/** Sums token usage, duration, turn count, turns-to-green, and human-message detection out of one transcript's raw JSONL content. */
+/** Sums token usage, duration, turn count, and turns-to-green out of one transcript's raw JSONL content. */
 export function summarizeUsage(jsonl: string): UsageSummary {
 	const entries = parseLines(jsonl);
 
@@ -136,7 +105,6 @@ export function summarizeUsage(jsonl: string): UsageSummary {
 	let cacheReadInputTokens = 0;
 	let turnCount = 0;
 	let turnsToGreen: number | null = null;
-	let humanMessageCount = 0;
 	let firstTimestamp: number | null = null;
 	let lastTimestamp: number | null = null;
 
@@ -173,16 +141,14 @@ export function summarizeUsage(jsonl: string): UsageSummary {
 
 		if (entry.type === "user" && entry.message?.role === "user") {
 			const content = entry.message.content;
-			if (typeof content === "string") {
-				humanMessageCount += 1;
-			} else if (Array.isArray(content)) {
+			if (Array.isArray(content)) {
 				const toolResultText = extractToolResultText(content);
-				if (toolResultText !== null) {
-					if (turnsToGreen === null && isPassingTestRunOutput(toolResultText)) {
-						turnsToGreen = turnCount;
-					}
-				} else if (!isInjectedTextTurn(content)) {
-					humanMessageCount += 1;
+				if (
+					toolResultText !== null &&
+					turnsToGreen === null &&
+					isPassingTestRunOutput(toolResultText)
+				) {
+					turnsToGreen = turnCount;
 				}
 			}
 		}
@@ -203,8 +169,6 @@ export function summarizeUsage(jsonl: string): UsageSummary {
 		durationMs,
 		turnCount,
 		turnsToGreen,
-		humanMessageCount,
-		manuallyInspected: humanMessageCount > 1,
 	};
 }
 

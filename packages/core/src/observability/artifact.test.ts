@@ -12,8 +12,6 @@ const mainSummary: UsageSummary = {
 	durationMs: 60_000,
 	turnCount: 4,
 	turnsToGreen: 3,
-	humanMessageCount: 1,
-	manuallyInspected: false,
 };
 
 describe("buildUsageArtifact", () => {
@@ -36,8 +34,6 @@ describe("buildUsageArtifact", () => {
 		expect(artifact.duration_ms).toBe(60_000);
 		expect(artifact.turn_count).toBe(4);
 		expect(artifact.turns_to_green).toBe(3);
-		expect(artifact.human_message_count).toBe(1);
-		expect(artifact.manually_inspected).toBe(false);
 		expect(artifact.theoretical_cost_usd.applies_rate).toBe("intro");
 		expect(artifact.reviewer_subagent).toBeNull();
 		// no reviewer subagent: total system cost equals the main cost exactly

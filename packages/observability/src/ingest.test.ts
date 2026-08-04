@@ -30,8 +30,6 @@ describe("mapUsageArtifactToTicketRun", () => {
 			durationMs: 12345,
 			turnCount: 10,
 			turnsToGreen: 7,
-			humanMessageCount: 1,
-			manuallyInspected: false,
 			appliesRate: "intro",
 			theoreticalCostIntroUsd: 1.5,
 			theoreticalCostStandardUsd: 2.25,
@@ -66,8 +64,6 @@ describe("mapUsageArtifactToTicketRun", () => {
 			duration_ms: 500,
 			turn_count: 5,
 			turns_to_green: 3,
-			human_message_count: 1,
-			manually_inspected: false,
 			theoretical_cost_usd: {
 				applies_rate: "standard",
 				intro_usd: 0.5,
