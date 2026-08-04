@@ -337,6 +337,7 @@ export const entityService = {
 			type: string;
 			description?: string;
 			sourceId?: string;
+			attributes?: Record<string, unknown>;
 		},
 	) {
 		const rows = await db
@@ -347,6 +348,7 @@ export const entityService = {
 				type: input.type,
 				description: input.description ?? null,
 				sourceId: input.sourceId ?? null,
+				attributes: input.attributes ?? {},
 			})
 			.returning();
 		const row = rows[0];

@@ -413,6 +413,46 @@ describe("entityService.archive / unarchive", () => {
 	});
 });
 
+describe("entityService.create", () => {
+	let campaignId: string;
+
+	beforeEach(async () => {
+		await db.execute(sql`BEGIN`);
+		const campaign = await campaignService.create(db, {
+			name: "Test Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await db.execute(sql`ROLLBACK`);
+	});
+
+	it("stores the given attributes on the entity", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Vespera Nightveil",
+			type: "npc",
+			attributes: { extractedFrom: "00000000-0000-0000-0000-000000000000" },
+		});
+
+		expect(entity.attributes).toEqual({
+			extractedFrom: "00000000-0000-0000-0000-000000000000",
+		});
+	});
+
+	it("defaults attributes to an empty object when omitted", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Ismark",
+			type: "npc",
+		});
+
+		expect(entity.attributes).toEqual({});
+	});
+});
+
 describe("entityService.appendToDescription", () => {
 	let campaignId: string;
 
