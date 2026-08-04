@@ -2,6 +2,8 @@
 
 Milestone ref: M-OBS.5
 
+Complexity tier: M
+
 Priority: P2
 
 
