@@ -2,6 +2,8 @@
 
 Milestone ref: M-OBS.7
 
+Complexity tier: S
+
 Priority: P2
 
 Branch: feat/m-obs/t-051-cost-model-config

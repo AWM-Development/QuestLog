@@ -16,6 +16,8 @@ would need redoing.
 
 Milestone ref: M-AUDIT.4 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
+Complexity tier: M
+
 Priority: P2
 
 Context files (load broadly):

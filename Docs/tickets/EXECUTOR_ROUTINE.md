@@ -89,14 +89,20 @@ If the loop exhausts every candidate without a pick (case 1) or a resume (case 4
 - If `Mockup:` names a path, read it (read-only — never edit anything under `Docs/mockups/`). If it's `none`, there's no visual component.
 - If the ticket has an unresolved 🧠 strategy gate anywhere in its scope, STOP on that specific item and continue with whatever in the ticket doesn't depend on it. Don't just log it in the eventual report — file it as a gate-stub now: check whether `Docs/tickets/gated/*.md` already has one for this exact question (filed during ticket-writing); if not, create `Docs/tickets/gated/G-###-slug.md` per `Docs/tickets/GATE_SPEC.md` (next unused `G-###`), naming this ticket's id and branch in `Blocks:`/`Notes:`, and commit it (`chore: file G-### — gate surfaced during T-###`). This is what makes the gap visible to `/ungate` instead of only living inside this ticket's morning report. A 🎨/mockup reference is never a gate — proceed.
 
-## Step 4: Implement — TDD, per `.claude/skills/tdd-loop/SKILL.md`
-For each unit of work in the ticket's Scope:
+## Step 4: Implement — TDD, per `.claude/skills/tdd-loop/SKILL.md` (weight gated by Complexity tier, T-084)
+Process weight below is gated on the ticket's `Complexity tier` field (`TICKET_SPEC.md`), not applied uniformly — a docs-only edit has no meaningful failing test to write, and forcing the full ceremony on one burns turns proportional to fixed process, not diff size (T-070: a 4-file, 7-line docs-only ticket cost ~$3.87 across 136 turns).
+
+**S-tier tickets whose Scope touches no application code** (docs/config-only — confirmed by the ticket's own Scope naming only `.md`/config files, never inferred from the diff after the fact once work is underway): skip the Red/Green/Refactor requirement below entirely — there's no meaningful failing test for a markdown/config edit. Make the documented change directly, then run `scripts/run-tests-quiet.sh` once as a single end-of-work verification pass (still the exact same lint/typecheck/test regression gate every tier requires — this collapses the per-checkpoint iteration, not the gate itself) instead of looping it per checkpoint in Scope. Commit with message `feat(T-###): <short description>` once green.
+
+**M/L-tier tickets, and any S-tier ticket that touches application code**: unchanged — full TDD loop, per checkpoint in the ticket's Scope:
 1. Red: write a failing test for the behavior. Confirm it fails for the right reason.
 2. Green: minimum code to pass.
 3. Refactor with tests green.
 4. Run `scripts/run-tests-quiet.sh` (same fail-fast lint → typecheck → test chain, but only prints per-stage summaries on success — full output for a failing stage only; logs persist under `tmp/test-logs/` for Step 7's pasted evidence).
 5. If a single blocking failure survives 3 distinct attempted approaches (the ticket's Iteration cap — check the ticket for a different number), STOP. Do not attempt a 4th. Go to Step 6 (Blocked).
 6. Commit with message `feat(T-###): <short description>` once green.
+
+Step 5's reviewer subagent still runs for every tier regardless of which path above applied — this only changes the implementation-loop overhead leading up to review, never review coverage itself.
 
 ## Step 5: Review — before any report is written
 Invoke the `reviewer` subagent against the ticket file and the diff (`git diff develop <feature-branch>`). Wait for its verdict.

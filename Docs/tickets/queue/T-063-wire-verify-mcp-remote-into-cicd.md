@@ -8,6 +8,8 @@ Milestone ref: M-CICD.2/M-CICD.3 (`Docs/milestones/MILESTONES_V1_1_MCP.md`) —
   `apps/server/scripts/verify-mcp-remote.ts` as a script a human has to
   remember to invoke by hand after every deploy.
 
+Complexity tier: M
+
 Priority: P2
 
 Branch: feat/m-cicd/t-063-wire-verify-mcp-remote-into-cicd

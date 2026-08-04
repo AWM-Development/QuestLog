@@ -4,6 +4,10 @@
 
 **Last Updated:** 2026-08-04
 
+## T-084 — Gate executor process weight on ticket Complexity tier (2026-08-04)
+
+**The docs/config-only fast path is a Scope-time judgment, never a diff-time inference.** `EXECUTOR_ROUTINE.md` Step 4 gates the TDD-skip on the ticket's own Scope naming only `.md`/config files — not on what the resulting diff happens to touch — so a ticket that starts docs-only but drifts into application code mid-work doesn't retroactively qualify just because an executor session decides after the fact that the ceremony felt unnecessary. This mirrors T-050's existing "assigned once at draft time, not re-derived" pattern for the tier field itself. T-084's own ticket file predates T-050 having shipped and so carries no `Complexity tier` field — this ticket ran under the pre-existing (un-gated) full-process rules, same as every ticket before T-050 merged; the new fast path only applies going forward, to tickets `ticket-writer` drafts with the field present.
+
 ## T-081 — Mark extracted entities as machine-proposed for review (2026-08-04)
 
 **`entities.metadata.extractedFrom` (as the ticket described it) doesn't exist — `entities.attributes` is the actual pre-existing jsonb column, and that's what `confirm_ingest_entities` now sets `extractedFrom` on.** The ticket's own context-files note said "confirm before assuming, and reuse it rather than adding a new column"; `packages/core/src/db/schema/tables.ts` has no `metadata` column on `entities`, only `attributes` (default `{}`, previously unused by any code path). No migration needed since the column already exists. `get_entity`/`list_entities` already round-trip the full row via Drizzle's default `select()`/`returning()`, so both surface `attributes.extractedFrom` with no response-shape change. M-SEED.1's milestone text (`MILESTONES_V1_3_MCP.md` M-SEED.1) already anticipated this and calls it "the same column T-081 uses for `extractedFrom`" — future tickets writing to this column should keep using `attributes`, not introduce a `metadata` column that doesn't exist.

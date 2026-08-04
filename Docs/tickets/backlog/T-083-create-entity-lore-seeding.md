@@ -2,6 +2,8 @@
 
 Milestone ref: Docs/milestones/MILESTONES_V1_3_MCP.md M-SEED.2
 
+Complexity tier: M
+
 Priority: P1
 
 Blocked on: T-082 — must be merged into develop first

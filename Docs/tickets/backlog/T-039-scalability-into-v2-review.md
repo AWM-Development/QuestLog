@@ -17,6 +17,8 @@ starting.
 
 Milestone ref: M-AUDIT.3 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
+Complexity tier: L
+
 Priority: P2
 
 Context files (load broadly, same reasoning as T-017 — a narrower list
