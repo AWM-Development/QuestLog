@@ -65,7 +65,16 @@ Definition of done includes: checkbox flipped in Docs/milestones/MILESTONES_V1_M
     refactor, still within a well-understood pattern.
   - **L** — a new subsystem, a cross-cutting change touching many files,
     or a genuinely unfamiliar pattern for this codebase.
-  `ticket-writer` assigns this at draft time, same as `Priority`.
+  `ticket-writer` assigns this at draft time, same as `Priority`. Beyond
+  observability, the tier also gates the executor's own process weight
+  (T-084): an S-tier ticket whose Scope names only docs/config files skips
+  `EXECUTOR_ROUTINE.md` Step 4's Red/Green/Refactor ceremony in favor of a
+  single end-of-work `scripts/run-tests-quiet.sh` pass — still the same
+  lint/typecheck/test regression gate every tier requires, just not looped
+  per checkpoint. M/L-tier tickets, and any S-tier ticket that touches
+  application code, keep the full TDD loop. See Step 4 for the exact
+  mechanics; this field note only records that the tier has this
+  consequence, not just a reporting purpose.
 - **Strategy-gate flag** is a provenance marker, not a judgment call: `yes`
   if this ticket's own scope only became draftable after resolving a
   🎨/🧠 gate (i.e. it previously existed as a `Gated on:` reference, or
