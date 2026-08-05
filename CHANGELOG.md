@@ -10,6 +10,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-095
+
+- **The nightly executor now ingests every ticket's run into the observability store as part of its own wrap-up.** `EXECUTOR_ROUTINE.md` Step 7 (shipped) and Step 6 (blocked) each run `pnpm --filter @questlog/observability ingest <usage.json> <report>` right after the usage-capture invocation — T-053 built the store and CLI, but nothing called it until now, so every prior ticket's data only reached the store via a manual pull. A missing or unreachable `OBSERVABILITY_DATABASE_URL` (the real Neon branch/secret is still Alex's manual step) logs a warning and exits cleanly instead of failing the wrap-up. `packages/observability`'s `ingest` CLI also now closes its DB connection on every exit path (previously only failure paths did, so a successful run hung instead of exiting) — needed for the command to actually terminate.
+- **Uses T-036's established `pnpm --filter <pkg> <script> <args>` invocation form (no `run`, no `--`)** to avoid a known pnpm quirk where `run <script> -- <args>` forwards a literal `--` as the script's first argument on this repo's pnpm version. The CLI also strips a leading `--` defensively, since this ticket's own exit condition (and a habit-typed invocation) still uses the `run ... --` form.
+
 ### Added — T-125
 
 - **`session-start.sh`'s remote-sandbox branch now installs `pgvector` from source, pinned to `0.8.5`, instead of via apt/PGDG.** Investigation (`G-034`) found the sandbox's egress proxy hard-blocks `apt.postgresql.org`/PGDG (403 on the CONNECT tunnel) as a matter of policy, not a fixable config issue, and Ubuntu's own `noble/universe` package (0.6.0) is three minors behind what `hnsw.iterative_scan` needs (`IMPLEMENTATION_NOTES.md` § T-016) — meaning every remote executor session had been silently running against the wrong pgvector version. Building from source against GitHub (confirmed reachable) with `OPTFLAGS=""` (pgvector's default `-march=native` reliably segfaulted Postgres on `CREATE EXTENSION`, confirmed via a from-scratch Docker rebuild) now brings the sandbox to parity with `docker-compose.yml`/`ci.yml`, which already pin `pgvector/pgvector:0.8.5-pg16`.
