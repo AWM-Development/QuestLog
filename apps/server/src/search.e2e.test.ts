@@ -18,7 +18,10 @@
  * blocked.
  */
 import { readFileSync } from "node:fs";
-import { createTestDb } from "@questlog/core/db/test-helpers.js";
+import {
+	createAccessToken,
+	createTestDb,
+} from "@questlog/core/db/test-helpers.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
 import { sourceService } from "@questlog/core/services/source.service.js";
 import { createMemoryStorage } from "@questlog/core/services/storage.service.js";
@@ -87,11 +90,15 @@ describe.skipIf(!process.env.VOYAGE_API_KEY)(
 				contentType: "text/markdown",
 			});
 
+			const accessToken = await createAccessToken(db);
 			const uploadResponse = await app.inject({
 				method: "POST",
 				url: `/api/campaigns/${campaignId}/sources/upload`,
 				payload: form.getBuffer(),
-				headers: form.getHeaders(),
+				headers: {
+					...form.getHeaders(),
+					authorization: `Bearer ${accessToken}`,
+				},
 			});
 			expect(uploadResponse.statusCode).toBe(200);
 			const { source } = uploadResponse.json();

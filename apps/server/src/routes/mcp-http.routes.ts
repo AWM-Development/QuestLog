@@ -29,7 +29,8 @@ function sendUnauthorized(request: FastifyRequest, reply: FastifyReply) {
 		.send({ error: "invalid_token" });
 }
 
-async function requireBearerToken(
+/** Exported for reuse by other routes that share this same bearer-token scheme (T-092: upload, conversation-stream). */
+export async function requireBearerToken(
 	db: Database,
 	request: FastifyRequest,
 	reply: FastifyReply,

@@ -5,6 +5,7 @@ import {
 } from "@questlog/core/db/schema/index.js";
 import {
 	basisVector,
+	createAccessToken,
 	createTestDb,
 	deleteCampaignTree,
 } from "@questlog/core/db/test-helpers.js";
@@ -565,6 +566,12 @@ describe("conversation router", () => {
 	});
 
 	describe("SSE streaming endpoint", () => {
+		let accessToken: string;
+
+		beforeEach(async () => {
+			accessToken = await createAccessToken(db);
+		});
+
 		it("streams text deltas followed by a done event", async () => {
 			const convResp = await app.inject({
 				method: "POST",
@@ -588,7 +595,10 @@ describe("conversation router", () => {
 			const response = await app.inject({
 				method: "POST",
 				url: `/api/conversation/${conversationId}/stream`,
-				headers: { "content-type": "application/json" },
+				headers: {
+					"content-type": "application/json",
+					authorization: `Bearer ${accessToken}`,
+				},
 				payload: { campaignId, query: "Tell me about Strahd" },
 			});
 
@@ -637,7 +647,10 @@ describe("conversation router", () => {
 			await app.inject({
 				method: "POST",
 				url: `/api/conversation/${conversationId}/stream`,
-				headers: { "content-type": "application/json" },
+				headers: {
+					"content-type": "application/json",
+					authorization: `Bearer ${accessToken}`,
+				},
 				payload: { campaignId, query: "Hello" },
 			});
 
@@ -680,7 +693,10 @@ describe("conversation router", () => {
 			const response = await app.inject({
 				method: "POST",
 				url: `/api/conversation/${conversationId}/stream`,
-				headers: { "content-type": "application/json" },
+				headers: {
+					"content-type": "application/json",
+					authorization: `Bearer ${accessToken}`,
+				},
 				payload: { campaignId, query: "Hello" },
 			});
 
@@ -703,7 +719,10 @@ describe("conversation router", () => {
 			const response = await app.inject({
 				method: "POST",
 				url: `/api/conversation/${fakeId}/stream`,
-				headers: { "content-type": "application/json" },
+				headers: {
+					"content-type": "application/json",
+					authorization: `Bearer ${accessToken}`,
+				},
 				payload: { campaignId, query: "Hello" },
 			});
 
@@ -735,7 +754,10 @@ describe("conversation router", () => {
 			const response = await app.inject({
 				method: "POST",
 				url: `/api/conversation/${conversationId}/stream`,
-				headers: { "content-type": "application/json" },
+				headers: {
+					"content-type": "application/json",
+					authorization: `Bearer ${accessToken}`,
+				},
 				payload: { campaignId: otherCampaignId, query: "Hello" },
 			});
 
@@ -762,7 +784,10 @@ describe("conversation router", () => {
 			const response = await app.inject({
 				method: "POST",
 				url: `/api/conversation/${conversationId}/stream`,
-				headers: { "content-type": "application/json" },
+				headers: {
+					"content-type": "application/json",
+					authorization: `Bearer ${accessToken}`,
+				},
 				payload: { campaignId },
 			});
 
@@ -774,7 +799,10 @@ describe("conversation router", () => {
 			const response = await app.inject({
 				method: "POST",
 				url: "/api/conversation/not-a-uuid/stream",
-				headers: { "content-type": "application/json" },
+				headers: {
+					"content-type": "application/json",
+					authorization: `Bearer ${accessToken}`,
+				},
 				payload: { campaignId, query: "Hello" },
 			});
 
@@ -802,7 +830,10 @@ describe("conversation router", () => {
 			const response = await app.inject({
 				method: "POST",
 				url: `/api/conversation/${conversationId}/stream`,
-				headers: { "content-type": "application/json" },
+				headers: {
+					"content-type": "application/json",
+					authorization: `Bearer ${accessToken}`,
+				},
 				payload: { campaignId, query: "Tell me about Strahd" },
 			});
 
@@ -811,6 +842,47 @@ describe("conversation router", () => {
 			expect(errorEvent).toBeDefined();
 			const errorData = JSON.parse(errorEvent?.data as string);
 			expect(errorData.code).toBe(429);
+		});
+
+		it("rejects a request with no bearer token with 401", async () => {
+			const convResp = await app.inject({
+				method: "POST",
+				url: "/trpc/conversation.create",
+				headers: { "content-type": "application/json" },
+				payload: { json: { campaignId } },
+			});
+			const conversationId = convResp.json().result.data.json.id;
+
+			const response = await app.inject({
+				method: "POST",
+				url: `/api/conversation/${conversationId}/stream`,
+				headers: { "content-type": "application/json" },
+				payload: { campaignId, query: "Hello" },
+			});
+
+			expect(response.statusCode).toBe(401);
+		});
+
+		it("rejects a request with an invalid bearer token with 401", async () => {
+			const convResp = await app.inject({
+				method: "POST",
+				url: "/trpc/conversation.create",
+				headers: { "content-type": "application/json" },
+				payload: { json: { campaignId } },
+			});
+			const conversationId = convResp.json().result.data.json.id;
+
+			const response = await app.inject({
+				method: "POST",
+				url: `/api/conversation/${conversationId}/stream`,
+				headers: {
+					"content-type": "application/json",
+					authorization: "Bearer not-a-real-token",
+				},
+				payload: { campaignId, query: "Hello" },
+			});
+
+			expect(response.statusCode).toBe(401);
 		});
 	});
 });

@@ -1,6 +1,8 @@
+import { createHash, randomBytes } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { mcpOauthService } from "../services/mcp-oauth.service.js";
 import { TABLES_IN_DELETE_ORDER } from "./global-setup.js";
 import type { Database } from "./index.js";
 import * as schema from "./schema/index.js";
@@ -83,6 +85,36 @@ export async function lockTruncationTargets(sql: {
  * `db.transaction()` on the same connection — raw `BEGIN` in a test does not
  * compose with Drizzle/postgres.js nested transaction handling.
  */
+/**
+ * Issues a real access token via the full PKCE authorization-code flow, for
+ * tests exercising routes gated behind `requireBearerToken`
+ * (`apps/server/src/routes/mcp-http.routes.ts`) — `/mcp`, the upload route,
+ * and the conversation-stream route all share this one scheme (T-092).
+ */
+export async function createAccessToken(db: Database): Promise<string> {
+	const client = await mcpOauthService.registerClient(db, {
+		redirectUri: "https://claude.ai/api/mcp/callback",
+	});
+	const codeVerifier = randomBytes(32).toString("base64url");
+	const codeChallenge = createHash("sha256")
+		.update(codeVerifier)
+		.digest("base64url");
+	// resource only has to match itself between the two calls below — validateAccessToken never checks it.
+	const resource = "http://test.local/mcp";
+	const { code } = await mcpOauthService.createAuthorizationCode(db, {
+		clientId: client.clientId,
+		codeChallenge,
+		resource,
+	});
+	const tokens = await mcpOauthService.exchangeAuthorizationCode(db, {
+		code,
+		clientId: client.clientId,
+		codeVerifier,
+		resource,
+	});
+	return tokens.accessToken;
+}
+
 export async function deleteCampaignTree(db: Database, campaignId: string) {
 	const convRows = await db
 		.select({ id: conversations.id })
