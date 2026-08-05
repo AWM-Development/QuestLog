@@ -2,6 +2,8 @@
 
 Milestone ref: Docs/milestones/MILESTONES_V1_3_MCP.md M-EXTRACT.3
 
+Complexity tier: S
+
 Priority: P1
 
 Branch: feat/m-extract/t-081-extracted-entity-review-marker

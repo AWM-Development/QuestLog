@@ -6,6 +6,8 @@ milestone checkbox. Surfaced during Alex's `/morning-review` of T-076
 (`Docs/tickets/reports/T-076-confirm-correct-lore-tool.md`), not part of a
 milestone doc.
 
+Complexity tier: L
+
 Priority: P2
 
 Branch: chore/mcp-test-hygiene/t-103-split-server-test-file

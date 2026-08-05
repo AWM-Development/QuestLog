@@ -45,6 +45,8 @@ yet and this should wait.
 Milestone ref: M-MCP (all of it) — this is a cross-cutting audit of the
 whole milestone, not scoped to one M-MCP.# task
 
+Complexity tier: L
+
 Priority: P2
 
 Context files (load ONLY these to start — this ticket's whole point is
