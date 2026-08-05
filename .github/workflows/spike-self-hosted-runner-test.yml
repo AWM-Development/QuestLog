@@ -1,0 +1,50 @@
+name: SPIKE — self-hosted runner + dynamic-port Postgres (G-035)
+
+# Throwaway spike workflow for G-035's self-hosted-runner investigation.
+# Proves two things together: (1) a job actually dispatches to and runs on
+# a self-hosted runner, and (2) the same pgvector/pgvector:0.8.5-pg16
+# service image ci.yml already trusts works via a DYNAMIC host port
+# (no hardcoded port mapping) — the mechanism that lets concurrent jobs
+# share one host without T-072-style port-hashing. Delete this file once
+# the spike is done; it is not meant to ship.
+
+on:
+  pull_request:
+    branches: [develop]
+  workflow_dispatch:
+
+jobs:
+  spike:
+    runs-on: [self-hosted, spike]
+
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.5-pg16
+        env:
+          POSTGRES_USER: questlog
+          POSTGRES_PASSWORD: questlog
+          POSTGRES_DB: questlog_spike
+        ports:
+          - 5432/tcp # no host port pinned — Docker assigns a free one
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Report assigned dynamic port
+        run: echo "Postgres mapped to dynamic host port ${{ job.services.postgres.ports['5432'] }}"
+
+      - name: Connect and create the vector extension (mirrors migrate.ts's own bootstrap step)
+        env:
+          PGPASSWORD: questlog
+          PGPORT: ${{ job.services.postgres.ports['5432'] }}
+        run: |
+          psql -h 127.0.0.1 -p "$PGPORT" -U questlog -d questlog_spike -c "CREATE EXTENSION IF NOT EXISTS vector;"
+          psql -h 127.0.0.1 -p "$PGPORT" -U questlog -d questlog_spike -tAc "SELECT extversion FROM pg_extension WHERE extname='vector';"
+
+      - name: Confirm this actually ran on the self-hosted runner, not a GitHub-hosted one
+        run: |
+          echo "Runner name: $RUNNER_NAME"
+          uname -a
