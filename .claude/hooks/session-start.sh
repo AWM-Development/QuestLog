@@ -126,22 +126,13 @@ fi
 # healthy system — never let this line itself fail the hook.
 dpkg --configure -a >/dev/null 2>&1 || true
 
-# Ubuntu's own postgresql-16-pgvector package is pinned at 0.6.0 — three
-# minors behind the 0.8.5 hnsw.iterative_scan needs (recall-cliff fix,
-# IMPLEMENTATION_NOTES.md § T-016) and the exact version docker-compose.yml
-# and ci.yml already pin (pgvector/pgvector:0.8.5-pg16); building from
-# source here restores parity across all four environments instead of
-# leaving the sandbox silently three minors behind. PGDG's own repo, and
-# Ubuntu's launchpad PPAs, are unreachable from this sandbox's egress proxy
-# (a hard 403 on the CONNECT tunnel, confirmed live — not a config mistake,
-# see Docs/IMPLEMENTATION_NOTES.md § G-034), so no apt-based path can ever
-# reach 0.8.x here. Building from source against Ubuntu's own already-
-# reachable archive (postgresql-server-dev-16, build-essential) plus GitHub
-# (also confirmed reachable) is the only path that actually works in this
-# sandbox class. The readiness check is the versioned .sql file `make
-# install` leaves behind, not dpkg — dpkg has no visibility into a source
-# build, and this whole block runs before Postgres itself starts below, so
-# no live-DB query is possible yet either.
+# Ubuntu's postgresql-16-pgvector is three minors behind the 0.8.5
+# hnsw.iterative_scan needs, and PGDG is unreachable from this sandbox's
+# egress proxy — built from source instead, pinned to match
+# docker-compose.yml/ci.yml. Full investigation: IMPLEMENTATION_NOTES.md
+# § T-125 / § G-034. Readiness check is the .sql file `make install`
+# leaves behind, not dpkg (no record of a source build) — this block runs
+# before Postgres starts below, so a live-DB query isn't possible yet.
 PGVECTOR_VERSION=0.8.5
 PGVECTOR_SQL="/usr/share/postgresql/16/extension/vector--${PGVECTOR_VERSION}.sql"
 if [ ! -f "$PGVECTOR_SQL" ]; then
@@ -150,12 +141,8 @@ if [ ! -f "$PGVECTOR_SQL" ]; then
   rm -rf /tmp/pgvector-build
   git clone --quiet --branch "v${PGVECTOR_VERSION}" --depth 1 \
     https://github.com/pgvector/pgvector.git /tmp/pgvector-build
-  # OPTFLAGS="" is load-bearing, not cosmetic — pgvector's Makefile defaults
-  # to -march=native, and that combined with -flto=auto reliably segfaulted
-  # Postgres on CREATE EXTENSION in real testing (SIGSEGV, confirmed via a
-  # from-scratch Docker rebuild — G-034), even within a single build/run on
-  # the same host. Disabling it produces a portable, working binary at the
-  # cost of pgvector's own SIMD auto-tuning, which this hook doesn't need.
+  # OPTFLAGS="" is load-bearing, not cosmetic — pgvector's default
+  # -march=native segfaulted Postgres on CREATE EXTENSION (§ G-034).
   make -C /tmp/pgvector-build OPTFLAGS="" -j"$(nproc)" >/dev/null
   make -C /tmp/pgvector-build OPTFLAGS="" install >/dev/null
   rm -rf /tmp/pgvector-build
