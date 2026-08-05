@@ -8,8 +8,6 @@ Strategy-gate flag: no
 
 Priority: P1
 
-Blocked on: T-084 — must be merged into develop first
-
 Branch: feat/m-efficiency/t-102-xs-tier-established-pattern-fast-path
 
 Context files (load ONLY these):
