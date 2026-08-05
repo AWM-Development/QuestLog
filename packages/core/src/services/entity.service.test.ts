@@ -1,15 +1,37 @@
 import { sql } from "drizzle-orm";
-import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createTestDb } from "../db/test-helpers.js";
+import {
+	afterAll,
+	afterEach,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
+import { chunks, sources } from "../db/schema/index.js";
+import {
+	basisVector,
+	createTestDb,
+	deleteCampaignTree,
+} from "../db/test-helpers.js";
 import { NotFoundError } from "../lib/errors.js";
 import { campaignService } from "./campaign.service.js";
 import { entityService, extractExcerpt } from "./entity.service.js";
+import type { FetchFn } from "./voyage.client.js";
 
 const { db, close } = createTestDb();
 
 afterAll(async () => {
 	await close();
 });
+
+/** Mock fetch that always returns a fixed embedding for the query — decouples createSeeded tests from the Voyage AI API. */
+function createMockFetch(embedding: number[]): FetchFn {
+	return vi.fn().mockImplementation(async () => ({
+		ok: true,
+		json: async () => ({ data: [{ embedding, index: 0 }] }),
+	})) as unknown as FetchFn;
+}
 
 async function insertEntity(
 	campaignId: string,
@@ -450,6 +472,169 @@ describe("entityService.create", () => {
 		});
 
 		expect(entity.attributes).toEqual({});
+	});
+});
+
+describe("entityService.createSeeded", () => {
+	// contextService.searchChunks' keywordSearch opens its own db.transaction()
+	// (T-015) — doesn't compose with a raw BEGIN/ROLLBACK wrapper on the same
+	// connection (.claude/rules/backend.md "Test DB pattern"); use explicit
+	// FK-safe cleanup instead, same as context.service.test.ts.
+	let campaignId: string;
+	let sourceId: string;
+
+	beforeEach(async () => {
+		const campaign = await campaignService.create(db, {
+			name: "Test Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+
+		const [source] = await db
+			.insert(sources)
+			.values({ campaignId, name: "primer.md", type: "file", status: "done" })
+			.returning();
+		sourceId = source?.id ?? "";
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, campaignId);
+	});
+
+	it("seeds description and attributes.seededFrom when a chunk clears the threshold", async () => {
+		const [chunk] = await db
+			.insert(chunks)
+			.values({
+				campaignId,
+				sourceId,
+				content: "Mira Duskwood patrols the Old Road near Ashfall Peak.",
+				embedding: basisVector(0),
+				metadata: { position: 0 },
+			})
+			.returning();
+
+		const result = await entityService.createSeeded(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+			fetchFn: createMockFetch(basisVector(0)),
+		});
+
+		expect(result.seeded).toBe(true);
+		expect(result.entity.description).toContain(
+			"Mira Duskwood patrols the Old Road",
+		);
+		expect(result.entity.attributes).toMatchObject({
+			seededFrom: { chunkIds: [chunk?.id], confidence: expect.any(Number) },
+		});
+		expect(result.citations).toEqual(
+			expect.arrayContaining([expect.objectContaining({ chunkId: chunk?.id })]),
+		);
+		expect(result.confidence).toBeGreaterThan(0);
+	});
+
+	it("appends the seeded draft after a caller-supplied description rather than replacing it", async () => {
+		await db.insert(chunks).values({
+			campaignId,
+			sourceId,
+			content: "Mira Duskwood patrols the Old Road near Ashfall Peak.",
+			embedding: basisVector(0),
+			metadata: { position: 0 },
+		});
+
+		const result = await entityService.createSeeded(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+			description: "A grizzled road warden.",
+			fetchFn: createMockFetch(basisVector(0)),
+		});
+
+		expect(
+			result.entity.description?.startsWith("A grizzled road warden."),
+		).toBe(true);
+		expect(result.entity.description).toContain("Seeded from lore:");
+		expect(result.entity.description).toContain(
+			"Mira Duskwood patrols the Old Road",
+		);
+	});
+
+	it("does not seed when the best match is below threshold, but still returns it as a citation", async () => {
+		const [chunk] = await db
+			.insert(chunks)
+			.values({
+				campaignId,
+				sourceId,
+				content: "The tavern serves watered-down ale.",
+				// Orthogonal to the query embedding (basisVector(0)) -> score 0.
+				embedding: basisVector(1),
+				metadata: { position: 0 },
+			})
+			.returning();
+
+		const result = await entityService.createSeeded(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+			fetchFn: createMockFetch(basisVector(0)),
+		});
+
+		expect(result.seeded).toBe(false);
+		expect(result.entity.description).toBeNull();
+		expect(result.entity.attributes).toEqual({});
+		expect(result.citations).toEqual(
+			expect.arrayContaining([expect.objectContaining({ chunkId: chunk?.id })]),
+		);
+	});
+
+	it("leaves the description unset when no lore matches at all", async () => {
+		const result = await entityService.createSeeded(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+			fetchFn: createMockFetch(basisVector(0)),
+		});
+
+		expect(result.seeded).toBe(false);
+		expect(result.entity.description).toBeNull();
+		expect(result.citations).toEqual([]);
+		expect(result.confidence).toBe(0);
+	});
+
+	it("lists each source's excerpt separately when matches span more than one source", async () => {
+		const [source2] = await db
+			.insert(sources)
+			.values({ campaignId, name: "second.md", type: "file", status: "done" })
+			.returning();
+
+		await db.insert(chunks).values([
+			{
+				campaignId,
+				sourceId,
+				content: "Mira Duskwood patrols the Old Road.",
+				embedding: basisVector(0),
+				metadata: { position: 0 },
+			},
+			{
+				campaignId,
+				sourceId: source2?.id,
+				content: "Mira Duskwood once served in the Ashfall Watch.",
+				embedding: basisVector(0),
+				metadata: { position: 0 },
+			},
+		]);
+
+		const result = await entityService.createSeeded(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+			fetchFn: createMockFetch(basisVector(0)),
+		});
+
+		expect(result.entity.description).toContain("Old Road");
+		expect(result.entity.description).toContain("Ashfall Watch");
+		expect(result.entity.description).toContain("primer.md");
+		expect(result.entity.description).toContain("second.md");
 	});
 });
 

@@ -4,12 +4,15 @@ import type { Database, Transaction } from "../db/index.js";
 import { entities } from "../db/schema/index.js";
 import { NotFoundError } from "../lib/errors.js";
 import { first } from "../lib/utils.js";
+import { CONTEXT_CONFIG, contextService } from "./context.service.js";
+import type { ContextCitation } from "./context.service.js";
 import {
 	findProperNounSpans,
 	guessEntityType,
 	rangesOverlap,
 	tokenizeWords,
 } from "./entity-candidate-detection.service.js";
+import type { FetchFn } from "./voyage.client.js";
 
 export interface EntitySpan {
 	entityId: string;
@@ -178,6 +181,42 @@ export function extractExcerpt(
 
 	return text.slice(start, end).trim();
 }
+
+/**
+ * Groups matching chunks by source and joins each source's excerpts into its
+ * own labeled paragraph — surfaces a multi-source conflict instead of
+ * silently blending voices into one paragraph (G-016).
+ */
+function buildSeededDraft(
+	seedChunks: Array<{
+		sourceId: string | null;
+		sourceName: string | null;
+		content: string;
+	}>,
+): string {
+	const bySource = new Map<string, { label: string; excerpts: string[] }>();
+	for (const chunk of seedChunks) {
+		const key = chunk.sourceId ?? "unknown";
+		const existing = bySource.get(key);
+		if (existing) {
+			existing.excerpts.push(chunk.content);
+		} else {
+			bySource.set(key, {
+				label: chunk.sourceName ?? "Unknown source",
+				excerpts: [chunk.content],
+			});
+		}
+	}
+	return Array.from(bySource.values())
+		.map(({ label, excerpts }) => `${label}: ${excerpts.join(" ")}`)
+		.join("\n");
+}
+
+// Named separately (rather than `Awaited<ReturnType<typeof entityService.create>>`)
+// so `createSeeded`'s return type doesn't reference `entityService` from inside
+// its own initializer — that circular reference made the whole object literal's
+// inferred types collapse to `any`.
+type EntityRow = typeof entities.$inferSelect;
 
 export const entityService = {
 	async detectSpans(
@@ -354,6 +393,77 @@ export const entityService = {
 		const row = rows[0];
 		if (!row) throw new Error("Entity creation failed");
 		return row;
+	},
+
+	/**
+	 * `create_entity`'s lore-seeding variant (T-083, G-016): searches ingested
+	 * lore for the entity's name before persisting, and drafts a description
+	 * from any match that clears `CONTEXT_CONFIG.seedConfidenceThreshold`. A
+	 * caller-supplied description is never overwritten — the draft is
+	 * appended as a separate, labeled section instead. Below threshold, the
+	 * entity is created exactly as `create` would, but the search results
+	 * still come back as citations so nothing found is silently discarded.
+	 */
+	async createSeeded(
+		db: Database,
+		input: {
+			campaignId: string;
+			name: string;
+			type: string;
+			description?: string;
+			fetchFn?: FetchFn;
+		},
+	): Promise<{
+		entity: EntityRow;
+		citations: ContextCitation[];
+		confidence: number;
+		seeded: boolean;
+	}> {
+		const results = await contextService.searchChunks(db, {
+			campaignId: input.campaignId,
+			// `type` is a hint appended to the query text, not a hard filter —
+			// mirrors context.service.ts's formatEntity line shape.
+			query: `${input.name} (${input.type})`,
+			fetchFn: input.fetchFn,
+		});
+
+		const confidence = results[0]?.score ?? 0;
+		const seeded = confidence >= CONTEXT_CONFIG.seedConfidenceThreshold;
+
+		const citations: ContextCitation[] = results.map((r) => ({
+			chunkId: r.chunkId,
+			sourceName: r.sourceName,
+			sourceId: r.sourceId,
+		}));
+
+		let description = input.description;
+		let attributes: Record<string, unknown> | undefined;
+
+		if (seeded) {
+			const seedChunks = results.filter(
+				(r) => r.score >= CONTEXT_CONFIG.seedConfidenceThreshold,
+			);
+			const draft = buildSeededDraft(seedChunks);
+			description = input.description
+				? `${input.description}\n\n---\nSeeded from lore:\n${draft}`
+				: draft;
+			attributes = {
+				seededFrom: {
+					chunkIds: seedChunks.map((c) => c.chunkId),
+					confidence,
+				},
+			};
+		}
+
+		const entity = await entityService.create(db, {
+			campaignId: input.campaignId,
+			name: input.name,
+			type: input.type,
+			description,
+			attributes,
+		});
+
+		return { entity, citations, confidence, seeded };
 	},
 
 	async update(
