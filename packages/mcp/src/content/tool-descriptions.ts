@@ -17,7 +17,7 @@ export const GET_ENTITY_DESCRIPTION =
 	"Look up a single entity by id or by fuzzy name match. Exactly one of entityId or name must be provided.";
 
 export const CREATE_ENTITY_DESCRIPTION =
-	"Create a new entity (npc, location, faction, item, or arc) in a campaign. Direct write — only ever inserts a new row, no preview/confirm needed.";
+	"Create a new entity (npc, location, faction, item, or arc) in a campaign. Searches ingested lore for a matching description first: a high-confidence match seeds the description and is cited in the response, a caller-supplied description is never overwritten (a seeded draft is appended alongside it instead), and lower-confidence matches still come back as citations to review. Direct write — only ever inserts a new row, no preview/confirm needed.";
 
 export const APPEND_ENTITY_NOTE_DESCRIPTION =
 	"Append a note to an existing entity's description, without overwriting its prior content. Direct write — additive only, no preview/confirm needed.";
