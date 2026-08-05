@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Fixed — T-092
+
+- **`POST /api/campaigns/:campaignId/sources/upload` and `POST /api/conversation/:conversationId/stream` now require a valid bearer token**, closing the gap flagged by T-038's security review (both routes were previously reachable by anyone who has or guesses a campaign UUID, no credential required). Reuses `/mcp`'s existing `requireBearerToken` scheme (G-017's resolution) rather than a new, lighter mechanism. Known consequence, accepted by G-017: `SourcesPage` (the one kept v1 web surface) has no token-issuance story of its own yet and will get 401'd on real uploads until a follow-up addresses that — out of scope for this ticket.
+
 ### Added — T-125
 
 - **`session-start.sh`'s remote-sandbox branch now installs `pgvector` from source, pinned to `0.8.5`, instead of via apt/PGDG.** Investigation (`G-034`) found the sandbox's egress proxy hard-blocks `apt.postgresql.org`/PGDG (403 on the CONNECT tunnel) as a matter of policy, not a fixable config issue, and Ubuntu's own `noble/universe` package (0.6.0) is three minors behind what `hnsw.iterative_scan` needs (`IMPLEMENTATION_NOTES.md` § T-016) — meaning every remote executor session had been silently running against the wrong pgvector version. Building from source against GitHub (confirmed reachable) with `OPTFLAGS=""` (pgvector's default `-march=native` reliably segfaulted Postgres on `CREATE EXTENSION`, confirmed via a from-scratch Docker rebuild) now brings the sandbox to parity with `docker-compose.yml`/`ci.yml`, which already pin `pgvector/pgvector:0.8.5-pg16`.
