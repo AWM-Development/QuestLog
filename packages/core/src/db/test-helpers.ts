@@ -29,6 +29,25 @@ export function basisVector(axis: number, dims = 1024): number[] {
 }
 
 /**
+ * Build a unit vector with an *exact* cosine similarity to `basisVector(axis)`
+ * (score = 1 - cosine distance, per `.claude/rules/db.md`). Puts the rest of
+ * the unit-length budget on `otherAxis` so the vector stays normalized. Use
+ * over `mixVectors`-style blending when a test needs a precise, reproducible
+ * score rather than an approximate "partially similar."
+ */
+export function similarityVector(
+	axis: number,
+	similarity: number,
+	otherAxis: number,
+	dims = 1024,
+): number[] {
+	const vec = new Array(dims).fill(0);
+	vec[axis] = similarity;
+	vec[otherAxis] = Math.sqrt(1 - similarity * similarity);
+	return vec;
+}
+
+/**
  * Creates an isolated test database connection.
  *
  * Defaults to { max: 1 } so all queries within a test share the same

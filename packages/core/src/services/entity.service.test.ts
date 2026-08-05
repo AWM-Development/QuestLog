@@ -13,6 +13,7 @@ import {
 	basisVector,
 	createTestDb,
 	deleteCampaignTree,
+	similarityVector,
 } from "../db/test-helpers.js";
 import { NotFoundError } from "../lib/errors.js";
 import { campaignService } from "./campaign.service.js";
@@ -635,6 +636,45 @@ describe("entityService.createSeeded", () => {
 		expect(result.entity.description).toContain("Ashfall Watch");
 		expect(result.entity.description).toContain("primer.md");
 		expect(result.entity.description).toContain("second.md");
+	});
+
+	it("seeds from the highest-scoring chunk even when a more recent, lower-scoring chunk ranks first by combinedScore", async () => {
+		// searchChunks sorts by combinedScore (recency-blended), not raw score.
+		// An older chunk clearing the threshold on raw score can rank behind a
+		// newer, sub-threshold chunk — the gate must scan all results for the
+		// max raw score, not just trust array position 0.
+		// Content deliberately avoids the query's tokens (the entity's name and
+		// type) so pg_trgm's keyword-search leg doesn't also match and boost
+		// these chunks (`dualMatchBoost`) — this test isolates vector score only.
+		await db.insert(chunks).values([
+			{
+				campaignId,
+				sourceId,
+				content: "A road warden patrols alone near the old bridge at dusk.",
+				embedding: similarityVector(0, 0.72, 1),
+				metadata: { position: 0 },
+				createdAt: new Date("2020-01-01T00:00:00Z"),
+			},
+			{
+				campaignId,
+				sourceId,
+				content: "An officer was seen recently, otherwise unremarkable.",
+				embedding: similarityVector(0, 0.69, 2),
+				metadata: { position: 1 },
+				createdAt: new Date(),
+			},
+		]);
+
+		const result = await entityService.createSeeded(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+			fetchFn: createMockFetch(basisVector(0)),
+		});
+
+		expect(result.seeded).toBe(true);
+		expect(result.confidence).toBeCloseTo(0.72, 1);
+		expect(result.entity.description).toContain("road warden");
 	});
 });
 

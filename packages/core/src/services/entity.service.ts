@@ -427,7 +427,10 @@ export const entityService = {
 			fetchFn: input.fetchFn,
 		});
 
-		const confidence = results[0]?.score ?? 0;
+		// searchChunks sorts by combinedScore (recency-blended, T-082), so
+		// results[0] isn't necessarily the chunk with the highest raw score —
+		// gate on the max raw score across all results, not array position.
+		const confidence = results.reduce((max, r) => Math.max(max, r.score), 0);
 		const seeded = confidence >= CONTEXT_CONFIG.seedConfidenceThreshold;
 
 		const citations: ContextCitation[] = results.map((r) => ({
