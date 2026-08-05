@@ -2,7 +2,13 @@
 
 **Purpose:** Non-obvious decisions and gotchas that aren't derivable from reading the code. Read at the start of every session. Add an entry when you make a non-obvious decision. Retired entries: `Docs/IMPLEMENTATION_NOTES_ARCHIVE.md`.
 
-**Last Updated:** 2026-08-04
+**Last Updated:** 2026-08-05
+
+## T-083 — `create_entity` lore-seeding + citation response (2026-08-05)
+
+**Confidence is the top search result's raw `score`, not `combinedScore`, and the same number is reused everywhere (gating threshold, `metadata.seededFrom.confidence`, and the response's top-level `confidence`).** `contextService.searchChunks` sorts by `combinedScore` (recency-blended), but `contextService.assemble`'s own `confidence` field averages `.score` (the raw similarity/keyword-boosted score, no recency) — G-016 ties `seedConfidenceThreshold` to "the same scale as `contextService`'s confidence score," so gating and reporting both use `.score` to stay consistent with that precedent, even though ranking order still comes from `combinedScore`. The "matching chunk(s)" used to build the seeded draft are every result whose `.score` clears the threshold (not just the single top result) — G-016's multi-source-conflict language ("when the top search results span more than one distinct source") implies more than one contributing chunk is expected.
+
+**`entityService.createSeeded`'s return type names the entity row via a standalone `EntityRow = typeof entities.$inferSelect` alias, not `Awaited<ReturnType<typeof entityService.create>>`.** The latter references `entityService` from inside its own object-literal initializer; TypeScript can't resolve that self-reference and silently collapses the *entire* `entityService` object literal's inferred types to `any` (surfaced as unrelated `TS7006 implicit any` errors scattered across other methods, not a clean error at the actual reference site) rather than failing at the reference itself. Any future method wanting another sibling method's return type should use a named type alias for the same reason.
 
 ## T-084 — Gate executor process weight on ticket Complexity tier (2026-08-04)
 

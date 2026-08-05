@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-083
+
+- **`create_entity` now searches ingested lore before creating an entity and offers to seed its description from what it finds.** A match scoring at or above the new `seedConfidenceThreshold` (default `0.7`) drafts a description from the matching chunk(s), stores the contributing chunk ids and confidence as `attributes.seededFrom`, and is cited in the response. A caller-supplied `description` is never overwritten — the seeded draft is appended alongside it as a separate, clearly labeled section. Matches spanning more than one source list each source's excerpt separately rather than blending them, so a conflict between sources is visible instead of silently resolved. Below-threshold (or absent) matches still come back as citations for the caller to review. The tool's response now returns `{ ...entity, citations, confidence, seeded }`.
+
 ### Added — T-125
 
 - **`session-start.sh`'s remote-sandbox branch now installs `pgvector` from source, pinned to `0.8.5`, instead of via apt/PGDG.** Investigation (`G-034`) found the sandbox's egress proxy hard-blocks `apt.postgresql.org`/PGDG (403 on the CONNECT tunnel) as a matter of policy, not a fixable config issue, and Ubuntu's own `noble/universe` package (0.6.0) is three minors behind what `hnsw.iterative_scan` needs (`IMPLEMENTATION_NOTES.md` § T-016) — meaning every remote executor session had been silently running against the wrong pgvector version. Building from source against GitHub (confirmed reachable) with `OPTFLAGS=""` (pgvector's default `-march=native` reliably segfaulted Postgres on `CREATE EXTENSION`, confirmed via a from-scratch Docker rebuild) now brings the sandbox to parity with `docker-compose.yml`/`ci.yml`, which already pin `pgvector/pgvector:0.8.5-pg16`.
