@@ -126,29 +126,26 @@ fi
 # healthy system — never let this line itself fail the hook.
 dpkg --configure -a >/dev/null 2>&1 || true
 
-if ! dpkg -s postgresql-16-pgvector >/dev/null 2>&1; then
-  # Ubuntu's own postgresql-16-pgvector package is pinned at 0.6.0 — three
-  # minors behind the 0.8.0 that hnsw.iterative_scan needs (recall-cliff
-  # fix, IMPLEMENTATION_NOTES.md § T-016). Try PGDG's repo first (ships
-  # 0.8.x); fall back to Ubuntu's package on any failure, including the
-  # egress proxy blocking apt.postgresql.org — a live possibility here,
-  # since the launchpad PPAs already 403 in this sandbox. This whole
-  # attempt must never fail the run; only the final fallback install may.
-  pgdg_ok=false
-  if command -v lsb_release >/dev/null 2>&1 &&
-    wget -qO /tmp/pgdg.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc 2>/dev/null &&
-    gpg --dearmor -o /usr/share/keyrings/pgdg.gpg /tmp/pgdg.asc 2>/dev/null; then
-    echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
-      >/etc/apt/sources.list.d/pgdg.list
-    if apt-get update -qq 2>/dev/null && apt-get install -y -qq postgresql-16-pgvector 2>/dev/null; then
-      pgdg_ok=true
-    fi
-    rm -f /etc/apt/sources.list.d/pgdg.list /tmp/pgdg.asc
-  fi
-  if [ "$pgdg_ok" != true ]; then
-    apt-get update -qq
-    apt-get install -y -qq postgresql-16-pgvector
-  fi
+# Ubuntu's postgresql-16-pgvector is three minors behind the 0.8.5
+# hnsw.iterative_scan needs, and PGDG is unreachable from this sandbox's
+# egress proxy — built from source instead, pinned to match
+# docker-compose.yml/ci.yml. Full investigation: IMPLEMENTATION_NOTES.md
+# § T-125 / § G-034. Readiness check is the .sql file `make install`
+# leaves behind, not dpkg (no record of a source build) — this block runs
+# before Postgres starts below, so a live-DB query isn't possible yet.
+PGVECTOR_VERSION=0.8.5
+PGVECTOR_SQL="/usr/share/postgresql/16/extension/vector--${PGVECTOR_VERSION}.sql"
+if [ ! -f "$PGVECTOR_SQL" ]; then
+  apt-get update -qq
+  apt-get install -y -qq build-essential postgresql-server-dev-16 git
+  rm -rf /tmp/pgvector-build
+  git clone --quiet --branch "v${PGVECTOR_VERSION}" --depth 1 \
+    https://github.com/pgvector/pgvector.git /tmp/pgvector-build
+  # OPTFLAGS="" is load-bearing, not cosmetic — pgvector's default
+  # -march=native segfaulted Postgres on CREATE EXTENSION (§ G-034).
+  make -C /tmp/pgvector-build OPTFLAGS="" -j"$(nproc)" >/dev/null
+  make -C /tmp/pgvector-build OPTFLAGS="" install >/dev/null
+  rm -rf /tmp/pgvector-build
 fi
 
 PG_CONF=/etc/postgresql/16/main/postgresql.conf
@@ -186,25 +183,88 @@ fi
 # scripts/test-db-names.sh — also sourced by ci.yml and
 # e2e-release-check.yml. Why: Docs/IMPLEMENTATION_NOTES.md § T-027.
 source "$CLAUDE_PROJECT_DIR/scripts/test-db-names.sh"
-for dbname in "${TEST_DB_NAMES[@]}"; do
-  db_exists=$(sudo -u postgres psql -p "$PGPORT" -tAc "SELECT 1 FROM pg_database WHERE datname='${dbname}'")
+
+# Extension list needed by both the fast-path pre-check below and the
+# verification gate further down — parsed once, up front, from migrate.ts's
+# own REQUIRED_EXTENSIONS constant so it can never drift from the app's
+# actual source of truth (same reasoning as the gate always had; just
+# hoisted so both consumers share one parse instead of two).
+required_extensions=$(grep 'REQUIRED_EXTENSIONS' "$CLAUDE_PROJECT_DIR/packages/core/src/db/migrate.ts" \
+  | head -1 | grep -oE '"[a-zA-Z_]+"' | tr -d '"')
+
+# Returns (via stdout) the first unmet-readiness reason for a database, or
+# nothing if it's fully ready — existence, required extensions (skipped for
+# the observability db, which has its own independent schema with no
+# vector/pg_trgm columns — G-003), and at least one applied migration.
+# Shared by the fast-path pre-check (T-125, immediately below) and the
+# verification gate at the end of this script, so "is this database ready"
+# is defined in exactly one place rather than two copies drifting apart.
+db_readiness_issue() {
+  local dbname="$1"
+  local db_exists
+  db_exists=$(sudo -u postgres psql -p "$PGPORT" -tAc "SELECT 1 FROM pg_database WHERE datname='${dbname}'" 2>/dev/null || echo none)
   if [ "$db_exists" != "1" ]; then
-    sudo -u postgres psql -p "$PGPORT" -c "CREATE DATABASE ${dbname} OWNER ${DB_USER}"
+    echo "database ${dbname} does not exist"
+    return
   fi
-  DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${PGPORT}/${dbname}" \
-    eval "$(test_db_migrate_cmd "$dbname")"
+  if [ "$dbname" != "$TEST_DB_NAME_OBSERVABILITY" ]; then
+    local ext ext_ok
+    for ext in $required_extensions; do
+      ext_ok=$(sudo -u postgres psql -p "$PGPORT" -d "$dbname" -tAc "SELECT 1 FROM pg_extension WHERE extname='${ext}'" 2>/dev/null || echo none)
+      if [ "$ext_ok" != "1" ]; then
+        echo "extension ${ext} missing on database ${dbname}"
+        return
+      fi
+    done
+  fi
+  local migration_count
+  migration_count=$(sudo -u postgres psql -p "$PGPORT" -d "$dbname" -tAc \
+    "SELECT count(*) FROM drizzle.__drizzle_migrations" 2>/dev/null || echo 0)
+  if [ "${migration_count:-0}" -lt 1 ]; then
+    echo "database ${dbname} has no applied migrations (drizzle.__drizzle_migrations empty or missing)"
+    return
+  fi
+}
+
+# Fast-path (T-125): skip the per-package db:migrate loop entirely when
+# every TEST_DB_NAMES database already satisfies the same criteria the
+# verification gate below checks anyway — a warm sandbox re-running this
+# hook shouldn't pay N `db:migrate` invocations' cost just to no-op every
+# time. Falls through to the unchanged loop on ANY unmet criterion (first
+# reason wins, remaining databases aren't checked), so a genuinely fresh or
+# partially-migrated database always still runs the full loop below.
+all_databases_ready=true
+for dbname in "${TEST_DB_NAMES[@]}"; do
+  if [ -n "$(db_readiness_issue "$dbname")" ]; then
+    all_databases_ready=false
+    break
+  fi
 done
+
+if [ "$all_databases_ready" = true ]; then
+  echo "session-start.sh: fast-path — all ${#TEST_DB_NAMES[@]} database(s) already satisfy the verification gate's criteria, skipping per-package db:migrate loop"
+else
+  for dbname in "${TEST_DB_NAMES[@]}"; do
+    db_exists=$(sudo -u postgres psql -p "$PGPORT" -tAc "SELECT 1 FROM pg_database WHERE datname='${dbname}'")
+    if [ "$db_exists" != "1" ]; then
+      sudo -u postgres psql -p "$PGPORT" -c "CREATE DATABASE ${dbname} OWNER ${DB_USER}"
+    fi
+    DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${PGPORT}/${dbname}" \
+      eval "$(test_db_migrate_cmd "$dbname")"
+  done
+fi
 
 # Verification gate (T-098) — the recurring cost of this subsystem has
 # never been that the sandbox breaks (that box isn't ours to control),
 # it's been that a broken step failed silently under `set -e` above,
 # surfacing 20+ turns later as unexplained test failures. Confirm the
 # actual end state and fail loudly with a specific diagnostic instead.
-# Extension list is parsed from migrate.ts, not hand-copied, so it can
-# never drift from the app's own source of truth.
-required_extensions=$(grep 'REQUIRED_EXTENSIONS' "$CLAUDE_PROJECT_DIR/packages/core/src/db/migrate.ts" \
-  | head -1 | grep -oE '"[a-zA-Z_]+"' | tr -d '"')
-
+# Per-database readiness (existence/extensions/migrations) is checked via
+# db_readiness_issue(), the same function the fast-path pre-check above
+# uses — required_extensions is also already parsed, above. This gate must
+# always run, whether or not the fast-path fired, so a database that looked
+# ready to the pre-check but somehow wasn't (or a connection-level failure
+# the pre-check can't see) still gets caught here.
 failed=""
 if ! pg_isready -h localhost -p "$PGPORT" -q; then
   failed="connection to localhost:${PGPORT}"
@@ -212,32 +272,9 @@ fi
 
 if [ -z "$failed" ]; then
   for dbname in "${TEST_DB_NAMES[@]}"; do
-    # 2>/dev/null || echo 0/none on every check here, not just the migration
-    # count below — a psql connection error (not just an empty result) must
-    # still reach the "$failed" diagnostic instead of letting `set -e` kill
-    # the script first, which would silently defeat this gate's entire point.
-    db_exists=$(sudo -u postgres psql -p "$PGPORT" -tAc "SELECT 1 FROM pg_database WHERE datname='${dbname}'" 2>/dev/null || echo none)
-    if [ "$db_exists" != "1" ]; then
-      failed="database ${dbname} does not exist"
-      break
-    fi
-    # packages/observability has its own independent schema (G-003) with no
-    # vector/pg_trgm columns — its migrate script legitimately never creates
-    # these, so checking for them there is a false alarm, not a real failure.
-    # Same distinction test_db_migrate_cmd() already draws by dbname.
-    if [ "$dbname" != "$TEST_DB_NAME_OBSERVABILITY" ]; then
-      for ext in $required_extensions; do
-        ext_ok=$(sudo -u postgres psql -p "$PGPORT" -d "$dbname" -tAc "SELECT 1 FROM pg_extension WHERE extname='${ext}'" 2>/dev/null || echo none)
-        if [ "$ext_ok" != "1" ]; then
-          failed="extension ${ext} missing on database ${dbname}"
-          break 2
-        fi
-      done
-    fi
-    migration_count=$(sudo -u postgres psql -p "$PGPORT" -d "$dbname" -tAc \
-      "SELECT count(*) FROM drizzle.__drizzle_migrations" 2>/dev/null || echo 0)
-    if [ "${migration_count:-0}" -lt 1 ]; then
-      failed="database ${dbname} has no applied migrations (drizzle.__drizzle_migrations empty or missing)"
+    issue="$(db_readiness_issue "$dbname")"
+    if [ -n "$issue" ]; then
+      failed="$issue"
       break
     fi
   done

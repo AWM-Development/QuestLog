@@ -6,8 +6,6 @@ Complexity tier: M
 
 Priority: P1
 
-Blocked on: T-082 — must be merged into develop first
-
 Branch: feat/m-seed/t-083-create-entity-lore-seeding
 
 Context files (load ONLY these):

@@ -10,6 +10,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-125
+
+- **`session-start.sh`'s remote-sandbox branch now installs `pgvector` from source, pinned to `0.8.5`, instead of via apt/PGDG.** Investigation (`G-034`) found the sandbox's egress proxy hard-blocks `apt.postgresql.org`/PGDG (403 on the CONNECT tunnel) as a matter of policy, not a fixable config issue, and Ubuntu's own `noble/universe` package (0.6.0) is three minors behind what `hnsw.iterative_scan` needs (`IMPLEMENTATION_NOTES.md` § T-016) — meaning every remote executor session had been silently running against the wrong pgvector version. Building from source against GitHub (confirmed reachable) with `OPTFLAGS=""` (pgvector's default `-march=native` reliably segfaulted Postgres on `CREATE EXTENSION`, confirmed via a from-scratch Docker rebuild) now brings the sandbox to parity with `docker-compose.yml`/`ci.yml`, which already pin `pgvector/pgvector:0.8.5-pg16`.
+- **`session-start.sh`'s remote-sandbox branch now fast-paths its per-package `db:migrate` loop** — before running the loop, it checks every `TEST_DB_NAMES` database against the same existence/extensions/migration criteria the end-of-run verification gate already enforces, and skips straight to that gate (with a logged reason) when every database already qualifies. A genuinely fresh or partially-migrated database still runs the full loop unchanged.
+- **pnpm's warm-cache install behavior confirmed live** (not assumed) during this ticket's own session — `pnpm install` completed in 928ms with `Lockfile is up to date, resolution step is skipped`, the short-circuit shape pnpm only takes when its content-addressable store and `node_modules` are already warm and consistent with the lockfile.
+
 ### Changed — T-084
 
 - **The nightly executor no longer runs a full TDD Red/Green/Refactor cycle on docs/config-only work.** `EXECUTOR_ROUTINE.md` Step 4 now branches on a ticket's `Complexity tier` field: an S-tier ticket whose Scope names only `.md`/config files skips the red-phase ceremony and runs a single end-of-work `pnpm lint && pnpm typecheck && pnpm test` pass instead of looping it per checkpoint — the same regression gate every tier still has to clear, just not repeated for a change with no meaningful "failing test" to write. M/L-tier tickets, and any S-tier ticket that touches application code, are unaffected. `TICKET_SPEC.md`'s Complexity tier field notes now document this as a consequence of the tier, not just its observability purpose.
