@@ -16,5 +16,11 @@
     "prNumber": 182,
     "branch": "feat/m-efficiency/t-116-pr-merge-status-ledger-action",
     "mergedAt": "2026-08-04T23:29:41Z"
+  },
+  {
+    "ticketId": "T-125",
+    "prNumber": 191,
+    "branch": "feat/m-efficiency/t-125-session-bootstrap-speed",
+    "mergedAt": "2026-08-05T01:06:13Z"
   }
 ]
