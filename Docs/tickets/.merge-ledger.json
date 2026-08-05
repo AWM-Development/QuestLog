@@ -6,6 +6,12 @@
     "mergedAt": "2026-08-04T23:56:53Z"
   },
   {
+    "ticketId": "T-092",
+    "prNumber": 194,
+    "branch": "feat/m-audit/t-092-upload-endpoint-auth-gap-decision",
+    "mergedAt": "2026-08-05T15:49:17Z"
+  },
+  {
     "ticketId": "T-110",
     "prNumber": 179,
     "branch": "feat/m-pipeline/t-110-ci-gate-guard",
