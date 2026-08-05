@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 
 const TICKET_FILE_RE =
-	/^Docs\/tickets\/(?:queue|backlog|in-progress|done)\/(T-\d+)-.*\.md$/;
+	/^Docs\/tickets\/(queue|backlog|in-progress|done)\/(T-\d+)-.*\.md$/;
 const GATE_ID_RE = /^Gated on:\s*(G-\d+)/m;
 const BLOCKED_ON_LINE_RE = /^Blocked on:\s*(.+)$/m;
 const TICKET_ID_RE = /T-\d+/g;
@@ -76,18 +76,29 @@ export function runGateGuard(deps: GateGuardDeps): GateGuardResult {
 	);
 
 	for (const path of deps.listChangedFiles()) {
-		if (!TICKET_FILE_RE.test(path)) continue;
+		const match = path.match(TICKET_FILE_RE);
+		if (!match) continue;
 
 		const content = deps.readFile(path);
 		if (content === null) continue; // deleted in this diff — nothing to check
 
+		// `backlog/` is the pipeline's designed holding pen for a ticket that
+		// isn't ready yet (TICKET_SPEC.md Lifecycle) — an unresolved `Gated on:`
+		// or an unmet `Blocked on:` there is the normal, intended resting state,
+		// not a violation. Auto-promotion (Blocked on:) and /ungate (Gated on:)
+		// are what clear it; only queue/in-progress/done are expected to have
+		// already cleared both, so only those three still hard-fail on either.
+		const inBacklog = match[1] === "backlog";
+
 		const gatedOn = parseGatedOn(content);
 		if (gatedOn !== null) {
 			if (unresolvedGateIds.has(gatedOn)) {
-				failures.push({
-					ticketPath: path,
-					message: `carries an unresolved Gated on: ${gatedOn} (still present under Docs/tickets/gated/) — only /ungate may clear this`,
-				});
+				if (!inBacklog) {
+					failures.push({
+						ticketPath: path,
+						message: `carries an unresolved Gated on: ${gatedOn} (still present under Docs/tickets/gated/) — only /ungate may clear this`,
+					});
+				}
 			} else if (resolvedGateIds.has(gatedOn)) {
 				warnings.push({
 					ticketPath: path,
@@ -103,7 +114,7 @@ export function runGateGuard(deps: GateGuardDeps): GateGuardResult {
 
 		const blockedOn = parseBlockedOn(content);
 		const unmet = blockedOn.filter((id) => !doneTicketIds.has(id));
-		if (unmet.length > 0) {
+		if (unmet.length > 0 && !inBacklog) {
 			failures.push({
 				ticketPath: path,
 				message: `carries Blocked on: ${unmet.join(", ")} — no matching file under Docs/tickets/done/ yet`,

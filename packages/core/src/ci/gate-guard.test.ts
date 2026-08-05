@@ -48,7 +48,24 @@ describe("runGateGuard", () => {
 		expect(result.failures).toEqual([]);
 	});
 
-	it("fails a synthetic PR diff introducing a ticket with an unresolved Gated on:", () => {
+	it("fails a synthetic PR diff introducing a queue/ ticket with an unresolved Gated on:", () => {
+		const result = runGateGuard(
+			deps({
+				listChangedFiles: () => ["Docs/tickets/queue/T-200-example.md"],
+				readFile: (path) =>
+					path === "Docs/tickets/queue/T-200-example.md"
+						? "Priority: P1\n\nGated on: G-099 — must be resolved via /ungate first\n"
+						: null,
+				listDir: (path) =>
+					path === "Docs/tickets/gated" ? ["G-099-example.md"] : [],
+			}),
+		);
+		expect(result.ok).toBe(false);
+		expect(result.failures).toHaveLength(1);
+		expect(result.failures[0]?.message).toMatch(/G-099/);
+	});
+
+	it("passes a backlog/ ticket carrying an unresolved Gated on: — its designed resting state (GATE_SPEC.md)", () => {
 		const result = runGateGuard(
 			deps({
 				listChangedFiles: () => ["Docs/tickets/backlog/T-200-example.md"],
@@ -60,9 +77,8 @@ describe("runGateGuard", () => {
 					path === "Docs/tickets/gated" ? ["G-099-example.md"] : [],
 			}),
 		);
-		expect(result.ok).toBe(false);
-		expect(result.failures).toHaveLength(1);
-		expect(result.failures[0]?.message).toMatch(/G-099/);
+		expect(result.ok).toBe(true);
+		expect(result.failures).toEqual([]);
 	});
 
 	it("passes the same ticket once its Gated on: line is removed as part of the diff", () => {
@@ -80,7 +96,38 @@ describe("runGateGuard", () => {
 		expect(result.ok).toBe(true);
 	});
 
-	it("fails a synthetic PR diff naming a Blocked on: ticket with no file in done/", () => {
+	it("fails a synthetic PR diff naming a Blocked on: ticket with no file in done/, in queue/", () => {
+		const result = runGateGuard(
+			deps({
+				listChangedFiles: () => ["Docs/tickets/queue/T-201-example.md"],
+				readFile: (path) =>
+					path === "Docs/tickets/queue/T-201-example.md"
+						? "Priority: P1\n\nBlocked on: T-999 — must be merged into develop first\n"
+						: null,
+				listDir: () => [],
+			}),
+		);
+		expect(result.ok).toBe(false);
+		expect(result.failures).toHaveLength(1);
+		expect(result.failures[0]?.message).toMatch(/T-999/);
+	});
+
+	it("fails an in-progress/ ticket naming an unmet Blocked on: — the invariant still holds past backlog/", () => {
+		const result = runGateGuard(
+			deps({
+				listChangedFiles: () => ["Docs/tickets/in-progress/T-201-example.md"],
+				readFile: (path) =>
+					path === "Docs/tickets/in-progress/T-201-example.md"
+						? "Priority: P1\n\nBlocked on: T-999 — must be merged into develop first\n"
+						: null,
+				listDir: () => [],
+			}),
+		);
+		expect(result.ok).toBe(false);
+		expect(result.failures).toHaveLength(1);
+	});
+
+	it("passes a newly-drafted backlog/ ticket carrying an unmet Blocked on: — this is ticket-writer's normal output (TICKET_SPEC.md Lifecycle)", () => {
 		const result = runGateGuard(
 			deps({
 				listChangedFiles: () => ["Docs/tickets/backlog/T-201-example.md"],
@@ -91,9 +138,8 @@ describe("runGateGuard", () => {
 				listDir: () => [],
 			}),
 		);
-		expect(result.ok).toBe(false);
-		expect(result.failures).toHaveLength(1);
-		expect(result.failures[0]?.message).toMatch(/T-999/);
+		expect(result.ok).toBe(true);
+		expect(result.failures).toEqual([]);
 	});
 
 	it("passes a Blocked on: line naming a real ticket id already in done/", () => {
