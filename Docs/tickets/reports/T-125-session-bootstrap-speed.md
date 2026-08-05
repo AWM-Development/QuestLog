@@ -96,5 +96,48 @@ Ran tight relative to its Complexity tier M rating. The three scope items were i
 
 ## Anything Alex must decide
 
-- **Wiring the built image into the Claude Code Remote environment is still open** — this ticket built, verified, and documented the image (`infra/README.md`'s "Wiring it in" section has the exact push/point-CCR-at-it steps), but per the ticket's own mixed-autonomy banner, actually changing CCR's base-image setting is an environment-configuration action outside this repo's control and wasn't attempted. Until that happens, this image has zero effect on any real session — the hook's live PGDG-install fallback keeps running exactly as before.
-- No 🧠 gate was surfaced by this ticket; none skipped.
+- No 🧠 gate was surfaced by this ticket at ship time; one was filed afterward — see the correction below.
+
+## Correction (2026-08-04, via `/morning-review` + G-034)
+
+The original report above claimed a pointable base-image setting existed on the Claude Code Remote platform and left "wiring it in" as an Alex-only next step. That assumption was never actually verified, and it was wrong. `/morning-review` review of this PR surfaced the gap; `G-034` (`Docs/tickets/gated/resolved/G-034-ccr-base-image-configuration-mechanism.md`) investigated it directly with Alex and found:
+
+- **No custom-base-image mechanism exists on this platform at all** — the actual environment-configuration UI only exposes Name, Network access, Environment variables, and a Setup script (bash). `infra/session-bootstrap.Dockerfile` had nowhere to plug in and has been removed.
+- **A session's own "Setup script" doesn't persist state across sessions either** — confirmed empirically by running the exact PGDG install commands in two back-to-back sessions against the same test environment; both did a full fresh install, no caching.
+- **The real, more important finding**: that same investigation showed the sandbox's egress proxy hard-blocks the CONNECT tunnel to `apt.postgresql.org` (403, confirmed via direct `curl` testing) as a matter of policy. This means `session-start.sh`'s PGDG-first branch had never actually been reaching PGDG in this sandbox class — every remote session was silently falling back to Ubuntu's `postgresql-16-pgvector 0.6.0`, three minors behind the 0.8.x `hnsw.iterative_scan` needs (§ T-016). This was a live correctness gap, not a hypothetical.
+
+**Fix applied on this same branch**: `session-start.sh` now builds pgvector from source, pinned to `0.8.5` (matching `docker-compose.yml`/`ci.yml`'s `pgvector/pgvector:0.8.5-pg16` exactly), using GitHub (confirmed reachable through the same proxy) instead of PGDG. Verified end-to-end with a real from-scratch Docker rebuild:
+
+```
+$ docker build -t g034-pgvector-source-verify .   # Ubuntu 24.04 + postgresql-16, no PGDG
+$ docker run --rm g034-pgvector-source-verify /fragment.sh
+--- before ---
+not present (expected, fresh image)
+--- after ---
+PASS: /usr/share/postgresql/16/extension/vector--0.8.5.sql exists
+--- second run (idempotency / already-built skip) ---
+SKIP: already built, no rebuild needed
+```
+
+First pass used a plain `make && make install` and reproduced a real bug: `CREATE EXTENSION vector;` segfaulted Postgres outright —
+
+```
+2026-08-05 00:31:06.536 UTC [789] LOG:  server process (PID 812) was terminated by signal 11: Segmentation fault
+2026-08-05 00:31:06.536 UTC [789] DETAIL:  Failed process was running: CREATE EXTENSION vector;
+```
+
+— traced to pgvector's default `-march=native` build flag combined with `-flto=auto`. Rebuilding with `OPTFLAGS=""` (pgvector's own documented mitigation) fixed it, confirmed by re-running end-to-end:
+
+```
+$ docker run --rm g034-pgvector-source-verify.../fragment2.sh   # OPTFLAGS="" build
+PASS: build/install done, /usr/share/postgresql/16/extension/vector--0.8.5.sql exists: yes
+CREATE EXTENSION
+ extname | extversion
+---------+------------
+ vector  | 0.8.5
+(1 row)
+```
+
+`bash -n .claude/hooks/session-start.sh` → syntax OK after the edit.
+
+The `infra/` directory (Dockerfile + README) has been removed — it documented a mechanism that doesn't exist on this platform. The `db:migrate` fast-path and the pnpm warm-cache finding from the original ticket are unaffected and remain shipped as originally verified.

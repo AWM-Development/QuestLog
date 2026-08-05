@@ -126,29 +126,39 @@ fi
 # healthy system — never let this line itself fail the hook.
 dpkg --configure -a >/dev/null 2>&1 || true
 
-if ! dpkg -s postgresql-16-pgvector >/dev/null 2>&1; then
-  # Ubuntu's own postgresql-16-pgvector package is pinned at 0.6.0 — three
-  # minors behind the 0.8.0 that hnsw.iterative_scan needs (recall-cliff
-  # fix, IMPLEMENTATION_NOTES.md § T-016). Try PGDG's repo first (ships
-  # 0.8.x); fall back to Ubuntu's package on any failure, including the
-  # egress proxy blocking apt.postgresql.org — a live possibility here,
-  # since the launchpad PPAs already 403 in this sandbox. This whole
-  # attempt must never fail the run; only the final fallback install may.
-  pgdg_ok=false
-  if command -v lsb_release >/dev/null 2>&1 &&
-    wget -qO /tmp/pgdg.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc 2>/dev/null &&
-    gpg --dearmor -o /usr/share/keyrings/pgdg.gpg /tmp/pgdg.asc 2>/dev/null; then
-    echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
-      >/etc/apt/sources.list.d/pgdg.list
-    if apt-get update -qq 2>/dev/null && apt-get install -y -qq postgresql-16-pgvector 2>/dev/null; then
-      pgdg_ok=true
-    fi
-    rm -f /etc/apt/sources.list.d/pgdg.list /tmp/pgdg.asc
-  fi
-  if [ "$pgdg_ok" != true ]; then
-    apt-get update -qq
-    apt-get install -y -qq postgresql-16-pgvector
-  fi
+# Ubuntu's own postgresql-16-pgvector package is pinned at 0.6.0 — three
+# minors behind the 0.8.5 hnsw.iterative_scan needs (recall-cliff fix,
+# IMPLEMENTATION_NOTES.md § T-016) and the exact version docker-compose.yml
+# and ci.yml already pin (pgvector/pgvector:0.8.5-pg16); building from
+# source here restores parity across all four environments instead of
+# leaving the sandbox silently three minors behind. PGDG's own repo, and
+# Ubuntu's launchpad PPAs, are unreachable from this sandbox's egress proxy
+# (a hard 403 on the CONNECT tunnel, confirmed live — not a config mistake,
+# see Docs/IMPLEMENTATION_NOTES.md § G-034), so no apt-based path can ever
+# reach 0.8.x here. Building from source against Ubuntu's own already-
+# reachable archive (postgresql-server-dev-16, build-essential) plus GitHub
+# (also confirmed reachable) is the only path that actually works in this
+# sandbox class. The readiness check is the versioned .sql file `make
+# install` leaves behind, not dpkg — dpkg has no visibility into a source
+# build, and this whole block runs before Postgres itself starts below, so
+# no live-DB query is possible yet either.
+PGVECTOR_VERSION=0.8.5
+PGVECTOR_SQL="/usr/share/postgresql/16/extension/vector--${PGVECTOR_VERSION}.sql"
+if [ ! -f "$PGVECTOR_SQL" ]; then
+  apt-get update -qq
+  apt-get install -y -qq build-essential postgresql-server-dev-16 git
+  rm -rf /tmp/pgvector-build
+  git clone --quiet --branch "v${PGVECTOR_VERSION}" --depth 1 \
+    https://github.com/pgvector/pgvector.git /tmp/pgvector-build
+  # OPTFLAGS="" is load-bearing, not cosmetic — pgvector's Makefile defaults
+  # to -march=native, and that combined with -flto=auto reliably segfaulted
+  # Postgres on CREATE EXTENSION in real testing (SIGSEGV, confirmed via a
+  # from-scratch Docker rebuild — G-034), even within a single build/run on
+  # the same host. Disabling it produces a portable, working binary at the
+  # cost of pgvector's own SIMD auto-tuning, which this hook doesn't need.
+  make -C /tmp/pgvector-build OPTFLAGS="" -j"$(nproc)" >/dev/null
+  make -C /tmp/pgvector-build OPTFLAGS="" install >/dev/null
+  rm -rf /tmp/pgvector-build
 fi
 
 PG_CONF=/etc/postgresql/16/main/postgresql.conf
