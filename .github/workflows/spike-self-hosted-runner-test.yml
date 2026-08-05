@@ -3,10 +3,14 @@ name: SPIKE — self-hosted runner + dynamic-port Postgres (G-035)
 # Throwaway spike workflow for G-035's self-hosted-runner investigation.
 # Proves two things together: (1) a job actually dispatches to and runs on
 # a self-hosted runner, and (2) the same pgvector/pgvector:0.8.5-pg16
-# service image ci.yml already trusts works via a DYNAMIC host port
-# (no hardcoded port mapping) — the mechanism that lets concurrent jobs
-# share one host without T-072-style port-hashing. Delete this file once
-# the spike is done; it is not meant to ship.
+# image ci.yml already trusts works via a DYNAMIC host port (no hardcoded
+# mapping) — the mechanism that lets concurrent jobs share one host
+# without T-072-style port-hashing. Driven via plain `docker run` rather
+# than the `services:` block — confirmed live that `services:` container
+# orchestration is Linux-runner-only, not available on this spike's macOS
+# host; the real target runners are Linux (Fly Machines), so this is a
+# spike-host limitation, not a plan limitation. Delete this file once the
+# spike is done; it is not meant to ship.
 
 on:
   pull_request:
@@ -17,29 +21,25 @@ jobs:
   spike:
     runs-on: [self-hosted, spike]
 
-    services:
-      postgres:
-        image: pgvector/pgvector:0.8.5-pg16
-        env:
-          POSTGRES_USER: questlog
-          POSTGRES_PASSWORD: questlog
-          POSTGRES_DB: questlog_spike
-        ports:
-          - 5432/tcp # no host port pinned — Docker assigns a free one
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
     steps:
-      - name: Report assigned dynamic port
-        run: echo "Postgres mapped to dynamic host port ${{ job.services.postgres.ports['5432'] }}"
+      - name: Start Postgres on a Docker-assigned dynamic host port
+        id: pg
+        run: |
+          CID=$(docker run -d -e POSTGRES_USER=questlog -e POSTGRES_PASSWORD=questlog \
+            -e POSTGRES_DB=questlog_spike -p 127.0.0.1::5432 pgvector/pgvector:0.8.5-pg16)
+          echo "container_id=$CID" >> "$GITHUB_OUTPUT"
+          PORT=$(docker inspect -f '{{(index (index .NetworkSettings.Ports "5432/tcp") 0).HostPort}}' "$CID")
+          echo "port=$PORT" >> "$GITHUB_OUTPUT"
+          echo "Assigned dynamic host port: $PORT"
+          for i in $(seq 1 30); do
+            docker exec "$CID" pg_isready -U questlog -q && break
+            sleep 1
+          done
 
       - name: Connect and create the vector extension (mirrors migrate.ts's own bootstrap step)
         env:
           PGPASSWORD: questlog
-          PGPORT: ${{ job.services.postgres.ports['5432'] }}
+          PGPORT: ${{ steps.pg.outputs.port }}
         run: |
           psql -h 127.0.0.1 -p "$PGPORT" -U questlog -d questlog_spike -c "CREATE EXTENSION IF NOT EXISTS vector;"
           psql -h 127.0.0.1 -p "$PGPORT" -U questlog -d questlog_spike -tAc "SELECT extversion FROM pg_extension WHERE extname='vector';"
@@ -48,3 +48,7 @@ jobs:
         run: |
           echo "Runner name: $RUNNER_NAME"
           uname -a
+
+      - name: Tear down the Postgres container
+        if: always()
+        run: docker rm -f "${{ steps.pg.outputs.container_id }}" || true
