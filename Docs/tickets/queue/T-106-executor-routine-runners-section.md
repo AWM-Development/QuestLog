@@ -8,8 +8,6 @@ Strategy-gate flag: yes
 
 Priority: P2
 
-Blocked on: T-105 — must be merged into develop first
-
 Branch: feat/m-pipeline/t-106-executor-routine-runners-section
 
 Context files (load ONLY these):
