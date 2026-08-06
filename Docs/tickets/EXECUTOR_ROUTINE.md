@@ -1,7 +1,7 @@
 # Executor Routine
 
 **Location:** `Docs/tickets/EXECUTOR_ROUTINE.md`
-**Last Updated:** 2026-08-03
+**Last Updated:** 2026-08-06
 **Purpose:** The procedure the nightly scheduled agent follows. Kept here, version-controlled, so changes to the nightly loop are diffable and reviewable like everything else in the pipeline.
 
 **How the scheduler reaches this file (updated 2026-07-30):** the scheduled agent's prompt is *not* a copy of this document. The prompt is two lines, the same shape as `.claude/commands/executor.md`:
@@ -85,6 +85,9 @@ If the loop exhausts every candidate without a pick (case 1) or a resume (case 4
 - **Push the branch now** — `git push -u origin <branch-name>` — carrying the pickup commit(s) above. This is the ticket claim (T-069): it turns Step 1's `git ls-remote`/`gh pr list` dedup check into a real mutex instead of a check-then-act race two sessions could both pass, at the cost of a second push to this same branch later (Step 6/7's wrap-up push) — CRITICAL BRANCH RULES still permits this, since it's still only ever this ticket's own feature branch. The git proxy permits creating a new branch name even though it isn't your session's assigned `claude/*` branch (verified empirically in this repo — T-004's session, 2026-07-15). If this push is rejected (e.g. proxy behavior has tightened): push the same commits to your session's harness-assigned branch instead — same one-ticket/one-branch/one-PR shape, different name — and flag the deviation under "Anything Alex must decide" in the eventual report. Either way, Step 1's dedup check on future runs is unaffected, since it searches by ticket id, not by exact branch name.
 
 ## Step 3: Load context — ONLY what the ticket names
+**`XS`-tier tickets (T-102):** read only `CLAUDE.md` and the ticket file itself — no `Context files:` reads at all. An `XS` ticket's body already inlines the exact before-text and precedent snippet needed to locate and make the edit (`TICKET_SPEC.md`'s `Complexity tier` field notes), so there's nothing else to load. Skip straight to Step 4's `XS` branch.
+
+**Every other tier:**
 - Read `CLAUDE.md` (always — it's the top-level pointer, ~40 lines) together with every file listed in the ticket's `Context files:` field, as parallel tool calls within a single assistant turn — the full list is known upfront, so there's no reason to spread these reads sequentially across multiple turns, each re-sending the growing conversation. Read nothing else, unless you discover mid-ticket that something is missing — if so, note that as a scoping gap in the eventual report rather than silently pulling in extra files. (This batching applies only to this upfront context-loading step — Step 4's TDD loop necessarily reads/writes files sequentially as work proceeds.)
 - `.claude/rules/*.md` load automatically by path glob as you touch matching files — you don't need to seek them out manually.
 - If `Mockup:` names a path, read it (read-only — never edit anything under `Docs/mockups/`). If it's `none`, there's no visual component.
@@ -92,6 +95,8 @@ If the loop exhausts every candidate without a pick (case 1) or a resume (case 4
 
 ## Step 4: Implement — TDD, per `.claude/skills/tdd-loop/SKILL.md` (weight gated by Complexity tier, T-084)
 Process weight below is gated on the ticket's `Complexity tier` field (`TICKET_SPEC.md`), not applied uniformly — a docs-only edit has no meaningful failing test to write, and forcing the full ceremony on one burns turns proportional to fixed process, not diff size (T-070: a 4-file, 7-line docs-only ticket cost ~$3.87 across 136 turns).
+
+**`XS`-tier tickets (T-102), checked first, ahead of the `S`-docs-only branch below:** no per-checkpoint Red/Green/Refactor iteration. Write the one (or two, matching the ticket's Exit condition) test(s) and the fix together, in a single pass, using the before-text and precedent snippet the ticket already inlined in Step 3. Then run `scripts/run-tests-quiet.sh` once — still an unconditional gate, must be green before proceeding, same bar every other tier enforces, just without the iterate-per-checkpoint ceremony. Commit with message `feat(T-###): <short description>` once green. Skip straight to Step 5's `XS` branch.
 
 **S-tier tickets whose Scope touches no application code** (docs/config-only — confirmed by the ticket's own Scope naming only `.md`/config files, never inferred from the diff after the fact once work is underway): skip the Red/Green/Refactor requirement below entirely — there's no meaningful failing test for a markdown/config edit. Make the documented change directly, then run `scripts/run-tests-quiet.sh` once as a single end-of-work verification pass (still the exact same lint/typecheck/test regression gate every tier requires — this collapses the per-checkpoint iteration, not the gate itself) instead of looping it per checkpoint in Scope. Commit with message `feat(T-###): <short description>` once green.
 
@@ -103,10 +108,12 @@ Process weight below is gated on the ticket's `Complexity tier` field (`TICKET_S
 5. If a single blocking failure survives 3 distinct attempted approaches (the ticket's Iteration cap — check the ticket for a different number), STOP. Do not attempt a 4th. Go to Step 6 (Blocked).
 6. Commit with message `feat(T-###): <short description>` once green.
 
-Step 5's reviewer subagent still runs for every tier regardless of which path above applied — this only changes the implementation-loop overhead leading up to review, never review coverage itself.
+Step 5's reviewer subagent still runs for every tier except `XS` regardless of which path above applied — this only changes the implementation-loop overhead leading up to review, never review coverage itself (except for `XS`, which skips the reviewer entirely — see Step 5).
 
 ## Step 5: Review — before any report is written
-Invoke the `reviewer` subagent against the ticket file and the diff (`git diff develop <feature-branch>`). Wait for its verdict.
+**`XS`-tier tickets (T-102):** skip the `reviewer` subagent invocation entirely — a full second agent pass over a diff this small is genuinely unneeded ceremony, since Alex already re-derives an independent code-review judgment by hand in `/morning-review` before the PR merges (pattern deviation, scope vs. ticket, test theater, DRY/sprawl — everything `.claude/agents/reviewer.md` checks). In the eventual report, write the "Reviewer verdict" section as exactly: `N/A — XS tier; independent verification deferred to Alex's manual /morning-review`. Proceed straight to Step 7 (Wrap up — shipped).
+
+**Every other tier:** Invoke the `reviewer` subagent against the ticket file and the diff (`git diff develop <feature-branch>`). Wait for its verdict.
 - **PASS** or **PASS-WITH-NOTES**: proceed to Step 7 (Wrap up — shipped).
 - **FAIL**: make exactly one remediation pass addressing the specific `file:line` findings, then re-run lint/typecheck/test. Whether or not it now passes, this is your last attempt — proceed to Step 7 (shipped if now clean, Step 6/Blocked if not).
 
