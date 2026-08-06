@@ -48,6 +48,13 @@ if [ "$current_branch" = "develop" ] && git diff --quiet 2>/dev/null && git diff
 fi
 # --- develop-ff guard: end ---
 
+# Canonical DB name list + the shared "is this database actually ready"
+# check — sourced once, here, so both branches below use the identical
+# check instead of two independently-drifting copies. Why: § T-027 (names),
+# § T-130 (readiness check extraction).
+source "$CLAUDE_PROJECT_DIR/scripts/test-db-names.sh"
+source "$CLAUDE_PROJECT_DIR/scripts/db-readiness.sh"
+
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   # Worktree-scoped Postgres provisioning (T-072) — see Docs/IMPLEMENTATION_NOTES.md § T-072.
   case "$CLAUDE_PROJECT_DIR" in
@@ -64,20 +71,46 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
     sleep 1
   done
 
+  # db_readiness_issue's own psql invocation for this branch: docker-compose,
+  # non-superuser `questlog` role. See scripts/db-readiness.sh for why this
+  # is injected rather than hardcoded into the shared check.
+  local_psql_query() {
+    local conn_db="$1" query="$2"
+    PGPASSWORD=questlog psql -h localhost -p "$QUESTLOG_PG_PORT" -U questlog -d "$conn_db" -tAc "$query" 2>/dev/null || echo none
+  }
+
   # Test-tier only (TEST_DB_NAMES_CI excludes the dev DB) — see § T-072.
   # docker-compose.yml's POSTGRES_DB only creates `questlog` itself; every
   # other name needs an explicit CREATE DATABASE, same as ci.yml's own
   # provisioning step. Why this wasn't always here: Docs/IMPLEMENTATION_NOTES.md § T-098.
-  source "$CLAUDE_PROJECT_DIR/scripts/test-db-names.sh"
   for dbname in "${TEST_DB_NAMES_CI[@]}"; do
-    db_exists=$(PGPASSWORD=questlog psql -h localhost -p "$QUESTLOG_PG_PORT" -U questlog -d questlog -tAc \
-      "SELECT 1 FROM pg_database WHERE datname='${dbname}'" 2>/dev/null || echo none)
+    db_exists=$(local_psql_query questlog "SELECT 1 FROM pg_database WHERE datname='${dbname}'")
     if [ "$db_exists" != "1" ]; then
       PGPASSWORD=questlog psql -h localhost -p "$QUESTLOG_PG_PORT" -U questlog -d questlog -c "CREATE DATABASE ${dbname}"
     fi
     DATABASE_URL="postgresql://questlog:questlog@localhost:${QUESTLOG_PG_PORT}/${dbname}" \
       eval "$(test_db_migrate_cmd "$dbname")"
   done
+
+  # Verification gate (T-130) — ports T-098's remote-branch gate to this
+  # branch: confirm the actual end state landed instead of trusting the loop
+  # above silently succeeded (a silent gap here has already cost two real
+  # tickets real turns — T-064, T-092 — both discovering a missing/
+  # unmigrated questlog_test_observability mid-session instead of at
+  # hook-exit). Why: Docs/IMPLEMENTATION_NOTES.md § T-130.
+  failed=""
+  for dbname in "${TEST_DB_NAMES_CI[@]}"; do
+    issue="$(db_readiness_issue local_psql_query "$dbname")"
+    if [ -n "$issue" ]; then
+      failed="$issue"
+      break
+    fi
+  done
+
+  if [ -n "$failed" ]; then
+    echo "session-start.sh: PROVISIONING FAILED — ${failed}" >&2
+    exit 1
+  fi
 
   exit 0
 fi
@@ -179,51 +212,16 @@ fi
 # Extension creation is left to `db:migrate` (apps/server/src/db/migrate.ts
 # runs `CREATE EXTENSION IF NOT EXISTS` before applying migrations), so each
 # database only needs an existence check plus one migrate call here.
-# Isolated per-package test DBs (T-026/T-027). Canonical name list:
-# scripts/test-db-names.sh — also sourced by ci.yml and
-# e2e-release-check.yml. Why: Docs/IMPLEMENTATION_NOTES.md § T-027.
-source "$CLAUDE_PROJECT_DIR/scripts/test-db-names.sh"
+# Isolated per-package test DBs (T-026/T-027). Canonical name list and the
+# shared db_readiness_issue() check (§ T-130) were already sourced above,
+# before the local/remote branch split.
 
-# Extension list needed by both the fast-path pre-check below and the
-# verification gate further down — parsed once, up front, from migrate.ts's
-# own REQUIRED_EXTENSIONS constant so it can never drift from the app's
-# actual source of truth (same reasoning as the gate always had; just
-# hoisted so both consumers share one parse instead of two).
-required_extensions=$(grep 'REQUIRED_EXTENSIONS' "$CLAUDE_PROJECT_DIR/packages/core/src/db/migrate.ts" \
-  | head -1 | grep -oE '"[a-zA-Z_]+"' | tr -d '"')
-
-# Returns (via stdout) the first unmet-readiness reason for a database, or
-# nothing if it's fully ready — existence, required extensions (skipped for
-# the observability db, which has its own independent schema with no
-# vector/pg_trgm columns — G-003), and at least one applied migration.
-# Shared by the fast-path pre-check (T-125, immediately below) and the
-# verification gate at the end of this script, so "is this database ready"
-# is defined in exactly one place rather than two copies drifting apart.
-db_readiness_issue() {
-  local dbname="$1"
-  local db_exists
-  db_exists=$(sudo -u postgres psql -p "$PGPORT" -tAc "SELECT 1 FROM pg_database WHERE datname='${dbname}'" 2>/dev/null || echo none)
-  if [ "$db_exists" != "1" ]; then
-    echo "database ${dbname} does not exist"
-    return
-  fi
-  if [ "$dbname" != "$TEST_DB_NAME_OBSERVABILITY" ]; then
-    local ext ext_ok
-    for ext in $required_extensions; do
-      ext_ok=$(sudo -u postgres psql -p "$PGPORT" -d "$dbname" -tAc "SELECT 1 FROM pg_extension WHERE extname='${ext}'" 2>/dev/null || echo none)
-      if [ "$ext_ok" != "1" ]; then
-        echo "extension ${ext} missing on database ${dbname}"
-        return
-      fi
-    done
-  fi
-  local migration_count
-  migration_count=$(sudo -u postgres psql -p "$PGPORT" -d "$dbname" -tAc \
-    "SELECT count(*) FROM drizzle.__drizzle_migrations" 2>/dev/null || echo 0)
-  if [ "${migration_count:-0}" -lt 1 ]; then
-    echo "database ${dbname} has no applied migrations (drizzle.__drizzle_migrations empty or missing)"
-    return
-  fi
+# db_readiness_issue's own psql invocation for this branch: native
+# superuser psql. See scripts/db-readiness.sh for why this is injected
+# rather than hardcoded into the shared check.
+remote_psql_query() {
+  local conn_db="$1" query="$2"
+  sudo -u postgres psql -p "$PGPORT" -d "$conn_db" -tAc "$query" 2>/dev/null || echo none
 }
 
 # Fast-path (T-125): skip the per-package db:migrate loop entirely when
@@ -235,7 +233,7 @@ db_readiness_issue() {
 # partially-migrated database always still runs the full loop below.
 all_databases_ready=true
 for dbname in "${TEST_DB_NAMES[@]}"; do
-  if [ -n "$(db_readiness_issue "$dbname")" ]; then
+  if [ -n "$(db_readiness_issue remote_psql_query "$dbname")" ]; then
     all_databases_ready=false
     break
   fi
@@ -260,11 +258,11 @@ fi
 # surfacing 20+ turns later as unexplained test failures. Confirm the
 # actual end state and fail loudly with a specific diagnostic instead.
 # Per-database readiness (existence/extensions/migrations) is checked via
-# db_readiness_issue(), the same function the fast-path pre-check above
-# uses — required_extensions is also already parsed, above. This gate must
-# always run, whether or not the fast-path fired, so a database that looked
-# ready to the pre-check but somehow wasn't (or a connection-level failure
-# the pre-check can't see) still gets caught here.
+# the shared db_readiness_issue() (§ T-130), the same function the
+# fast-path pre-check above uses. This gate must always run, whether or not
+# the fast-path fired, so a database that looked ready to the pre-check but
+# somehow wasn't (or a connection-level failure the pre-check can't see)
+# still gets caught here.
 failed=""
 if ! pg_isready -h localhost -p "$PGPORT" -q; then
   failed="connection to localhost:${PGPORT}"
@@ -272,7 +270,7 @@ fi
 
 if [ -z "$failed" ]; then
   for dbname in "${TEST_DB_NAMES[@]}"; do
-    issue="$(db_readiness_issue "$dbname")"
+    issue="$(db_readiness_issue remote_psql_query "$dbname")"
     if [ -n "$issue" ]; then
       failed="$issue"
       break
