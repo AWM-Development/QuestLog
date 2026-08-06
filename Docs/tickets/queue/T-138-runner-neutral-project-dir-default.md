@@ -1,4 +1,11 @@
-# T-104 — Runner-neutral `CLAUDE_PROJECT_DIR` default
+# T-138 — Runner-neutral `CLAUDE_PROJECT_DIR` default
+
+Renumbered 2026-08-06 from `T-104`: that id collided with a separate,
+legitimate ticket (`T-104-cite-not-restate-implementation-notes-rationale.md`,
+shipped same day, PR #217) that had already claimed the same number —
+flagged in that ticket's own report and in `T-105`'s/`T-100`'s reports.
+Renumbered to the next free id rather than renumbering the already-shipped
+one.
 
 Milestone ref: M-PIPELINE.8 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
@@ -8,7 +15,7 @@ Strategy-gate flag: yes
 
 Priority: P1
 
-Branch: feat/m-pipeline/t-104-runner-neutral-project-dir-default
+Branch: feat/m-pipeline/t-138-runner-neutral-project-dir-default
 
 Context files (load ONLY these):
   - scripts/worktree-postgres-env.sh

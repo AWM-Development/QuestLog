@@ -143,9 +143,9 @@ resolution (`Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md
 
 *Runner-agnosticism (Q1 — full commitment):*
 
-- [ ] **M-PIPELINE.8 — Runner-neutral `CLAUDE_PROJECT_DIR` default** (T-104)
+- [ ] **M-PIPELINE.8 — Runner-neutral `CLAUDE_PROJECT_DIR` default** (T-138)
   `scripts/worktree-postgres-env.sh:7` and `.claude/hooks/session-start.sh:54` both hard-require `CLAUDE_PROJECT_DIR` with no fallback; under a runner that doesn't export it, a partial recovery (only the `cd` line fixed) silently reintroduces the `T-071`/`T-072`/`T-099` shared-Postgres collision instead of failing loudly. `G-020` Notes §2.
-  Exit: see T-104.
+  Exit: see T-138.
 
 - [x] **M-PIPELINE.9 — Adopt `AGENTS.md` as the canonical constitution** (T-105)
   `CLAUDE.md` becomes a thin pointer to `AGENTS.md`, which carries the actual runner-neutral content (Principles, Commands, Pointer map, Hard rules) — the cross-tool convention every non-Claude runner checks for by default, per `G-020`'s Q3 research. `G-020` Notes §1 ("the routine is already portable by accident of good design") — this closes the one deliberate naming gap.
