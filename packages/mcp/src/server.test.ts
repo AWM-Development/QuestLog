@@ -491,6 +491,14 @@ describe("server instructions + help tool (T-033)", () => {
 		expect(ingestText?.description).toMatch(/get_source_status/);
 		expect(ingestText?.description).toMatch(/sourceId/);
 	});
+
+	it("onboarding instructions include error-tone guidance for translating tool errors (T-100)", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const instructions = client.getInstructions() ?? "";
+
+		expect(instructions).toMatch(/error/i);
+		expect(instructions).toMatch(/plain|non-alarming/i);
+	});
 });
 
 describe("get_entity tool", () => {

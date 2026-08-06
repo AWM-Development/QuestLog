@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-100
+
+- **`.claude/rules/mcp.md` now states a standing agent-interaction policy** (resolving `G-012`'s interaction-philosophy axis): any tool description paired with a `confirm_*` tool must instruct the model to narrate the proposed change in plain language before confirming; any tool starting async background work must instruct the model to proactively poll its status tool and narrate progress; and tool errors should be translated into a plain, non-alarming explanation rather than relayed as raw JSON. The error-tone sentence itself now ships in `ONBOARDING_INSTRUCTIONS`, applying to every tool at once. `tool-descriptions.ts` itself is untouched here — retrofitting individual tool descriptions for compliance is T-101.
+
 ### Fixed — T-092
 
 - **`POST /api/campaigns/:campaignId/sources/upload` and `POST /api/conversation/:conversationId/stream` now require a valid bearer token**, closing the gap flagged by T-038's security review (both routes were previously reachable by anyone who has or guesses a campaign UUID, no credential required). Reuses `/mcp`'s existing `requireBearerToken` scheme (G-017's resolution) rather than a new, lighter mechanism. Known consequence, accepted by G-017: `SourcesPage` (the one kept v1 web surface) has no token-issuance story of its own yet and will get 401'd on real uploads until a follow-up addresses that — out of scope for this ticket.
