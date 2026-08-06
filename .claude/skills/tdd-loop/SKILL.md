@@ -5,7 +5,7 @@ description: Red/green/refactor implementation loop for QuestLog tickets. Use wh
 
 # TDD Loop
 
-The implementation procedure for every ticket. QuestLog's CLAUDE.md rule is absolute: no implementation code before a failing test exists for the behavior it implements. This skill is the mechanical loop that enforces that, plus QuestLog-specific test conventions so you don't have to rediscover them per ticket.
+The implementation procedure for every ticket. QuestLog's AGENTS.md rule is absolute: no implementation code before a failing test exists for the behavior it implements. This skill is the mechanical loop that enforces that, plus QuestLog-specific test conventions so you don't have to rediscover them per ticket.
 
 ## The loop, per checkpoint in the ticket's scope
 

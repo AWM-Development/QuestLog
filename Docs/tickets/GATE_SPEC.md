@@ -32,7 +32,7 @@ Notes: <anything already surfaced — options considered, partial
 
 ## Field notes
 
-- **Gate type** — 🎨 means the resolution is a mockup (`Docs/mockups/<view>/`); 🧠 means the resolution is a written decision with rationale. Same taxonomy `CLAUDE.md`'s hard rules and `Docs/milestones/MILESTONES_V1_MCP.md` already use — a gate-stub doesn't invent a new gate concept, it just gives the existing one a durable home before it's resolved.
+- **Gate type** — 🎨 means the resolution is a mockup (`Docs/mockups/<view>/`); 🧠 means the resolution is a written decision with rationale. Same taxonomy `AGENTS.md`'s hard rules and `Docs/milestones/MILESTONES_V1_MCP.md` already use — a gate-stub doesn't invent a new gate concept, it just gives the existing one a durable home before it's resolved.
 - **Opened** records provenance because gate-stubs have two distinct origins (see Lifecycle below) and `/ungate` needs to know which ticket, if any, is already mid-flight and waiting.
 - **Context files** is the same discipline as a ticket's — the whole point of deferring this to a dedicated `/ungate` session is that it gets Alex's full attention on just this decision, not a grab-bag of "whatever's related."
 - **Open question** must be a single, answerable question — same bar as `BLOCKED_TEMPLATE.md`'s "Exact question for Alex." "Should we support OCR?" is not answerable; "local Tesseract vs. hosted API, given a cost ceiling of $X/mo" is.
@@ -47,7 +47,7 @@ Filing a gate-stub is otherwise a look-then-act operation — scan every existin
 `Docs/tickets/gated/` sits outside the ticket pipeline (`TICKET_SPEC.md`'s `backlog/` → `queue/` → `in-progress/` → `done/`/`blocked/` flow) — it feeds it, the way a spring feeds a river. A gate-stub is created two ways:
 
 1. **During planning** — `.claude/skills/ticket-writer/SKILL.md`, drafting tickets from a milestone task, hits an unresolved 🎨/🧠 gate. Instead of stopping the whole session to resolve it inline (the old behavior), it files a gate-stub here, notes the milestone task in `Blocks:`, and continues drafting whatever else in the milestone doesn't depend on it.
-2. **Mid-execution** — the nightly executor (`EXECUTOR_ROUTINE.md` Step 3) hits an unresolved 🧠 gate on one scope item within an otherwise-shippable ticket. It still ships what it can (per `CLAUDE.md`'s existing rule), but now *also* files or updates a gate-stub here — referencing the ticket id and branch in `Blocks:`/`Notes:` — instead of leaving the gap to be rediscovered only in the morning report.
+2. **Mid-execution** — the nightly executor (`EXECUTOR_ROUTINE.md` Step 3) hits an unresolved 🧠 gate on one scope item within an otherwise-shippable ticket. It still ships what it can (per `AGENTS.md`'s existing rule), but now *also* files or updates a gate-stub here — referencing the ticket id and branch in `Blocks:`/`Notes:` — instead of leaving the gap to be rediscovered only in the morning report.
 
 `/ungate` (`.claude/skills/ungate/SKILL.md`) is the only mechanism that resolves a gate-stub. `/ungate` always pulls the earliest open `G-###` in numeric order — gates have no priority tier of their own (`G-010`'s `Priority` field lives on tickets only), so this stays pure "oldest first, no cherry-picking" the way ticket selection itself used to before `G-010` — predictable order that doesn't depend on whoever happens to run the command noticing a different one first.
 

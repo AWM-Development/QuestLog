@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-105
+
+- **`AGENTS.md` is now the canonical repo constitution** (Principles, Commands, Pointer map, Hard rules, task-source line) — the cross-tool convention spec-kit, Devin, Cursor, and other runners check for by default, per `G-020`'s Q1 resolution. `CLAUDE.md` is now a 6-line pointer at `AGENTS.md`, kept only so Claude Code's own auto-load convention still finds a file at that path. References to the constitution across `Docs/tickets/`'s spec docs and `.claude/skills/`/`.claude/commands/` now cite `AGENTS.md`; `EXECUTOR_ROUTINE.md`'s context-loading steps now read `AGENTS.md` for real content instead of `CLAUDE.md`.
+
 ### Added — T-102
 
 - **New `XS` complexity tier, one notch below `S`, for tickets that are a single-line-or-near-single-line change in one existing file, reusing a pattern already implemented at another call site in that exact same file.** `ticket-writer` may only assign it when it can quote both the target and precedent call sites verbatim in the ticket's Scope — otherwise the ticket stays `S`. An `XS` ticket cuts the nightly executor's process weight harder than T-084's docs-only `S` path: Step 3 skips `Context files:` reads entirely (the ticket body already has everything needed), Step 4 collapses to one write-test-and-fix pass instead of per-checkpoint Red/Green/Refactor, and Step 5 skips the `reviewer` subagent invocation altogether — deferred to Alex's own `/morning-review` judgment instead. Targets the same waste T-090 exemplified: a one-line, zero-ambiguity fix that cost $3.11 across 109 turns under the standard process.
