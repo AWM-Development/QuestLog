@@ -1,4 +1,4 @@
-# T-136 — Re-audit `MILESTONES_V1_MCP.md`'s "Deferred to v2" table against current v1 shape
+# T-137 — Re-audit `MILESTONES_V1_MCP.md`'s "Deferred to v2" table against current v1 shape
 
 Milestone ref: cross-cutting audit finding (T-132, Dimension 2/5 — rules-file
   accuracy & ticket-pipeline health)
@@ -9,7 +9,7 @@ Strategy-gate flag: no
 
 Priority: P2
 
-Branch: chore/m-audit/t-136-v2-deferred-table-re-audit
+Branch: chore/m-audit/t-137-v2-deferred-table-re-audit
 
 Context files (load ONLY these):
   - Docs/milestones/MILESTONES_V1_MCP.md § "Deferred to v2 — NOT eligible

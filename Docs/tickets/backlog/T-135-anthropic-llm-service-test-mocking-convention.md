@@ -1,4 +1,4 @@
-# T-134 — Reconcile `llm.service.ts`'s DI factory with how its tests actually mock Anthropic
+# T-135 — Reconcile `llm.service.ts`'s DI factory with how its tests actually mock Anthropic
 
 Milestone ref: cross-cutting audit finding (T-132, Dimension 1/2 — MCP tool/service
   pattern consistency & rules-file accuracy)
@@ -9,7 +9,7 @@ Strategy-gate flag: no
 
 Priority: P2
 
-Branch: chore/m-audit/t-134-llm-service-test-mocking-convention
+Branch: chore/m-audit/t-135-llm-service-test-mocking-convention
 
 Context files (load ONLY these):
   - packages/core/src/services/llm.service.ts (`createLlmService(client?)`,

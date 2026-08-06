@@ -9,8 +9,8 @@ v1.4-to-date, per the ticket's 7 dimensions.
 
 ## Summary
 
-3 findings substantive enough to file as follow-up tickets (`T-134`,
-`T-135`, `T-136`, all landed in `Docs/tickets/backlog/`). 2 trivial fixes
+3 findings substantive enough to file as follow-up tickets (`T-135`,
+`T-136`, `T-137`, all landed in `Docs/tickets/backlog/`). 2 trivial fixes
 applied inline in this branch. 4 of the 7 dimensions came back clean —
 no findings beyond what's noted below.
 
@@ -18,7 +18,7 @@ no findings beyond what's noted below.
 
 ## 1. Cross-service/tool pattern consistency
 
-**Clean, with one cross-cutting note (→ `T-134`).**
+**Clean, with one cross-cutting note (→ `T-135`).**
 
 - All 22 MCP tools (`packages/mcp/src/tools/*.ts`) wrap their handlers in
   `withToolErrors`; all 7 tRPC routers (`apps/server/src/routers/*.ts`)
@@ -42,7 +42,7 @@ no findings beyond what's noted below.
   untrusted external id either (both are only called from tRPC routers) —
   not a violation, just worth noting they'd need the same treatment if an
   MCP tool ever calls them directly by id.
-- **Finding → `T-134`:** `.claude/rules/backend.md` documents Anthropic
+- **Finding → `T-135`:** `.claude/rules/backend.md` documents Anthropic
   test mocking as "a DI'd client... `createLlmService(client?)`," but
   `createLlmService`'s optional parameter is never actually exercised
   anywhere in the codebase — the sole call site is the parameterless
@@ -56,7 +56,7 @@ no findings beyond what's noted below.
 ## 2. Rules-file accuracy
 
 **One stale reference found and fixed inline; one drift finding filed as
-`T-134` (shared with Dimension 1 above, not double-filed).**
+`T-135` (shared with Dimension 1 above, not double-filed).**
 
 - **Fixed inline:** `.claude/rules/backend.md:36` (and its Cursor mirror,
   `.cursor/rules/backend.mdc:36`) described a single `questlog_test`
@@ -87,7 +87,7 @@ no findings beyond what's noted below.
 ## 3. Dead / deprecated code
 
 **No genuinely orphaned code found via targeted spot-checks; tooling gap
-noted → `T-135`.**
+noted → `T-136`.**
 
 - Confirmed the v2-deferred web surfaces
   (`apps/web/src/features/agent-chat/`,
@@ -108,7 +108,7 @@ noted → `T-135`.**
   evidence the heuristic was broken (import-path/extension mismatches),
   not evidence of real dead code. No `ts-prune`/`knip`-equivalent tool
   exists in the repo to do this reliably.
-- **Filed `T-135`** rather than continuing to hand-verify ~106 frontend
+- **Filed `T-136`** rather than continuing to hand-verify ~106 frontend
   files one at a time: add real dead-code detection tooling so this
   dimension is actually checkable (by a human or by `/drift-audit`'s
   future runs) instead of relying on an ad hoc grep script.
@@ -177,7 +177,7 @@ explained (no action needed).**
   dependency at all — nothing to mock.
 - Voyage tests inject `fetchFn` per the documented pattern
   (`embedding.service.test.ts`); Anthropic tests use module-level
-  `vi.mock` instead (see Dimension 1/2's `T-134` finding — a convention
+  `vi.mock` instead (see Dimension 1/2's `T-135` finding — a convention
   mismatch, not a live-network violation).
 - Tool coverage: all 22 registered MCP tool names appear in
   `packages/mcp/src/server.test.ts`'s integration suite. No tool found
@@ -221,11 +221,11 @@ explained (no action needed).**
 before promotion — none auto-promoted per this ticket's own
 Out-of-scope note)
 
-- **`T-134`** — Reconcile `llm.service.ts`'s DI factory with how its
+- **`T-135`** — Reconcile `llm.service.ts`'s DI factory with how its
   tests actually mock Anthropic (Dimension 1/2).
-- **`T-135`** — Add automated unused-export/dead-code detection tooling
+- **`T-136`** — Add automated unused-export/dead-code detection tooling
   (Dimension 3).
-- **`T-136`** — Re-audit `MILESTONES_V1_MCP.md`'s "Deferred to v2" table
+- **`T-137`** — Re-audit `MILESTONES_V1_MCP.md`'s "Deferred to v2" table
   against current v1 shape — the table's own long-standing "flagged for
   a future pass" note, still open (Dimension 2/5).
 
@@ -246,5 +246,5 @@ Seeded at this run's completion commit — see
 
 ## Sign-off
 
-Awaiting Alex's review before any of `T-134`/`T-135`/`T-136` gets
+Awaiting Alex's review before any of `T-135`/`T-136`/`T-137` gets
 promoted toward `queue/`.

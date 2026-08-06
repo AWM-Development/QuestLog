@@ -1,4 +1,4 @@
-# T-135 — Add automated unused-export / dead-code detection tooling
+# T-136 — Add automated unused-export / dead-code detection tooling
 
 Milestone ref: cross-cutting audit finding (T-132, Dimension 3 — dead/deprecated
   code audit)
@@ -9,7 +9,7 @@ Strategy-gate flag: no
 
 Priority: P2
 
-Branch: chore/m-audit/t-135-dead-code-detection-tooling
+Branch: chore/m-audit/t-136-dead-code-detection-tooling
 
 Context files (load ONLY these):
   - package.json (root) and each app/package's package.json — for where a
