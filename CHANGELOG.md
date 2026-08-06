@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-134
+
+- **New `D` complexity tier, a sibling to `S` for tickets whose entire Scope is prose/markdown edits only, regardless of file count.** Unlike `XS`, `D` has no single-file or same-call-site-precedent requirement — a multi-file docs sweep (e.g. T-105's 8-file reference update) qualifies as long as every named file is `.md`. `D` reuses T-084's existing docs/config-only Step 4 branch unchanged (single end-of-work `scripts/run-tests-quiet.sh` pass, no per-checkpoint Red/Green/Refactor) and gets `XS`'s Step 5 reviewer-skip — cutting the nightly executor's cost on legitimately docs-only, multi-file tickets that previously still paid for a full `reviewer` subagent pass.
+
 ### Changed — T-105
 
 - **`AGENTS.md` is now the canonical repo constitution** (Principles, Commands, Pointer map, Hard rules, task-source line) — the cross-tool convention spec-kit, Devin, Cursor, and other runners check for by default, per `G-020`'s Q1 resolution. `CLAUDE.md` is now a 6-line pointer at `AGENTS.md`, kept only so Claude Code's own auto-load convention still finds a file at that path. References to the constitution across `Docs/tickets/`'s spec docs and `.claude/skills/`/`.claude/commands/` now cite `AGENTS.md`; `EXECUTOR_ROUTINE.md`'s context-loading steps now read `AGENTS.md` for real content instead of `CLAUDE.md`.

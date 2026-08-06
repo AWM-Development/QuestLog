@@ -87,6 +87,8 @@ If the loop exhausts every candidate without a pick (case 1) or a resume (case 4
 ## Step 3: Load context — ONLY what the ticket names
 **`XS`-tier tickets (T-102):** read only `AGENTS.md` and the ticket file itself — no `Context files:` reads at all. An `XS` ticket's body already inlines the exact before-text and precedent snippet needed to locate and make the edit (`TICKET_SPEC.md`'s `Complexity tier` field notes), so there's nothing else to load. Skip straight to Step 4's `XS` branch.
 
+**`D`-tier tickets (T-134): unchanged from the default below — no separate branch.** A docs-only sweep often needs to read several existing docs to know current wording before editing them, unlike `XS`, whose ticket body fully inlines the before-text and precedent snippet so there's nothing left to read. `D` gets its process-weight cut in Steps 4 and 5, not here.
+
 **Every other tier:**
 - Read `AGENTS.md` (always — it's the canonical constitution, ~40 lines; `CLAUDE.md` itself is just a thin pointer to it, per T-105) together with every file listed in the ticket's `Context files:` field, as parallel tool calls within a single assistant turn — the full list is known upfront, so there's no reason to spread these reads sequentially across multiple turns, each re-sending the growing conversation. Read nothing else, unless you discover mid-ticket that something is missing — if so, note that as a scoping gap in the eventual report rather than silently pulling in extra files. (This batching applies only to this upfront context-loading step — Step 4's TDD loop necessarily reads/writes files sequentially as work proceeds.)
 - `.claude/rules/*.md` load automatically by path glob as you touch matching files — you don't need to seek them out manually.
@@ -100,6 +102,8 @@ Process weight below is gated on the ticket's `Complexity tier` field (`TICKET_S
 
 **S-tier tickets whose Scope touches no application code** (docs/config-only — confirmed by the ticket's own Scope naming only `.md`/config files, never inferred from the diff after the fact once work is underway): skip the Red/Green/Refactor requirement below entirely — there's no meaningful failing test for a markdown/config edit. Make the documented change directly, then run `scripts/run-tests-quiet.sh` once as a single end-of-work verification pass (still the exact same lint/typecheck/test regression gate every tier requires — this collapses the per-checkpoint iteration, not the gate itself) instead of looping it per checkpoint in Scope. Commit with message `feat(T-###): <short description>` once green.
 
+**`D`-tier tickets (T-134): no branch of their own — reuse the `S`-docs-only branch above.** A `D` ticket is by definition all-`.md` Scope (`TICKET_SPEC.md`'s field notes), so it already qualifies for the docs/config-only path immediately above: single end-of-work `scripts/run-tests-quiet.sh` pass, no per-checkpoint Red/Green/Refactor. `D` only changes Step 5, not this step.
+
 **M/L-tier tickets, and any S-tier ticket that touches application code**: unchanged — full TDD loop, per checkpoint in the ticket's Scope:
 1. Red: write a failing test for the behavior. Confirm it fails for the right reason.
 2. Green: minimum code to pass.
@@ -108,10 +112,12 @@ Process weight below is gated on the ticket's `Complexity tier` field (`TICKET_S
 5. If a single blocking failure survives 3 distinct attempted approaches (the ticket's Iteration cap — check the ticket for a different number), STOP. Do not attempt a 4th. Go to Step 6 (Blocked).
 6. Commit with message `feat(T-###): <short description>` once green.
 
-Step 5's reviewer subagent still runs for every tier except `XS` regardless of which path above applied — this only changes the implementation-loop overhead leading up to review, never review coverage itself.
+Step 5's reviewer subagent still runs for every tier except `XS` and `D` regardless of which path above applied — this only changes the implementation-loop overhead leading up to review, never review coverage itself.
 
 ## Step 5: Review — before any report is written
 **`XS`-tier tickets (T-102):** skip the `reviewer` subagent invocation entirely — a full second agent pass over a diff this small is genuinely unneeded ceremony, since Alex already re-derives an independent code-review judgment by hand in `/morning-review` before the PR merges (pattern deviation, scope vs. ticket, test theater, DRY/sprawl — everything `.claude/agents/reviewer.md` checks). In the eventual report, write the "Reviewer verdict" section as exactly: `N/A — XS tier; independent verification deferred to Alex's manual /morning-review`. Proceed straight to Step 7 (Wrap up — shipped).
+
+**`D`-tier tickets (T-134):** same reviewer-skip as `XS`, for the same reason — but `D`'s bar is a fully-`.md` Scope of any file count, not `XS`'s single-file/same-call-site restriction. In the eventual report, write the "Reviewer verdict" section as exactly: `N/A — D tier; independent verification deferred to Alex's manual /morning-review`. Proceed straight to Step 7 (Wrap up — shipped).
 
 **Every other tier:** Invoke the `reviewer` subagent against the ticket file and the diff (`git diff develop <feature-branch>`). Wait for its verdict.
 - **PASS** or **PASS-WITH-NOTES**: proceed to Step 7 (Wrap up — shipped).

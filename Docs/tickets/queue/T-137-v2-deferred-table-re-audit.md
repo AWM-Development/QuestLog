@@ -3,7 +3,7 @@
 Milestone ref: cross-cutting audit finding (T-132, Dimension 2/5 — rules-file
   accuracy & ticket-pipeline health)
 
-Complexity tier: S
+Complexity tier: D
 
 Strategy-gate flag: no
 
