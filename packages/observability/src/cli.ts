@@ -61,6 +61,8 @@ function warnIngestionSkipped(err: unknown): void {
  */
 export async function runIngestCli(
 	argv: string[],
+	// Lazy, not static — a static import would throw at load time whenever
+	// OBSERVABILITY_DATABASE_URL is unset, even for a test that overrides loadDb.
 	loadDb: () => Promise<{ db: Database }> = () => import("./db/index.js"),
 ): Promise<void> {
 	// Defense in depth against pnpm's `run ... --` mis-forwarding: Docs/IMPLEMENTATION_NOTES.md § T-095.
