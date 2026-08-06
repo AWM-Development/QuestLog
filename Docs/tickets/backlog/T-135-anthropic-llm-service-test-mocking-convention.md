@@ -1,4 +1,4 @@
-# T-135 — Reconcile `llm.service.ts`'s DI factory with how its tests actually mock Anthropic
+# T-135 — Refactor `llm.service.test.ts` to use `createLlmService`'s DI parameter
 
 Milestone ref: cross-cutting audit finding (T-132, Dimension 1/2 — MCP tool/service
   pattern consistency & rules-file accuracy)
@@ -37,39 +37,49 @@ calls out of the default test tier (no rule violation), but they're two
 different mechanisms for the same job, and the rules doc describes the
 one that isn't actually used.
 
+**Decided (2026-08-06, Alex):** refactor the test to use the DI parameter,
+not the doc. The rule stays as currently written — no doc change needed
+here, only code.
+
 Mockup: none
 
 Model: sonnet
 
-Scope: Pick one direction and make the doc and code agree:
-  1. **Either** refactor `llm.service.test.ts` to inject a mock client via
-     `createLlmService(mockClient)`, matching Voyage's `fetchFn` DI
-     pattern and the rule as currently written — the DI parameter then
-     has a real reason to exist beyond looking parallel to Voyage's shape;
-  2. **or** update `.claude/rules/backend.md`'s Anthropic bullet to
-     describe module-level `vi.mock` as the actual convention, and decide
-     whether `createLlmService`'s optional `client` parameter should be
-     kept (documented as available for a future non-test caller) or
-     removed as unused surface.
-  Alex's call which direction — this ticket exists to force the decision,
-  not to presume DI is obviously better just because Voyage does it that
-  way (Voyage's `fetchFn` swaps a plain function; swapping an entire SDK
-  client instance is a heavier ask for each test file to construct).
+Scope: Refactor `llm.service.test.ts` to construct
+  `createLlmService(mockClient)` with a hand-built mock `Anthropic`-shaped
+  client (`{ messages: { create: mockCreate, stream: mockStream } }`,
+  reusing the same `mockCreate`/`mockStream` fns the file already
+  `vi.hoisted`s) instead of `vi.mock("@anthropic-ai/sdk", ...)`ing the
+  whole module. Every test in the file should exercise the DI'd instance
+  (`createLlmService(mockClient).callClaude(...)` etc.) rather than the
+  module-level `llmService` singleton, matching how
+  `embedding.service.test.ts` calls `embedChunks(db, chunks, { fetchFn:
+  mockFetch })` per-test rather than patching a module-level default.
+  Remove the `vi.mock("@anthropic-ai/sdk")` block once nothing depends on
+  it. Keep the existing `Anthropic.APIError` mock subclass (or an
+  equivalent) available for the tests that construct one to assert
+  error-mapping behavior — it's still needed as a value, just no longer
+  needs to arrive via a full module mock.
 
 Out of scope: Any other service's external-API mocking pattern — this
   ticket is scoped to the one concrete Anthropic/`llm.service.ts`
-  inconsistency found.
+  inconsistency found. No change to `.claude/rules/backend.md`'s
+  Anthropic-mocking bullet — it already describes the target state this
+  ticket implements.
 
 Exit condition (machine-checkable):
   - all tests green, typecheck clean, lint clean
-  - `.claude/rules/backend.md`'s Anthropic-mocking bullet and
-    `llm.service.test.ts`'s actual mocking mechanism agree with each
-    other (whichever direction was chosen)
+  - `llm.service.test.ts` contains no `vi.mock("@anthropic-ai/sdk", ...)`
+    call; every test constructs its own `createLlmService(mockClient)`
+  - `.claude/rules/backend.md`'s Anthropic-mocking bullet now accurately
+    describes the test file's actual mechanism (it already does — this
+    is a regression check, not a doc edit)
 
 Iteration cap: 3 distinct approaches on any single failure, then Blocked Protocol
 
 Definition of done includes: checkbox flipped in Docs/milestones/MILESTONES_V1_MCP.md
-  if applicable (likely N/A — this is a cross-cutting audit follow-up, not
-  a milestone task; mark N/A if so), IMPLEMENTATION_NOTES.md updated
-  recording which direction was chosen and why, a CHANGELOG.md entry
-  under [Unreleased] only if test behavior changed, morning report written.
+  — N/A, this is a cross-cutting audit follow-up, not a milestone task,
+  IMPLEMENTATION_NOTES.md updated noting the DI refactor and that Alex
+  chose it over the doc-update alternative T-132 also offered, no
+  CHANGELOG.md entry required (test-only change, no shipped behavior
+  change), morning report written.

@@ -217,17 +217,20 @@ explained (no action needed).**
 2. `Docs/tickets/backlog/T-115-wire-enforcement-guards-into-preflight.md`
    — dropped the shipped `T-110` from its `Blocked on:` line.
 
-## Filed tickets (all in `Docs/tickets/backlog/`, awaiting Alex's review
-before promotion — none auto-promoted per this ticket's own
-Out-of-scope note)
+## Filed tickets (all in `Docs/tickets/backlog/`, none auto-promoted per
+this ticket's own Out-of-scope note — promotion to `queue/` is still a
+separate step)
 
-- **`T-135`** — Reconcile `llm.service.ts`'s DI factory with how its
-  tests actually mock Anthropic (Dimension 1/2).
-- **`T-136`** — Add automated unused-export/dead-code detection tooling
-  (Dimension 3).
+- **`T-135`** — Refactor `llm.service.test.ts` to use `createLlmService`'s
+  DI parameter (Dimension 1/2). **Decided 2026-08-06:** DI refactor, not
+  a doc update — ticket scope updated accordingly, ready to execute.
+- **`T-136`** — Add `knip` for automated unused-export/dead-code
+  detection (Dimension 3). **Decided 2026-08-06:** `knip`, no spike
+  needed — ticket scope updated accordingly, ready to execute.
 - **`T-137`** — Re-audit `MILESTONES_V1_MCP.md`'s "Deferred to v2" table
   against current v1 shape — the table's own long-standing "flagged for
-  a future pass" note, still open (Dimension 2/5).
+  a future pass" note, still open (Dimension 2/5). No decision needed,
+  just legwork — ready to execute as originally scoped.
 
 ## Supersession precedent (per Scope's request)
 
@@ -246,5 +249,8 @@ Seeded at this run's completion commit — see
 
 ## Sign-off
 
-Awaiting Alex's review before any of `T-135`/`T-136`/`T-137` gets
-promoted toward `queue/`.
+Alex reviewed the report and decided the open questions in `T-135`/
+`T-136` on 2026-08-06 (both tickets updated in place, still branch
+`chore/m-audit/t-132-bootstrap-drift-audit`, not yet promoted to
+`queue/` — that's Alex's own separate call, same as any other backlog
+ticket).
