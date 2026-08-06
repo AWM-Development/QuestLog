@@ -8,8 +8,6 @@ Strategy-gate flag: yes
 
 Priority: P1
 
-Blocked on: T-100 — must be merged into develop first
-
 Branch: feat/m-interact/t-101-retrofit-tool-descriptions-interaction-philosophy
 
 Context files (load ONLY these):
