@@ -42,3 +42,44 @@ Notes: Split out of `G-012` rather than answered in the same `/ungate`
   interaction philosophy only, and write this half as a separate future
   gate-stub rather than force both decisions into one session. See
   `G-012`'s `## Resolution` for the full context this split came from.
+
+## Resolution (2026-08-06)
+
+Scoped M-POLISH to three concrete pieces, decided with Alex:
+
+1. **Tool-description consistency beyond v1.4's axes** — yes, include a
+   naming/format pass. Concrete drift found on inspection: the "Direct
+   write — ..." label sits in a different position in `CREATE_ENTITY_DESCRIPTION`
+   than in `CREATE_CAMPAIGN_DESCRIPTION`/`APPEND_ENTITY_NOTE_DESCRIPTION`,
+   and a "Returns ..." clause is present on some descriptions but not
+   others with no evident reasoning. → T-139.
+
+2. **`ONBOARDING_INSTRUCTIONS` maintenance mechanism** — a drift *test*,
+   not codegen: assert every tool name registered in `createMcpServer`
+   appears in the instructions string, derived from the live registration
+   list (not a hand-duplicated array, which would just reintroduce the
+   same drift). Codegen was explicitly rejected — the prose's writing
+   quality matters and a generated tool list would read worse. → T-140.
+
+3. **`apps/mcp-stdio` UX rough edges** — Alex had no specific complaints
+   to report from actual usage since v1.1. Rather than dropping this axis,
+   investigated `apps/mcp-stdio/src/main.ts` directly and found a real,
+   concrete gap: zero error handling or logging around startup (storage
+   init, `server.connect`) — a bad DB connection string or storage-path
+   permission error today surfaces as a raw unhandled stack trace with no
+   diagnosable log line. Alex confirmed including a fix. → T-141.
+
+Tickets drafted: T-139, T-140, T-141 (all P1, all `queue/`, all tagged
+onto their M-POLISH task line in `Docs/milestones/MILESTONES_V1_5_MCP.md`).
+Note: T-138/T-139/T-140 were the numbers first claimed for these tickets,
+but a T-138 already existed elsewhere at claim time (a collision this
+`/ungate` session's directory scan missed), so all three were shifted
+forward by one to T-139/T-140/T-141 — same shift-by-one renumbering
+pattern already used for T-134→T-135/T-135→T-136/T-136→T-137 earlier in
+this repo's history.
+`Docs/milestones/MILESTONES_V1_5_MCP.md`'s status line was updated from
+"placeholder" to "CANONICAL task source (M-POLISH only)" and added to
+`AGENTS.md`'s task-source pointer line (the real constitution file on
+`develop` — `CLAUDE.md` there is just a stub pointing to it), since
+M-POLISH now has a real task list (M-INVENTORY within the same file stays
+gated on `G-023`).
