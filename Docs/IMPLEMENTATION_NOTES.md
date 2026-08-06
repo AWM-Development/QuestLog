@@ -2,7 +2,19 @@
 
 **Purpose:** Non-obvious decisions and gotchas that aren't derivable from reading the code. Read at the start of every session. Add an entry when you make a non-obvious decision. Retired entries: `Docs/IMPLEMENTATION_NOTES_ARCHIVE.md`.
 
-**Last Updated:** 2026-08-05
+**Last Updated:** 2026-08-06
+
+## T-132 — Bootstrap architecture & pattern drift audit (2026-08-06)
+
+**Ran interactively on Sonnet rather than Fable/Opus, at Alex's explicit direction.** The ticket's own banner calls for Fable/Opus since this is planning-shaped work, not execution-shaped — that guidance is about staying out of the *unattended nightly* pipeline (self-audit risk, needs Alex's institutional context), not a hard model requirement once Alex is present and driving the session directly. Recorded here in case a future audit or `/drift-audit` run cites this ticket as precedent — the model choice was a judgment call specific to this run, not a new standing exception to `TICKET_SPEC.md`'s "never opus/fable for execution" rule (which is about the *autonomous executor*, a different thing than an interactive session Alex is present for).
+
+**Two rules-file mirrors (`.claude/rules/backend.md` and `.cursor/rules/backend.mdc`) had independently drifted from `.claude/rules/db.md`'s already-correct per-package test-database naming** (`questlog_test_core`/`_server`/`_mcp`/`_observability`) — both still described a single `questlog_test` database, stale since `T-071`'s per-package split. Fixed in both files, with `backend.md` now pointing at `db.md` § "Test database" as the canonical list instead of risking a second independently-stale copy.
+
+**`createLlmService(client?)`'s DI parameter is unused in practice** — the only call site is the parameterless singleton, and `llm.service.test.ts` mocks `@anthropic-ai/sdk` at the module level instead of injecting a client, unlike Voyage's `fetchFn` DI pattern that's actually exercised in `embedding.service.test.ts`. Not a live-network violation (both approaches keep tests offline), but `.claude/rules/backend.md` describes the DI mechanism as if it's the one in use. Filed as `T-135` rather than picking a direction unilaterally at audit time — Alex decided the same day: refactor the test to use the DI parameter (matching Voyage's pattern), not update the doc. `T-135`'s scope reflects that decision and is ready to execute.
+
+**No repeat of the `entities_name_trgm_idx` class of bug** (an index present in a migration but missing from `tables.ts`, or vice versa) — cross-checked all 13 current indexes and the one unique constraint; all matched in both directions. This class of bug appears to be a one-time incident, not a recurring pattern.
+
+Full findings: `Docs/tickets/reports/T-132-bootstrap-drift-audit.md`. Follow-up tickets: `T-135` (Anthropic test-mocking convention), `T-136` (dead-code detection tooling — a manual grep-based sweep of `apps/web/src` proved unreliable, false-flagging nearly every file), `T-137` (re-audit `MILESTONES_V1_MCP.md`'s v2-deferred table, its own long-standing "flagged for a future pass" note).
 
 ## T-083 — `create_entity` lore-seeding + citation response (2026-08-05)
 
