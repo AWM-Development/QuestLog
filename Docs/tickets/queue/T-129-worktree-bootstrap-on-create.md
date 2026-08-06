@@ -1,6 +1,6 @@
-# T-127 — Bootstrap a new worktree's environment as part of pickup, not on first test failure
+# T-129 — Bootstrap a new worktree's environment as part of pickup, not on first test failure
 
-Milestone ref: M-EFFICIENCY.15 (`Docs/milestones/MILESTONES_V1_2_MCP.md`)
+Milestone ref: M-EFFICIENCY.17 (`Docs/milestones/MILESTONES_V1_2_MCP.md`)
 
 Complexity tier: S
 
@@ -8,7 +8,7 @@ Strategy-gate flag: no
 
 Priority: P1
 
-Branch: feat/m-efficiency/t-127-worktree-bootstrap-on-create
+Branch: feat/m-efficiency/t-129-worktree-bootstrap-on-create
 
 Context files (load ONLY these):
   - Docs/tickets/EXECUTOR_ROUTINE.md (Step 0's existing "Provisioning fallback" bullet — the remote-only precedent this ticket generalizes to the local-worktree case; Step 2, where the new bootstrap call is added)
