@@ -13,6 +13,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 ### Added — T-130
 
 - **The local-worktree (non-remote) branch of the `SessionStart` hook now verifies its own database provisioning instead of trusting it silently succeeded**, matching the verification gate the remote-sandbox branch already had (T-098). A database that's missing, missing a required extension, or has no applied migrations now fails the hook loudly with a diagnostic naming the specific database and unmet criterion, instead of falling through to a confusing test failure minutes into real ticket work. The underlying readiness check is shared between both branches via a new `scripts/db-readiness.sh`, not duplicated. Ships as part of G-035's resolution to make local execution the primary ticket-execution path.
+- **Same-PR follow-up:** the local branch also now shares its create-if-missing-then-migrate logic with the remote branch (`ensure_database_provisioned()`, same injected-runner shape as the readiness check above) instead of each branch reimplementing it, and gained the remote branch's T-125 fast-path skip — a healthy worktree's session-start no longer pays a full `db:migrate` per database on every session when nothing changed.
 
 ### Added — T-127
 

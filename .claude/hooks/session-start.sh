@@ -73,24 +73,47 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
 
   # db_readiness_issue's own psql invocation for this branch: docker-compose,
   # non-superuser `questlog` role. See scripts/db-readiness.sh for why this
-  # is injected rather than hardcoded into the shared check.
+  # is injected rather than hardcoded into the shared check. Both functions
+  # below are only ever called by name (db_readiness_issue/
+  # ensure_database_provisioned's own $run_query/$create_fn params, in
+  # scripts/db-readiness.sh) — shellcheck can't see that indirection through
+  # a sourced file it doesn't follow (SC1091), hence the disables.
+  # shellcheck disable=SC2329
   local_psql_query() {
     local conn_db="$1" query="$2"
     PGPASSWORD=questlog psql -h localhost -p "$QUESTLOG_PG_PORT" -U questlog -d "$conn_db" -tAc "$query" 2>/dev/null || echo none
   }
 
-  # Test-tier only (TEST_DB_NAMES_CI excludes the dev DB) — see § T-072.
   # docker-compose.yml's POSTGRES_DB only creates `questlog` itself; every
   # other name needs an explicit CREATE DATABASE, same as ci.yml's own
   # provisioning step. Why this wasn't always here: Docs/IMPLEMENTATION_NOTES.md § T-098.
+  # shellcheck disable=SC2329
+  local_create_database() {
+    PGPASSWORD=questlog psql -h localhost -p "$QUESTLOG_PG_PORT" -U questlog -d questlog -c "CREATE DATABASE $1"
+  }
+
+  # Fast-path (mirrors T-125's remote-branch pre-check, ported here per the
+  # same audit): skip the create/migrate loop entirely when every
+  # TEST_DB_NAMES_CI database already satisfies the verification gate's own
+  # criteria — a warm worktree re-running this hook shouldn't pay N
+  # `db:migrate` invocations just to no-op every time. Why: Docs/IMPLEMENTATION_NOTES.md § T-130.
+  all_databases_ready=true
   for dbname in "${TEST_DB_NAMES_CI[@]}"; do
-    db_exists=$(local_psql_query questlog "SELECT 1 FROM pg_database WHERE datname='${dbname}'")
-    if [ "$db_exists" != "1" ]; then
-      PGPASSWORD=questlog psql -h localhost -p "$QUESTLOG_PG_PORT" -U questlog -d questlog -c "CREATE DATABASE ${dbname}"
+    if [ -n "$(db_readiness_issue local_psql_query "$dbname")" ]; then
+      all_databases_ready=false
+      break
     fi
-    DATABASE_URL="postgresql://questlog:questlog@localhost:${QUESTLOG_PG_PORT}/${dbname}" \
-      eval "$(test_db_migrate_cmd "$dbname")"
   done
+
+  if [ "$all_databases_ready" = true ]; then
+    echo "session-start.sh: fast-path — all ${#TEST_DB_NAMES_CI[@]} database(s) already satisfy the verification gate's criteria, skipping create/migrate loop"
+  else
+    # Test-tier only (TEST_DB_NAMES_CI excludes the dev DB) — see § T-072.
+    for dbname in "${TEST_DB_NAMES_CI[@]}"; do
+      ensure_database_provisioned local_psql_query local_create_database \
+        "postgresql://questlog:questlog@localhost:${QUESTLOG_PG_PORT}/${dbname}" "$dbname"
+    done
+  fi
 
   # Verification gate (T-130) — ports T-098's remote-branch gate to this
   # branch: confirm the actual end state landed instead of trusting the loop
@@ -224,6 +247,10 @@ remote_psql_query() {
   sudo -u postgres psql -p "$PGPORT" -d "$conn_db" -tAc "$query" 2>/dev/null || echo none
 }
 
+remote_create_database() {
+  sudo -u postgres psql -p "$PGPORT" -c "CREATE DATABASE $1 OWNER ${DB_USER}"
+}
+
 # Fast-path (T-125): skip the per-package db:migrate loop entirely when
 # every TEST_DB_NAMES database already satisfies the same criteria the
 # verification gate below checks anyway — a warm sandbox re-running this
@@ -243,12 +270,8 @@ if [ "$all_databases_ready" = true ]; then
   echo "session-start.sh: fast-path — all ${#TEST_DB_NAMES[@]} database(s) already satisfy the verification gate's criteria, skipping per-package db:migrate loop"
 else
   for dbname in "${TEST_DB_NAMES[@]}"; do
-    db_exists=$(sudo -u postgres psql -p "$PGPORT" -tAc "SELECT 1 FROM pg_database WHERE datname='${dbname}'")
-    if [ "$db_exists" != "1" ]; then
-      sudo -u postgres psql -p "$PGPORT" -c "CREATE DATABASE ${dbname} OWNER ${DB_USER}"
-    fi
-    DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${PGPORT}/${dbname}" \
-      eval "$(test_db_migrate_cmd "$dbname")"
+    ensure_database_provisioned remote_psql_query remote_create_database \
+      "postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${PGPORT}/${dbname}" "$dbname"
   done
 fi
 

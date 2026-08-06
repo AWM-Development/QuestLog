@@ -67,3 +67,26 @@ db_readiness_issue() {
 		return
 	fi
 }
+
+# Creates $4 if it doesn't already exist, then applies its migration command
+# (test_db_migrate_cmd, from test-db-names.sh). Shared by both branches the
+# same way db_readiness_issue() is: $1/$2 abstract over *how* a database is
+# checked/created (differing connection details per branch), not *whether*
+# or *what* migrates it. Extracted alongside the existing "does this branch
+# separately reimplement create-if-missing-then-migrate" duplication flagged
+# in the same audit that added this function — see Docs/IMPLEMENTATION_NOTES.md § T-130.
+#
+# $1 = db_readiness_issue()'s own run_query runner (see above).
+# $2 = the name of a function that creates a database given its name as $1,
+#      using this branch's own connection details/owner clause.
+# $3 = the DATABASE_URL to pass to this database's migrate command.
+# $4 = the database name.
+ensure_database_provisioned() {
+	local run_query="$1" create_fn="$2" database_url="$3" dbname="$4"
+	local db_exists
+	db_exists=$("$run_query" "$TEST_DB_NAME_DEV" "SELECT 1 FROM pg_database WHERE datname='${dbname}'")
+	if [ "$db_exists" != "1" ]; then
+		"$create_fn" "$dbname"
+	fi
+	DATABASE_URL="$database_url" eval "$(test_db_migrate_cmd "$dbname")"
+}

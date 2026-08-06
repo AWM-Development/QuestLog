@@ -64,3 +64,19 @@ Most of the ticket's cost was in verification design, not implementation — `db
 ## Anything Alex must decide
 
 None.
+
+## Follow-up, same PR (2026-08-06)
+
+Alex requested a fresh-eyes audit of `session-start.sh` as a whole after this ticket shipped. Two of that audit's findings were simple enough to fix directly on this branch rather than file as new tickets:
+
+- **DRY:** the local and remote branches each independently reimplemented "create the database if missing, then migrate it" — the one pattern `db_readiness_issue()`'s own extraction didn't reach. Extracted into `scripts/db-readiness.sh`'s `ensure_database_provisioned()`, same injected-runner shape (`local_psql_query`/`local_create_database` vs. `remote_psql_query`/`remote_create_database`).
+- **Efficiency parity:** T-125's fast-path skip (avoid a full `db:migrate` loop when every database already satisfies the gate's own criteria) existed only on the remote branch — an artifact of remote being the expensive, `pnpm`-metered path at the time it was built. Now that G-035 makes local the primary execution surface, the same skip was ported there.
+
+Re-verified live in a real worktree (not just reasoned about): a healthy worktree fast-paths; dropping `questlog_test_observability` falls through to the loop, creates it via `ensure_database_provisioned`, exits 0; the same `test_db_migrate_cmd`-no-op fault-injection harness this ticket originally used still shows the loop exiting 0 obliviously while the real gate fails non-zero with the correct diagnostic (run via `bash -c`, not the interactive zsh shell — hit the exact word-splitting gotcha `IMPLEMENTATION_NOTES.md` § T-098 warns about on the first attempt, same as this ticket's own original verification did). `pnpm lint`/`typecheck`/`test` all pass. `shellcheck` needed two new `# shellcheck disable=SC2329` suppressions (documented inline) — extracting `local_psql_query`'s only direct call site left it referenced solely by name, which shellcheck's dead-code check can't see through a sourced file it doesn't follow.
+
+Full detail: `Docs/IMPLEMENTATION_NOTES.md` § G-035 / T-130, "Follow-up, same PR" addendum.
+
+**Other audit findings, deliberately not acted on here:**
+- Extracting the dormant remote-sandbox block (`CLAUDE_CODE_REMOTE=true` branch, currently unexercised per G-035) into its own file — recommended as its own ticket instead, since verifying the remote branch still boots identically needs an actual remote sandbox run this session can't perform.
+- Retiring the per-worktree Postgres/port-hashing machinery (T-072/T-087) — Alex confirmed this stays: deliberate headroom for running multiple concurrent local agents, not dead weight for the current single-session use case.
+- The remaining minor findings (unconditional sourcing on the primary-directory exit-0 path, `db-readiness.sh`'s unenforced sourcing-order contract) — left as-is per Alex's call.
