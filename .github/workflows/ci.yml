@@ -259,7 +259,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: "Check diff is confined to declared Context files:, base is develop"
-        run: scripts/ci-scope-guard.sh origin/${{ github.base_ref }} ${{ github.head_ref }} ${{ github.base_ref }}
+        # github.head_ref is attacker-controlled (a fork's branch name) — pass
+        # it through env, never interpolate it directly into the run: script,
+        # per actionlint's expression-injection check.
+        env:
+          HEAD_BRANCH: ${{ github.head_ref }}
+          BASE_BRANCH: ${{ github.base_ref }}
+        run: scripts/ci-scope-guard.sh "origin/$BASE_BRANCH" "$HEAD_BRANCH" "$BASE_BRANCH"
 
   # ── Mockup Guard ──────────────────────────────────────────────────────────
   # Docs/mockups/ is generated manually in Claude Design during planning
