@@ -1,7 +1,7 @@
 # Ticket Spec
 
 **Location:** `Docs/tickets/TICKET_SPEC.md`
-**Last Updated:** 2026-08-03
+**Last Updated:** 2026-08-06
 **Purpose:** The exact, complete format for every ticket file. `.claude/skills/ticket-writer/SKILL.md` produces tickets in this shape; the nightly executor and the reviewer subagent both assume it. See `Docs/tickets/GATE_SPEC.md` for the companion format used by design/strategy gate-stubs, which feed this pipeline via a ticket's `Gated on:` field.
 
 Every ticket lives at `Docs/tickets/T-###-slug.md` (`###` sequential, zero-padded, never reused across `backlog/`, `queue/`, `in-progress/`, `done/`, `blocked/`, `archive/`) and contains exactly these fields, in this order:
@@ -11,7 +11,7 @@ Every ticket lives at `Docs/tickets/T-###-slug.md` (`###` sequential, zero-padde
 
 Milestone ref: <Docs/milestones/MILESTONES_V1_MCP.md section, e.g. "M-MCP.1">
 
-Complexity tier: S | M | L   # see field notes for the rubric
+Complexity tier: XS | S | M | L   # see field notes for the rubric
 
 Strategy-gate flag: yes | no   # see field notes
 
@@ -59,6 +59,16 @@ Definition of done includes: checkbox flipped in Docs/milestones/MILESTONES_V1_M
   interpretable relative to how big the ticket actually was — a flat
   average across a 1-file config fix and a 161-file monorepo split is
   meaningless. Assign exactly one:
+  - **XS** — a qualifier *below* `S`, not a replacement for it: a
+    single-line-or-near-single-line change in one existing file, reusing
+    a pattern already implemented at *another call site in that exact
+    same file* — not just "somewhere in the codebase" (`S`'s bar), but
+    verifiably, quotably present a few lines away. No new file, no new
+    function, no branching logic, no design decision. `ticket-writer` may
+    only assign `XS` when it can quote both the target call site and the
+    precedent call site verbatim in the ticket body (T-102) — if it can't
+    paste both, the ticket isn't `XS` regardless of how small the diff
+    looks.
   - **S** — single file or function, an established pattern already used
     elsewhere in the codebase.
   - **M** — multiple files, a new service/router pair, or a moderate
@@ -67,14 +77,19 @@ Definition of done includes: checkbox flipped in Docs/milestones/MILESTONES_V1_M
     or a genuinely unfamiliar pattern for this codebase.
   `ticket-writer` assigns this at draft time, same as `Priority`. Beyond
   observability, the tier also gates the executor's own process weight
-  (T-084): an S-tier ticket whose Scope names only docs/config files skips
-  `EXECUTOR_ROUTINE.md` Step 4's Red/Green/Refactor ceremony in favor of a
-  single end-of-work `scripts/run-tests-quiet.sh` pass — still the same
-  lint/typecheck/test regression gate every tier requires, just not looped
-  per checkpoint. M/L-tier tickets, and any S-tier ticket that touches
-  application code, keep the full TDD loop. See Step 4 for the exact
-  mechanics; this field note only records that the tier has this
-  consequence, not just a reporting purpose.
+  (T-084, T-102): an S-tier ticket whose Scope names only docs/config
+  files skips `EXECUTOR_ROUTINE.md` Step 4's Red/Green/Refactor ceremony
+  in favor of a single end-of-work `scripts/run-tests-quiet.sh` pass —
+  still the same lint/typecheck/test regression gate every tier requires,
+  just not looped per checkpoint. An `XS` ticket cuts process weight
+  further still, across Steps 3–5: no `Context files:` reads (the ticket
+  body already inlines the before-text and precedent snippet), a single
+  write-test-and-fix pass instead of per-checkpoint TDD, and no
+  `reviewer` subagent invocation — see Step 3/4/5 for the exact
+  mechanics. M/L-tier tickets, and any S-tier ticket that touches
+  application code, keep the full TDD loop and reviewer pass. This field
+  note only records that the tier has these consequences, not just a
+  reporting purpose.
 - **Strategy-gate flag** is a provenance marker, not a judgment call: `yes`
   if this ticket's own scope only became draftable after resolving a
   🎨/🧠 gate (i.e. it previously existed as a `Gated on:` reference, or

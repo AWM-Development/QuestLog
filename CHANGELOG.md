@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-102
+
+- **New `XS` complexity tier, one notch below `S`, for tickets that are a single-line-or-near-single-line change in one existing file, reusing a pattern already implemented at another call site in that exact same file.** `ticket-writer` may only assign it when it can quote both the target and precedent call sites verbatim in the ticket's Scope — otherwise the ticket stays `S`. An `XS` ticket cuts the nightly executor's process weight harder than T-084's docs-only `S` path: Step 3 skips `Context files:` reads entirely (the ticket body already has everything needed), Step 4 collapses to one write-test-and-fix pass instead of per-checkpoint Red/Green/Refactor, and Step 5 skips the `reviewer` subagent invocation altogether — deferred to Alex's own `/morning-review` judgment instead. Targets the same waste T-090 exemplified: a one-line, zero-ambiguity fix that cost $3.11 across 109 turns under the standard process.
+
 ### Changed — T-101
 
 - **`update_entity`, `log_session`, and `correct_lore`'s tool descriptions now instruct the calling model to summarize the proposed change to the user in plain language before calling their paired `confirm_*` tool**, retrofitting T-100's agent-interaction policy onto the tools that predate it. `create_campaign`, `create_entity`, `append_entity_note`, and `ingest_text` needed no change (direct writes or already-compliant async guidance).
