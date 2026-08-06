@@ -17,6 +17,26 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 - **Real Neon `observability` branch provisioned and `OBSERVABILITY_DATABASE_URL` set** (M-OBS.3b's Alex-only manual step, completed post-merge-review) — the store is live, not just wired.
 - **Post-merge-review fix: `assertValidObservabilityDatabaseUrl` is now exported and directly unit-tested (`db/index.test.ts`), mirroring `packages/core/src/db/index.test.ts`'s existing pattern for its sibling validator.** The gap was a copy-paste bug in `vitest.config.ts` — it set `DATABASE_URL` instead of `OBSERVABILITY_DATABASE_URL` in the test env, so this package's own env var was never available under test. Fixed, with `global-setup.ts` updated to match.
 
+### Added — T-127
+
+- **The nightly executor now bootstraps a new worktree's environment (`pnpm install` + per-worktree Postgres provisioning) as part of picking up a ticket**, instead of discovering it's missing on the first test command. `EXECUTOR_ROUTINE.md` Step 2 (fresh pickup) and Step 1 case 4 (resumed abandoned branch) both call `session-start.sh` immediately after entering the worktree — verified idempotent on a real throwaway worktree run twice.
+
+### Added — T-083
+
+- **`create_entity` now searches ingested lore before creating an entity and offers to seed its description from what it finds.** A match scoring at or above the new `seedConfidenceThreshold` (default `0.7`) drafts a description from the matching chunk(s), stores the contributing chunk ids and confidence as `attributes.seededFrom`, and is cited in the response. A caller-supplied `description` is never overwritten — the seeded draft is appended alongside it as a separate, clearly labeled section. Matches spanning more than one source list each source's excerpt separately rather than blending them, so a conflict between sources is visible instead of silently resolved. Below-threshold (or absent) matches still come back as citations for the caller to review. The tool's response now returns `{ ...entity, citations, confidence, seeded }`. (Post-merge-review fix: the seed/confidence gate now takes the max raw score across all search results instead of assuming the top-ranked-by-recency result was also the top-scoring one.)
+
+### Added — T-100
+
+- **`.claude/rules/mcp.md` now states a standing agent-interaction policy** (resolving `G-012`'s interaction-philosophy axis): any tool description paired with a `confirm_*` tool must instruct the model to narrate the proposed change in plain language before confirming; any tool starting async background work must instruct the model to proactively poll its status tool and narrate progress; and tool errors should be translated into a plain, non-alarming explanation rather than relayed as raw JSON. The error-tone sentence itself now ships in `ONBOARDING_INSTRUCTIONS`, applying to every tool at once. `tool-descriptions.ts` itself is untouched here — retrofitting individual tool descriptions for compliance is T-101.
+
+### Fixed — T-092
+
+- **`POST /api/campaigns/:campaignId/sources/upload` and `POST /api/conversation/:conversationId/stream` now require a valid bearer token**, closing the gap flagged by T-038's security review (both routes were previously reachable by anyone who has or guesses a campaign UUID, no credential required). Reuses `/mcp`'s existing `requireBearerToken` scheme (G-017's resolution) rather than a new, lighter mechanism. Known consequence, accepted by G-017: `SourcesPage` (the one kept v1 web surface) has no token-issuance story of its own yet and will get 401'd on real uploads until a follow-up addresses that — out of scope for this ticket.
+
+### Fixed — T-110 (correction, surfaced while filing T-126)
+
+- **The gate guard (`packages/core/src/ci/gate-guard.ts`) no longer fails a PR for a `backlog/` ticket carrying an unresolved `Gated on:` or unmet `Blocked on:`.** That's `backlog/`'s designed resting state (`TICKET_SPEC.md` Lifecycle, `GATE_SPEC.md`), not a violation — T-110's original scope included `backlog/` in the enforced set with no carve-out, so any newly-drafted `backlog/` ticket following the pipeline's own normal process failed CI. `queue/`, `in-progress/`, and `done/` are unaffected — a ticket is only ever supposed to reach those once both fields have actually cleared.
+
 ### Added — T-125
 
 - **`session-start.sh`'s remote-sandbox branch now installs `pgvector` from source, pinned to `0.8.5`, instead of via apt/PGDG.** Investigation (`G-034`) found the sandbox's egress proxy hard-blocks `apt.postgresql.org`/PGDG (403 on the CONNECT tunnel) as a matter of policy, not a fixable config issue, and Ubuntu's own `noble/universe` package (0.6.0) is three minors behind what `hnsw.iterative_scan` needs (`IMPLEMENTATION_NOTES.md` § T-016) — meaning every remote executor session had been silently running against the wrong pgvector version. Building from source against GitHub (confirmed reachable) with `OPTFLAGS=""` (pgvector's default `-march=native` reliably segfaulted Postgres on `CREATE EXTENSION`, confirmed via a from-scratch Docker rebuild) now brings the sandbox to parity with `docker-compose.yml`/`ci.yml`, which already pin `pgvector/pgvector:0.8.5-pg16`.

@@ -30,7 +30,7 @@ v1.4 closes all three with one written policy plus a retrofit pass, so future to
 
 ### Tasks
 
-- [ ] **M-INTERACT.1 — Write the agent-interaction policy into `.claude/rules/mcp.md`** (T-100)
+- [x] **M-INTERACT.1 — Write the agent-interaction policy into `.claude/rules/mcp.md`** (T-100)
   Add a new section to the existing rules file (alongside the current "Write tools — preview/confirm/audit" and "Error shape" sections) stating the three-axis policy: (1) a tool description for any `confirm_*`-paired tool must instruct the model to summarize the proposed change to the user before calling confirm; (2) a tool description for any tool that starts async background work must instruct the model to proactively poll its status tool and narrate progress, generalizing `ingest_text`'s existing pattern into a standing rule rather than a one-off; (3) global error-tone guidance — the model should translate a `{ error: { code, message } }` result into a plain, non-alarming explanation with a suggested next step, not relay raw JSON — written once (in `ONBOARDING_INSTRUCTIONS`, per the DRY discipline that already governs that file, not duplicated per tool description).
   Exit: `.claude/rules/mcp.md` states all three rules in prescriptive, checkable language (a reviewer can point at a tool description and say whether it complies).
 

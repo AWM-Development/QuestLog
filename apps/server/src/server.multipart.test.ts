@@ -1,4 +1,7 @@
-import { createTestDb } from "@questlog/core/db/test-helpers.js";
+import {
+	createAccessToken,
+	createTestDb,
+} from "@questlog/core/db/test-helpers.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
 import { createMemoryStorage } from "@questlog/core/services/storage.service.js";
 import { sql } from "drizzle-orm";
@@ -28,6 +31,7 @@ afterAll(async () => {
 
 describe("multipart upload route", () => {
 	let campaignId: string;
+	let accessToken: string;
 
 	beforeEach(async () => {
 		await db.execute(sql`BEGIN`);
@@ -36,6 +40,7 @@ describe("multipart upload route", () => {
 			theme: "fantasy",
 		});
 		campaignId = campaign.id;
+		accessToken = await createAccessToken(db);
 	});
 
 	afterEach(async () => {
@@ -51,6 +56,7 @@ describe("multipart upload route", () => {
 			url: `/api/campaigns/${campaignId}/sources/upload`,
 			headers: {
 				"content-type": `multipart/form-data; boundary=${boundary}`,
+				authorization: `Bearer ${accessToken}`,
 			},
 			payload: body,
 		});
