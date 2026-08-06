@@ -11,7 +11,7 @@ Turns one milestone task from `Docs/milestones/MILESTONES_V1_MCP.md` into one or
 
 If invoked without a specific milestone task (e.g. "what's next", "what should we ticket next"), don't ask Alex to name one — find it yourself:
 
-1. Default to whichever milestone doc `CLAUDE.md`'s task-source line names as currently in progress (today: `Docs/milestones/MILESTONES_V1_1_MCP.md`; `Docs/milestones/MILESTONES_V1_MCP.md` is fully shipped and has nothing left to scan). If Alex names a specific doc, use that instead.
+1. Default to whichever milestone doc `AGENTS.md`'s task-source line names as currently in progress (today: `Docs/milestones/MILESTONES_V1_1_MCP.md`; `Docs/milestones/MILESTONES_V1_MCP.md` is fully shipped and has nothing left to scan). If Alex names a specific doc, use that instead.
 2. Read the doc's task list in the order it declares (an explicit "Ordering constraint" section if the doc has one — e.g. `Docs/milestones/MILESTONES_V1_MCP.md`'s M-MCP.0 → M-MCP.1 → ... chain — otherwise top-to-bottom).
 3. Walk the tasks in that order. Skip any task that's `[x]` (done) or already carries a `(T-###)` tag (already ticketed — see `TICKET_SPEC.md`'s "Milestone-doc annotations") — a ticketed task can still be `[ ]`, that's normal, not a signal to re-ticket it.
 4. The first task that's neither done nor ticketed is the candidate. If it carries a `(Gated on: G-###)` tag, it's blocked on an unresolved decision — report it as such (name the `G-###`) rather than drafting anything; if the doc's ordering is strict, stop here (nothing after it is legitimately shippable next regardless). If the ordering isn't strict for that stretch, keep scanning for the next ungated candidate instead of stopping dead.
