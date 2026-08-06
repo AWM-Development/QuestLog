@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-104
+
+- **Cite-not-restate rule for `IMPLEMENTATION_NOTES.md` rationale.** Once a piece of rationale is captured in full in `Docs/IMPLEMENTATION_NOTES.md`, rule files (`.claude/rules/*.md`, `AGENTS.md`/`CLAUDE.md`), code comments, and future ticket files must cite it with a one-line pointer instead of restating it in full — closing the gap (`G-013`) that let the same `trustProxy`/Fly-proxy explanation get independently reinvented across three separate files. Tickets/reports already in `done/`/`archive/`/`reports/` stay exempt, as point-in-time records. `.claude/agents/reviewer.md` check 6 now flags this even at a single call site in a diff, not just duplication within the diff itself.
+
 ### Added — T-134
 
 - **New `D` complexity tier, a sibling to `S` for tickets whose entire Scope is prose/markdown edits only, regardless of file count.** Unlike `XS`, `D` has no single-file or same-call-site-precedent requirement — a multi-file docs sweep (e.g. T-105's 8-file reference update) qualifies as long as every named file is `.md`. `D` reuses T-084's existing docs/config-only Step 4 branch unchanged (single end-of-work `scripts/run-tests-quiet.sh` pass, no per-checkpoint Red/Green/Refactor) and gets `XS`'s Step 5 reviewer-skip — cutting the nightly executor's cost on legitimately docs-only, multi-file tickets that previously still paid for a full `reviewer` subagent pass.
