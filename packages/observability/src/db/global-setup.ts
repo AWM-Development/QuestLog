@@ -26,7 +26,7 @@ export async function truncateAllTables(sql: Pick<Sql, "unsafe">) {
 
 export async function setup(project?: TestProject) {
 	const connectionString = resolveLocalTestDbUrl(
-		project?.config.env.DATABASE_URL,
+		project?.config.env.OBSERVABILITY_DATABASE_URL,
 	);
 	const client = postgres(connectionString, { max: 1 });
 

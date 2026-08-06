@@ -8,7 +8,6 @@ Strategy-gate flag: no
 
 Priority: P1
 
-
 Branch: feat/m-efficiency/t-102-xs-tier-established-pattern-fast-path
 
 Context files (load ONLY these):

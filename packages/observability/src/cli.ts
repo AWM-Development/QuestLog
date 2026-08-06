@@ -47,21 +47,55 @@ export async function ingestUsageArtifact(
 	);
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-	const [usageJsonPath, reportPath] = process.argv.slice(2);
+// Graceful-degradation rationale: Docs/IMPLEMENTATION_NOTES.md § T-095.
+function warnIngestionSkipped(err: unknown): void {
+	const message = err instanceof Error ? err.message : String(err);
+	console.warn(`Observability ingestion skipped — ${message}`);
+}
+
+/**
+ * The guarded entry block's logic, factored out so it's testable without
+ * running this file as a script (`.claude/rules/scripts.md`'s dual-mode
+ * shape). `loadDb` is injected so the graceful-degradation path above can
+ * be exercised without a real env var or a real unreachable connection.
+ */
+export async function runIngestCli(
+	argv: string[],
+	// Lazy, not static — a static import would throw at load time whenever
+	// OBSERVABILITY_DATABASE_URL is unset, even for a test that overrides loadDb.
+	loadDb: () => Promise<{ db: Database }> = () => import("./db/index.js"),
+): Promise<void> {
+	// Defense in depth against pnpm's `run ... --` mis-forwarding: Docs/IMPLEMENTATION_NOTES.md § T-095.
+	const [usageJsonPath, reportPath] = argv[0] === "--" ? argv.slice(1) : argv;
 	if (!usageJsonPath) {
 		console.error(
 			"Usage: tsx src/cli.ts <path/to/T-###.usage.json> [path/to/T-###-slug.md]",
 		);
-		process.exit(1);
+		process.exitCode = 1;
+		return;
 	}
-	import("./db/index.js")
-		.then(({ db }) => ingestUsageArtifact(db, usageJsonPath, reportPath))
-		.then(() => {
-			console.log(`Ingested ${usageJsonPath}`);
-		})
-		.catch((err) => {
-			console.error("Ingestion failed:", err);
-			process.exit(1);
-		});
+
+	let db: Database;
+	try {
+		({ db } = await loadDb());
+	} catch (err) {
+		warnIngestionSkipped(err);
+		return;
+	}
+
+	try {
+		await ingestUsageArtifact(db, usageJsonPath, reportPath);
+		console.log(`Ingested ${usageJsonPath}`);
+	} catch (err) {
+		warnIngestionSkipped(err);
+	} finally {
+		await db.$client.end().catch(() => {});
+	}
+}
+
+if (import.meta.url === `file://${process.argv[1]}`) {
+	runIngestCli(process.argv.slice(2)).catch((err) => {
+		console.error("Unexpected ingestion CLI error:", err);
+		process.exitCode = 1;
+	});
 }

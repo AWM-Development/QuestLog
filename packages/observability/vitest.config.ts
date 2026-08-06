@@ -16,7 +16,7 @@ export default defineConfig({
 		// packages/mcp/vitest.config.ts). Why: Docs/IMPLEMENTATION_NOTES.md § T-027.
 		globalSetup: ["./src/db/global-setup.ts"],
 		env: {
-			DATABASE_URL: testDbUrl("questlog_test_observability"),
+			OBSERVABILITY_DATABASE_URL: testDbUrl("questlog_test_observability"),
 		},
 	},
 });
