@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-101
+
+- **`update_entity`, `log_session`, and `correct_lore`'s tool descriptions now instruct the calling model to summarize the proposed change to the user in plain language before calling their paired `confirm_*` tool**, retrofitting T-100's agent-interaction policy onto the tools that predate it. `create_campaign`, `create_entity`, `append_entity_note`, and `ingest_text` needed no change (direct writes or already-compliant async guidance).
+
 ### Added — T-130
 
 - **The local-worktree (non-remote) branch of the `SessionStart` hook now verifies its own database provisioning instead of trusting it silently succeeded**, matching the verification gate the remote-sandbox branch already had (T-098). A database that's missing, missing a required extension, or has no applied migrations now fails the hook loudly with a diagnostic naming the specific database and unmet criterion, instead of falling through to a confusing test failure minutes into real ticket work. The underlying readiness check is shared between both branches via a new `scripts/db-readiness.sh`, not duplicated. Ships as part of G-035's resolution to make local execution the primary ticket-execution path.
