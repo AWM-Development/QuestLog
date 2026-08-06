@@ -8,7 +8,7 @@ Strategy-gate flag: yes
 
 Priority: P2
 
-Blocked on: T-110, T-111, T-112, T-113, T-114 — must be merged into develop first
+Blocked on: T-111, T-112, T-113, T-114 — must be merged into develop first (T-110 shipped, see Docs/tickets/done/T-110-ci-gate-guard.md)
 
 Branch: feat/m-pipeline/t-115-wire-enforcement-guards-into-preflight
 
