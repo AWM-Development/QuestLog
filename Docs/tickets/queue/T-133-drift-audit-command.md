@@ -13,7 +13,7 @@ Milestone ref: cross-cutting pipeline tooling (ad hoc — not extracted from
   a milestone doc task; companion to T-132, born from the same interactive
   planning session that retired T-017)
 
-Complexity tier: M
+Complexity tier: D
 
 Strategy-gate flag: no
 

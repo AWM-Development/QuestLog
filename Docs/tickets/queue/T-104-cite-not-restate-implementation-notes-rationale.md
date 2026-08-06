@@ -6,7 +6,7 @@ Milestone ref: Docs/milestones/MILESTONES_V1_1_MCP.md § M-AUDIT.1 (T-017,
   own scope (extending `T-017`'s audit to cover v1.1) is unaffected and
   stays as-is.
 
-Complexity tier: S
+Complexity tier: D
 
 Strategy-gate flag: yes
 

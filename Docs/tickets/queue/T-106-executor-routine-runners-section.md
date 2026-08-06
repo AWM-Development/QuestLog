@@ -2,7 +2,7 @@
 
 Milestone ref: M-PIPELINE.10 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
-Complexity tier: S
+Complexity tier: D
 
 Strategy-gate flag: yes
 
