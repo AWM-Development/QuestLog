@@ -14,7 +14,8 @@
 		"test:e2e": "vitest run --config vitest.e2e.config.ts",
 		"typecheck": "tsc --noEmit",
 		"lint": "biome check .",
-		"ci-gate-guard": "tsx src/ci/gate-guard.ts"
+		"ci-gate-guard": "tsx src/ci/gate-guard.ts",
+		"ci-scope-guard": "tsx src/ci/scope-guard.ts"
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.79.0",
