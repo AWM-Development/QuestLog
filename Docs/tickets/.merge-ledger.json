@@ -1,5 +1,11 @@
 [
   {
+    "ticketId": "T-083",
+    "prNumber": 193,
+    "branch": "feat/m-seed/t-083-create-entity-lore-seeding",
+    "mergedAt": "2026-08-06T13:48:41Z"
+  },
+  {
     "ticketId": "T-084",
     "prNumber": 192,
     "branch": "feat/m-efficiency/t-084-tier-gated-executor-process-weight",
