@@ -1,4 +1,4 @@
-# T-138 — Tool-description naming & length/format consistency pass
+# T-139 — Tool-description naming & length/format consistency pass
 
 Milestone ref: Docs/milestones/MILESTONES_V1_5_MCP.md, M-POLISH.1
 
@@ -8,7 +8,7 @@ Strategy-gate flag: yes
 
 Priority: P1
 
-Branch: feat/m-polish/t-138-tool-description-consistency-pass
+Branch: feat/m-polish/t-139-tool-description-consistency-pass
 
 Context files (load ONLY these):
   - packages/mcp/src/content/tool-descriptions.ts

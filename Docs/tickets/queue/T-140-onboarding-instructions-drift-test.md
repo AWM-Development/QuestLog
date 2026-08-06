@@ -1,4 +1,4 @@
-# T-139 — ONBOARDING_INSTRUCTIONS drift test
+# T-140 — ONBOARDING_INSTRUCTIONS drift test
 
 Milestone ref: Docs/milestones/MILESTONES_V1_5_MCP.md, M-POLISH.2
 
@@ -8,7 +8,7 @@ Strategy-gate flag: yes
 
 Priority: P1
 
-Branch: feat/m-polish/t-139-onboarding-instructions-drift-test
+Branch: feat/m-polish/t-140-onboarding-instructions-drift-test
 
 Context files (load ONLY these):
   - packages/mcp/src/content/onboarding-instructions.ts

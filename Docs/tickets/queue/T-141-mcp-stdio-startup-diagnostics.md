@@ -1,4 +1,4 @@
-# T-140 — apps/mcp-stdio startup diagnostics
+# T-141 — apps/mcp-stdio startup diagnostics
 
 Milestone ref: Docs/milestones/MILESTONES_V1_5_MCP.md, M-POLISH.3
 
@@ -8,7 +8,7 @@ Strategy-gate flag: yes
 
 Priority: P1
 
-Branch: feat/m-polish/t-140-mcp-stdio-startup-diagnostics
+Branch: feat/m-polish/t-141-mcp-stdio-startup-diagnostics
 
 Context files (load ONLY these):
   - apps/mcp-stdio/src/main.ts
