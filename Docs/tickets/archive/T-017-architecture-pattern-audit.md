@@ -1,4 +1,24 @@
-# T-017 — Architecture & pattern audit: drift, dead code, and best-practicing across M-MCP
+# T-017 — Architecture & pattern audit: drift, dead code, and best-practicing across M-MCP — SUPERSEDED
+
+## Resolution — SUPERSEDED (2026-08-06)
+
+Archived, not run. Interactive planning session with Alex (2026-08-06)
+found this ticket's scope stale: it only ever widened to cover M-MCP +
+v1.1 (last amended 2026-07-22), but v1.2, v1.3, and substantial v1.4 work
+have shipped since, none of which this ticket's context-file list or
+scope text ever accounted for. Rather than amend a second time, Alex
+opted to retire this ticket and replace it with `T-132-bootstrap-drift-audit.md`
+(same design, same 7 audit dimensions, widened to cover everything shipped
+through v1.4-to-date) plus a new companion, `T-133-drift-audit-command.md`,
+a reproducible weekly `/drift-audit` command so this kind of audit never
+goes stale for three-plus weeks unnoticed again. See both for the
+carried-forward design. No further action on this file — kept for
+history only.
+
+Everything below this line is the ticket exactly as it last read before
+archival, unmodified.
+
+---
 
 **Amended 2026-07-22 (M-AUDIT.1, `Docs/milestones/MILESTONES_V1_1_MCP.md`):** scope extended
 to also cover the v1.1 additions (the M-REMOTE remote-MCP work and the

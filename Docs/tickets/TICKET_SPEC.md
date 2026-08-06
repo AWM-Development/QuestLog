@@ -193,9 +193,10 @@ a ticket is never picked up before its dependency has actually landed.
 pre-flight parses. A separate pattern exists for tickets that are inherently
 interactive — planning-shaped work a ticket file can still usefully describe,
 but that should never be picked up by the autonomous executor at all, gate or
-no gate (see `Docs/tickets/backlog/T-017-architecture-pattern-audit.md` for a
-worked example: an architecture audit that needs Alex's own institutional
-judgment throughout, not a single yes/no decision). These tickets carry
+no gate (see `Docs/tickets/queue/T-132-bootstrap-drift-audit.md` — successor
+to the now-archived `T-017` — for a worked example: an architecture audit
+that needs Alex's own institutional judgment throughout, not a single
+yes/no decision). These tickets carry
 neither field — instead a freeform banner (`**⚠️ NOT ELIGIBLE FOR AUTONOMOUS
 NIGHTLY EXECUTION.**`) and prose describing their own trigger condition. This
 works today only because the executor's pre-flight never scans `backlog/` for
