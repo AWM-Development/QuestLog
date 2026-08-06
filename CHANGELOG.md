@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-111
+
+- **CI scope guard for ticket-implementation PRs.** A new `scope-guard` CI job checks a `feat/*`-branch PR's diff against its ticket's declared `Context files:` list: warns (never fails) when the diff touches a path outside both that list and the diff's own newly-created files; hard-fails if the diff touches `Docs/mockups/` or targets a base branch other than `develop`. Logic lives in `packages/core/src/ci/scope-guard.ts` (unit-tested), following the same DI'd, `gate-guard.ts`-modeled shape; `scripts/ci-scope-guard.sh` is the reusable entry point `T-115`'s pre-flight wiring will call. Part of `G-020`'s Q2 "instruction → invariant" candidate set.
+
 ### Added — T-104
 
 - **Cite-not-restate rule for `IMPLEMENTATION_NOTES.md` rationale.** Once a piece of rationale is captured in full in `Docs/IMPLEMENTATION_NOTES.md`, rule files (`.claude/rules/*.md`, `AGENTS.md`/`CLAUDE.md`), code comments, and future ticket files must cite it with a one-line pointer instead of restating it in full — closing the gap (`G-013`) that let the same `trustProxy`/Fly-proxy explanation get independently reinvented across three separate files. Tickets/reports already in `done/`/`archive/`/`reports/` stay exempt, as point-in-time records. `.claude/agents/reviewer.md` check 6 now flags this even at a single call site in a diff, not just duplication within the diff itself.

@@ -173,7 +173,7 @@ resolution (`Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md
   The cheapest, highest-value check per `G-020` Q2 — directly the failure mode the Devin investigation session surfaced (skipped strategy-review stops). Required status check on `develop`.
   Exit: see T-110.
 
-- [ ] **M-PIPELINE.15 — CI scope guard: diff confined to the ticket's declared `Context files:`, `Docs/mockups/` untouched, base is `develop`** (T-111)
+- [x] **M-PIPELINE.15 — CI scope guard: diff confined to the ticket's declared `Context files:`, `Docs/mockups/` untouched, base is `develop`** (T-111)
   Exit: see T-111.
 
 - [ ] **M-PIPELINE.16 — CI report-completeness validator against `REPORT_TEMPLATE.md`** (T-112)
