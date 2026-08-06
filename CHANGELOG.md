@@ -10,6 +10,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-130
+
+- **The local-worktree (non-remote) branch of the `SessionStart` hook now verifies its own database provisioning instead of trusting it silently succeeded**, matching the verification gate the remote-sandbox branch already had (T-098). A database that's missing, missing a required extension, or has no applied migrations now fails the hook loudly with a diagnostic naming the specific database and unmet criterion, instead of falling through to a confusing test failure minutes into real ticket work. The underlying readiness check is shared between both branches via a new `scripts/db-readiness.sh`, not duplicated. Ships as part of G-035's resolution to make local execution the primary ticket-execution path.
+- **Same-PR follow-up:** the local branch also now shares its create-if-missing-then-migrate logic with the remote branch (`ensure_database_provisioned()`, same injected-runner shape as the readiness check above) instead of each branch reimplementing it, and gained the remote branch's T-125 fast-path skip — a healthy worktree's session-start no longer pays a full `db:migrate` per database on every session when nothing changed.
+
 ### Added — T-095
 
 - **The nightly executor now ingests every ticket's run into the observability store as part of its own wrap-up.** `EXECUTOR_ROUTINE.md` Step 7 (shipped) and Step 6 (blocked) each run `pnpm --filter @questlog/observability ingest <usage.json> <report>` right after the usage-capture invocation — T-053 built the store and CLI, but nothing called it until now, so every prior ticket's data only reached the store via a manual pull. A missing or unreachable `OBSERVABILITY_DATABASE_URL` logs a warning and exits cleanly instead of failing the wrap-up. `packages/observability`'s `ingest` CLI also now closes its DB connection on every exit path (previously only failure paths did, so a successful run hung instead of exiting) — needed for the command to actually terminate.
