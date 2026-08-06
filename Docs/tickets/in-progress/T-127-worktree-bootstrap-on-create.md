@@ -6,7 +6,7 @@ Complexity tier: S
 
 Strategy-gate flag: no
 
-Priority: P1
+Priority: P0
 
 Branch: feat/m-efficiency/t-127-worktree-bootstrap-on-create
 
