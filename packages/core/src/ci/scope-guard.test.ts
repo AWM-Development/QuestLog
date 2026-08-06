@@ -154,6 +154,31 @@ describe("runScopeGuard", () => {
 		expect(result.warnings).toEqual([]);
 	});
 
+	it("does not warn on the standard wrap-up files (CHANGELOG.md, IMPLEMENTATION_NOTES.md, a milestone doc) even though they're modified, not added, and never declared", () => {
+		const result = runScopeGuard(
+			deps({
+				changedFiles: () => [
+					{
+						path: "Docs/tickets/done/T-200-example.md",
+						status: "added",
+					},
+					{ path: "CHANGELOG.md", status: "modified" },
+					{ path: "Docs/IMPLEMENTATION_NOTES.md", status: "modified" },
+					{
+						path: "Docs/milestones/MILESTONES_V1_1_MCP.md",
+						status: "modified",
+					},
+				],
+				readFile: (path) =>
+					path === "Docs/tickets/done/T-200-example.md"
+						? "Context files (load ONLY these):\n  - foo.ts\n"
+						: null,
+			}),
+		);
+		expect(result.ok).toBe(true);
+		expect(result.warnings).toEqual([]);
+	});
+
 	it("does not warn on a changed file that is inside the declared Context files: set", () => {
 		const result = runScopeGuard(
 			deps({
