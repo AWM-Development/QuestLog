@@ -7,7 +7,7 @@ import * as schema from "../schema/tables.js";
 // so importing it here just to reuse this ~15-line validator would also
 // pull in core's own connection as an import side effect. Small enough to
 // duplicate rather than couple two independent connection pools together.
-function assertValidObservabilityDatabaseUrl(
+export function assertValidObservabilityDatabaseUrl(
 	value: string | undefined,
 ): asserts value is string {
 	if (!value) {

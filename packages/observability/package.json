@@ -14,7 +14,8 @@
 		"typecheck": "tsc --noEmit",
 		"lint": "biome check .",
 		"db:generate": "drizzle-kit generate",
-		"db:migrate": "tsx src/db/migrate.ts"
+		"db:migrate": "tsx src/db/migrate.ts",
+		"ingest": "tsx src/cli.ts"
 	},
 	"dependencies": {
 		"@questlog/core": "workspace:*",
