@@ -697,10 +697,14 @@ describe("get_entity tool", () => {
 });
 
 describe("create_entity tool", () => {
+	// create_entity now searches lore before persisting (T-083), whose
+	// keywordSearch opens its own db.transaction() (T-015) — doesn't compose
+	// with a raw BEGIN/ROLLBACK wrapper (.claude/rules/backend.md "Test DB
+	// pattern"), same reason query_lore's describe block above uses this.
 	let campaignId: string;
+	let sourceId: string;
 
 	beforeEach(async () => {
-		await db.execute(sql`BEGIN`);
 		vi.clearAllMocks();
 
 		const campaign = await campaignService.create(db, {
@@ -708,10 +712,16 @@ describe("create_entity tool", () => {
 			theme: "fantasy",
 		});
 		campaignId = campaign.id;
+
+		const [source] = await db
+			.insert(sources)
+			.values({ campaignId, name: "primer.md", type: "file", status: "done" })
+			.returning();
+		sourceId = source?.id ?? "";
 	});
 
 	afterEach(async () => {
-		await db.execute(sql`ROLLBACK`);
+		await deleteCampaignTree(db, campaignId);
 	});
 
 	it("creates a row immediately visible via get_entity and list_entities", async () => {
@@ -779,6 +789,66 @@ describe("create_entity tool", () => {
 			.from(entities)
 			.where(eq(entities.campaignId, campaignId));
 		expect(rows).toHaveLength(0);
+	});
+
+	it("seeds the description from a high-confidence lore match and returns citations + seeded: true (T-083)", async () => {
+		const [chunk] = await db
+			.insert(chunks)
+			.values({
+				campaignId,
+				sourceId,
+				content: "Mira Duskwood patrols the Old Road near Ashfall Peak.",
+				embedding: basisVector(0),
+				metadata: { position: 0 },
+			})
+			.returning();
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "create_entity",
+			arguments: { campaignId, name: "Mira Duskwood", type: "npc" },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const created = JSON.parse(content[0]?.text ?? "{}");
+		expect(created.seeded).toBe(true);
+		expect(created.description).toContain("Mira Duskwood patrols the Old Road");
+		expect(created.citations).toEqual(
+			expect.arrayContaining([expect.objectContaining({ chunkId: chunk?.id })]),
+		);
+		expect(created.confidence).toBeGreaterThan(0);
+	});
+
+	it("returns low-confidence matches as citations without seeding (T-083)", async () => {
+		const [chunk] = await db
+			.insert(chunks)
+			.values({
+				campaignId,
+				sourceId,
+				content: "The tavern serves watered-down ale.",
+				// Orthogonal to the query embedding (basisVector(0)) -> score 0.
+				embedding: basisVector(1),
+				metadata: { position: 0 },
+			})
+			.returning();
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "create_entity",
+			arguments: { campaignId, name: "Mira Duskwood", type: "npc" },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const created = JSON.parse(content[0]?.text ?? "{}");
+		expect(created.seeded).toBe(false);
+		expect(created.description).toBeNull();
+		expect(created.citations).toEqual(
+			expect.arrayContaining([expect.objectContaining({ chunkId: chunk?.id })]),
+		);
 	});
 });
 

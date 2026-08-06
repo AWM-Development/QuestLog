@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-083
+
+- **`create_entity` now searches ingested lore before creating an entity and offers to seed its description from what it finds.** A match scoring at or above the new `seedConfidenceThreshold` (default `0.7`) drafts a description from the matching chunk(s), stores the contributing chunk ids and confidence as `attributes.seededFrom`, and is cited in the response. A caller-supplied `description` is never overwritten — the seeded draft is appended alongside it as a separate, clearly labeled section. Matches spanning more than one source list each source's excerpt separately rather than blending them, so a conflict between sources is visible instead of silently resolved. Below-threshold (or absent) matches still come back as citations for the caller to review. The tool's response now returns `{ ...entity, citations, confidence, seeded }`. (Post-merge-review fix: the seed/confidence gate now takes the max raw score across all search results instead of assuming the top-ranked-by-recency result was also the top-scoring one.)
+
 ### Added — T-100
 
 - **`.claude/rules/mcp.md` now states a standing agent-interaction policy** (resolving `G-012`'s interaction-philosophy axis): any tool description paired with a `confirm_*` tool must instruct the model to narrate the proposed change in plain language before confirming; any tool starting async background work must instruct the model to proactively poll its status tool and narrate progress; and tool errors should be translated into a plain, non-alarming explanation rather than relayed as raw JSON. The error-tone sentence itself now ships in `ONBOARDING_INSTRUCTIONS`, applying to every tool at once. `tool-descriptions.ts` itself is untouched here — retrofitting individual tool descriptions for compliance is T-101.

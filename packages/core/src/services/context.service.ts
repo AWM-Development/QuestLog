@@ -72,6 +72,15 @@ export const CONTEXT_CONFIG = {
 	keywordSearchThreshold: 0.1,
 	/** Score boost when a chunk appears in both vector and keyword results. */
 	dualMatchBoost: 0.1,
+
+	/**
+	 * Minimum chunk score (same scale as this module's `confidence`) for
+	 * `create_entity`'s lore-seeding (T-083, G-016) to draft a description
+	 * from a search match instead of leaving it to the caller. No usage data
+	 * exists yet to tune this precisely — an explicit, documented default
+	 * open to adjustment, not a number treated as final.
+	 */
+	seedConfidenceThreshold: 0.7,
 } as const;
 
 // ---------------------------------------------------------------------------
