@@ -40,5 +40,11 @@
     "prNumber": 191,
     "branch": "feat/m-efficiency/t-125-session-bootstrap-speed",
     "mergedAt": "2026-08-05T01:06:13Z"
+  },
+  {
+    "ticketId": "T-127",
+    "prNumber": 204,
+    "branch": "feat/m-efficiency/t-127-worktree-bootstrap-on-create",
+    "mergedAt": "2026-08-06T14:50:04Z"
   }
 ]
