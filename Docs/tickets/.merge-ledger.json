@@ -1,9 +1,27 @@
 [
   {
+    "ticketId": "T-083",
+    "prNumber": 193,
+    "branch": "feat/m-seed/t-083-create-entity-lore-seeding",
+    "mergedAt": "2026-08-06T13:48:41Z"
+  },
+  {
     "ticketId": "T-084",
     "prNumber": 192,
     "branch": "feat/m-efficiency/t-084-tier-gated-executor-process-weight",
     "mergedAt": "2026-08-04T23:56:53Z"
+  },
+  {
+    "ticketId": "T-092",
+    "prNumber": 194,
+    "branch": "feat/m-audit/t-092-upload-endpoint-auth-gap-decision",
+    "mergedAt": "2026-08-05T15:49:17Z"
+  },
+  {
+    "ticketId": "T-100",
+    "prNumber": 201,
+    "branch": "feat/m-interact/t-100-agent-interaction-philosophy-rule",
+    "mergedAt": "2026-08-06T13:37:32Z"
   },
   {
     "ticketId": "T-110",
@@ -22,5 +40,11 @@
     "prNumber": 191,
     "branch": "feat/m-efficiency/t-125-session-bootstrap-speed",
     "mergedAt": "2026-08-05T01:06:13Z"
+  },
+  {
+    "ticketId": "T-127",
+    "prNumber": 204,
+    "branch": "feat/m-efficiency/t-127-worktree-bootstrap-on-create",
+    "mergedAt": "2026-08-06T14:50:04Z"
   }
 ]

@@ -13,7 +13,28 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 ### Added — T-095
 
 - **The nightly executor now ingests every ticket's run into the observability store as part of its own wrap-up.** `EXECUTOR_ROUTINE.md` Step 7 (shipped) and Step 6 (blocked) each run `pnpm --filter @questlog/observability ingest <usage.json> <report>` right after the usage-capture invocation — T-053 built the store and CLI, but nothing called it until now, so every prior ticket's data only reached the store via a manual pull. A missing or unreachable `OBSERVABILITY_DATABASE_URL` (the real Neon branch/secret is still Alex's manual step) logs a warning and exits cleanly instead of failing the wrap-up. `packages/observability`'s `ingest` CLI also now closes its DB connection on every exit path (previously only failure paths did, so a successful run hung instead of exiting) — needed for the command to actually terminate.
+
 - **Uses T-036's established `pnpm --filter <pkg> <script> <args>` invocation form (no `run`, no `--`)** to avoid a known pnpm quirk where `run <script> -- <args>` forwards a literal `--` as the script's first argument on this repo's pnpm version. The CLI also strips a leading `--` defensively, since this ticket's own exit condition (and a habit-typed invocation) still uses the `run ... --` form.
+
+### Added — T-127
+
+- **The nightly executor now bootstraps a new worktree's environment (`pnpm install` + per-worktree Postgres provisioning) as part of picking up a ticket**, instead of discovering it's missing on the first test command. `EXECUTOR_ROUTINE.md` Step 2 (fresh pickup) and Step 1 case 4 (resumed abandoned branch) both call `session-start.sh` immediately after entering the worktree — verified idempotent on a real throwaway worktree run twice.
+
+### Added — T-083
+
+- **`create_entity` now searches ingested lore before creating an entity and offers to seed its description from what it finds.** A match scoring at or above the new `seedConfidenceThreshold` (default `0.7`) drafts a description from the matching chunk(s), stores the contributing chunk ids and confidence as `attributes.seededFrom`, and is cited in the response. A caller-supplied `description` is never overwritten — the seeded draft is appended alongside it as a separate, clearly labeled section. Matches spanning more than one source list each source's excerpt separately rather than blending them, so a conflict between sources is visible instead of silently resolved. Below-threshold (or absent) matches still come back as citations for the caller to review. The tool's response now returns `{ ...entity, citations, confidence, seeded }`. (Post-merge-review fix: the seed/confidence gate now takes the max raw score across all search results instead of assuming the top-ranked-by-recency result was also the top-scoring one.)
+
+### Added — T-100
+
+- **`.claude/rules/mcp.md` now states a standing agent-interaction policy** (resolving `G-012`'s interaction-philosophy axis): any tool description paired with a `confirm_*` tool must instruct the model to narrate the proposed change in plain language before confirming; any tool starting async background work must instruct the model to proactively poll its status tool and narrate progress; and tool errors should be translated into a plain, non-alarming explanation rather than relayed as raw JSON. The error-tone sentence itself now ships in `ONBOARDING_INSTRUCTIONS`, applying to every tool at once. `tool-descriptions.ts` itself is untouched here — retrofitting individual tool descriptions for compliance is T-101.
+
+### Fixed — T-092
+
+- **`POST /api/campaigns/:campaignId/sources/upload` and `POST /api/conversation/:conversationId/stream` now require a valid bearer token**, closing the gap flagged by T-038's security review (both routes were previously reachable by anyone who has or guesses a campaign UUID, no credential required). Reuses `/mcp`'s existing `requireBearerToken` scheme (G-017's resolution) rather than a new, lighter mechanism. Known consequence, accepted by G-017: `SourcesPage` (the one kept v1 web surface) has no token-issuance story of its own yet and will get 401'd on real uploads until a follow-up addresses that — out of scope for this ticket.
+
+### Fixed — T-110 (correction, surfaced while filing T-126)
+
+- **The gate guard (`packages/core/src/ci/gate-guard.ts`) no longer fails a PR for a `backlog/` ticket carrying an unresolved `Gated on:` or unmet `Blocked on:`.** That's `backlog/`'s designed resting state (`TICKET_SPEC.md` Lifecycle, `GATE_SPEC.md`), not a violation — T-110's original scope included `backlog/` in the enforced set with no carve-out, so any newly-drafted `backlog/` ticket following the pipeline's own normal process failed CI. `queue/`, `in-progress/`, and `done/` are unaffected — a ticket is only ever supposed to reach those once both fields have actually cleared.
 
 ### Added — T-125
 

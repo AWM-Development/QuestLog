@@ -24,7 +24,10 @@ import {
 	conversationStreamBodySchema,
 	conversationStreamParamsSchema,
 } from "./routers/conversation.schemas.js";
-import { registerMcpHttpRoutes } from "./routes/mcp-http.routes.js";
+import {
+	registerMcpHttpRoutes,
+	requireBearerToken,
+} from "./routes/mcp-http.routes.js";
 import { registerMcpOauthRoutes } from "./routes/mcp-oauth.routes.js";
 import { createContextFactory } from "./trpc.js";
 
@@ -127,6 +130,9 @@ export function buildApp({
 	 */
 	app.post<{ Params: { campaignId: string } }>(
 		"/api/campaigns/:campaignId/sources/upload",
+		// Closes the gap flagged by T-038's security review, resolved via G-017:
+		// reuse /mcp's bearer-token scheme rather than leaving this write path open.
+		{ preHandler: (request, reply) => requireBearerToken(db, request, reply) },
 		async (request, reply) => {
 			const { campaignId } = request.params;
 
@@ -241,57 +247,62 @@ export function buildApp({
 	app.post<{
 		Params: { conversationId: string };
 		Body: { campaignId: string; query: string };
-	}>("/api/conversation/:conversationId/stream", async (request, reply) => {
-		const paramsResult = conversationStreamParamsSchema.safeParse(
-			request.params,
-		);
-		if (!paramsResult.success) {
-			const msg =
-				paramsResult.error.issues[0]?.message ?? "Invalid conversationId";
-			return reply.status(400).send({ error: msg });
-		}
-		const bodyResult = conversationStreamBodySchema.safeParse(request.body);
-		if (!bodyResult.success) {
-			const msg = bodyResult.error.issues[0]?.message ?? "Invalid body";
-			return reply.status(400).send({ error: msg });
-		}
-
-		const { conversationId } = paramsResult.data;
-		const { campaignId, query } = bodyResult.data;
-
-		// Set SSE headers
-		reply.raw.writeHead(200, {
-			"Content-Type": "text/event-stream",
-			"Cache-Control": "no-cache",
-			Connection: "keep-alive",
-		});
-
-		/** Send an SSE event. */
-		const sendEvent = (event: string, data: unknown) => {
-			reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
-		};
-
-		try {
-			const result = await conversationService.chatStream(
-				db,
-				{ campaignId, conversationId, query },
-				(textDelta) => {
-					sendEvent("delta", { text: textDelta });
-				},
+	}>(
+		"/api/conversation/:conversationId/stream",
+		// Same auth gap/fix as the upload route above — see its comment.
+		{ preHandler: (request, reply) => requireBearerToken(db, request, reply) },
+		async (request, reply) => {
+			const paramsResult = conversationStreamParamsSchema.safeParse(
+				request.params,
 			);
+			if (!paramsResult.success) {
+				const msg =
+					paramsResult.error.issues[0]?.message ?? "Invalid conversationId";
+				return reply.status(400).send({ error: msg });
+			}
+			const bodyResult = conversationStreamBodySchema.safeParse(request.body);
+			if (!bodyResult.success) {
+				const msg = bodyResult.error.issues[0]?.message ?? "Invalid body";
+				return reply.status(400).send({ error: msg });
+			}
 
-			sendEvent("done", {
-				citations: result.citations,
-				confidence: result.confidence,
-				usage: result.usage,
+			const { conversationId } = paramsResult.data;
+			const { campaignId, query } = bodyResult.data;
+
+			// Set SSE headers
+			reply.raw.writeHead(200, {
+				"Content-Type": "text/event-stream",
+				"Cache-Control": "no-cache",
+				Connection: "keep-alive",
 			});
-		} catch (error) {
-			const mapped = mapDomainError(error);
-			sendEvent("error", { message: mapped.message, code: mapped.code });
-		} finally {
-			reply.raw.end();
-		}
-	});
+
+			/** Send an SSE event. */
+			const sendEvent = (event: string, data: unknown) => {
+				reply.raw.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+			};
+
+			try {
+				const result = await conversationService.chatStream(
+					db,
+					{ campaignId, conversationId, query },
+					(textDelta) => {
+						sendEvent("delta", { text: textDelta });
+					},
+				);
+
+				sendEvent("done", {
+					citations: result.citations,
+					confidence: result.confidence,
+					usage: result.usage,
+				});
+			} catch (error) {
+				const mapped = mapDomainError(error);
+				sendEvent("error", { message: mapped.message, code: mapped.code });
+			} finally {
+				reply.raw.end();
+			}
+		},
+	);
 
 	app.register(fastifyTRPCPlugin, {
 		prefix: "/trpc",

@@ -1,6 +1,8 @@
+import { createHash, randomBytes } from "node:crypto";
 import { eq, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
+import { mcpOauthService } from "../services/mcp-oauth.service.js";
 import { TABLES_IN_DELETE_ORDER } from "./global-setup.js";
 import type { Database } from "./index.js";
 import * as schema from "./schema/index.js";
@@ -25,6 +27,25 @@ import { resolveLocalTestDbUrl } from "./test-db-url.js";
 export function basisVector(axis: number, dims = 1024): number[] {
 	const vec = new Array(dims).fill(0);
 	vec[axis] = 1;
+	return vec;
+}
+
+/**
+ * Build a unit vector with an *exact* cosine similarity to `basisVector(axis)`
+ * (score = 1 - cosine distance, per `.claude/rules/db.md`). Puts the rest of
+ * the unit-length budget on `otherAxis` so the vector stays normalized. Use
+ * over `mixVectors`-style blending when a test needs a precise, reproducible
+ * score rather than an approximate "partially similar."
+ */
+export function similarityVector(
+	axis: number,
+	similarity: number,
+	otherAxis: number,
+	dims = 1024,
+): number[] {
+	const vec = new Array(dims).fill(0);
+	vec[axis] = similarity;
+	vec[otherAxis] = Math.sqrt(1 - similarity * similarity);
 	return vec;
 }
 
@@ -83,6 +104,36 @@ export async function lockTruncationTargets(sql: {
  * `db.transaction()` on the same connection — raw `BEGIN` in a test does not
  * compose with Drizzle/postgres.js nested transaction handling.
  */
+/**
+ * Issues a real access token via the full PKCE authorization-code flow, for
+ * tests exercising routes gated behind `requireBearerToken`
+ * (`apps/server/src/routes/mcp-http.routes.ts`) — `/mcp`, the upload route,
+ * and the conversation-stream route all share this one scheme (T-092).
+ */
+export async function createAccessToken(db: Database): Promise<string> {
+	const client = await mcpOauthService.registerClient(db, {
+		redirectUri: "https://claude.ai/api/mcp/callback",
+	});
+	const codeVerifier = randomBytes(32).toString("base64url");
+	const codeChallenge = createHash("sha256")
+		.update(codeVerifier)
+		.digest("base64url");
+	// resource only has to match itself between the two calls below — validateAccessToken never checks it.
+	const resource = "http://test.local/mcp";
+	const { code } = await mcpOauthService.createAuthorizationCode(db, {
+		clientId: client.clientId,
+		codeChallenge,
+		resource,
+	});
+	const tokens = await mcpOauthService.exchangeAuthorizationCode(db, {
+		code,
+		clientId: client.clientId,
+		codeVerifier,
+		resource,
+	});
+	return tokens.accessToken;
+}
+
 export async function deleteCampaignTree(db: Database, campaignId: string) {
 	const convRows = await db
 		.select({ id: conversations.id })

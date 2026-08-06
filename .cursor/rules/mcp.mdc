@@ -40,6 +40,14 @@ The trigger for preview/confirm is **mutating a record that already exists** (up
 
 Never persist a mutating write from a single call. If a ticket's exit condition doesn't distinguish preview from confirm for a tool that mutates existing data, that's a spec gap — flag it rather than collapsing the two steps for convenience. A tool that's genuinely additive-only doesn't need this pattern at all; don't add a preview/confirm pair to a create-only tool just to match `log_session`'s shape.
 
+## Agent-interaction philosophy (T-100, `G-012`)
+
+A tool description is instructions to the calling model, not just documentation of the tool's shape — these three rules govern what every write/async tool description must tell the model to do, not just what the tool does:
+
+1. **Confirmation narration** — any tool description for a tool with a paired `confirm_*` tool must instruct the model to summarize the proposed change to the user in plain language before calling confirm, not just chain the two calls silently.
+2. **Proactive status-checking** — any tool description for a tool that starts async background work must instruct the model to proactively poll the relevant status tool and narrate progress to the user (the pattern `ingest_text`'s description already sets for `get_source_status` is the standing rule, not a one-off).
+3. **Error tone** — the model must translate a tool's `{ error: { code, message } }` result into a plain, non-alarming explanation with a suggested next step, rather than relaying raw JSON. This one lives once in `ONBOARDING_INSTRUCTIONS` (`packages/mcp/src/content/onboarding-instructions.ts`), not repeated per tool description, since it applies uniformly to every tool's error shape.
+
 ## Error shape
 
 Tool errors return a structured result the MCP client can render (not a thrown exception that kills the connection): at minimum `{ error: { code, message } }`. Reuse the typed errors from `packages/core/src/lib/errors.ts` where the underlying service already throws one — map them the same way `withErrorHandling` does for tRPC, don't invent a parallel error taxonomy.

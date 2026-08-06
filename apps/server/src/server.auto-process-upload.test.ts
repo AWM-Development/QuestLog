@@ -1,4 +1,7 @@
-import { createTestDb } from "@questlog/core/db/test-helpers.js";
+import {
+	createAccessToken,
+	createTestDb,
+} from "@questlog/core/db/test-helpers.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
 import { sourceService } from "@questlog/core/services/source.service.js";
 import { createMemoryStorage } from "@questlog/core/services/storage.service.js";
@@ -65,6 +68,7 @@ async function waitForStatus(
 
 describe("autoProcessUploads opt-in", () => {
 	let campaignId: string;
+	let accessToken: string;
 
 	beforeAll(async () => {
 		// no-op: apps are built per-describe below since options differ
@@ -81,6 +85,7 @@ describe("autoProcessUploads opt-in", () => {
 			theme: "fantasy",
 		});
 		campaignId = campaign.id;
+		accessToken = await createAccessToken(db);
 	});
 
 	afterEach(async () => {
@@ -106,7 +111,7 @@ describe("autoProcessUploads opt-in", () => {
 			method: "POST",
 			url: `/api/campaigns/${campaignId}/sources/upload`,
 			payload: form.getBuffer(),
-			headers: form.getHeaders(),
+			headers: { ...form.getHeaders(), authorization: `Bearer ${accessToken}` },
 		});
 
 		expect(response.statusCode).toBe(200);
@@ -133,7 +138,7 @@ describe("autoProcessUploads opt-in", () => {
 			method: "POST",
 			url: `/api/campaigns/${campaignId}/sources/upload`,
 			payload: form.getBuffer(),
-			headers: form.getHeaders(),
+			headers: { ...form.getHeaders(), authorization: `Bearer ${accessToken}` },
 		});
 
 		expect(response.statusCode).toBe(200);
