@@ -8,8 +8,6 @@ Strategy-gate flag: no
 
 Priority: P2
 
-Blocked on: T-095 — must be merged into develop first
-
 Branch: feat/m-efficiency/t-126-repo-hygiene-audit-command
 
 Context files (load ONLY these):
