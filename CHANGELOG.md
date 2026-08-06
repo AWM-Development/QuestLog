@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-127
+
+- **The nightly executor now bootstraps a new worktree's environment (`pnpm install` + per-worktree Postgres provisioning) as part of picking up a ticket**, instead of discovering it's missing on the first test command. `EXECUTOR_ROUTINE.md` Step 2 (fresh pickup) and Step 1 case 4 (resumed abandoned branch) both call `session-start.sh` immediately after entering the worktree — verified idempotent on a real throwaway worktree run twice.
+
 ### Added — T-083
 
 - **`create_entity` now searches ingested lore before creating an entity and offers to seed its description from what it finds.** A match scoring at or above the new `seedConfidenceThreshold` (default `0.7`) drafts a description from the matching chunk(s), stores the contributing chunk ids and confidence as `attributes.seededFrom`, and is cited in the response. A caller-supplied `description` is never overwritten — the seeded draft is appended alongside it as a separate, clearly labeled section. Matches spanning more than one source list each source's excerpt separately rather than blending them, so a conflict between sources is visible instead of silently resolved. Below-threshold (or absent) matches still come back as citations for the caller to review. The tool's response now returns `{ ...entity, citations, confidence, seeded }`. (Post-merge-review fix: the seed/confidence gate now takes the max raw score across all search results instead of assuming the top-ranked-by-recency result was also the top-scoring one.)
