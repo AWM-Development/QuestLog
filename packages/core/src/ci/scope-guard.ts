@@ -1,6 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readRepoFile, resolveRepoRoot } from "./guard-utils.js";
 
 const TICKET_FILE_RE = /^Docs\/tickets\/(in-progress|done)\/(T-\d+)-.*\.md$/;
 const CONTEXT_FILES_HEADER_RE = /^Context files/;
@@ -113,12 +112,6 @@ export function runScopeGuard(deps: ScopeGuardDeps): ScopeGuardResult {
 	return { ok: failures.length === 0, failures, warnings };
 }
 
-function resolveRepoRoot(): string {
-	return execFileSync("git", ["rev-parse", "--show-toplevel"], {
-		encoding: "utf-8",
-	}).trim();
-}
-
 function gitChangedFiles(repoRoot: string, baseRef: string): ChangedFile[] {
 	const output = execFileSync(
 		"git",
@@ -144,11 +137,6 @@ function gitChangedFiles(repoRoot: string, baseRef: string): ChangedFile[] {
 		.filter((f) => f.path.length > 0);
 }
 
-// pnpm --filter shifts the script's cwd to the target package's directory
-// (packages/core), not the repo root — every repo-relative path this module
-// touches must be resolved against `repoRoot`, not process.cwd(). Same class
-// of bug as gate-guard.ts's own note / EXECUTOR_ROUTINE.md Step 6/7's
-// CLAUDE_PROJECT_DIR note.
 function realDeps(
 	baseRef: string,
 	headBranch: string,
@@ -159,10 +147,7 @@ function realDeps(
 		headBranch,
 		baseBranchName,
 		changedFiles: () => gitChangedFiles(repoRoot, baseRef),
-		readFile: (path) => {
-			const abs = join(repoRoot, path);
-			return existsSync(abs) ? readFileSync(abs, "utf-8") : null;
-		},
+		readFile: (path) => readRepoFile(repoRoot, path),
 	};
 }
 

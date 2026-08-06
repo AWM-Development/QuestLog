@@ -1,6 +1,7 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { readRepoFile, resolveRepoRoot } from "./guard-utils.js";
 
 const TICKET_FILE_RE =
 	/^Docs\/tickets\/(queue|backlog|in-progress|done)\/(T-\d+)-.*\.md$/;
@@ -125,12 +126,6 @@ export function runGateGuard(deps: GateGuardDeps): GateGuardResult {
 	return { ok: failures.length === 0, failures, warnings };
 }
 
-function resolveRepoRoot(): string {
-	return execFileSync("git", ["rev-parse", "--show-toplevel"], {
-		encoding: "utf-8",
-	}).trim();
-}
-
 function gitDiffChangedFiles(repoRoot: string, baseRef: string): string[] {
 	const output = execFileSync(
 		"git",
@@ -143,18 +138,11 @@ function gitDiffChangedFiles(repoRoot: string, baseRef: string): string[] {
 	return output.split("\n").filter((line) => line.length > 0);
 }
 
-// pnpm --filter shifts the script's cwd to the target package's directory
-// (packages/core), not the repo root — every repo-relative path this module
-// touches must be resolved against `repoRoot`, not process.cwd(). Same class
-// of bug as EXECUTOR_ROUTINE.md Step 6/7's CLAUDE_PROJECT_DIR note.
 function realDeps(baseRef: string): GateGuardDeps {
 	const repoRoot = resolveRepoRoot();
 	return {
 		listChangedFiles: () => gitDiffChangedFiles(repoRoot, baseRef),
-		readFile: (path) => {
-			const abs = join(repoRoot, path);
-			return existsSync(abs) ? readFileSync(abs, "utf-8") : null;
-		},
+		readFile: (path) => readRepoFile(repoRoot, path),
 		listDir: (dir) => {
 			const abs = join(repoRoot, dir);
 			return existsSync(abs) ? readdirSync(abs) : [];
