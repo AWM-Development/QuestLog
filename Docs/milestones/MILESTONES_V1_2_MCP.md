@@ -136,7 +136,7 @@ This milestone builds the actual instrumentation instead of continuing to guess:
   Raised during the same G-035 investigation (2026-08-05): Alex reported exceeding his GitHub Actions minutes budget from `ci.yml`'s own volume alone, with zero ticket-execution work running there — a red flag for any plan involving more GitHub Actions usage, and worth understanding on its own terms regardless. Quantifies actual minute consumption across `ci.yml`'s 7 jobs and the other 4 workflow files, and identifies concrete reduction options.
   Exit: see T-128.
 
-- [ ] **M-EFFICIENCY.17 — Verification gate for the local worktree DB-provisioning path** (T-130)
+- [x] **M-EFFICIENCY.17 — Verification gate for the local worktree DB-provisioning path** (T-130)
   Raised by `/ungate` resolving G-035 (2026-08-05): `session-start.sh`'s local (non-remote) branch has caused two real incidents (T-064, T-092) discovering a missing/unmigrated `questlog_test_observability` mid-session instead of at hook-exit, while the remote branch has had a `db_readiness_issue()` verification gate since T-098. G-035's own investigation confirmed Claude Code's cloud/routines caching mechanism doesn't work on this account, making the local path the priority-A execution surface going forward — this ticket is what makes trusting it more than hope. Renumbered from its original `T-127`/`M-EFFICIENCY.15` after that number was also independently claimed and shipped (see `T-127` above) — `T-127` above is the real, already-executed ticket; this is not a duplicate.
   Exit: see T-130 — `db_readiness_issue()` (or equivalent) shared between both branches, a deliberately broken worktree demonstrated failing loudly with a named diagnostic, a healthy worktree unaffected.
 

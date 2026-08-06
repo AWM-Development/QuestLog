@@ -33,6 +33,15 @@ db_readiness_issue() {
 	local run_query="$1"
 	local dbname="$2"
 	local db_exists
+	# Queried against $TEST_DB_NAME_DEV rather than $dbname itself — pg_database
+	# is a cluster-wide catalog, so any already-existing database's connection
+	# works to look it up. $TEST_DB_NAME_DEV itself is guaranteed to exist by
+	# the time either caller runs this, for two different reasons per branch:
+	# locally, docker-compose.yml's POSTGRES_DB creates it at container start,
+	# before session-start.sh ever runs; remotely, it's TEST_DB_NAMES's own
+	# first entry (test-db-names.sh) and the remote branch's loops check
+	# databases in that array's order, so it's already created/migrated
+	# before any later database's readiness is ever checked.
 	db_exists=$("$run_query" "$TEST_DB_NAME_DEV" "SELECT 1 FROM pg_database WHERE datname='${dbname}'")
 	if [ "$db_exists" != "1" ]; then
 		echo "database ${dbname} does not exist"
