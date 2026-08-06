@@ -108,7 +108,7 @@ Process weight below is gated on the ticket's `Complexity tier` field (`TICKET_S
 5. If a single blocking failure survives 3 distinct attempted approaches (the ticket's Iteration cap — check the ticket for a different number), STOP. Do not attempt a 4th. Go to Step 6 (Blocked).
 6. Commit with message `feat(T-###): <short description>` once green.
 
-Step 5's reviewer subagent still runs for every tier except `XS` regardless of which path above applied — this only changes the implementation-loop overhead leading up to review, never review coverage itself (except for `XS`, which skips the reviewer entirely — see Step 5).
+Step 5's reviewer subagent still runs for every tier except `XS` regardless of which path above applied — this only changes the implementation-loop overhead leading up to review, never review coverage itself.
 
 ## Step 5: Review — before any report is written
 **`XS`-tier tickets (T-102):** skip the `reviewer` subagent invocation entirely — a full second agent pass over a diff this small is genuinely unneeded ceremony, since Alex already re-derives an independent code-review judgment by hand in `/morning-review` before the PR merges (pattern deviation, scope vs. ticket, test theater, DRY/sprawl — everything `.claude/agents/reviewer.md` checks). In the eventual report, write the "Reviewer verdict" section as exactly: `N/A — XS tier; independent verification deferred to Alex's manual /morning-review`. Proceed straight to Step 7 (Wrap up — shipped).
