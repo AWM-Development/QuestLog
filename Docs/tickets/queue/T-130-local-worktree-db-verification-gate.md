@@ -1,6 +1,6 @@
-# T-127 — Verification gate for the local worktree DB-provisioning path
+# T-130 — Verification gate for the local worktree DB-provisioning path
 
-Milestone ref: Docs/milestones/MILESTONES_V1_2_MCP.md M-EFFICIENCY.15
+Milestone ref: Docs/milestones/MILESTONES_V1_2_MCP.md M-EFFICIENCY.17
 
 Complexity tier: S
 
@@ -8,7 +8,7 @@ Strategy-gate flag: yes — drafted directly by `/ungate` resolving G-035
 
 Priority: P0
 
-Branch: fix/m-efficiency/t-127-local-worktree-db-verification-gate
+Branch: fix/m-efficiency/t-130-local-worktree-db-verification-gate
 
 Context files (load ONLY these):
   - .claude/hooks/session-start.sh (both branches — lines 51-83 are the
@@ -90,7 +90,7 @@ Exit condition (machine-checkable):
 
 Iteration cap: 3 distinct approaches on any single failure, then Blocked Protocol
 
-Definition of done includes: checkbox flipped for M-EFFICIENCY.15 in
+Definition of done includes: checkbox flipped for M-EFFICIENCY.17 in
   `Docs/milestones/MILESTONES_V1_2_MCP.md`, `IMPLEMENTATION_NOTES.md`
   updated citing G-035's resolution as the reason this shipped, a
   `CHANGELOG.md` entry under `[Unreleased]`, morning report written.
