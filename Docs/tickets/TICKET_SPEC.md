@@ -11,7 +11,7 @@ Every ticket lives at `Docs/tickets/T-###-slug.md` (`###` sequential, zero-padde
 
 Milestone ref: <Docs/milestones/MILESTONES_V1_MCP.md section, e.g. "M-MCP.1">
 
-Complexity tier: XS | S | M | L   # see field notes for the rubric
+Complexity tier: XS | S | M | L | D   # see field notes for the rubric
 
 Strategy-gate flag: yes | no   # see field notes
 
@@ -75,6 +75,15 @@ Definition of done includes: checkbox flipped in Docs/milestones/MILESTONES_V1_M
     refactor, still within a well-understood pattern.
   - **L** — a new subsystem, a cross-cutting change touching many files,
     or a genuinely unfamiliar pattern for this codebase.
+  - **D** — a sibling to `S`, not nested inside it: the ticket's entire
+    Scope is prose/markdown edits only (`.md` files — no application
+    code, no config/schema files with executable behavior, e.g. no
+    `.ts`/`.tsx`/`.yml`/`.sql`). Qualifies regardless of file count —
+    unlike `XS`, there is no single-file or same-call-site-precedent
+    requirement. `ticket-writer` assigns `D` once the ticket's Scope is
+    fully drafted and every named file confirmed `.md`; if drafting
+    turns up even one non-`.md` file in Scope, the ticket is `S`/`M`/`L`
+    instead, never `D` (T-134).
   `ticket-writer` assigns this at draft time, same as `Priority`. Beyond
   observability, the tier also gates the executor's own process weight
   (T-084, T-102): an S-tier ticket whose Scope names only docs/config
@@ -86,7 +95,10 @@ Definition of done includes: checkbox flipped in Docs/milestones/MILESTONES_V1_M
   body already inlines the before-text and precedent snippet), a single
   write-test-and-fix pass instead of per-checkpoint TDD, and no
   `reviewer` subagent invocation — see Step 3/4/5 for the exact
-  mechanics. M/L-tier tickets, and any S-tier ticket that touches
+  mechanics. A `D` ticket gets `XS`'s Step 5 reviewer-skip without `XS`'s
+  single-file/same-call-site restriction — it keeps Step 3's normal
+  `Context files:` reads and Step 4's existing `S`-docs-only branch
+  (T-134). M/L-tier tickets, and any S-tier ticket that touches
   application code, keep the full TDD loop and reviewer pass. This field
   note only records that the tier has these consequences, not just a
   reporting purpose.
