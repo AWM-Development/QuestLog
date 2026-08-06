@@ -1,0 +1,23 @@
+{
+  "ticket_id": "T-104",
+  "empty_run": false,
+  "session_id": "af83a680-052e-4333-bfe8-67242342cc14",
+  "input_tokens": 154,
+  "output_tokens": 34931,
+  "cache_creation_input_tokens": 161078,
+  "cache_read_input_tokens": 5755670,
+  "duration_ms": 270048,
+  "turn_count": 77,
+  "turns_to_green": 60,
+  "theoretical_cost_usd": {
+    "applies_rate": "intro",
+    "intro_usd": 2.145064,
+    "standard_usd": 3.217596
+  },
+  "reviewer_subagent": null,
+  "total_system_cost_usd": {
+    "applies_rate": "intro",
+    "intro_usd": 2.145064,
+    "standard_usd": 3.217596
+  }
+}

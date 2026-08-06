@@ -229,7 +229,8 @@ lifecycle) is cleaner than spec-kit's single transient `clarify` step.
 
 - **Q1 (portability) — full commitment.** `AGENTS.md` becomes the canonical
   constitution (`T-105`); the one real runner coupling
-  (`CLAUDE_PROJECT_DIR`, Notes §2) gets a safe default (`T-104`);
+  (`CLAUDE_PROJECT_DIR`, Notes §2) gets a safe default (`T-138`, renumbered
+  from a `T-104` id collision);
   `EXECUTOR_ROUTINE.md` grows a "Runners" section rather than forking per
   runner (`T-106`, Q1(c)); `TICKET_SPEC.md`'s `Model:` field generalizes to
   `Runner:` + `Model:` (`T-107`, Q1(b)); the observability store gains a

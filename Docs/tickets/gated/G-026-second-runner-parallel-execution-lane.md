@@ -36,6 +36,7 @@ Notes: Raised in `G-020` Q4 verbatim: "a second runner as a parallel
   ticket-selection collision (`T-069`'s mutex) — it does not by itself
   answer which runner, how cost is tracked, or how the nightly scheduler's
   single cron invocation becomes multiple concurrent invocations. Depends
-  conceptually on `G-020`'s Q1 portability work (`T-104`–`T-109`) having
+  conceptually on `G-020`'s Q1 portability work (`T-138`, `T-105`–`T-109`)
+  having
   landed first, since a second runner is the first real test of whether
   that portability work actually holds.
