@@ -90,6 +90,30 @@ describe("findPlaceholder", () => {
 	it("does not flag a short generic-looking bracket like <T>", () => {
 		expect(findPlaceholder("uses a generic type <T> here")).toBeNull();
 	});
+
+	it("does not flag the placeholder shape when it's inline-code-quoted as an example, not a real leftover", () => {
+		// Regression: T-112's own report describes this exact test in prose,
+		// backtick-quoting the placeholder pattern as an example — that must
+		// not itself be flagged as a leftover placeholder.
+		expect(
+			findPlaceholder(
+				"the job fails when a report has a leftover `<Pasted actual output...>` placeholder",
+			),
+		).toBeNull();
+	});
+
+	it("still flags the placeholder shape inside a fenced code block (the Test evidence failure mode)", () => {
+		const content = [
+			"## Test evidence",
+			"",
+			"```",
+			"<Pasted actual output of pnpm test>",
+			"```",
+		].join("\n");
+		expect(findPlaceholder(content)).toBe(
+			"<Pasted actual output of pnpm test>",
+		);
+	});
 });
 
 describe("hasRealisticTestEvidence", () => {

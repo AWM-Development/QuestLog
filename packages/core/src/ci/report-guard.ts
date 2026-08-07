@@ -1,8 +1,12 @@
 // Layout: constants → exported types → exported logic → private CLI wiring →
 // CLI entry. Only the functions imported by report-guard.test.ts are
 // exported (Shape 1, .claude/rules/scripts.md).
-import { execFileSync } from "node:child_process";
-import { readRepoFile, resolveRepoRoot } from "./guard-utils.js";
+import {
+	type ChangedFile,
+	gitChangedFiles,
+	readRepoFile,
+	resolveRepoRoot,
+} from "./guard-utils.js";
 
 const REPORT_FILE_RE = /^Docs\/tickets\/reports\/(T-\d+)-.*\.md$/;
 
@@ -23,6 +27,20 @@ export const REQUIRED_REPORT_HEADINGS = [
 // generic-type-looking bracket like `<T>` that could legitimately appear
 // in pasted code/output.
 const PLACEHOLDER_RE = /<[^<>\n]{4,}>/;
+
+// A finished report legitimately *quotes* the placeholder shape inline —
+// either in backticks (e.g. this ticket's own report: "a leftover
+// `<Pasted actual output...>` placeholder") or in a plain double-quoted
+// test-name string (e.g. the same report quoting a vitest `it(...)` title
+// verbatim: "fails a synthetic PR adding a report with a leftover
+// <Pasted actual output...> placeholder") — without either being a real
+// leftover placeholder. REPORT_TEMPLATE.md's actual placeholders are bare
+// prose, never inside backticks or quotes. Strip both span kinds before
+// matching. Deliberately doesn't touch ``` fenced blocks — a placeholder
+// pasted there instead of real output (the Test evidence section's actual
+// failure mode) must still be caught.
+const INLINE_CODE_SPAN_RE = /(?<!`)`(?!`)[^`\n]+`(?!`)/g;
+const DOUBLE_QUOTED_SPAN_RE = /"[^"\n]+"/g;
 
 // Heuristic for "looks like real command output," not prose describing it:
 // PASS/FAIL/✓ markers, or a file:line reference.
@@ -45,7 +63,10 @@ export function extractSection(
 }
 
 export function findPlaceholder(content: string): string | null {
-	return content.match(PLACEHOLDER_RE)?.[0] ?? null;
+	const stripped = content
+		.replace(INLINE_CODE_SPAN_RE, "")
+		.replace(DOUBLE_QUOTED_SPAN_RE, "");
+	return stripped.match(PLACEHOLDER_RE)?.[0] ?? null;
 }
 
 export function hasRealisticTestEvidence(section: string): boolean {
@@ -94,17 +115,10 @@ export function validateReportStructure(
 	return issues;
 }
 
-export type ReportGuardChangeStatus = "added" | "modified" | "deleted";
-
-export interface ReportGuardChangedFile {
-	path: string;
-	status: ReportGuardChangeStatus;
-}
-
 export interface ReportGuardDeps {
 	/** The PR's head branch name — ticket-implementation PRs only, same feat/* branch-prefix detection as scope-guard.ts (T-111). */
 	headBranch: string;
-	changedFiles: () => ReportGuardChangedFile[];
+	changedFiles: () => ChangedFile[];
 	readFile: (path: string) => string | null;
 }
 
@@ -140,37 +154,11 @@ export function runReportGuard(deps: ReportGuardDeps): ReportGuardResult {
 	return { ok: failures.length === 0, failures };
 }
 
-function gitAddedFiles(
-	repoRoot: string,
-	baseRef: string,
-): ReportGuardChangedFile[] {
-	const output = execFileSync(
-		"git",
-		["diff", "--name-status", `${baseRef}...HEAD`],
-		{ encoding: "utf-8", cwd: repoRoot },
-	);
-	const statusMap: Record<string, ReportGuardChangeStatus> = {
-		A: "added",
-		M: "modified",
-		D: "deleted",
-	};
-	return output
-		.split("\n")
-		.filter((line) => line.length > 0)
-		.map((line) => {
-			const [rawStatus, ...pathParts] = line.split("\t");
-			const path = pathParts[pathParts.length - 1] ?? "";
-			const status = statusMap[(rawStatus ?? "").charAt(0)] ?? "modified";
-			return { path, status };
-		})
-		.filter((f) => f.path.length > 0);
-}
-
 function realDeps(baseRef: string, headBranch: string): ReportGuardDeps {
 	const repoRoot = resolveRepoRoot();
 	return {
 		headBranch,
-		changedFiles: () => gitAddedFiles(repoRoot, baseRef),
+		changedFiles: () => gitChangedFiles(repoRoot, baseRef),
 		readFile: (path) => readRepoFile(repoRoot, path),
 	};
 }
