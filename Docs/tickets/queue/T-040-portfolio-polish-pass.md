@@ -9,12 +9,16 @@ improvements, but Alex needs to read the result with fresh eyes before
 it's real — run this interactively, or have an agent draft a PR that Alex
 reviews before merging, not something that lands unreviewed overnight.
 
-**Trigger condition:** once the rest of v1.1 (M-REMOTE, M-CICD, and
-ideally M-AUDIT.2/M-AUDIT.3's findings) has landed — a portfolio pass
-written against a repo that's about to change significantly under it
-would need redoing.
+**Trigger condition:** once every MCP-roadmap milestone (`v1.1` through
+`v1.9`, plus any further MCP-scope version opened before this one) has
+landed, and ideally M-RELEASE.1's (`T-039`) findings too — a portfolio
+pass written against a repo that's about to change significantly under
+it would need redoing. This ticket moved out of `v1.1`'s `M-AUDIT` into
+its own version (`v1.10`, `M-RELEASE`) because it's the actual pre-req
+for Alex taking the repo from private to public, not a v1.1-specific
+closeout.
 
-Milestone ref: M-AUDIT.4 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
+Milestone ref: M-RELEASE.2 (`Docs/milestones/MILESTONES_V1_10_MCP.md`)
 
 Complexity tier: D
 
@@ -79,8 +83,8 @@ Exit condition (human-checkable):
 
 Iteration cap: not applicable (interactive/judgment-based)
 
-Definition of done includes: checkbox flip for M-AUDIT.4 in
-  `Docs/milestones/MILESTONES_V1_1_MCP.md`, no `CHANGELOG.md` entry required (this is
+Definition of done includes: checkbox flip for M-RELEASE.2 in
+  `Docs/milestones/MILESTONES_V1_10_MCP.md`, no `CHANGELOG.md` entry required (this is
   documentation/presentation, not shipped application behavior), morning-
   report-equivalent is a summary of what changed and what Alex still
   needs to record/decide (e.g. the demo recording itself).
