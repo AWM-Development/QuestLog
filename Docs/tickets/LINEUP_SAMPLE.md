@@ -27,6 +27,35 @@ Eligible now — no `Blocked on:`/`Gated on:`. Never touched.
 
 ---
 
+## 📈 Milestone Progress & Deployed Version
+
+**Completed milestones**
+- **v1** — MCP-first campaign manager: `query_lore`, `get_entity`/`list_entities`, `log_session`, `prep_brief` as the primary interface, SourcesPage kept as the only web surface.
+
+**Deployed: v1.1.1** · promoted to `main` 2026-08-02
+
+**Next milestone in queue — v1.1 (Remote MCP)**
+15 tasks remaining:
+- M-REMOTE.7 — Deploy + connect a real Claude Project + full remote test pass
+- M-CICD.1 — Auto-deploy `questlog-dev` on merge to `develop`
+- M-CICD.2 — Post-merge smoke-test workflow (dev)
+- M-CICD.3 — Post-merge smoke-test workflow (prod)
+- M-PIPELINE.8 — Runner-neutral `CLAUDE_PROJECT_DIR` default
+- M-PIPELINE.10 — `EXECUTOR_ROUTINE.md` "Runners" section
+- M-PIPELINE.11 — Generalize `TICKET_SPEC.md`'s `Model:` field to `Runner:` + `Model:`
+- M-PIPELINE.12 — `runner` dimension on `ticket_runs`
+- M-PIPELINE.13 — Runner-neutral cost adapter interface
+- M-PIPELINE.17 — Exit-condition evidence recomputation
+- M-PIPELINE.18 — Red-check CI job: a PR's new tests must fail against `develop`'s pre-change implementation
+- M-PIPELINE.19 — Wire the enforcement guards into the executor's own pre-flight
+- M-AUDIT.1 — Extend `T-017`'s scope to cover v1.1
+- M-AUDIT.3 — Scalability-into-v2 review
+- M-AUDIT.4 — Portfolio polish pass
+
+*(v1.2 through v1.5 are also in progress per `AGENTS.md`'s task-source line, but only the first in-progress doc in that line's listed order is surfaced here — same "one candidate at a time" discipline `ticket-writer`'s "what's next" mode already uses.)*
+
+---
+
 ## 🔍 Open PRs Awaiting Review
 
 | Ticket | PR | Priority | Summary |

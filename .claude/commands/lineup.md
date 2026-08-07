@@ -1,24 +1,29 @@
 ---
-description: Morning report — next tickets up to run, open PRs awaiting review, and the full backlog snapshot
+description: Morning report — next tickets up to run, milestone progress + deployed version, open PRs awaiting review, and the full backlog snapshot
 ---
 
 Read-only report. This command never commits, pushes, promotes, or mutates any ticket file — it only reads `develop`'s current state and GitHub. Safe to run unattended (e.g. as a scheduled morning routine).
 
 ## Procedure
 
-1. `git fetch origin develop` — that's it, no checkout. This command only ever reads ticket files off `origin/develop` (e.g. `git show origin/develop:Docs/tickets/queue/T-###-slug.md`, or `git show origin/develop:Docs/tickets/` to list a directory), following `.claude/commands/promote.md:12`'s pattern — never a working tree, so nothing here ever disturbs a concurrent session sharing this primary directory (`Docs/IMPLEMENTATION_NOTES.md` § T-069).
+1. `git fetch origin develop main` — that's it, no checkout. This command only ever reads ticket files off `origin/develop` (e.g. `git show origin/develop:Docs/tickets/queue/T-###-slug.md`, or `git show origin/develop:Docs/tickets/` to list a directory) and deployed-state files off `origin/main` (step 4 below), following `.claude/commands/promote.md:12`'s pattern — never a working tree, so nothing here ever disturbs a concurrent session sharing this primary directory (`Docs/IMPLEMENTATION_NOTES.md` § T-069).
 
 2. **Build the real candidate order** — mirror `EXECUTOR_ROUTINE.md` Step 1's logic without mutating anything:
    - For each ticket in `origin/develop`'s `Docs/tickets/backlog/`: if it carries no `Gated on:` and every id in its `Blocked on:` (if any) has a matching file under `Docs/tickets/done/`, treat it as *promotable* for this report (do not actually `git mv` it).
    - Candidate list = `Docs/tickets/in-progress/*.md` + `Docs/tickets/queue/*.md` + promotable backlog tickets from above, sorted by `Priority:` tier (missing field = `P1`) first, numeric `T-###` id as tiebreak within a tier.
 
-3. **Find the next 3 genuinely eligible tickets** — walk the candidate list in order, applying `EXECUTOR_ROUTINE.md` Step 1's own dedup check to each (`gh pr list --search "T-### in:title" --state all`, then `git ls-remote --heads origin` fallback on its nominal branch): skip any with an open PR (already shipped, awaiting review — it'll surface in section 4 instead) or an existing `Docs/tickets/blocked/T-###-slug.md` on a matching branch (needs Alex first). Stop once you have 3 clean picks, or you run out of candidates. Label them, in order: **At Bat**, **On Deck**, **In the Hole**. If fewer than 3 exist, say so explicitly rather than leaving a slot blank with no explanation.
+3. **Find the next 3 genuinely eligible tickets** — walk the candidate list in order, applying `EXECUTOR_ROUTINE.md` Step 1's own dedup check to each (`gh pr list --search "T-### in:title" --state all`, then `git ls-remote --heads origin` fallback on its nominal branch): skip any with an open PR (already shipped, awaiting review — it'll surface in section 5 instead) or an existing `Docs/tickets/blocked/T-###-slug.md` on a matching branch (needs Alex first). Stop once you have 3 clean picks, or you run out of candidates. Label them, in order: **At Bat**, **On Deck**, **In the Hole**. If fewer than 3 exist, say so explicitly rather than leaving a slot blank with no explanation.
 
-4. **Open PRs awaiting review** — `gh pr list --base develop --state open`. For each, resolve the ticket id from its branch/title (`feat/<group>/t-###-<slug>`), read that ticket's `Priority:` and a one-line scope summary. These are PRs only Alex can merge (`AGENTS.md`'s "never merge a PR yourself" — no automation is allowed to clear this list).
+4. **Milestone progress + deployed version** — read this off `origin/main` and `origin/develop`, never the shared primary directory's live state, same discipline as every other step:
+   - **Completed milestones:** parse `AGENTS.md`'s task-source line for the milestone docs it marks shipped (today: only `Docs/milestones/MILESTONES_V1_MCP.md`, "v1, shipped"). For each, pull a single-sentence one-liner from the doc's own opening description section (e.g. `MILESTONES_V1_MCP.md`'s "The v1 pivot" section) — not the full prose block. List oldest-first.
+   - **Deployed version:** `git show origin/main:package.json`, read the `version` field. Cross-reference `git show origin/main:CHANGELOG.md` for that version's dated section header (`## [X.Y.Z] - YYYY-MM-DD`) to get the promotion date. If no matching dated section is found, report the version alone with an explicit "promotion date not found in `CHANGELOG.md`" note — never leave the field blank.
+   - **Next milestone in queue:** parse `AGENTS.md`'s task-source line again for the first milestone doc it marks "in progress" (in the line's own listed order). List that doc's remaining `[ ]` top-level tasks by id and title, reusing `.claude/skills/ticket-writer/SKILL.md`'s "what's next" mode scan logic (skip only `[x]`, not tickets that are drafted-but-unstarted). If every task in every in-progress doc is checked off, say so explicitly rather than showing an empty list.
 
-5. **Full backlog snapshot** — every ticket currently in `Docs/tickets/queue/`, `Docs/tickets/backlog/`, and `Docs/tickets/in-progress/` (including the ones already surfaced above — this section is the complete picture, not just the leftovers), sorted the same way as step 2. For each: ticket id, one-line summary (first sentence of Scope, or the title if Scope is long-form prose), `Priority:` tier, and its `Blocked on:`/`Gated on:` state (name what it's waiting on, or "none").
+5. **Open PRs awaiting review** — `gh pr list --base develop --state open`. For each, resolve the ticket id from its branch/title (`feat/<group>/t-###-<slug>`), read that ticket's `Priority:` and a one-line scope summary. These are PRs only Alex can merge (`AGENTS.md`'s "never merge a PR yourself" — no automation is allowed to clear this list).
 
-6. Render using the exact template below — this is the canonical output shape, not just a section list, so the report reads the same regardless of which session or model runs it. Fill in real data; omit no section even if empty (say so explicitly instead, e.g. "No open PRs.").
+6. **Full backlog snapshot** — every ticket currently in `Docs/tickets/queue/`, `Docs/tickets/backlog/`, and `Docs/tickets/in-progress/` (including the ones already surfaced above — this section is the complete picture, not just the leftovers), sorted the same way as step 2. For each: ticket id, one-line summary (first sentence of Scope, or the title if Scope is long-form prose), `Priority:` tier, and its `Blocked on:`/`Gated on:` state (name what it's waiting on, or "none").
+
+7. Render using the exact template below — this is the canonical output shape, not just a section list, so the report reads the same regardless of which session or model runs it. Fill in real data; omit no section even if empty (say so explicitly instead, e.g. "No open PRs.").
 
 ## Output template
 
@@ -42,6 +47,23 @@ Read-only report. This command never commits, pushes, promotes, or mutates any t
 <same shape>
 
 <If fewer than 3 eligible tickets exist, say so explicitly here instead of a blank slot, e.g. "Only 2 eligible tickets remain in the queue.">
+
+---
+
+## 📈 Milestone Progress & Deployed Version
+
+**Completed milestones**
+- **<version>** — <one-line description>
+<repeat oldest-first for every milestone doc AGENTS.md's task-source line marks shipped>
+
+**Deployed: v<X.Y.Z>** · promoted to `main` <YYYY-MM-DD>
+<if no dated CHANGELOG.md section matches: "Deployed: v<X.Y.Z> · promotion date not found in CHANGELOG.md">
+
+**Next milestone in queue — <version> (<milestone name>)**
+<N> tasks remaining:
+- <task id> — <task title>
+<repeat for every remaining [ ] top-level task in that milestone doc>
+<if none remain: "No remaining tasks in any in-progress milestone doc.">
 
 ---
 
