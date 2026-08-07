@@ -1,7 +1,7 @@
 # QuestLog — v1.5 Milestones (MCP App Polish & Inventory Management)
 
 **Location:** `Docs/milestones/MILESTONES_V1_5_MCP.md`
-**Status:** CANONICAL task source for v1.5, M-POLISH only. M-POLISH's task list is real as of `G-022`'s resolution (2026-08-06); M-INVENTORY is still fully gated on `G-023` and has no task list yet.
+**Status:** CANONICAL task source for v1.5. Both milestones now have real task lists: M-POLISH as of `G-022`'s resolution (2026-08-06); M-INVENTORY as of `G-023`'s resolution (2026-08-07).
 **Created:** 2026-08-02, per Alex — reserving v1.5 for `G-022` (already filed as "whichever milestone comes after v1.4") and folding in a newly-proposed inventory-management feature as a second milestone under the same version, per Alex's explicit choice to house both under v1.5 rather than open a separate v1.6.
 
 ## Why v1.5 exists
@@ -13,11 +13,11 @@ Two independent, unrelated pieces of scope both landed here at once:
 
 These two milestones are otherwise unconnected — they're bundled into one version number only because both needed a home and Alex chose not to spread them across two version bumps. Whichever gate resolves first (per `GATE_SPEC.md`'s oldest-first `/ungate` ordering, `G-022` before `G-023`) gets its task list written into this file first; the other's section stays a placeholder until its own gate resolves.
 
-**Open gates:**
-- `G-023` (`Docs/tickets/gated/G-023-inventory-management-design.md`) — inventory management design. Blocks Milestone M-INVENTORY below.
+**Open gates:** none for this milestone doc — both `G-022` and `G-023` are resolved. (`G-041`, filed during `G-023`'s resolution, is a separate speculative future-scope stub for generalized freeform-text detection — not tied to a milestone task here, see the gate-stub itself.)
 
 **Resolved gates going into this milestone:**
 - `G-022` (`Docs/tickets/gated/resolved/G-022-mcp-app-polish-milestone.md`) — resolved 2026-08-06 via `/ungate`, together with Alex. Scoped M-POLISH to three concrete pieces: tool-description naming/format consistency (beyond v1.4's interaction-philosophy axes), an `ONBOARDING_INSTRUCTIONS` drift test tying it to `server.ts`'s registered tool list, and `apps/mcp-stdio` startup diagnostics (no known concrete UX complaints from Alex — the rough edge was found by inspecting `apps/mcp-stdio/src/main.ts` itself: no error handling or logging around DB/storage connect). See the resolved gate-stub for full rationale.
+- `G-023` (`Docs/tickets/gated/resolved/G-023-inventory-management-design.md`) — resolved 2026-08-07 via `/ungate`, together with Alex. Dedicated `inventory_items`/`campaign_wealth` tables (not an extension of the narrative `item` entity type), a new `pc`/`character` entity type for per-character ownership, a single abstracted wealth total per campaign structured to extend to multi-denomination later without a migration, unified loot/party-inventory via a nullable `ownerEntityId` on `inventory_items`, and — the most consequential call — inventory tools (`add_item`/`transfer_item`/`adjust_wealth`/`list_inventory`) skip preview/confirm and audit-log entirely, a deliberate first-of-a-kind "quick action" tool class distinct from `G-001`'s lore-mutation rule. Session-log auto-detection of loot/wealth explicitly deferred out of v1 scope, generalized into its own future gate `G-041`. See the resolved gate-stub for full rationale.
 
 ---
 
@@ -49,10 +49,24 @@ None — the three tasks touch disjoint files and can ship in any order.
 
 ## Milestone M-INVENTORY: Inventory Management
 
-**Goal:** TBD — resolves from `G-023`. Placeholder section; see the gate-stub for the open question (data model for party items/wealth/NPC loot, ownership, currency tracking, tool surface, session-log integration).
+**Goal:** Structured tracking for party items, campaign wealth, and NPC/location loot — a new `pc`/`character` entity type, dedicated `inventory_items`/`campaign_wealth` tables, and a set of fast, direct-write MCP tools (no preview/confirm, no audit trail) purpose-built for in-session DM use rather than lore consistency.
 
-**Context:** No PRD section covers this — new scope proposed by Alex on 2026-08-02 (see `G-023`).
+**Context:** No PRD section covers this — new scope proposed by Alex on 2026-08-02, resolved via `G-023` on 2026-08-07 (see "Resolved gates" above for the full decision summary and the gate-stub itself for complete rationale).
 
 ### Tasks
 
-_None yet — blocked on `G-023`. `/ungate` drafts this milestone's real task list on resolution._
+- [ ] **M-INVENTORY.1 — Inventory & wealth schema, `pc` entity type** (T-142)
+  Add `pc` to `ENTITY_TYPES`; add `inventory_items` (owner-nullable FK to `entities`, quantity, value, metadata) and `campaign_wealth` (denomination + amount, unique per campaign+denomination) tables with a journaled migration. No service/tool code yet.
+  Exit: migration applies cleanly; `pc` validates through existing entity Zod schemas; both new tables round-trip inserts including a null-owner item.
+
+- [ ] **M-INVENTORY.2 — Inventory & wealth MCP tools (quick, no preview/confirm)** (T-143)
+  `add_item`, `transfer_item`, `adjust_wealth`, `list_inventory` — service layer plus four direct-write MCP tools, no `write_requests` row of any kind. Documents the new "quick-action tools" exception class in `.claude/rules/mcp.md`.
+  Exit: service + tool tests cover add/transfer/adjust/list including the below-zero-wealth rejection; tests assert no `write_requests` row is written by any of the four tools.
+
+- [ ] **M-INVENTORY.3 — Surface inventory/wealth in `get_entity` and `prep_brief`** (T-144)
+  `get_entity` includes an entity's assigned items; `prep_brief` surfaces campaign wealth and unassigned/pool items as prep context.
+  Exit: `get_entity` test with assigned items; `prep_brief` test against a fixture campaign with seeded wealth and unassigned items.
+
+### Ordering constraint
+
+T-142 → T-143 → T-144, strictly sequential (each depends on the schema/tools the previous ticket adds).
