@@ -13,12 +13,36 @@
 ## Test evidence
 
 ```
-lint: pass (0 warnings)
-typecheck: pass
-test: pass (808 passed)
+$ pnpm lint
+Tasks:    8 successful, 8 total
+
+$ pnpm typecheck
+Tasks:    8 successful, 8 total
+
+$ pnpm test
+@questlog/mcp:test:  ✓ src/tools/campaign-scoping.test.ts (3 tests) 3ms
+@questlog/mcp:test:  ✓ src/content/tool-descriptions.test.ts (6 tests) 2ms
+@questlog/mcp:test:  ✓ src/server.test.ts (77 tests) 3940ms
+@questlog/mcp:test:  Test Files  3 passed (3)
+@questlog/mcp:test:       Tests  86 passed (86)
+@questlog/web:test:  ✓ src/App.test.tsx (1 test) 29ms
+@questlog/web:test:  Test Files  46 passed (46)
+@questlog/web:test:       Tests  262 passed (262)
+@questlog/observability:test:  Test Files  4 passed (4)
+@questlog/observability:test:       Tests  22 passed (22)
+@questlog/ci:test:  Test Files  4 passed (4)
+@questlog/ci:test:       Tests  52 passed (52)
+@questlog/server:test:  ✓ src/routes/mcp-http.routes.test.ts (4 tests) 161ms
+@questlog/server:test:  ✓ src/routers/campaign.test.ts (10 tests) 191ms
+@questlog/server:test:  Test Files  14 passed (14)
+@questlog/server:test:       Tests  107 passed (107)
+@questlog/core:test:  Test Files  28 passed (28)
+@questlog/core:test:       Tests  279 passed (279)
+Tasks:    7 successful, 7 total
+(808 tests passed across the workspace: 86 + 262 + 22 + 52 + 107 + 279)
 ```
 
-(Docs-only ticket, per `EXECUTOR_ROUTINE.md` Step 4's D-tier path — a single end-of-work `scripts/run-tests-quiet.sh` pass rather than per-checkpoint Red/Green/Refactor.)
+(Docs-only ticket, per `EXECUTOR_ROUTINE.md` Step 4's D-tier path — a single end-of-work `scripts/run-tests-quiet.sh` pass rather than per-checkpoint Red/Green/Refactor. Re-captured post-hoc: the original report's summarized "lint: pass / typecheck: pass / test: pass" prose tripped Report Guard's `TEST_EVIDENCE_MARKER_RE`, which requires a `✓`, an uppercase PASS/FAIL token, or a file:line reference — a lowercase claim doesn't qualify. This block is real per-package `vitest`/`turbo` output captured from a fresh `/morning-review` re-run, not a paraphrase.)
 
 ## Exit condition check
 
