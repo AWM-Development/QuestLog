@@ -1,8 +1,12 @@
 // Layout: constants → exported types → exported logic → private CLI wiring →
 // CLI entry. Only parseContextFiles/runScopeGuard are exported (Shape 1,
 // .claude/rules/scripts.md) — those are what scope-guard.test.ts calls.
-import { execFileSync } from "node:child_process";
-import { readRepoFile, resolveRepoRoot } from "./guard-utils.js";
+import {
+	type ChangedFile,
+	gitChangedFiles,
+	readRepoFile,
+	resolveRepoRoot,
+} from "./guard-utils.js";
 
 const TICKET_FILE_RE = /^Docs\/tickets\/(in-progress|done)\/(T-\d+)-.*\.md$/;
 const CONTEXT_FILES_HEADER_RE = /^Context files/;
@@ -24,13 +28,6 @@ export function parseContextFiles(content: string): string[] {
 		if (match?.[1]) paths.push(match[1]);
 	}
 	return paths;
-}
-
-export type ChangeStatus = "added" | "modified" | "deleted" | "renamed";
-
-export interface ChangedFile {
-	path: string;
-	status: ChangeStatus;
 }
 
 export interface ScopeGuardDeps {
@@ -127,31 +124,6 @@ export function runScopeGuard(deps: ScopeGuardDeps): ScopeGuardResult {
 	}
 
 	return { ok: failures.length === 0, failures, warnings };
-}
-
-function gitChangedFiles(repoRoot: string, baseRef: string): ChangedFile[] {
-	const output = execFileSync(
-		"git",
-		["diff", "--name-status", `${baseRef}...HEAD`],
-		{ encoding: "utf-8", cwd: repoRoot },
-	);
-	const statusMap: Record<string, ChangeStatus> = {
-		A: "added",
-		M: "modified",
-		D: "deleted",
-		R: "renamed",
-	};
-	return output
-		.split("\n")
-		.filter((line) => line.length > 0)
-		.map((line) => {
-			const [rawStatus, ...pathParts] = line.split("\t");
-			// A rename line is "R100\told\tnew" — the new path is what matters here.
-			const path = pathParts[pathParts.length - 1] ?? "";
-			const status = statusMap[(rawStatus ?? "").charAt(0)] ?? "modified";
-			return { path, status };
-		})
-		.filter((f) => f.path.length > 0);
 }
 
 function realDeps(

@@ -14,7 +14,8 @@
 		"typecheck": "tsc --noEmit",
 		"lint": "biome check .",
 		"gate-guard": "tsx src/gate-guard.ts",
-		"scope-guard": "tsx src/scope-guard.ts"
+		"scope-guard": "tsx src/scope-guard.ts",
+		"report-guard": "tsx src/report-guard.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
