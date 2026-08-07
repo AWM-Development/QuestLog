@@ -61,6 +61,7 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 
 - [ ] **M-REMOTE.7 — Deploy + connect a real Claude Project + full remote test pass** (T-034)
   Deploy the above to dev, connect it as a real Claude.ai Custom Connector in an actual Project, re-run the v1 test plan (this session's table) against the remote transport end-to-end, then repeat for prod. **The Custom Connector setup itself is an Alex-only action** — it happens inside Alex's own Claude.ai account and cannot be scripted.
+  **Automatable half shipped** (`Docs/tickets/done/T-034-deploy-connect-claude-project.md`) — checkbox held pending Alex's real Custom Connector connection; see the ticket's own report for the checklist.
 
 - [x] **M-REMOTE.8 — Agent-interaction strategy for MCP-hooked sessions** (T-065, T-066, T-067)
   Resolved via `/ungate` on 2026-07-28 (`G-005`): no new MCP transport for
@@ -95,9 +96,11 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 
 - [ ] **M-CICD.2 — Post-merge smoke-test workflow (dev)** (T-036)
   A new, separate GitHub Actions workflow triggered on push to `develop`: migrate, verify schema + pgvector/pg_trgm extensions, one create/read/delete round-trip against the real dev Neon branch. Automates exactly what was done by hand during v1 sign-off. Does **not** touch or replace the existing PR-gate test suite.
+  **Code shipped** (`Docs/tickets/done/T-036-post-merge-smoke-test-dev.md`) — checkbox held pending the Alex-only `DEV_DATABASE_URL` GitHub Actions secret and a confirmed real workflow run; see the ticket's own report for the checklist.
 
 - [ ] **M-CICD.3 — Post-merge smoke-test workflow (prod)** (T-037)
   Same shape, triggered on push to `main`, against the real prod branch. **Read-only** by default (health + schema/extension checks, no automated write/delete) — an unattended write against prod on every merge felt like a bigger call than to default into silently; revisit if Alex wants prod's check to match dev's full round-trip.
+  **Code shipped** (`Docs/tickets/done/T-037-post-merge-smoke-test-prod.md`) — checkbox held pending the Alex-only `PROD_DATABASE_URL` GitHub Actions secret and a confirmed real workflow run; see the ticket's own report for the checklist.
 
 ---
 
@@ -208,8 +211,9 @@ session before `M-ROBUST`'s tasks get real Scope/Exit-condition fields.
 
 ### Tasks
 
-- [ ] **M-AUDIT.1 — Extend `T-017`'s scope to cover v1.1** (T-017, amended in place)
+- [x] **M-AUDIT.1 — Extend `T-017`'s scope to cover v1.1** (T-017, amended in place) — SUPERSEDED
   `T-017` (architecture & pattern audit) already existed in the backlog, already unblocked (its trigger condition — the M-MCP hardening backlog being in `done/` — was already satisfied). Amended to also cover the M-REMOTE and M-CICD additions once they ship, rather than filing a duplicate. Stays interactive/Alex-present, never auto-promoted — unchanged from its original design.
+  **Superseded 2026-08-06** (`Docs/tickets/archive/T-017-architecture-pattern-audit.md`): its scope had drifted stale — last amended for v1.1 while v1.2/v1.3/v1.4 shipped underneath it — so Alex retired it rather than amending a second time, replacing it with `T-132` (`Docs/tickets/queue/T-132-bootstrap-drift-audit.md`, same 7 audit dimensions, widened through v1.4) plus a new companion `T-133` (`Docs/tickets/queue/T-133-drift-audit-command.md`, a recurring `/drift-audit` command). Checked off here as resolved-by-supersession, not as shipped; T-132/T-133 are v1.2-family follow-on work, not part of this milestone's own task list.
 
 - [x] **M-AUDIT.2 — Security review of the new remote-MCP surface** (T-038)
   The OAuth shim, the new HTTP transport, the existing (currently unauthenticated) `POST /api/campaigns/:id/sources/upload` REST endpoint now sitting behind the same public Fly apps, and the new GitHub Actions secrets M-CICD.2/M-CICD.3 introduce. Produces a written report + follow-up tickets for anything found, same shape as T-017. Severe findings follow the Blocked Protocol rather than being remediated unilaterally.
