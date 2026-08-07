@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-147
+
+- **Worktree isolation is now the default for every local session, not just the nightly ticket pipeline.** `T-069`/`T-070` already isolated the executor/`/promote-execute`/`/lineup`/`/morning-review`/`/ungate` into their own `tmp/worktrees/<name>/`; `AGENTS.md` now carries the same rule for any local session (interactive planning, ad hoc audits, anything) before it edits anything, and `session-start.sh` prints a loud reminder when a local session is running in the shared primary checkout instead of a worktree.
+
 ### Added — T-112
 
 - **CI report-completeness validator for ticket-implementation PRs.** A new `report-guard` CI job checks any `Docs/tickets/reports/` file newly added by a `feat/*`-branch PR against `REPORT_TEMPLATE.md`'s structure: hard-fails if a required `## ` heading is missing, a leftover `<...>` template placeholder is still present, or the `## Test evidence` section has no recognizable tool-output marker (`PASS`/`FAIL`/`✓`/a file:line pattern) rather than a bare "tests pass" claim. Does not check whether the report's claims are *true* — that's `T-113`/`T-114`. Logic lives in `packages/core/src/ci/report-guard.ts` (unit-tested, same DI'd, `gate-guard.ts`-modeled shape as `T-110`/`T-111`); its `validateReportStructure` helper is generic over the required-headings list so `T-115` can reuse it for `BLOCKED_TEMPLATE.md`'s shape without duplicating the check. Part of `G-020`'s Q2 "instruction → invariant" candidate set.

@@ -4,6 +4,28 @@ set -euo pipefail
 
 cd "$CLAUDE_PROJECT_DIR"
 
+# --- shared-primary-directory warning: begin ---
+# The hook itself can't relocate this session (each Bash call's cwd is
+# fixed by the harness for the session's lifetime) — this is a mechanical
+# nudge reinforcing AGENTS.md's "Session isolation" rule, not the
+# enforcement mechanism itself. Only fires locally: a remote sandbox is
+# already a fresh, disposable checkout with nothing else sharing it. Why:
+# Docs/IMPLEMENTATION_NOTES.md § T-147 (two interactive sessions collided
+# in the shared primary checkout the same day this was added).
+if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
+  case "$CLAUDE_PROJECT_DIR" in
+    */tmp/worktrees/*) ;;
+    *)
+      echo "⚠️  session-start.sh: this session is in the SHARED PRIMARY checkout, not an isolated worktree."
+      echo "⚠️  Per AGENTS.md 'Session isolation': before editing anything, run —"
+      echo "⚠️    git fetch origin develop && git worktree add tmp/worktrees/<short-slug> -B <branch-name> origin/develop"
+      echo "⚠️    cd tmp/worktrees/<short-slug>"
+      echo "⚠️  — then do all work there. Skip only if this session makes no edits."
+      ;;
+  esac
+fi
+# --- shared-primary-directory warning: end ---
+
 pnpm install
 
 # --- develop-sync guard: begin (extracted verbatim by the T-041 repro
