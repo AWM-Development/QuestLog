@@ -48,6 +48,12 @@
     "mergedAt": "2026-08-04T23:29:41Z"
   },
   {
+    "ticketId": "T-118",
+    "prNumber": 231,
+    "branch": "feat/m-extract/t-118-llm-structured-extraction-client-pattern",
+    "mergedAt": "2026-08-07T19:59:59Z"
+  },
+  {
     "ticketId": "T-125",
     "prNumber": 191,
     "branch": "feat/m-efficiency/t-125-session-bootstrap-speed",
