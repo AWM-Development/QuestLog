@@ -30,36 +30,20 @@ jobs:
           --health-retries 5
 
     steps:
+      # Bare checkout first so the runner can resolve the local composite
+      # action below (a `uses: ./...` reference requires the repo already
+      # checked out) — setup-repo's own checkout step then re-checks out
+      # with the real ref/fetch-depth, superseding this one.
       - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-repo
 
-      - uses: pnpm/action-setup@v5
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # ── Turborepo local cache ────────────────────────────────────────────
-      # Persists .turbo/cache (gitignored, turbo's on-disk task cache) across
-      # runs so lint/typecheck/build cache-hit when their inputs haven't
-      # changed. test:e2e stays uncached — turbo.json marks it cache:false.
-      # test itself has no such override, so turbo caches it too and will
-      # replay a prior run's real-DB result when the task hash is unchanged;
+      # test:e2e stays uncached — turbo.json marks it cache:false. test
+      # itself has no such override, so turbo caches it too and will replay
+      # a prior run's real-DB result when the task hash is unchanged;
       # that's only safe because the hash covers all first-party inputs, so
       # a replay only ever fires when nothing that could change the DB-backed
-      # result actually changed. Restore-keys fallback (lockfile hash only)
-      # so a source-only miss still restores the last cacheable state instead
-      # of starting fully cold. Why: Docs/tickets/T-086.
-      - name: Restore Turborepo cache
-        uses: actions/cache@v5
-        with:
-          path: .turbo/cache
-          key: turbo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'biome.json', 'tsconfig.base.json', 'apps/**/*.ts', 'apps/**/*.tsx', 'apps/**/tsconfig*.json', 'packages/**/*.ts', 'packages/**/*.tsx', 'packages/**/tsconfig*.json') }}
-          restore-keys: |
-            turbo-${{ runner.os }}-
+      # result actually changed. Why: Docs/tickets/T-086.
+      - uses: ./.github/actions/restore-turbo-cache
 
       # ── Lint ──────────────────────────────────────────────────────────────
       - name: Lint
@@ -85,27 +69,7 @@ jobs:
           fi
           echo "✅ No test.only or test.skip found."
 
-      # ── Provision and migrate every test-tier database ──────────────────
-      # Migrate once per schema family into a template database, then clone
-      # every test-tier database from its matching template instead of
-      # replaying the full migration set per database. Postgres refuses to
-      # clone a template with open connections — each migrate command's own
-      # tool closes its connection on exit (migrate.ts's `client.end()`), so
-      # by the time the CREATE DATABASE ... TEMPLATE loop below starts, both
-      # templates are already connection-free. Why: Docs/tickets/T-086,
-      # Docs/IMPLEMENTATION_NOTES.md § T-071 (also § T-027).
-      - name: Provision and migrate test-tier databases
-        run: |
-          source scripts/test-db-names.sh
-          for template in "${TEST_DB_TEMPLATES[@]}"; do
-            PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog_test -c "CREATE DATABASE ${template}"
-          done
-          DATABASE_URL="postgresql://questlog:questlog@localhost:5433/${TEST_DB_TEMPLATE_CORE}" eval "$(test_db_migrate_cmd "$TEST_DB_NAME_CORE")"
-          DATABASE_URL="postgresql://questlog:questlog@localhost:5433/${TEST_DB_TEMPLATE_OBSERVABILITY}" eval "$(test_db_migrate_cmd "$TEST_DB_NAME_OBSERVABILITY")"
-          for dbname in "${TEST_DB_NAMES_CI[@]}"; do
-            template="$(test_db_template_name "$dbname")"
-            PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog_test -c "CREATE DATABASE ${dbname} TEMPLATE ${template}"
-          done
+      - uses: ./.github/actions/provision-test-databases
 
       # ── Full test suite ───────────────────────────────────────────────────
       # Unit + integration only (real DB, mocked external APIs). The real-API
@@ -211,19 +175,14 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
+      # Bare checkout first so the runner can resolve the local composite
+      # action below (a `uses: ./...` reference requires the repo already
+      # checked out) — setup-repo's own checkout step then re-checks out
+      # with the real ref/fetch-depth, superseding this one.
       - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-repo
         with:
           fetch-depth: 0
-
-      - uses: pnpm/action-setup@v5
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
 
       - name: "Check for unresolved Gated on: / unmet Blocked on:"
         run: scripts/ci-gate-guard.sh origin/${{ github.base_ref }}
@@ -244,19 +203,14 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
+      # Bare checkout first so the runner can resolve the local composite
+      # action below (a `uses: ./...` reference requires the repo already
+      # checked out) — setup-repo's own checkout step then re-checks out
+      # with the real ref/fetch-depth, superseding this one.
       - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-repo
         with:
           fetch-depth: 0
-
-      - uses: pnpm/action-setup@v5
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
 
       - name: "Check diff is confined to declared Context files:, base is develop"
         # github.head_ref is attacker-controlled (a fork's branch name) — pass
@@ -284,19 +238,14 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
+      # Bare checkout first so the runner can resolve the local composite
+      # action below (a `uses: ./...` reference requires the repo already
+      # checked out) — setup-repo's own checkout step then re-checks out
+      # with the real ref/fetch-depth, superseding this one.
       - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-repo
         with:
           fetch-depth: 0
-
-      - uses: pnpm/action-setup@v5
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
 
       - name: "Check any newly-added report is structurally complete"
         env:

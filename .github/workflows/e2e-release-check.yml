@@ -54,49 +54,23 @@ jobs:
       VOYAGE_API_KEY: ${{ secrets.VOYAGE_API_KEY }}
 
     steps:
+      # Bare checkout first so the runner can resolve the local composite
+      # action below (a `uses: ./...` reference requires the repo already
+      # checked out) — setup-repo's own checkout step then re-checks out
+      # with the real ref/fetch-depth, superseding this one.
       - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-repo
         with:
           ref: ${{ inputs.ref || github.ref }}
 
-      - uses: pnpm/action-setup@v5
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # ── Turborepo local cache ────────────────────────────────────────────
       # Mirrors ci.yml — kept structurally parallel even though this
       # workflow only runs test:e2e (uncacheable): lint/typecheck/build
       # aren't invoked here, so this step is a no-op today, not a source of
       # divergence if a future change adds one of those tasks to this
       # workflow. Why: Docs/tickets/T-086.
-      - name: Restore Turborepo cache
-        uses: actions/cache@v5
-        with:
-          path: .turbo/cache
-          key: turbo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'biome.json', 'tsconfig.base.json', 'apps/**/*.ts', 'apps/**/*.tsx', 'apps/**/tsconfig*.json', 'packages/**/*.ts', 'packages/**/*.tsx', 'packages/**/tsconfig*.json') }}
-          restore-keys: |
-            turbo-${{ runner.os }}-
+      - uses: ./.github/actions/restore-turbo-cache
 
-      # ── Provision and migrate every test-tier database ──────────────────
-      # Mirrors ci.yml. Why: Docs/tickets/T-086, Docs/IMPLEMENTATION_NOTES.md
-      # § T-071 (also § T-027).
-      - name: Provision and migrate test-tier databases
-        run: |
-          source scripts/test-db-names.sh
-          for template in "${TEST_DB_TEMPLATES[@]}"; do
-            PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog_test -c "CREATE DATABASE ${template}"
-          done
-          DATABASE_URL="postgresql://questlog:questlog@localhost:5433/${TEST_DB_TEMPLATE_CORE}" eval "$(test_db_migrate_cmd "$TEST_DB_NAME_CORE")"
-          DATABASE_URL="postgresql://questlog:questlog@localhost:5433/${TEST_DB_TEMPLATE_OBSERVABILITY}" eval "$(test_db_migrate_cmd "$TEST_DB_NAME_OBSERVABILITY")"
-          for dbname in "${TEST_DB_NAMES_CI[@]}"; do
-            template="$(test_db_template_name "$dbname")"
-            PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog_test -c "CREATE DATABASE ${dbname} TEMPLATE ${template}"
-          done
+      - uses: ./.github/actions/provision-test-databases
 
       - name: Real-API e2e tests
         run: pnpm turbo test:e2e
