@@ -228,6 +228,45 @@ jobs:
       - name: "Check for unresolved Gated on: / unmet Blocked on:"
         run: scripts/ci-gate-guard.sh origin/${{ github.base_ref }}
 
+  # ── Scope Guard ────────────────────────────────────────────────────────────
+  # For a ticket-implementation PR (head branch prefix `feat/*`, TICKET_SPEC.md's
+  # "Branch naming" convention): warns (does not fail) when the diff touches a
+  # path outside the ticket's declared `Context files:` and not newly created
+  # by this diff; hard-fails if the diff touches `Docs/mockups/` (narrower
+  # version of mockup-guard's own check, scoped to ticket-implementation PRs)
+  # or if the PR's base branch isn't `develop`. Logic lives in
+  # packages/core/src/ci/scope-guard.ts (unit-tested there); scripts/ci-scope-guard.sh
+  # is the same kind of thin, reusable entry point as gate-guard's above.
+  # Why: Docs/tickets/gated/resolved/G-020 § Q2.
+  scope-guard:
+    name: Scope Guard
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: "Check diff is confined to declared Context files:, base is develop"
+        # github.head_ref is attacker-controlled (a fork's branch name) — pass
+        # it through env, never interpolate it directly into the run: script,
+        # per actionlint's expression-injection check.
+        env:
+          HEAD_BRANCH: ${{ github.head_ref }}
+          BASE_BRANCH: ${{ github.base_ref }}
+        run: scripts/ci-scope-guard.sh "origin/$BASE_BRANCH" "$HEAD_BRANCH" "$BASE_BRANCH"
+
   # ── Mockup Guard ──────────────────────────────────────────────────────────
   # Docs/mockups/ is generated manually in Claude Design during planning
   # sessions and is read-only to agents (see Docs/mockups/README.md). A
