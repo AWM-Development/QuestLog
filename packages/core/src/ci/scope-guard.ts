@@ -1,11 +1,6 @@
-// Layout: constants → exported types → exported pure logic (parseContextFiles,
-// runScopeGuard) with their private helpers immediately above each → private
-// real-git/CLI wiring (gitChangedFiles/realDeps/printResult) → CLI entry.
-// Only `parseContextFiles` and `runScopeGuard` are exported — per
-// .claude/rules/scripts.md Shape 1, those are the two functions
-// scope-guard.test.ts calls directly with synthetic deps; everything below
-// them is the real git/fs wiring the CLI entry point uses and tests never
-// touch, so it stays module-private. Same shape as gate-guard.ts.
+// Layout: constants → exported types → exported logic → private CLI wiring →
+// CLI entry. Only parseContextFiles/runScopeGuard are exported (Shape 1,
+// .claude/rules/scripts.md) — those are what scope-guard.test.ts calls.
 import { execFileSync } from "node:child_process";
 import { readRepoFile, resolveRepoRoot } from "./guard-utils.js";
 
@@ -68,16 +63,9 @@ function findTicketFile(changed: ChangedFile[]): ChangedFile | null {
 	);
 }
 
-// The full Step 7 wrap-up file set (EXECUTOR_ROUTINE.md), cross-checked
-// against this exemption: milestone-doc checkbox flip and the ticket file's
-// own in-progress/ → done/ move are covered by MILESTONE_DOC_RE and the
-// `file.path === ticketFile.path` check in runScopeGuard respectively; the
-// report and usage.json are always newly-created (`added` status) so the
-// addedFiles check already exempts them. CHANGELOG.md and
-// IMPLEMENTATION_NOTES.md are the only two that are (a) always modified,
-// never added, and (b) never declared in any ticket's Context files: — the
-// ones this allowlist exists for. Confirmed noisy on this PR's own first
-// live CI run (Docs/IMPLEMENTATION_NOTES.md § T-111).
+// Always touched, never declared in Context files: — noise, not signal.
+// Full rationale + cross-check against EXECUTOR_ROUTINE.md's wrap-up list:
+// Docs/IMPLEMENTATION_NOTES.md § T-111.
 const STANDARD_WRAPUP_FILES = new Set([
 	"CHANGELOG.md",
 	"Docs/IMPLEMENTATION_NOTES.md",
