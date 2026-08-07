@@ -154,7 +154,7 @@ resolution (`Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md
   `CLAUDE.md` becomes a thin pointer to `AGENTS.md`, which carries the actual runner-neutral content (Principles, Commands, Pointer map, Hard rules) — the cross-tool convention every non-Claude runner checks for by default, per `G-020`'s Q3 research. `G-020` Notes §1 ("the routine is already portable by accident of good design") — this closes the one deliberate naming gap.
   Exit: see T-105.
 
-- [ ] **M-PIPELINE.10 — `EXECUTOR_ROUTINE.md` "Runners" section** (T-106)
+- [x] **M-PIPELINE.10 — `EXECUTOR_ROUTINE.md` "Runners" section** (T-106)
   Names which steps are Claude-Code-specific (the `Model: sonnet` field, hook-based usage capture) vs. runner-neutral, per `G-020` Q1(c) — a short section, not a per-runner fork of the routine. Blocked on T-105 (references `AGENTS.md`).
   Exit: see T-106.
 
