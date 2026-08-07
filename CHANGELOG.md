@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-112
+
+- **CI report-completeness validator for ticket-implementation PRs.** A new `report-guard` CI job checks any `Docs/tickets/reports/` file newly added by a `feat/*`-branch PR against `REPORT_TEMPLATE.md`'s structure: hard-fails if a required `## ` heading is missing, a leftover `<...>` template placeholder is still present, or the `## Test evidence` section has no recognizable tool-output marker (`PASS`/`FAIL`/`✓`/a file:line pattern) rather than a bare "tests pass" claim. Does not check whether the report's claims are *true* — that's `T-113`/`T-114`. Logic lives in `packages/core/src/ci/report-guard.ts` (unit-tested, same DI'd, `gate-guard.ts`-modeled shape as `T-110`/`T-111`); its `validateReportStructure` helper is generic over the required-headings list so `T-115` can reuse it for `BLOCKED_TEMPLATE.md`'s shape without duplicating the check. Part of `G-020`'s Q2 "instruction → invariant" candidate set.
+
 ### Added — T-111
 
 - **CI scope guard for ticket-implementation PRs.** A new `scope-guard` CI job checks a `feat/*`-branch PR's diff against its ticket's declared `Context files:` list: warns (never fails) when the diff touches a path outside both that list and the diff's own newly-created files; hard-fails if the diff touches `Docs/mockups/` or targets a base branch other than `develop`. Logic lives in `packages/core/src/ci/scope-guard.ts` (unit-tested), following the same DI'd, `gate-guard.ts`-modeled shape; `scripts/ci-scope-guard.sh` is the reusable entry point `T-115`'s pre-flight wiring will call. Part of `G-020`'s Q2 "instruction → invariant" candidate set.
