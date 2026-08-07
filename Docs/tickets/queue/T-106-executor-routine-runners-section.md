@@ -6,7 +6,7 @@ Complexity tier: D
 
 Strategy-gate flag: yes
 
-Priority: P2
+Priority: P1
 
 Branch: feat/m-pipeline/t-106-executor-routine-runners-section
 

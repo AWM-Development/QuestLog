@@ -6,7 +6,7 @@ Complexity tier: M
 
 Strategy-gate flag: yes
 
-Priority: P2
+Priority: P1
 
 Branch: feat/m-pipeline/t-113-exit-condition-evidence-recomputation
 

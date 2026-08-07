@@ -6,7 +6,7 @@ Complexity tier: S
 
 Strategy-gate flag: yes
 
-Priority: P2
+Priority: P1
 
 Branch: feat/m-pipeline/t-108-ticket-runs-runner-dimension
 

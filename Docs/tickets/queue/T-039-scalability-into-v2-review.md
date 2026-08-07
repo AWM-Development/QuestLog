@@ -11,15 +11,19 @@ mechanical `Blocked on:` field for auto-promotion, for the same reason
 T-017 doesn't have one.
 
 **Trigger condition for pulling this into an interactive session:** once
-the M-REMOTE and M-CICD tickets (T-028 through T-033, T-035 through
-T-037) are in `done/` — check for anything newer spawned since before
-starting.
+every MCP-roadmap milestone (`v1.1` through `v1.9`, plus any further
+MCP-scope version opened before this one) is in `done/` — this ticket
+moved out of `v1.1`'s `M-AUDIT` into its own version (`v1.10`,
+`M-RELEASE`) because its real trigger was always broader than v1.1's own
+scope: it's the pre-flight check before Alex takes the repo from private
+to public, not a v1.1-specific closeout. Check for anything newer
+spawned since before starting.
 
-Milestone ref: M-AUDIT.3 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
+Milestone ref: M-RELEASE.1 (`Docs/milestones/MILESTONES_V1_10_MCP.md`)
 
 Complexity tier: L
 
-Priority: P2
+Priority: P1
 
 Context files (load broadly, same reasoning as T-017 — a narrower list
 would defeat the point):
@@ -93,7 +97,7 @@ Exit condition (human-checkable):
 
 Iteration cap: not applicable (interactive session)
 
-Definition of done includes: checkbox flip for M-AUDIT.3 in
-  `Docs/milestones/MILESTONES_V1_1_MCP.md`, `IMPLEMENTATION_NOTES.md` updated per the
+Definition of done includes: checkbox flip for M-RELEASE.1 in
+  `Docs/milestones/MILESTONES_V1_10_MCP.md`, `IMPLEMENTATION_NOTES.md` updated per the
   report's findings, no `CHANGELOG.md` entry required, morning-report-
   equivalent is the review report itself.
