@@ -90,10 +90,17 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       # ── Extract the ticket id from the branch name ───────────────────────
-      # Only feat/<group>/t-###-<slug> branches (TICKET_SPEC.md's Branch
-      # field format) name a ticket. Most merges to develop are ticket-
-      # creation (`tickets/*`), gate (`gates/*`), or ad hoc chore/fix
-      # branches — not a failure, just nothing for this ledger to record.
+      # feat/chore/fix/refactor/<group>/t-###-<slug> branches (any real
+      # implementation-branch prefix seen in practice — TICKET_SPEC.md
+      # documents feat/ as canonical, but chore/fix/refactor ship for real
+      # tickets too, confirmed against Docs/tickets/done/*.md's own Branch:
+      # fields) name a ticket. Deliberately NOT widened to match "anything
+      # with a /t-###- segment" — that would also catch pre-2026-07-16
+      # tickets/t-041-...-style ticket-CREATION branches (docs-only filing
+      # PRs, not implementation merges), silently poisoning the pre-flight's
+      # "already merged" signal. Most merges to develop are still ticket-
+      # creation (`tickets/*`) or gate (`gates/*`) branches — not a failure,
+      # just nothing for this ledger to record.
       - name: Extract ticket id
         id: ticket
         env:
@@ -104,11 +111,11 @@ jobs:
           BRANCH: ${{ steps.pr.outputs.branch }}
         run: |
           set -euo pipefail
-          if [[ "$BRANCH" =~ ^feat/[^/]+/t-([0-9]+)- ]]; then
-            echo "ticket_id=T-${BASH_REMATCH[1]}" >> "$GITHUB_OUTPUT"
+          if [[ "$BRANCH" =~ ^(feat|chore|fix|refactor)/[^/]+/t-([0-9]+)- ]]; then
+            echo "ticket_id=T-${BASH_REMATCH[2]}" >> "$GITHUB_OUTPUT"
             echo "found=true" >> "$GITHUB_OUTPUT"
           else
-            echo "ℹ️ Branch '$BRANCH' doesn't match feat/<group>/t-###-<slug> — no ticket to ledger."
+            echo "ℹ️ Branch '$BRANCH' doesn't match (feat|chore|fix|refactor)/<group>/t-###-<slug> — no ticket to ledger."
             echo "found=false" >> "$GITHUB_OUTPUT"
           fi
 
