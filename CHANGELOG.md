@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-118
+
+- **Reusable structured-output call pattern for Claude.** `llm.service.ts`'s `createLlmService(client?)` gains `callClaudeStructured<T>`, a single-call, DI-testable method that forces Claude to respond via a caller-supplied JSON schema (a `tool_choice`-forced tool call) and returns the parsed, typed result — throwing `LlmApiError` if the response has no matching tool call or a non-object payload. No conversation history, no streaming, no wiring into any feature yet; it exists standalone so `T-119` (entity-candidate detection) and future structured-extraction call sites can share one implementation instead of each rolling their own Anthropic tool-use plumbing.
+
 ### Changed — T-147
 
 - **Worktree isolation is now the default for every local session, not just the nightly ticket pipeline.** `T-069`/`T-070` already isolated the executor/`/promote-execute`/`/lineup`/`/morning-review`/`/ungate` into their own `tmp/worktrees/<name>/`; `AGENTS.md` now carries the same rule for any local session (interactive planning, ad hoc audits, anything) before it edits anything, and `session-start.sh` prints a loud reminder when a local session is running in the shared primary checkout instead of a worktree.

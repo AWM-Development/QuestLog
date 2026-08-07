@@ -8,6 +8,26 @@ import {
 } from "./llm.service.js";
 
 // ---------------------------------------------------------------------------
+// Fixture JSON schema for callClaudeStructured tests
+// ---------------------------------------------------------------------------
+
+const FIXTURE_SCHEMA_NAME = "extract_npc";
+
+const FIXTURE_SCHEMA = {
+	type: "object" as const,
+	properties: {
+		name: { type: "string" },
+		role: { type: "string" },
+	},
+	required: ["name", "role"],
+};
+
+interface FixtureNpc {
+	name: string;
+	role: string;
+}
+
+// ---------------------------------------------------------------------------
 // Mock the Anthropic SDK
 // ---------------------------------------------------------------------------
 
@@ -403,5 +423,140 @@ describe("llmService.callClaudeStreaming", () => {
 
 		expect(deltas).toEqual([]);
 		expect(result.content).toBe("");
+	});
+});
+
+describe("llmService.callClaudeStructured", () => {
+	beforeEach(() => {
+		vi.clearAllMocks();
+	});
+
+	afterEach(() => {
+		vi.restoreAllMocks();
+	});
+
+	it("returns the parsed, typed result for a valid tool-use response", async () => {
+		mockCreate.mockResolvedValueOnce({
+			content: [
+				{
+					type: "tool_use",
+					id: "toolu_1",
+					name: FIXTURE_SCHEMA_NAME,
+					input: { name: "Strahd von Zarovich", role: "vampire lord" },
+				},
+			],
+			usage: { input_tokens: 80, output_tokens: 30 },
+			stop_reason: "tool_use",
+		});
+
+		const result = await llmService.callClaudeStructured<FixtureNpc>({
+			prompt: "Extract the NPC from this text: Strahd rules Barovia.",
+			schemaName: FIXTURE_SCHEMA_NAME,
+			schema: FIXTURE_SCHEMA,
+		});
+
+		expect(result.data).toEqual({
+			name: "Strahd von Zarovich",
+			role: "vampire lord",
+		});
+		expect(result.usage).toEqual({ inputTokens: 80, outputTokens: 30 });
+	});
+
+	it("sends the schema as the tool's input_schema and forces tool_choice", async () => {
+		mockCreate.mockResolvedValueOnce({
+			content: [
+				{
+					type: "tool_use",
+					id: "toolu_1",
+					name: FIXTURE_SCHEMA_NAME,
+					input: { name: "Ismark", role: "burgomaster's son" },
+				},
+			],
+			usage: { input_tokens: 40, output_tokens: 15 },
+			stop_reason: "tool_use",
+		});
+
+		await llmService.callClaudeStructured<FixtureNpc>({
+			prompt: "Extract the NPC.",
+			schemaName: FIXTURE_SCHEMA_NAME,
+			schema: FIXTURE_SCHEMA,
+		});
+
+		const callArgs = mockCreate.mock.calls[0]?.[0];
+		expect(callArgs.tools).toEqual([
+			{
+				name: FIXTURE_SCHEMA_NAME,
+				description: undefined,
+				input_schema: FIXTURE_SCHEMA,
+			},
+		]);
+		expect(callArgs.tool_choice).toEqual({
+			type: "tool",
+			name: FIXTURE_SCHEMA_NAME,
+		});
+		expect(callArgs.messages).toEqual([
+			{ role: "user", content: "Extract the NPC." },
+		]);
+	});
+
+	it("throws LlmApiError when the response has no matching tool_use block", async () => {
+		mockCreate.mockResolvedValueOnce({
+			content: [{ type: "text", text: "I don't want to use the tool." }],
+			usage: { input_tokens: 40, output_tokens: 10 },
+			stop_reason: "end_turn",
+		});
+
+		await expect(
+			llmService.callClaudeStructured<FixtureNpc>({
+				prompt: "Extract the NPC.",
+				schemaName: FIXTURE_SCHEMA_NAME,
+				schema: FIXTURE_SCHEMA,
+			}),
+		).rejects.toThrow(LlmApiError);
+	});
+
+	it("throws LlmApiError when the tool_use input is not an object", async () => {
+		mockCreate.mockResolvedValueOnce({
+			content: [
+				{
+					type: "tool_use",
+					id: "toolu_1",
+					name: FIXTURE_SCHEMA_NAME,
+					input: "not an object",
+				},
+			],
+			usage: { input_tokens: 40, output_tokens: 10 },
+			stop_reason: "tool_use",
+		});
+
+		await expect(
+			llmService.callClaudeStructured<FixtureNpc>({
+				prompt: "Extract the NPC.",
+				schemaName: FIXTURE_SCHEMA_NAME,
+				schema: FIXTURE_SCHEMA,
+			}),
+		).rejects.toThrow(LlmApiError);
+	});
+
+	it("wraps Anthropic API errors in LlmApiError", async () => {
+		const apiError = new Error("rate_limit_exceeded");
+		apiError.name = "APIError";
+		(apiError as unknown as Record<string, unknown>).status = 429;
+		mockCreate.mockRejectedValueOnce(apiError);
+
+		await expect(
+			llmService.callClaudeStructured<FixtureNpc>({
+				prompt: "Extract the NPC.",
+				schemaName: FIXTURE_SCHEMA_NAME,
+				schema: FIXTURE_SCHEMA,
+			}),
+		).rejects.toThrow(LlmApiError);
+	});
+
+	it("does not make a real network call", () => {
+		// mockCreate replaces the SDK entirely for this suite (module-level
+		// vi.mock above) — asserting it's a mock function is a cheap guard
+		// against that wiring silently breaking and hitting the real network.
+		expect(vi.isMockFunction(mockCreate)).toBe(true);
 	});
 });

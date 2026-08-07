@@ -47,6 +47,29 @@ export interface CallClaudeResult {
 	usage: { inputTokens: number; outputTokens: number };
 }
 
+/**
+ * Input for a single structured-output call: a prompt plus a JSON schema
+ * (`schema`) describing the shape Claude must respond with, forced via a
+ * single-tool `tool_choice`. Callers holding a Zod schema convert it to JSON
+ * schema themselves (e.g. `zod-to-json-schema`) before calling — this
+ * function takes the JSON schema directly rather than depending on Zod,
+ * since it has no callers yet to justify picking a conversion library.
+ */
+export interface CallClaudeStructuredInput {
+	prompt: string;
+	/** Tool name Claude is forced to call; also identifies the schema in the response. */
+	schemaName: string;
+	/** JSON schema (draft 2020-12) the response must conform to — becomes the tool's `input_schema`. */
+	schema: Anthropic.Tool.InputSchema;
+	/** Optional tool description to help the model understand when/how to fill the schema. */
+	schemaDescription?: string;
+}
+
+export interface CallClaudeStructuredResult<T> {
+	data: T;
+	usage: { inputTokens: number; outputTokens: number };
+}
+
 // ---------------------------------------------------------------------------
 // System prompt builder
 // ---------------------------------------------------------------------------
@@ -190,6 +213,69 @@ export function createLlmService(client?: Anthropic) {
 					},
 				};
 			} catch (error) {
+				throw wrapError(error);
+			}
+		},
+
+		/**
+		 * Make a single structured-output call: Claude is forced (via
+		 * `tool_choice`) to respond by "calling" a single tool shaped by the
+		 * caller-supplied JSON schema, and the tool's parsed `input` is
+		 * returned as the typed result. No conversation history, no
+		 * streaming, no system prompt — for callers that need one schema-
+		 * conforming answer to one input, not a chat turn.
+		 */
+		async callClaudeStructured<T>(
+			input: CallClaudeStructuredInput,
+		): Promise<CallClaudeStructuredResult<T>> {
+			const { prompt, schemaName, schema, schemaDescription } = input;
+
+			try {
+				const response = await anthropic.messages.create({
+					model: LLM_CONFIG.model,
+					max_tokens: LLM_CONFIG.maxTokens,
+					messages: [{ role: "user", content: prompt }],
+					tools: [
+						{
+							name: schemaName,
+							description: schemaDescription,
+							input_schema: schema,
+						},
+					],
+					tool_choice: { type: "tool", name: schemaName },
+				});
+
+				const toolUseBlock = response.content.find(
+					(block): block is Anthropic.ToolUseBlock =>
+						block.type === "tool_use" && block.name === schemaName,
+				);
+
+				if (!toolUseBlock) {
+					throw new LlmApiError(
+						`Expected a "${schemaName}" tool_use block in the response but found none`,
+					);
+				}
+
+				if (
+					typeof toolUseBlock.input !== "object" ||
+					toolUseBlock.input === null
+				) {
+					throw new LlmApiError(
+						`"${schemaName}" tool_use input was not an object: ${JSON.stringify(toolUseBlock.input)}`,
+					);
+				}
+
+				return {
+					data: toolUseBlock.input as T,
+					usage: {
+						inputTokens: response.usage.input_tokens,
+						outputTokens: response.usage.output_tokens,
+					},
+				};
+			} catch (error) {
+				if (error instanceof LlmApiError) {
+					throw error;
+				}
 				throw wrapError(error);
 			}
 		},
