@@ -85,3 +85,78 @@ Notes: `item` already exists in `ENTITY_TYPES` (packages/shared/src/constants/in
   `/ungate` treat "item entity type" as already-solved scope; the
   narrative tag and the inventory-management system are two different
   asks that happen to share a word.
+
+## Resolution (2026-08-07)
+
+Resolved with Alex via `/ungate`. Answers to the seven sub-decisions:
+
+1. **Data model shape: dedicated tables.** New `inventory_items` and
+   `campaign_wealth` tables, not an extension of the existing `item`
+   `ENTITY_TYPES` tag via `attributes` JSONB. Keeps narrative items
+   (a described artifact entity) and structured inventory (quantity,
+   owner, value) as related-but-distinct concepts, matches the codebase's
+   existing pattern of dedicated join/edge tables (`sessionEntities`,
+   `entityRelationships`) over JSONB blobs for structured relational data.
+
+2. **Ownership model: new `pc`/`character` entity type, generic
+   `ownerEntityId`.** `ENTITY_TYPES` gains `pc` alongside `npc`, `location`,
+   `faction`, `item`, `arc`. `inventory_items.ownerEntityId` is a nullable
+   FK to `entities` that can reference *any* entity type — a `pc` for
+   party-carried items, an `npc`/`location` for loot not yet taken, or
+   null for an unassigned shared pool. This single field is also the
+   answer to sub-decision 4 (loot vs. party inventory): one unified
+   mechanism, "looting" is a `transfer_item` call reassigning
+   `ownerEntityId` from an NPC/location to a PC, not a separate
+   create+delete.
+
+3. **Wealth/currency: single abstracted total, structured for future
+   extension.** `campaign_wealth` has a `(campaignId, denomination)`
+   unique row shape rather than a single `gold: integer` column on
+   `campaigns` — v1 only ever writes one `denomination` value
+   (`"wealth"`) per campaign, but a future multi-denomination or
+   ledger system is additional rows/columns, not a schema migration of
+   existing data. No transaction ledger in v1 (Alex: "single abstracted
+   total but easily iterable" — the row shape carries the extensibility,
+   not a history mechanism).
+
+4. **NPC/location loot vs. party inventory: unified**, per point 2 above
+   — same `inventory_items` table, ownership transfer via `ownerEntityId`
+   reassignment.
+
+5. **Tool surface: split by operation, and — the most consequential
+   call — no preview/confirm, no audit trail at all.** Four tools:
+   `add_item`, `transfer_item`, `adjust_wealth`, `list_inventory`
+   (read-only). This is a deliberate extension beyond `G-001`'s resolved
+   rule (preview/confirm applies to mutations of *existing* records) —
+   `transfer_item` and `adjust_wealth` do mutate existing rows, and still
+   skip preview/confirm. Alex's rationale: inventory is "less a lore
+   consistency feature and more daily utility to facilitate in-session
+   management... first in a class of tools expanding the scope of
+   QuestLog from just multi-session tracker to live DM assistant" —
+   speed over auditability for this tool class specifically. This is
+   named as its own exception class ("quick-action tools") in
+   `.claude/rules/mcp.md`, not a blanket loosening of `G-001` — lore
+   mutation tools (`update_entity`, etc.) keep preview/confirm as before.
+
+6. **Session-log integration: deferred, not built for v1 — but not
+   dropped.** `log_session` does not auto-detect loot/wealth mentions in
+   v1's M-INVENTORY scope; inventory changes are manual-tool-calls only.
+   Per Alex's explicit request, the broader question — generalizing
+   automatic freeform-text detection (today only `log_session`'s entity
+   scan) as its own reusable mechanism, not bolted onto inventory
+   specifically — is captured as a new gate-stub, `G-041`
+   (`Docs/tickets/gated/G-041-generalized-freeform-text-detection.md`),
+   with no milestone slot assigned yet and no current blocking
+   dependency. M-INVENTORY's schema (nullable `ownerEntityId`, a
+   `denomination` column instead of a fixed shape) was deliberately kept
+   simple enough not to foreclose that future work.
+
+7. **Query surface: yes to both.** `get_entity` includes an entity's
+   assigned items; `prep_brief` surfaces campaign wealth and
+   unassigned/pool items as prep context. Ticketed as M-INVENTORY.3.
+
+Ticketed via `/ungate` against `Docs/milestones/MILESTONES_V1_5_MCP.md`
+Milestone M-INVENTORY: `T-142` (schema + `pc` entity type, `queue/`),
+`T-143` (MCP tools, `backlog/`, `Blocked on: T-142`), `T-144` (query
+surface, `backlog/`, `Blocked on: T-142, T-143`) — strictly sequential,
+see the milestone doc's ordering constraint.
