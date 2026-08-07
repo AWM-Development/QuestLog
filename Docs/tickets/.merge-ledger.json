@@ -30,6 +30,12 @@
     "mergedAt": "2026-08-04T23:36:10Z"
   },
   {
+    "ticketId": "T-111",
+    "prNumber": 219,
+    "branch": "feat/m-pipeline/t-111-ci-scope-guard",
+    "mergedAt": "2026-08-07T14:07:50Z"
+  },
+  {
     "ticketId": "T-116",
     "prNumber": 182,
     "branch": "feat/m-efficiency/t-116-pr-merge-status-ledger-action",
