@@ -1,0 +1,19 @@
+name: Restore Turborepo cache
+description: >-
+  Restore .turbo/cache (gitignored, turbo's on-disk task cache) so
+  lint/typecheck/build/test cache-hit when their inputs haven't changed.
+  Restore-keys fallback (lockfile hash only) so a source-only miss still
+  restores the last cacheable state instead of starting fully cold. Why:
+  Docs/tickets/T-086. Extracted (byte-identical across call sites) per
+  Docs/tickets/reports/T-117-github-actions-lean-audit.md finding #1.
+
+runs:
+  using: composite
+  steps:
+    - name: Restore Turborepo cache
+      uses: actions/cache@v5
+      with:
+        path: .turbo/cache
+        key: turbo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'biome.json', 'tsconfig.base.json', 'apps/**/*.ts', 'apps/**/*.tsx', 'apps/**/tsconfig*.json', 'packages/**/*.ts', 'packages/**/*.tsx', 'packages/**/tsconfig*.json') }}
+        restore-keys: |
+          turbo-${{ runner.os }}-

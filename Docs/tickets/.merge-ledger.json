@@ -54,6 +54,12 @@
     "mergedAt": "2026-08-07T19:59:59Z"
   },
   {
+    "ticketId": "T-120",
+    "prNumber": 232,
+    "branch": "feat/m-efficiency/t-120-ci-composite-actions",
+    "mergedAt": "2026-08-07T20:32:23Z"
+  },
+  {
     "ticketId": "T-125",
     "prNumber": 191,
     "branch": "feat/m-efficiency/t-125-session-bootstrap-speed",
