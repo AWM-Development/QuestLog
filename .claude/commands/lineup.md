@@ -17,7 +17,13 @@ Read-only report. This command never commits, pushes, promotes, or mutates any t
 4. **Milestone progress + deployed version** — read this off `origin/main` and `origin/develop`, never the shared primary directory's live state, same discipline as every other step:
    - **Completed milestones:** parse `AGENTS.md`'s task-source line for the milestone docs it marks shipped (today: only `Docs/milestones/MILESTONES_V1_MCP.md`, "v1, shipped"). For each, pull a single-sentence one-liner from the doc's own opening description section (e.g. `MILESTONES_V1_MCP.md`'s "The v1 pivot" section) — not the full prose block. List oldest-first.
    - **Deployed version:** `git show origin/main:package.json`, read the `version` field. Cross-reference `git show origin/main:CHANGELOG.md` for that version's dated section header (`## [X.Y.Z] - YYYY-MM-DD`) to get the promotion date. If no matching dated section is found, report the version alone with an explicit "promotion date not found in `CHANGELOG.md`" note — never leave the field blank.
-   - **Next milestone in queue:** parse `AGENTS.md`'s task-source line again for the first milestone doc it marks "in progress" (in the line's own listed order). List that doc's remaining `[ ]` top-level tasks by id and title, reusing `.claude/skills/ticket-writer/SKILL.md`'s "what's next" mode scan logic (skip only `[x]`, not tickets that are drafted-but-unstarted). If every task in every in-progress doc is checked off, say so explicitly rather than showing an empty list.
+   - **Next milestone in queue:** parse `AGENTS.md`'s task-source line again for the first milestone doc it marks "in progress" (in the line's own listed order). List that doc's remaining `[ ]` top-level tasks by id and title, reusing `.claude/skills/ticket-writer/SKILL.md`'s "what's next" mode scan logic (skip only `[x]`, not tickets that are drafted-but-unstarted). **Don't trust the checkbox alone** — for each remaining task, resolve its real state from its `(T-###)` tag (per `TICKET_SPEC.md`'s "Milestone-doc annotations"): find that ticket file across `Docs/tickets/{queue,backlog,in-progress,done,blocked,archive}/` and report its actual status next to the task, since a `[ ]` checkbox can go stale once a ticket ships without the milestone doc being updated to match (the same class of drift `EXECUTOR_ROUTINE.md`'s own "Definition of done" tries to prevent per-ticket, but nothing currently audits it in aggregate). Concretely:
+     - `done/` → flag as **"shipped — checkbox not yet updated"**, not as still-open work; call these out as a separate stale-checkbox count rather than folding them into "remaining."
+     - `archive/` → flag as **"parked / superseded — see `archive/`"**; also not counted as open work.
+     - `queue/`/`in-progress/` → genuinely next up; show `Priority:` tier.
+     - `backlog/` → show its `Blocked on:`/`Gated on:` state (same fields step 2 already reads).
+     - No `(T-###)` tag at all → **"unticketed"**.
+     Report a corrected "N tasks actually remaining" count (excluding shipped/parked) alongside the raw per-checkbox count, so the drift itself is visible. If every task in every in-progress doc is checked off, say so explicitly rather than showing an empty list.
 
 5. **Open PRs awaiting review** — `gh pr list --base develop --state open`. For each, resolve the ticket id from its branch/title (`feat/<group>/t-###-<slug>`), read that ticket's `Priority:` and a one-line scope summary. These are PRs only Alex can merge (`AGENTS.md`'s "never merge a PR yourself" — no automation is allowed to clear this list).
 
@@ -60,8 +66,11 @@ Read-only report. This command never commits, pushes, promotes, or mutates any t
 <if no dated CHANGELOG.md section matches: "Deployed: v<X.Y.Z> · promotion date not found in CHANGELOG.md">
 
 **Next milestone in queue — <version> (<milestone name>)**
-<N> tasks remaining:
-- <task id> — <task title>
+<N> tasks unchecked in the doc · <M> actually remaining (<K> shipped with stale checkboxes, <P> parked/superseded)
+- <task id> — <task title> (<T-###>) — <queue/backlog/in-progress · Priority tier, or Blocked on:/Gated on: state>
+- <task id> — <task title> (<T-###>) — ✅ shipped, checkbox not yet updated
+- <task id> — <task title> (<T-###>) — parked/superseded, see `archive/`
+- <task id> — <task title> — unticketed
 <repeat for every remaining [ ] top-level task in that milestone doc>
 <if none remain: "No remaining tasks in any in-progress milestone doc.">
 
