@@ -35,6 +35,12 @@ export const LLM_CONFIG = {
 // Types
 // ---------------------------------------------------------------------------
 
+/** Token counts for a single Claude API call, shared by every call shape below. */
+export interface LlmUsage {
+	inputTokens: number;
+	outputTokens: number;
+}
+
 export interface CallClaudeInput {
 	assembledContext: AssembledContext;
 	query: string;
@@ -44,20 +50,18 @@ export interface CallClaudeInput {
 
 export interface CallClaudeResult {
 	content: string;
-	usage: { inputTokens: number; outputTokens: number };
+	usage: LlmUsage;
 }
 
 /**
  * Input for a single structured-output call: a prompt plus a JSON schema
- * (`schema`) describing the shape Claude must respond with, forced via a
- * single-tool `tool_choice`. Callers holding a Zod schema convert it to JSON
- * schema themselves (e.g. `zod-to-json-schema`) before calling — this
- * function takes the JSON schema directly rather than depending on Zod,
- * since it has no callers yet to justify picking a conversion library.
+ * describing the shape Claude must respond with, forced via `tool_choice`.
+ * Takes JSON schema directly rather than Zod — see IMPLEMENTATION_NOTES.md
+ * § T-118 for why.
  */
 export interface CallClaudeStructuredInput {
 	prompt: string;
-	/** Tool name Claude is forced to call; also identifies the schema in the response. */
+	/** Tool name Claude is forced to call. */
 	schemaName: string;
 	/** JSON schema (draft 2020-12) the response must conform to — becomes the tool's `input_schema`. */
 	schema: Anthropic.Tool.InputSchema;
@@ -67,7 +71,7 @@ export interface CallClaudeStructuredInput {
 
 export interface CallClaudeStructuredResult<T> {
 	data: T;
-	usage: { inputTokens: number; outputTokens: number };
+	usage: LlmUsage;
 }
 
 // ---------------------------------------------------------------------------
