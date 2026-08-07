@@ -42,37 +42,6 @@ Full findings: `Docs/tickets/reports/T-132-bootstrap-drift-audit.md`. Follow-up 
 
 **Milestone checkbox for M-EXTRACT.2 stays unflipped.** That checkbox covers `(T-079, T-080)` together — `TICKET_SPEC.md`'s "ticketed and done are independent axes" note means a multi-ticket milestone item flips only once every contributing ticket lands. T-080 (the confirm tool) is still pending.
 
-## Component directory organization (M4.5 polish, 2026-04-24)
-
-### Why by-kind over the original primitives/feedback/layout split
-The M4.5 overnight agent created `components/primitives/`, `components/feedback/`, and `components/layout/` but left Button, Card, IconButton, and EntityAvatar at the root. This created a logic gap: Chip (in `primitives/`) and Button (at root) are the same category of component. The rule "new primitive goes in primitives/" had no consistent answer for root-level siblings.
-
-The follow-up refactor (branch `refactor/component-reorg`) commits fully to **by-kind**:
-
-```
-buttons/    — interactive click targets (Button, IconButton, Chip)
-inputs/     — form primitives (FormField, Input, Select, Textarea)
-surfaces/   — displayable containers (Card, EntityAvatar)
-feedback/   — status messages (Alert; future Toast, Banner)
-overlays/   — portal/dialog patterns (Modal)
-layout/     — page shells (PageScaffold)
-utilities/  — non-UI helpers (ErrorBoundary, PlaceholderPage)
-```
-
-Feature imports use the subdirectory path directly (e.g. `../../components/buttons/Button.js`). No root barrel — one was added briefly and removed because every callsite preferred the explicit subdir path, and an unused `export *` barrel silently widens the public surface (internal helpers become reachable; later name collisions resolve silently).
-
-### Half-step spacing tokens
-The 4px-grid tokens (`--space-1` through `--space-8`) left gaps at 2px, 6px, 10px, and 14px. These values appeared throughout button padding, chip padding, input padding, and panel section headings. Rather than rounding to the nearest grid step (which would have shifted visuals), four half-step tokens were added:
-
-```css
---space-0-5: 2px   /* micro-gap: list items, inline edit inputs */
---space-1-5: 6px   /* button vertical padding, tight flex gaps */
---space-2-5: 10px  /* input/panel vertical padding, section spacing */
---space-3-5: 14px  /* button/input horizontal padding */
-```
-
-`3px` and `5px` values were intentionally left as literals — they appear in only 2–3 places each (ghost button and source chip vertical padding; ChatHeader compact button) and don't align cleanly to a half-step. Adding tokens for single-location values creates noise.
-
 ## Session notes (T-012 investigation, won't-fix) — 2026-07-16
 
 ### `word_similarity` is non-symmetric — pg_trgm's indexable operator form can't preserve it here
@@ -275,53 +244,6 @@ Model (`claude-sonnet-4-20250514`), `maxTokens` (4096), `maxHistoryMessages` (40
 
 ---
 
-## Session notes (Milestone 4.5) — UI Component Library Refactor
-
-### Style preset pattern vs component encapsulation
-`styles.ts` continues to export style-preset objects (`buttonAccent`, `chipBase`, etc.) as the **implementation details** of the new components. Feature code must not import them directly. Components in `apps/web/src/components/` are the only importers.
-
-### `Input` uses `forwardRef`
-`Input.tsx` wraps `forwardRef` so callers needing a `ref` for focus management (e.g. `PasteTextInput`) can use `<Input ref={...}>` directly. This was added during M4.5 when the first ref-requiring callsite was encountered.
-
-### `ConversationTags` tag pills are still NOT `<Chip>`
-Each tag pill contains a nested remove `<button>`. Even after the component refactor, this remains intentionally inlined in `ConversationTags` because wrapping interactive children in a reusable chip primitive is still semantically awkward for this pattern.
-
-### `SourceChip` now uses `<Chip>`
-`Chip` was expanded to support `as="button"` and `variant="source"` with `sourceType` mapping, so `SourceChip` now composes `Chip` instead of re-spreading `sourceChipBase` and `sourceChipColors` directly.
-
-### `SessionEditorPage` back-link is NOT `<Button>`
-The `backLinkStyle` in `SessionEditorPage` is applied to a `<Link>` (react-router). `Button` renders a `<button>`. Rather than add a `Link` variant to `Button`, the `buttonGhost` values were inlined directly into the style object.
-
-### `IconButton` `hoverStyle`/`pressStyle` props
-`ChatInput`'s send and stop buttons need visually distinct hover/press states (accent glow vs border highlight). Rather than letting `ChatInput` manage the boolean hover state, `IconButton` accepts optional `hoverStyle`/`pressStyle` overrides. The callsite specifies WHAT to show; the component manages WHEN.
-
-### `Modal` uses generated `aria-labelledby` ids
-`Modal` uses React `useId()` for the title id and binds the dialog with `aria-labelledby={titleId}`. This keeps labels stable per instance and avoids id collisions for stacked dialogs.
-
-### `Alert` wraps `Button`
-`Alert`'s retry button uses `<Button variant="accent">` internally. This means `Alert` imports `Button` — keep this in mind if extracting to a separate package.
-
-### Component directory organization after M4.5 polish — superseded, see §"Component directory organization (M4.5 polish, 2026-04-24)" above
-This entry described an intermediate state (`primitives/`/`feedback/`/`layout/` with `Button`/`Card`/`IconButton`/`EntityAvatar` left at the component root) that the by-kind refactor (documented earlier in this file, and confirmed live in the current tree: `buttons/`, `inputs/`, `surfaces/`, `feedback/`, `overlays/`, `layout/`, `utilities/`) replaced. Left here only as a pointer so this section doesn't silently disappear from search — the content itself is stale and should not be followed. (Found during the 2026-07 doc audit, `Docs/AUDIT_2026-07-M4.md`.)
-
-### M4.2 — Entity detection: PostgreSQL port forwarding for local dev
-Project expects Docker on port 5433, but local PostgreSQL runs on 5432. Use `socat TCP-LISTEN:5433,fork,reuseaddr TCP:127.0.0.1:5432 &` to forward. Also requires: `pg_ctlcluster 16 main start` and `apt-get install -y postgresql-16-pgvector`.
-
-### M4.2 — pg_trgm: `word_similarity` vs `similarity` for entity pre-filter
-`word_similarity(query, text)` checks if any word in `text` is similar to `query`. Used for the low-threshold candidate pre-filter. `similarity(entity_name, token)` does character-level trigram comparison between two strings. Used for per-word comparison in the second phase to confirm a candidate entity matches a word in the scanned text. Both are required; using only one causes either too many or too few candidates.
-
-### M4.2 — tRPC superjson transformer in integration tests
-tRPC v11 with superjson transformer wraps GET query inputs as `{ json: { ...input } }`. When calling the HTTP endpoint directly in integration tests (not via the tRPC client), the query string must be `?input={"json":{...}}`. Using raw `?input={...}` causes input validation to fail silently.
-
-### M4.2 — TipTap extension option refs
-TipTap extension options are captured at extension creation time. To pass changing React state into the extension, create a `useRef` in the component, update it each render, and pass the ref object (not `.current`) into the extension options. The extension reads `ref.current` synchronously at event time. This avoids stale closures.
-
-### M4.2 — `entity-highlight.css` co-location
-`entity-highlight.css` lives in `features/session-log/styles/` and is imported by `SessionEditor.tsx`. This is intentional — it uses `:hover` pseudo-classes that require a stylesheet, and co-location keeps it adjacent to the extension it styles. Do not consolidate into `index.css`.
-
-### M4.2 — Biome `noAssignInExpressions` with `regex.exec`
-Biome flags `while ((match = regex.exec(text)) !== null)`. Rewrite as: `let result = regex.exec(text); while (result !== null) { ...; result = regex.exec(text); }`. This also avoids the need for `String.matchAll` which behaves differently with capture groups.
-
 ## Agentic pipeline — CI hardening & branch protection (Phase 2, 2026-07)
 
 `.github/workflows/ci.yml` gained a **Mockup Guard** job (hard fail if a PR diff touches `Docs/mockups/` — mockups are read-only to agents, generated manually by Alex in Claude Design). This mirrors the existing Migration Guard's pattern (checkout with `fetch-depth: 0`, diff against `origin/${{ github.base_ref }}`, hard `exit 1`). CI's trigger (`ci.yml` top) covers `[master, main, develop]` — see the branch-model note below for why `develop` is in that list.
@@ -341,26 +263,6 @@ Biome flags `while ((match = regex.exec(text)) !== null)`. Rewrite as: `let resu
 
 This was not yet applied as of Phase 2 — it's a manual one-time setup step, tracked here so it isn't lost between sessions.
 
-## M-MCP.4 — `prep_brief` (2026-07)
-
-### `session_entities` fallback (T-003/T-004 hadn't merged to `develop` yet)
-The ticket's Likely-NPCs scope names `session_entities` (from T-003) as the preferred source, with a fallback to re-running `entityService.detectSpans` against recent session content "if T-003 hasn't shipped." At the time this ticket ran, T-002 (the preview/confirm/audit plumbing T-003 depends on) was still an open PR against `develop`, unmerged — so `session_entities` doesn't exist on `develop` at all. `brief.service.ts` always takes the `detectSpans` fallback path. **Revisit once T-003/T-004 land**: swapping to a real `session_entities` join would be cheaper (no re-detection per brief call) and more accurate (persisted confirmed links, not re-derived from a heuristic each time).
-
-### Active plot threads use full session history; Previously-On/Likely-NPCs use `sessionCount`
-The ticket's Active-Threads source note ("sourced from `sessions.tags` **across recent sessions**") reads ambiguously against PRD §4.4's own table, which lists this section's source as "All session logs + entity data." Went with the PRD table: `activeThreads` scans every session in the campaign (a thread can span far more sessions than the 1-2 used for "Previously on"), while `previouslyOn` and `likelyNpcs` are scoped to the most recent `sessionCount` sessions (default 2).
-
-### `resolved:<tag>` convention for closing a thread
-Nothing in the ticket or PRD specifies how a thread gets marked resolved via tags alone (no dedicated "thread" entity exists in v1). Chose a `resolved:<tag>` tag convention: tagging a later session with `resolved:bones` closes the `bones` thread. Resolution is **permanent**: once any session carries `resolved:bones`, the `bones` thread stays closed even if a later session tags `bones` again (pinned by a test in `brief.service.test.ts`) — there is no reopen semantic yet; a genuinely new development should get a new tag. This is undocumented outside this note and `brief.service.ts` — if `log_session`/`SessionMetadata`'s tag UI (both v2/out of scope here) ever exposes tag entry, it should surface this convention rather than silently reinventing another one.
-
-### Entity type is lowercase (`"npc"`, not `"NPC"`)
-The ticket text writes "entities of type `NPC`," but `ENTITY_TYPES` (`packages/shared/src/constants/index.ts`) is `["npc", "location", "faction", "item", "arc"]`, all lowercase. `brief.service.ts` filters on `entity.type === "npc"`.
-
-### `LikelyNpc.summary` is always `null` today
-`entityService.create` only ever populates `entities.description`, never `entities.summary` — nothing in the current codebase writes that column yet. `brief.service.ts` reads `entity.summary` for `LikelyNpc.summary` (correct field per the ticket's response shape), but it'll be `null` for every NPC until some future consolidation/summarization ticket populates it. Not a bug in this ticket — flagging so a later summary-writing ticket knows this is the field `prep_brief` already reads from.
-
-### Tool-file pattern gap: `get_entity`/`list_entities` don't exist yet
-The ticket's Context files list references "the `query_lore`, `get_entity`/`list_entities` tool files" as the established pattern to mirror — but T-006 (which adds `get_entity`/`list_entities`) hadn't shipped to `develop` either at the time this ticket ran. `apps/mcp/src/server.ts` only has `query_lore` so far, and it's a single-file-per-server (not one-file-per-tool) structure; `prep_brief` was added as a second `server.registerTool(...)` call in the same file, mirroring `query_lore`'s try/catch → `NotFoundError` → `{ isError: true }` shape directly.
-
 ## M-MCP.3 — `log_session` embed+consolidate (T-004, 2026-07), closes M-MCP.3
 
 ### `entityConsolidation`'s `attribution.sessionId` is `null` in the preview, filled in only at confirm
@@ -374,170 +276,6 @@ Same reason as `sessionService`'s earlier widening this milestone: both are now 
 
 ### `confirm_log_session` holds the DB transaction open across the Voyage embed call — a deliberate divergence from `import.service.ts`
 `import.service.ts`'s pipeline (`pending → extracting → chunking → embedding → done`) never wraps `embedChunks` in a transaction, by design: it's a decoupled background worker (`process-imports.ts`) processing potentially large documents, and each stage commits its status independently so a crash or a slow/failed embed call doesn't force re-extracting a large PDF — resumability was the goal, not atomicity. `confirm_log_session` makes the opposite call: chunking, embedding, and entity consolidation all run inside the same transaction as the session write, because M-MCP.3's contract requires every confirmed write to be atomic and auditable as one action (no "half-logged" session ever visible). The tradeoff: a slow or unavailable Voyage API holds locks on `sessions`/`session_entities`/`write_requests` for the duration and, on failure, rolls back the entire confirm (session + entity links included), not just the embedding step — acceptable for this milestone's small, synchronous session-log payloads, but not a pattern to copy for anything resembling bulk/background ingestion.
-
-## T-014 — `campaign_id` btree indexes across campaign-scoped tables (2026-07)
-
-### Index list
-Plain btree index on `campaign_id`, one per campaign-scoped table, declared in `tables.ts` the same way as `entities_name_trgm_idx` (`index("<table>_campaign_id_idx").using("btree", table.campaignId)`), migration `0010_outgoing_skreet.sql`:
-
-- `sessions_campaign_id_idx`
-- `entities_campaign_id_idx`
-- `entity_relationships_campaign_id_idx`
-- `sources_campaign_id_idx`
-- `chunks_campaign_id_idx`
-- `conversations_campaign_id_idx`
-- `write_requests_campaign_id_idx`
-
-### EXPLAIN evidence needs low per-campaign selectivity to actually pick the index — a 3-campaign, ~1,000-row seed wasn't enough
-A first attempt seeded exactly 3 campaigns with ~1,000 total `entities`/`sessions` rows, one campaign holding ~46% of the table. Postgres correctly chose `Seq Scan` over the new index for that query — not a bug, just correct planner behavior: at that selectivity and table size (a handful of pages), scanning everything is cheaper than random index lookups. That result was actually a useful signal that the seed wasn't representative of the scenario this ticket is about (row counts growing with *user × campaign count*, not any one campaign's share shrinking). Re-seeded with 50 campaigns and ~4,900 `entities` / 3,000 `sessions` total, target campaign at a realistic ~4% slice — every query below then chose `Index Scan using *_campaign_id_idx`. Takeaway for future index-verification work: selectivity relative to *total campaigns*, not just total row count, is what makes an index win; a 3-campaign minimum seed can accidentally prove nothing.
-
-Seed and queries run inside `BEGIN`/`ROLLBACK` against `questlog_test` (no permanent data change). 50 campaigns; `entities`: campaign 1 = 200 rows + 1 verbatim "Strahd" row, campaigns 2–3 = 10 rows each (siblings, for the `detectSpans`/`getByName`-shaped check), campaigns 4–50 = 100 rows each filler (4,921 total); `sessions`: 60 rows × 50 campaigns (3,000 total).
-
-```
-=== entities: plain campaign_id filter ===
- Index Scan using entities_campaign_id_idx on entities  (cost=0.28..14.80 rows=201 width=70) (actual time=0.006..0.032 rows=201 loops=1)
-   Index Cond: (campaign_id = '00000000-0000-0000-0000-000000000001'::uuid)
-   Buffers: shared hit=6
- Execution Time: 0.045 ms
-
-=== sessions: plain campaign_id filter ===
- Index Scan using sessions_campaign_id_idx on sessions  (cost=0.28..10.33 rows=60 width=16) (actual time=0.007..0.014 rows=60 loops=1)
-   Index Cond: (campaign_id = '00000000-0000-0000-0000-000000000001'::uuid)
-   Buffers: shared hit=4
- Execution Time: 0.021 ms
-
-=== entities: detectSpans/getByName-shaped query (campaign_id + word_similarity), large campaign ===
- Index Scan using entities_campaign_id_idx on entities  (cost=0.28..15.81 rows=67 width=70) (actual time=2.326..2.327 rows=1 loops=1)
-   Index Cond: (campaign_id = '00000000-0000-0000-0000-000000000001'::uuid)
-   Filter: (word_similarity(name, 'a realistic session log mentioning Strahd among other things'::text) > '0.15'::double precision)
-   Rows Removed by Filter: 200
-   Buffers: shared hit=6
- Execution Time: 2.360 ms
-
-=== entities: detectSpans/getByName-shaped query, sibling campaign ===
- Index Scan using entities_campaign_id_idx on entities  (cost=0.28..8.51 rows=3 width=70) (actual time=0.021..0.105 rows=10 loops=1)
-   Index Cond: (campaign_id = '00000000-0000-0000-0000-000000000002'::uuid)
-   Filter: (word_similarity(name, 'looking up one specific entity by name'::text) > '0.15'::double precision)
-   Buffers: shared hit=3
- Execution Time: 0.112 ms
-```
-
-The `campaign_id` index narrows to the target campaign first in every case (`Index Cond`), and the existing (unchanged) `word_similarity` predicate then runs as a cheap in-memory `Filter` over that already-small row set — closing the loop T-012's won't-fix investigation opened.
-
-### `chunks` has no rows in this seed — the pgvector ANN index gap flagged by T-012/T-014's own scope, not fixed here
-`chunks.embedding` has no index (`<=>` runs an unindexed distance scan); out of scope per this ticket's own text. Noted here for whoever picks up that follow-up, not filed as a new ticket by this session.
-
-### Sandbox note: no Docker in this execution environment (recurrence of the M-MCP.1 note)
-Same situation as M-MCP.1/M-MCP.3: no `docker` daemon available. Native `postgresql-16` + `postgresql-16-pgvector` (apt) install, cluster moved to port 5433, `questlog`/`questlog_test` databases and the `questlog` role created from scratch, migrations run against both before any test could pass.
-
-## T-015 — `chunks.content` trgm GIN index for `keywordSearch` (2026-07)
-
-### `similarity()` is symmetric here (unlike T-012's `word_similarity()`) — confirmed, not assumed
-`similarity(a, b) == similarity(b, a)` held exactly (`0.16312057` both directions) against a realistic ~667-word chunk body (T-014-style filler + an appended verbatim "Strahd" sentence) and a short query, so no argument-order trap like T-012's `word_similarity`. `pg_trgm.similarity_threshold` is set to `CONTEXT_CONFIG.keywordSearchThreshold` via `SET LOCAL` inside a `db.transaction()` wrapping `keywordSearch`'s query, never the global config.
-
-### `%` is NOT a drop-in replacement for `similarity(...) > threshold` — it's `>=`, not `>` (reviewer-caught, fixed before merge)
-The first pass of this ticket rewrote the predicate to `content % query` alone and asserted (in a code comment, this doc, and `CHANGELOG.md`) that its truth test was identical to the original `similarity(content, query) > threshold`. That was wrong and unverified: `%`'s definition is `similarity(a, b) >= pg_trgm.similarity_threshold` (confirmed directly — `'abcde' % 'abcdz'` is `true` at threshold `0.5` while `similarity('abcde','abcdz') > 0.5` is `false`, only `>=` is `true`). A chunk scoring *exactly* the threshold — realistic for trigram similarity, a ratio of small integers — would have been included by the new predicate but excluded by the old one, a real scoring/ranking change the ticket's exit condition explicitly forbids. Fixed by keeping `%` only to reach the index for candidate generation, ANDed with the original strict `similarity(content, query) > threshold` filter to reproduce the exact prior result set (`context.service.ts`'s `keywordSearch` subquery `WHERE`). This doesn't cost a second index scan — `%` still drives the `Bitmap Index Scan`, and the strict filter runs as a cheap in-memory recheck alongside the existing `campaign_id` filter.
-
-### The function-call form (`similarity(...) > threshold`) can never use a GIN trgm index — confirmed with `enable_seqscan = off`
-Same class of finding as T-012's `word_similarity`, now confirmed for `similarity()` too: with `chunks_content_trgm_idx` present and `enable_seqscan = off` forced, `EXPLAIN` shows **no alternate plan at all** for the function-call predicate — it stays on `Seq Scan` regardless. Only `%`/`%>`/`<%` are indexable; wrapping the indexed column in a function call (`similarity(content, query)`) defeats it structurally, not as an implementation oversight. The operator rewrite is therefore required, not optional, to reach the index at all.
-
-### The operator form's *real* speedup is highly data-dependent at production chunk size (~800 words) and the existing 0.1 threshold — reliably reaches the index, but false-positive rate on the lossy candidate check varies a lot
-`chunking.service.ts` targets 650–1000 words per chunk (`TARGET_WORDS`/`MAX_WORDS`) — this is the length that matters for `EXPLAIN` verification, not the much shorter single-sentence fixtures `context.service.test.ts` uses for correctness tests. At that length, GIN's lossy "consistent" check for `%` can only prove a *necessary* condition for `similarity() >= threshold` (it can't know a candidate row's total trigram count without visiting it), so its candidate set gets less selective as the indexed text gets longer relative to the query. Across multiple `EXPLAIN ANALYZE` runs against the same script (20,000 rows, ~650-word chunks templated from a 27,000-combination sentence pool, 20 rows amended with an exact "Strahd Barovia vampire" match, seeded/rolled-back in `questlog_test`, final compound predicate `content % query AND similarity(content, query) > threshold`), the plan **always** chose `Bitmap Heap Scan` / `Bitmap Index Scan on chunks_content_trgm_idx` — never `Seq Scan` — but wall-clock ranged from ~20ms (few false-candidate rows) to ~7.5s, statistically indistinguishable from the function-call/`Seq Scan` baseline, depending purely on how much incidental trigram overlap that run's random filler content happened to share with the query. Both runs below satisfy the exit condition's plan-shape requirement; the honest characterization is "reliably indexable, sometimes dramatically faster, not reliably fast" for this specific chunk-length/threshold combination — real campaign lore with distinctive proper nouns (character/place names, per the `query_lore` use case) should trend toward the fast end more often than generic vocabulary, but this is not a guarantee this ticket can make.
-
-```
-=== fast run: realistic ~650-word chunks (chunking.service.ts's TARGET_WORDS shape), final compound predicate, natural planner choice ===
- Limit  (cost=862.03..862.13 rows=40 width=193) (actual time=20.187..20.193 rows=20 loops=1)
-   ->  Sort  (cost=862.03..862.20 rows=67 width=193) (actual time=20.185..20.188 rows=20 loops=1)
-         Sort Key: (similarity(chunks.content, 'Strahd Barovia vampire'::text)) DESC
-         Sort Method: quicksort  Memory: 35kB
-         ->  Nested Loop Left Join  (cost=263.49..860.00 rows=67 width=193) (actual time=1.145..20.158 rows=20 loops=1)
-               Join Filter: (chunks.source_id = sources.id)
-               ->  Bitmap Heap Scan on chunks  (cost=263.49..857.82 rows=67 width=178) (actual time=0.793..13.715 rows=20 loops=1)
-                     Recheck Cond: (content % 'Strahd Barovia vampire'::text)
-                     Filter: ((campaign_id = '...'::uuid) AND (similarity(content, 'Strahd Barovia vampire'::text) > '0.1'::double precision))
-                     Heap Blocks: exact=2
-                     ->  Bitmap Index Scan on chunks_content_trgm_idx  (cost=0.00..263.48 rows=200 width=0) (actual time=0.070..0.070 rows=20 loops=1)
-                           Index Cond: (content % 'Strahd Barovia vampire'::text)
-               ->  Materialize  (cost=0.00..1.01 rows=1 width=27) (actual time=0.000..0.000 rows=1 loops=20)
-                     ->  Seq Scan on sources  (cost=0.00..1.01 rows=1 width=27) (actual time=0.004..0.005 rows=1 loops=1)
- Planning Time: 0.330 ms
- Execution Time: 20.234 ms
-
-=== slow run: same script re-run (fresh random filler content), same compound predicate — still Bitmap Index Scan, not Seq Scan, but the recheck visits nearly the whole table ===
- Limit  (cost=890.91..891.01 rows=40 width=216) (actual time=7536.505..7536.515 rows=20 loops=1)
-   ->  Sort  (cost=890.91..891.08 rows=67 width=216) (actual time=7536.502..7536.508 rows=20 loops=1)
-         ->  Nested Loop Left Join  (cost=292.37..888.88 rows=67 width=216) (actual time=4262.861..7536.473 rows=20 loops=1)
-               ->  Bitmap Heap Scan on chunks  (cost=292.37..886.69 rows=67 width=201) (actual time=4262.398..7528.408 rows=20 loops=1)
-                     Recheck Cond: (content % 'Strahd Barovia vampire'::text)
-                     Rows Removed by Index Recheck: 19980
-                     Filter: ((campaign_id = '...'::uuid) AND (similarity(content, 'Strahd Barovia vampire'::text) > '0.1'::double precision))
-                     Heap Blocks: exact=648
-                     ->  Bitmap Index Scan on chunks_content_trgm_idx  (cost=0.00..292.35 rows=200 width=0) (actual time=4.152..4.153 rows=20020 loops=1)
-                           Index Cond: (content % 'Strahd Barovia vampire'::text)
- Execution Time: 7536.569 ms
-
-=== for comparison: function-call form alone (no operator, no index) — always Seq Scan, never reaches the index, regardless of data ===
- Limit  (cost=1251.43..1251.53 rows=40 width=186) (actual time=6135.413..6135.418 rows=20 loops=1)
-   ->  Sort ...
-         ->  Nested Loop Left Join  (cost=0.00..1040.68 rows=6667 width=186) (actual time=6122.828..6135.371 rows=20 loops=1)
-               ->  Seq Scan on chunks  (cost=0.00..923.00 rows=6667 width=171) (actual time=6122.491..6128.805 rows=20 loops=1)
-                     Filter: ((campaign_id = '...'::uuid) AND (similarity(content, 'Strahd Barovia vampire'::text) > '0.1'::double precision))
-                     Rows Removed by Filter: 19980
- Execution Time: 6135.439 ms
-```
-
-### Test isolation: `context.service.test.ts` and `apps/mcp/src/server.test.ts`'s `query_lore` suite switched from `BEGIN`/`ROLLBACK` to `deleteCampaignTree()`
-Wrapping `keywordSearch` in `db.transaction()` (needed to scope `SET LOCAL pg_trgm.similarity_threshold`) means any test suite exercising `contextService.assemble` now hits the same nested-transaction issue `.claude/rules/backend.md` already documents for `conversation.service.ts`/`write-request.service.ts`: a raw `BEGIN` on the connection doesn't compose with Drizzle's own `db.transaction()`, and Postgres emits `there is already a transaction in progress` / `there is no transaction in progress` warnings — worse, the inner `transaction()`'s `COMMIT` actually commits the outer test transaction for real, silently defeating the test's rollback-based isolation (confirmed: tests still reported green, but data was durably written to `questlog_test` instead of rolled back). Both suites now use `deleteCampaignTree()` instead, matching the established pattern. `apps/mcp/src/server.test.ts`'s `prep_brief`/`list_entities`/`get_entity`/`log_session` suites are unaffected (`prep_brief`'s `brief.service.ts` doesn't call `contextService`; `log_session` already used `deleteCampaignTree()` for the same reason via `write-request.service.ts`).
-
-## T-016 — `chunks.embedding` pgvector ANN index (2026-07)
-
-### Index type: `hnsw`, not `ivfflat` — confirmed against this table's actual write pattern, not just row count
-`ivfflat` needs representative training data present *at index-build time* to place its cluster centroids well, and re-clustering as the table grows requires an explicit `REINDEX` — a poor fit for `chunks`, which grows continuously via `log_session`/source upload rather than in one bulk load. `hnsw` has no training step and its graph absorbs new rows incrementally, so it was chosen without needing to tune a `lists` parameter against a row-count estimate that will be stale again in a month. Added as `chunks_embedding_hnsw_idx` (`USING hnsw (embedding vector_cosine_ops)`, migration `0012_gifted_doctor_spectrum.sql`), default `m`/`ef_construction` build parameters — no tuning beyond that, per ticket scope.
-
-### Critical finding: the installed pgvector (0.6.0) has no iterative index scan, so a campaign-filtered ANN query can return far fewer rows than `LIMIT` asks for — not just "slightly re-ranked," a real recall cliff
-The ticket's own "Behavior note" anticipated *some* approximation — a chunk ranking 6th instead of 5th. What was actually found empirically is worse in kind, not degree: pgvector's HNSW index scan enumerates candidates from the *global* (campaign-agnostic) nearest-neighbor graph up to `hnsw.ef_search` (default `40`), then applies the `campaign_id` filter as a post-scan `Filter` — it does **not** keep expanding the graph search to backfill rows the filter rejected. `iterative_scan` (`hnsw.iterative_scan = relaxed_order|strict_order`), the pgvector feature that fixes exactly this by continuing the search until the filtered result set is satisfied, was added in pgvector **0.8.0** — three minor versions ahead of what's installed (`0.6.0`, confirmed via `SELECT extversion FROM pg_extension WHERE extname='vector'`).
-
-Reproduced directly against `questlog_test` (rolled-back scratch transaction, not committed): seeded one target campaign with 2,000 chunks and 30,000 background chunks spread across 20 other campaigns (so the target is ~6% of the table — the regime where the planner actually prefers the new index over the existing `chunks_campaign_id_idx` bitmap scan + explicit sort; a single-campaign table, as tested first, never triggers the index at all and is not representative), then ran `search.service.ts`'s exact query shape (`WHERE campaign_id = $1 ORDER BY embedding <=> $2 LIMIT $3`) at both of the app's real limits:
-
-```
-=== default hnsw.ef_search (40), 5 runs each ===
-LIMIT 5  (search.service.ts DEFAULT_LIMIT):        got 1, 2, 1, 0, 1 rows   — expected 5 every time
-LIMIT 40 (context.service.ts defaultSearchLimit):   got 2, 3, 1, 1, 0 rows  — expected 40 every time
-
-=== hnsw.ef_search raised to 1000 (session-level GUC, no query-shape change), 5 runs each ===
-LIMIT 5:  got 5, 5, 5, 5, 5 rows   — fully recovered
-LIMIT 40: got 40, 38, 40, 34, 40 rows — mostly recovered, still occasionally short
-```
-
-```
-EXPLAIN ANALYZE, default ef_search, LIMIT 40:
-Limit  (cost=324.74..767.19 rows=40 width=1256) (actual time=4.283..4.405 rows=2 loops=1)
-  ->  Nested Loop Left Join  (cost=324.74..22391.82 rows=1995 width=1256) (actual time=4.281..4.402 rows=2 loops=1)
-        ->  Index Scan using chunks_embedding_hnsw_idx on chunks  (cost=324.60..22060.60 rows=1995 width=1226) (actual time=4.210..4.317 rows=2 loops=1)
-              Order By: (embedding <=> '[...]'::vector)
-              Filter: (campaign_id = '...'::uuid)
-              Rows Removed by Filter: 38
-        ->  Index Scan using sources_pkey on sources  (cost=0.14..0.16 rows=1 width=48) (actual time=0.002..0.002 rows=0 loops=2)
-              Index Cond: (id = chunks.source_id)
-Planning Time: 0.707 ms
-Execution Time: 4.468 ms
-```
-
-`Rows Removed by Filter: 38` alongside `ef_search`'s default of 40 makes the mechanism legible directly from the plan: of the 40 globally-nearest candidates the index scan visited, only 2 belonged to the queried campaign, and the scan stopped there instead of continuing — `query_lore`/`prep_brief` would silently receive 2 chunks of "relevant campaign knowledge" instead of the requested 40, with no error, warning, or empty-result signal to the caller.
-
-**Why this didn't surface in the existing mocked suites or in the ticket's own reproduction:** every mocked test (`search.service.test.ts`, `context.service.test.ts`) seeds at most a handful of rows in a single campaign. At that scale Postgres's planner never picks the HNSW index over a trivial sequential scan regardless of cost settings — the recall cliff only exists in the row-count/selectivity regime this ticket's own seeding script (single campaign, no background rows) also failed to reproduce on the first attempt; it only appeared once background rows from other campaigns were added to make the target genuinely selective. This is exactly the gap the ticket flagged as a risk ("if recall degrades in a way the existing e2e fixture doesn't catch") — the *existing* e2e fixture (`search.e2e.test.ts`, one campaign, a few dozen chunks) would not have caught this either, independent of the `VOYAGE_API_KEY` availability problem noted below.
-
-**Not fixed in this ticket, by design:** ticket scope explicitly excludes "tuning beyond a reasonable default parameter choice" for the index, and raising `hnsw.ef_search` is a query-time GUC, not an index-build parameter, but changing it would still be a `search.service.ts` behavior change beyond "add the index" — out of scope for a ticket framed as index-addition-only. Flagged in the ticket report for Alex to decide between: (a) accept the index as shipped, given QuestLog's actual per-user data volume today (single user, few campaigns) means the planner mostly won't choose the lossy path yet — the cliff appears exactly *as* the app scales into needing the index, which is a bad property but not an immediate one; (b) upgrade the `pgvector` extension to >= 0.8.0 and set `hnsw.iterative_scan` before relying on this index under filtered queries; or (c) hold off enabling filtered-ANN behavior until (b) is done. No code in this repo currently sets `hnsw.ef_search`, so today's behavior is entirely the Postgres/pgvector default.
-
-### `VOYAGE_API_KEY` unavailable in this sandbox — `search.e2e.test.ts`'s before/after recall check could not be run for real
-Per the existing documented pattern (`describe.skipIf(!process.env.VOYAGE_API_KEY)`, see above), `pnpm test:e2e` skipped `search.e2e.test.ts` cleanly rather than failing. The real-API recall check the ticket asks for was not executed; the synthetic reproduction above (direct SQL, realistic row counts and selectivity, the app's actual query shape and both real `LIMIT` values) is offered as a substitute rigor check, but it is not the same as confirming the fixture's specific expected chunks still surface — flagged for Alex, matching the precedent already set by prior tickets run in this same sandbox (T-000/T-001 notes above).
-
-## T-018 — `list_campaigns` MCP tool (2026-07)
-
-### `apps/mcp/src/server.test.ts`'s "empty" case for `list_campaigns` doesn't test a literal empty table — global `DELETE`s are unsafe in this shared test DB
-Every other tool suite in `server.test.ts` scopes its data by a `campaignId` it creates and cleans up itself, so any two suites' data never collides. `list_campaigns` takes no input — there's no `campaignId` to scope a query by — so its exit condition ("an empty database returns a well-formed empty list, not an error") can't be verified the same way. The obvious approach, `DELETE FROM campaigns` (optionally wrapped in `BEGIN`/`ROLLBACK`), is unsafe here specifically: `createTestDb()` uses `{ max: 1 }` (one physical connection per package's test run), and `turbo test` fans `apps/mcp`'s and `apps/server`'s test suites out as separate concurrent processes against the same physical `questlog_test` database (no `dependsOn` serializes them — see `turbo.json`). `BEGIN`/`ROLLBACK` only defers *visibility* of this transaction's own writes to other connections; it does not protect an unscoped `DELETE` from failing at execution time against a live FK reference from a row `apps/server`'s own concurrently-running suite has already committed. Hit this empirically while iterating: `DELETE FROM campaigns` failed with `sources_campaign_id_campaigns_id_fk` violation mid-run, tracing back to a campaign+source pair created by `apps/server`'s own service tests in the same window.
-
-**Closed by T-026:** `apps/mcp` now runs its default test suite against its own `questlog_test_mcp` database instead of the shared `questlog_test`, so no other concurrently-running suite can ever hold a live reference into it. `list_campaigns`'s test now asserts a literal `[]` from a genuinely empty table.
 
 ## T-019 — `apps/mcp` client setup glue (2026-07)
 
@@ -792,11 +530,6 @@ Fly terminates TLS at its edge and forwards plain HTTP internally; `mcp-oauth.vi
 Decided: stop relying on the `Stop` hook's fire timing entirely. `session-start.sh` now stashes `{transcript_path, session_id}` to `tmp/.session-context.json` on every session start; `EXECUTOR_ROUTINE.md` Step 2 writes an explicit `tmp/.active-ticket` marker naming the ticket a session is actively working, replacing `resolveTicketId`'s old git-log/mtime guess; Step 7 invokes the capture-usage CLI directly against the stashed payload and commits the artifact inline, before the single final push, instead of waiting for a `Stop` fire that (in a fully autonomous run) doesn't happen until after the PR is already open. The `Stop` hook itself needs no code change — with no active marker present it now correctly falls through to `empty_run` instead of guessing at an unrelated ticket. Full rationale on `Docs/tickets/gated/resolved/G-011-usage-capture-attribution-and-commit-timing.md`'s Resolution section; the work is T-061. (T-062 relocated both files from `.claude/` to `tmp/` after the original path stalled unattended runs on the harness's sensitive-file gate — see § T-046 above.)
 
 **Superseded by a direct follow-up during T-033's review (2026-07-27):** the "`empty_run`" fallback above is gone. The `Stop` hook fires on every turn in an interactive session (not just at session end), and re-parsing the whole transcript each time just to write a session nobody wanted tracked was pure noise — untracked `empty-run-<session_id>.usage.json` files churning `git status` on every message. `resolveArtifactPath(ticketId)` (`packages/core/src/observability/usage-summary.ts`) now returns `null` instead of an empty-run path when `ticketId` is null, and `captureUsage` (`capture-usage.ts`) short-circuits on that `null` before even reading the transcript, returning `{ artifactPath: null, artifact: null }`. Net effect: only sessions with a `tmp/.active-ticket` marker present — autonomous nightly runs and manual ticket-execution sessions alike, since both write that marker via the same `EXECUTOR_ROUTINE.md` path — ever produce a cost-report artifact; every other session (interactive review, planning, one-off chat) is invisible to this system by design, not just by naming convention.
-
-## T-035 follow-up — `capture-usage` no longer hard-depends on `tmp/.session-context.json` (2026-07-28)
-`EXECUTOR_ROUTINE.md` Step 6/7's manual invocation (`cat tmp/.session-context.json | ... capture-usage`) went stdin-empty during T-035's own nightly run — `session-start.sh`'s stash didn't survive to Step 7, cause unconfirmed, but the run was scheduler-triggered (`remote_trigger`), which is the one dimension it differs from a normal interactive session. Rather than build a targeted fix for that specific gap (unconfirmed root cause — nothing to target yet), `capture-usage.ts`'s entry point now falls back to `resolveHookPayloadFromEnv()` whenever stdin is empty: it derives the same `{transcript_path, session_id}` pair by reading `CLAUDE_CODE_SESSION_ID` and searching `~/.claude/projects/*/<sessionId>.jsonl` directly, rather than trusting a previously-stashed file. This is deliberately a fallback, not a replacement — the stdin/stash path stays primary since it's the documented hook contract; the env/filesystem derivation leans on CLI-internal conventions (env var name, transcript directory layout) that could change across Claude Code versions without notice. If `session-start.sh`'s stash starts failing routinely (not just this one occurrence), that's the signal to actually root-cause the scheduler-triggered gap rather than lean on this fallback indefinitely.
-
-**Follow-up fix (2026-07-29, folded into T-036's PR):** the fallback itself was silently broken since it shipped — `resolveHookPayloadFromEnv` joined `claudeHomeDir` directly with `"projects"` instead of `".claude", "projects"`, so it never found a real transcript (`/root/projects` instead of `/root/.claude/projects`) and every session relying on this fallback silently skipped usage capture instead of falling back correctly. Caught because the existing test's own fixture mirrored the bug rather than testing the real path. Fixed in `capture-usage.ts`; the test fixtures now build under `.claude/projects` to match real Claude Code layout.
 
 ## G-005 — Agent-interaction strategy for MCP-hooked sessions (2026-07-28)
 Decided: no new MCP transport for document attachment. The API-level MCP connector has no file-attachment-to-tool-call mechanism (tool inputs are JSON only), but Claude.ai/Desktop already embeds an attached document's content directly into the model's own context — the model can extract and pass that text to `ingest_text` today with zero user copy-paste and zero new protocol work. The only real constraint is the model having to regenerate a large document's full text as output tokens to fill one tool-call argument, which T-065 addresses with multi-call chunked ingestion (`sourceId`/`final` on `ingest_text`), not a new transport. Full rationale and the other three sub-decisions (campaign creation, status-polling guidance, instructions strategy) on `Docs/tickets/gated/resolved/G-005-agent-mcp-interaction-strategy.md`'s Resolution section; the work is T-065/T-066/T-067. The standing "agent-interaction philosophy" question was split out to `G-012` as a v1.3-scoping decision rather than answered here.
