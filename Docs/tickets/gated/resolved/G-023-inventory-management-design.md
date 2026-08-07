@@ -85,3 +85,101 @@ Notes: `item` already exists in `ENTITY_TYPES` (packages/shared/src/constants/in
   `/ungate` treat "item entity type" as already-solved scope; the
   narrative tag and the inventory-management system are two different
   asks that happen to share a word.
+
+## Resolution (2026-08-07)
+
+Resolved with Alex via `/ungate`. Answers to the seven sub-decisions:
+
+1. **Data model shape: dedicated tables.** New `inventory_items` and
+   `campaign_wealth` tables, not an extension of the existing `item`
+   `ENTITY_TYPES` tag via `attributes` JSONB. Keeps narrative items
+   (a described artifact entity) and structured inventory (quantity,
+   owner, value) as related-but-distinct concepts, matches the codebase's
+   existing pattern of dedicated join/edge tables (`sessionEntities`,
+   `entityRelationships`) over JSONB blobs for structured relational data.
+
+2. **Ownership model: new `pc`/`character` entity type, generic
+   `ownerEntityId`.** `ENTITY_TYPES` gains `pc` alongside `npc`, `location`,
+   `faction`, `item`, `arc`. `inventory_items.ownerEntityId` is a nullable
+   FK to `entities` that can reference *any* entity type — a `pc` for
+   party-carried items, an `npc`/`location` for loot not yet taken, or
+   null for an unassigned shared pool.
+
+3. **Wealth/currency: single abstracted total, structured for future
+   extension.** `campaign_wealth` has a `(campaignId, denomination)`
+   unique row shape rather than a single `gold: integer` column on
+   `campaigns` — v1 only ever writes one `denomination` value
+   (`"wealth"`) per campaign, but a future multi-denomination or
+   ledger system is additional rows/columns, not a schema migration of
+   existing data. No transaction ledger in v1 (Alex: "single abstracted
+   total but easily iterable" — the row shape carries the extensibility,
+   not a history mechanism).
+
+4. **NPC/location loot vs. party inventory: unified, confirmed explicitly
+   with Alex as a follow-up after the initial `/ungate` pass** (individual
+   items are assignable to any entity via `ownerEntityId` — same field
+   serves both PC ownership and NPC/monster loot; "looting" is a
+   `transfer_item` call reassigning `ownerEntityId`, not a separate
+   create+delete). Alex also confirmed the party-at-large treasury is a
+   distinct, separate concept from individual item assignment — that's
+   what `campaign_wealth` (point 3) already models — and flagged
+   loot-table generation (drawing individual items, including
+   template-defined ones, into a weighted/random table) as real future
+   scope, not in `T-142`/`T-143`/`T-144`'s scope now. Captured as
+   anticipated-but-not-yet-gated future work on the new v1.9 milestone doc
+   (see `G-042` below) rather than invented as a decision here.
+
+5. **Tool surface: split by operation, and — the most consequential
+   call — no preview/confirm, no audit trail at all.** Four tools:
+   `add_item`, `transfer_item`, `adjust_wealth`, `list_inventory`
+   (read-only). This is a deliberate extension beyond `G-001`'s resolved
+   rule (preview/confirm applies to mutations of *existing* records) —
+   `transfer_item` and `adjust_wealth` do mutate existing rows, and still
+   skip preview/confirm. Alex's rationale: inventory is "less a lore
+   consistency feature and more daily utility to facilitate in-session
+   management... first in a class of tools expanding the scope of
+   QuestLog from just multi-session tracker to live DM assistant" —
+   speed over auditability for this tool class specifically. This is
+   named as its own exception class ("quick-action tools") in
+   `.claude/rules/mcp.md`, not a blanket loosening of `G-001` — lore
+   mutation tools (`update_entity`, etc.) keep preview/confirm as before.
+
+6. **Session-log integration: deferred, not built for v1 — but not
+   dropped.** `log_session` does not auto-detect loot/wealth mentions in
+   v1's M-INVENTORY scope; inventory changes are manual-tool-calls only.
+   Per Alex's explicit request, the broader question — generalizing
+   automatic freeform-text detection (today only `log_session`'s entity
+   scan) as its own reusable mechanism, not bolted onto inventory
+   specifically — is captured as a new gate-stub, `G-041`
+   (`Docs/tickets/gated/G-041-generalized-freeform-text-detection.md`),
+   reserved on the new `Docs/milestones/MILESTONES_V1_9_MCP.md` (Milestone
+   M-DETECT), with no current blocking dependency. M-INVENTORY's schema
+   (nullable `ownerEntityId`, a `denomination` column instead of a fixed
+   shape) was deliberately kept simple enough not to foreclose that future
+   work.
+
+7. **Query surface: yes to both.** `get_entity` includes an entity's
+   assigned items; `prep_brief` surfaces campaign wealth and
+   unassigned/pool items as prep context. Ticketed as M-INVENTORY.3.
+
+**Follow-up gate filed after this resolution:** while confirming point 4
+above, Alex separately raised wanting structured, reusable item
+*templates* — the same shape of problem `G-036` (stat block templates,
+v1.8) solves for monsters. Filed as `G-042`
+(`Docs/tickets/gated/G-042-item-template-system.md`), reserved alongside
+`G-041` on the new `Docs/milestones/MILESTONES_V1_9_MCP.md` (Milestone
+M-ITEMTEMPLATE) rather than resolved in this same session — this is a
+genuinely new open question (template scope/storage, template→instance
+relationship, field shape, whether image rendering applies, creation-flow
+integration), not something answerable from context already gathered here.
+Loot-table generation (drawing individual items, including template-defined
+ones, into a weighted/random table) was flagged by Alex as anticipated
+future scope that likely lands in the same v1.9 milestone once `G-042`
+resolves — noted on the milestone doc, not filed as its own gate yet since
+its shape depends on `G-042`'s answer.
+
+Ticketed via `/ungate` against `Docs/milestones/MILESTONES_V1_5_MCP.md`
+Milestone M-INVENTORY: `T-142` (schema + `pc` entity type, `queue/`),
+`T-143` (MCP tools, `backlog/`, `Blocked on: T-142`), `T-144` (query
+surface, `backlog/`, `Blocked on: T-142, T-143`) — strictly sequential,
+see the milestone doc's ordering constraint.
