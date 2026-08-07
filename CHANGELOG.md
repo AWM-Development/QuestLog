@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-106
+
+- **`EXECUTOR_ROUTINE.md` gains a "Runners" section.** Documents which two steps of the pipeline routine are Claude-Code-specific (the `Model: sonnet, always` line, and Step 7/6's `capture-usage` invocation) and what a different runner should do instead, plus confirms every other step is already runner-neutral. Implements `G-020` Q1(c)'s decision not to fork the routine per runner — the routine stays one document, portable by construction.
+
 ### Changed — T-120
 
 - **`ci.yml` / `e2e-release-check.yml` share three new composite actions instead of hand-rolling the same setup steps at five call sites.** `.github/actions/setup-repo` (checkout + pnpm + Node + `pnpm install --frozen-lockfile`), `.github/actions/restore-turbo-cache` (the `.turbo/cache` restore step), and `.github/actions/provision-test-databases` (test-tier DB provisioning/migration) replace the duplicated inline steps T-117's audit flagged (findings #1–#3) — no behavior change, byte-for-byte equivalent to what ran before.

@@ -8,8 +8,6 @@ Strategy-gate flag: yes
 
 Priority: P1
 
-Blocked on: T-118 — must be merged into develop first
-
 Branch: feat/m-extract/t-119-llm-based-entity-candidate-detection
 
 Context files (load ONLY these):
