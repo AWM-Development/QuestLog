@@ -1,5 +1,5 @@
 {
-	"name": "@questlog/core",
+	"name": "@questlog/ci",
 	"version": "0.0.0",
 	"private": true,
 	"type": "module",
@@ -11,23 +11,15 @@
 	},
 	"scripts": {
 		"test": "vitest run",
-		"test:e2e": "vitest run --config vitest.e2e.config.ts",
 		"typecheck": "tsc --noEmit",
-		"lint": "biome check ."
-	},
-	"dependencies": {
-		"@anthropic-ai/sdk": "^0.79.0",
-		"@questlog/shared": "workspace:*",
-		"dotenv": "^17.3.1",
-		"drizzle-orm": "^0.45.1",
-		"mammoth": "^1.12.0",
-		"pdf-parse": "^2.4.5",
-		"postgres": "^3.4.8"
+		"lint": "biome check .",
+		"gate-guard": "tsx src/gate-guard.ts",
+		"scope-guard": "tsx src/scope-guard.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
 		"@types/node": "^22.13.10",
-		"@types/pdf-parse": "^1.1.5",
+		"tsx": "^4.19.3",
 		"typescript": "^5.8.2",
 		"vitest": "^3.0.9"
 	}

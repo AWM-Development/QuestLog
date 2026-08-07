@@ -13,9 +13,9 @@ Blocked on: T-108 — must be merged into develop first
 Branch: feat/m-pipeline/t-109-runner-cost-adapter-interface
 
 Context files (load ONLY these):
-  - packages/core/src/observability/capture-usage.ts
-  - packages/core/src/observability/pricing.ts
-  - packages/core/src/observability/usage-summary.ts
+  - packages/core/src/usage-capture/capture-usage.ts
+  - packages/core/src/usage-capture/pricing.ts
+  - packages/core/src/usage-capture/usage-summary.ts
   - packages/observability/src/schema/tables.ts (post-T-108, for the `runner` column)
   - Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md § Notes 3
 
@@ -33,7 +33,7 @@ Mockup: none
 Model: sonnet
 
 Scope: Extract a `RunnerCostAdapter` interface (in
-  `packages/core/src/observability/`) with the shape:
+  `packages/core/src/usage-capture/`) with the shape:
   `resolveTicketId(): string | null`, `captureRun(projectDir: string): RunCaptureResult`,
   where `RunCaptureResult` is a superset covering both Claude Code's full
   token/cache breakdown (current `UsageArtifact` shape) and a degraded shape

@@ -3,7 +3,7 @@
 **Location:** `Docs/milestones/MILESTONES_V1_MCP.md`
 **Status:** CANONICAL task source for v1. Agents select work from this file only.
 **Supersedes:** `MILESTONES_PT1.md` / `MILESTONES_PT2.md` for v1 sequencing (both retired 2026-07-27, consolidated into `Docs/milestones/MILESTONES_V2.md`).
-**Statuses audited:** 2026-07 against commit `ce4eecd` — see `Docs/AUDIT_2026-07.md` for evidence.
+**Statuses audited:** 2026-07 against commit `ce4eecd` — see `Docs/archive/AUDIT_2026-07.md` for evidence.
 
 ## The v1 pivot (June 2026, "Shape C")
 

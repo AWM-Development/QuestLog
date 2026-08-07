@@ -37,13 +37,13 @@ describe("parseContextFiles", () => {
 	it("stops at the first blank line after the block", () => {
 		const content = [
 			"Context files (load ONLY these):",
-			"  - packages/core/src/ci/gate-guard.ts",
+			"  - packages/ci/src/gate-guard.ts",
 			"",
 			"Mockup: none",
 			"  - Docs/tickets/TICKET_SPEC.md",
 		].join("\n");
 		expect(parseContextFiles(content)).toEqual([
-			"packages/core/src/ci/gate-guard.ts",
+			"packages/ci/src/gate-guard.ts",
 		]);
 	});
 });
@@ -111,7 +111,7 @@ describe("runScopeGuard", () => {
 						path: "Docs/tickets/done/T-200-example.md",
 						status: "added",
 					},
-					{ path: "packages/core/src/ci/gate-guard.ts", status: "modified" },
+					{ path: "packages/ci/src/gate-guard.ts", status: "modified" },
 					{
 						path: "apps/server/src/routers/unrelated.router.ts",
 						status: "modified",
@@ -119,7 +119,7 @@ describe("runScopeGuard", () => {
 				],
 				readFile: (path) =>
 					path === "Docs/tickets/done/T-200-example.md"
-						? "Context files (load ONLY these):\n  - packages/core/src/ci/gate-guard.ts\n"
+						? "Context files (load ONLY these):\n  - packages/ci/src/gate-guard.ts\n"
 						: null,
 			}),
 		);

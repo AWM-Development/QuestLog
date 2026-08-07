@@ -2,7 +2,7 @@
 # Warns/fails when a ticket-implementation PR's diff strays outside its
 # ticket's declared `Context files:`, touches `Docs/mockups/`, or targets a
 # base branch other than `develop`. Real logic lives in
-# packages/core/src/ci/scope-guard.ts (unit-tested there); this is the thin,
+# packages/ci/src/scope-guard.ts (unit-tested there); this is the thin,
 # runner-neutral entry point CI calls. Run from the repo root (or a worktree
 # root) — never touches the working tree.
 # Usage: scripts/ci-scope-guard.sh <base-ref> <head-branch> <base-branch-name>
@@ -15,4 +15,4 @@ BASE_REF="${1:-origin/develop}"
 HEAD_BRANCH="${2:-}"
 BASE_BRANCH_NAME="${3:-develop}"
 
-pnpm --filter @questlog/core run ci-scope-guard "$BASE_REF" "$HEAD_BRANCH" "$BASE_BRANCH_NAME"
+pnpm --filter @questlog/ci run scope-guard "$BASE_REF" "$HEAD_BRANCH" "$BASE_BRANCH_NAME"

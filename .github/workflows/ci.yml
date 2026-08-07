@@ -202,7 +202,7 @@ jobs:
   # Fails a PR whose diff introduces or leaves a ticket file carrying an
   # unresolved `Gated on:` or an unmet `Blocked on:` — the machine-checked
   # version of the invariant CLAUDE.md/EXECUTOR_ROUTINE.md already state in
-  # prose. Logic lives in packages/core/src/ci/gate-guard.ts (unit-tested
+  # prose. Logic lives in packages/ci/src/gate-guard.ts (unit-tested
   # there); scripts/ci-gate-guard.sh is the same reusable entry point T-115's
   # pre-flight wiring will call. Why: Docs/tickets/gated/resolved/G-020.
   gate-guard:
@@ -235,7 +235,7 @@ jobs:
   # by this diff; hard-fails if the diff touches `Docs/mockups/` (narrower
   # version of mockup-guard's own check, scoped to ticket-implementation PRs)
   # or if the PR's base branch isn't `develop`. Logic lives in
-  # packages/core/src/ci/scope-guard.ts (unit-tested there); scripts/ci-scope-guard.sh
+  # packages/ci/src/scope-guard.ts (unit-tested there); scripts/ci-scope-guard.sh
   # is the same kind of thin, reusable entry point as gate-guard's above.
   # Why: Docs/tickets/gated/resolved/G-020 § Q2.
   scope-guard:

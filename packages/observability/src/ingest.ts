@@ -1,4 +1,4 @@
-import type { UsageArtifact } from "@questlog/core/observability/artifact.js";
+import type { UsageArtifact } from "@questlog/core/usage-capture/artifact.js";
 import { eq } from "drizzle-orm";
 import type { Database } from "./db/index.js";
 import {
