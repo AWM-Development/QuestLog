@@ -1,0 +1,37 @@
+name: Setup repo
+description: >-
+  Checkout + pnpm + Node.js + install — the shared preamble every job that
+  runs pnpm scripts needs. Extracted from ci.yml/e2e-release-check.yml call
+  sites, which differed only in checkout's ref/fetch-depth. Why:
+  Docs/tickets/reports/T-117-github-actions-lean-audit.md finding #3.
+
+inputs:
+  ref:
+    description: >-
+      Ref to check out. Empty defers to actions/checkout's own default (the
+      ref/SHA that triggered the workflow).
+    required: false
+    default: ""
+  fetch-depth:
+    description: Number of commits to fetch. 0 fetches full history.
+    required: false
+    default: "1"
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/checkout@v5
+      with:
+        ref: ${{ inputs.ref }}
+        fetch-depth: ${{ inputs.fetch-depth }}
+
+    - uses: pnpm/action-setup@v5
+
+    - uses: actions/setup-node@v5
+      with:
+        node-version: 20
+        cache: pnpm
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
