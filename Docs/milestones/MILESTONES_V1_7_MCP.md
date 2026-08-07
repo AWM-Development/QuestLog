@@ -88,13 +88,13 @@ No task here depends on another — each of the four gates resolves independentl
 
 ### Tasks
 
-- [ ] **M-PARTYMODEL.1 — `partyId` FK on `campaigns`**
+- [ ] **M-PARTYMODEL.1 — `partyId` FK on `campaigns`** (T-150)
   Add a nullable `party_id` column to `campaigns` (self-contained, no `parties` table required yet — a party is just a shared UUID value campaigns can optionally carry in common; promote to a dedicated table only if a future ticket needs party-level attributes). No existing query changes behavior: `query_lore`, `get_entity`, `list_entities`, `prep_brief` all stay `campaignId`-scoped exactly as today.
   Exit: migration applies cleanly against a seeded DB; existing campaign-scoping tests (`campaign-scoping.test.ts` et al.) stay green unmodified, proving the new column is inert until something reads it.
 
-- [ ] **M-PARTYMODEL.2 — `sourceId`-scoped search filter on `query_lore`**
-  Add an optional `sourceId` to `QueryLoreInput` (`packages/shared/src/validators/mcp.ts`) and thread it into `search.service.ts`'s existing `and(eq(chunks.campaignId, campaignId), ...)` filter as an additional `AND` when present. No schema change — `chunks.sourceId` already exists.
-  Exit: a `query_lore` call with `sourceId` set returns only chunks from that source (seeded fixture with ≥2 sources in one campaign, asserted narrowed); omitting `sourceId` behaves exactly as before (existing tests unmodified and green).
+- [ ] **M-PARTYMODEL.2 — `sourceId`-scoped search filter on `query_lore`** (T-151)
+  Add an optional `sourceId` to `QueryLoreInput` (`packages/shared/src/validators/mcp.ts`) and thread it through the actual call path `query_lore` uses — `context.service.ts`'s `ContextInput`/`SearchChunksInput` → `assemble`/`searchChunks` → both `searchService.search`'s and `keywordSearch`'s existing `and(eq(chunks.campaignId, campaignId), ...)` filters, as an additional `AND` when present. No schema change — `chunks.sourceId` already exists on both query legs.
+  Exit: a `query_lore` call with `sourceId` set returns only chunks from that source (seeded fixture with ≥2 sources in one campaign, asserted narrowed on both the vector and keyword legs); omitting `sourceId` behaves exactly as before (existing tests unmodified and green, including `searchChunks`'s other caller — entity seeding — which doesn't pass `sourceId`).
 
 ### Ordering constraint
 
