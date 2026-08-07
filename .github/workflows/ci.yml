@@ -30,6 +30,11 @@ jobs:
           --health-retries 5
 
     steps:
+      # Bare checkout first so the runner can resolve the local composite
+      # action below (a `uses: ./...` reference requires the repo already
+      # checked out) — setup-repo's own checkout step then re-checks out
+      # with the real ref/fetch-depth, superseding this one.
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-repo
 
       # test:e2e stays uncached — turbo.json marks it cache:false. test
@@ -170,6 +175,11 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
+      # Bare checkout first so the runner can resolve the local composite
+      # action below (a `uses: ./...` reference requires the repo already
+      # checked out) — setup-repo's own checkout step then re-checks out
+      # with the real ref/fetch-depth, superseding this one.
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-repo
         with:
           fetch-depth: 0
@@ -193,6 +203,11 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
+      # Bare checkout first so the runner can resolve the local composite
+      # action below (a `uses: ./...` reference requires the repo already
+      # checked out) — setup-repo's own checkout step then re-checks out
+      # with the real ref/fetch-depth, superseding this one.
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-repo
         with:
           fetch-depth: 0
@@ -223,6 +238,11 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
+      # Bare checkout first so the runner can resolve the local composite
+      # action below (a `uses: ./...` reference requires the repo already
+      # checked out) — setup-repo's own checkout step then re-checks out
+      # with the real ref/fetch-depth, superseding this one.
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-repo
         with:
           fetch-depth: 0
