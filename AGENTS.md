@@ -27,6 +27,7 @@ pnpm test           # Vitest, all packages (needs Postgres on :5433, migrated)
 
 ## Pointer map — load only when the ticket directs you to
 
+- Lost in the repo tree / "where does X live" → `Docs/ARCHITECTURE.md`
 - Conventions detail → `Docs/DEVELOPMENT_GUIDE.md`
 - Non-obvious gotchas → `Docs/IMPLEMENTATION_NOTES.md`
 - Pipeline commands quick reference → `Docs/tickets/COMMANDS.md` (or run `/command-help`)
