@@ -2,9 +2,10 @@
 
 Gate type: 🧠 strategy
 
-Milestone ref: TBD — no version/milestone slot reserved yet. Filed as a
-  speculative future-scope stub per Alex's explicit request during
-  `G-023`'s resolution, not tied to any currently-open milestone doc.
+Milestone ref: `Docs/milestones/MILESTONES_V1_9_MCP.md` — Milestone
+  M-DETECT. Reserved alongside `G-042` (item template system, unrelated
+  scope) under the same v1.9 slot — see that doc's "Why v1.9 exists" for
+  why the two share a version number.
 
 Opened: 2026-08-07 — filed by agent during `G-023`'s `/ungate` resolution,
   per Alex's explicit choice: M-INVENTORY ships manual-tool-calls-only for
@@ -30,10 +31,11 @@ Open question: Should QuestLog build one generalized "detect mentions of X
   `log_session`'s existing entity-detection path too, or does it only apply
   to detectors built after this gate resolves?
 
-Blocks: none yet — no milestone task exists to name; this gate is
-  speculative/future scope, not a currently-blocking dependency of anything
-  ticketed today. `M-INVENTORY`'s tickets (`T-142`/`T-143`/`T-144`) ship
-  without auto-detection and are explicitly not blocked on this gate.
+Blocks: `Docs/milestones/MILESTONES_V1_9_MCP.md` Milestone M-DETECT (no
+  tickets exist yet — this gate's resolution is what makes M-DETECT's task
+  list draftable). Not a blocking dependency of anything shipping today:
+  `M-INVENTORY`'s tickets (`T-142`/`T-143`/`T-144`) ship without
+  auto-detection and are explicitly not blocked on this gate.
 
 Notes: Raised so `M-INVENTORY`'s schema/tool design (`G-023`) doesn't
   foreclose a future auto-detect capability for loot/wealth, without

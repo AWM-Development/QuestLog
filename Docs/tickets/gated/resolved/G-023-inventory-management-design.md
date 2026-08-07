@@ -103,11 +103,7 @@ Resolved with Alex via `/ungate`. Answers to the seven sub-decisions:
    `faction`, `item`, `arc`. `inventory_items.ownerEntityId` is a nullable
    FK to `entities` that can reference *any* entity type — a `pc` for
    party-carried items, an `npc`/`location` for loot not yet taken, or
-   null for an unassigned shared pool. This single field is also the
-   answer to sub-decision 4 (loot vs. party inventory): one unified
-   mechanism, "looting" is a `transfer_item` call reassigning
-   `ownerEntityId` from an NPC/location to a PC, not a separate
-   create+delete.
+   null for an unassigned shared pool.
 
 3. **Wealth/currency: single abstracted total, structured for future
    extension.** `campaign_wealth` has a `(campaignId, denomination)`
@@ -119,9 +115,19 @@ Resolved with Alex via `/ungate`. Answers to the seven sub-decisions:
    total but easily iterable" — the row shape carries the extensibility,
    not a history mechanism).
 
-4. **NPC/location loot vs. party inventory: unified**, per point 2 above
-   — same `inventory_items` table, ownership transfer via `ownerEntityId`
-   reassignment.
+4. **NPC/location loot vs. party inventory: unified, confirmed explicitly
+   with Alex as a follow-up after the initial `/ungate` pass** (individual
+   items are assignable to any entity via `ownerEntityId` — same field
+   serves both PC ownership and NPC/monster loot; "looting" is a
+   `transfer_item` call reassigning `ownerEntityId`, not a separate
+   create+delete). Alex also confirmed the party-at-large treasury is a
+   distinct, separate concept from individual item assignment — that's
+   what `campaign_wealth` (point 3) already models — and flagged
+   loot-table generation (drawing individual items, including
+   template-defined ones, into a weighted/random table) as real future
+   scope, not in `T-142`/`T-143`/`T-144`'s scope now. Captured as
+   anticipated-but-not-yet-gated future work on the new v1.9 milestone doc
+   (see `G-042` below) rather than invented as a decision here.
 
 5. **Tool surface: split by operation, and — the most consequential
    call — no preview/confirm, no audit trail at all.** Four tools:
@@ -146,14 +152,31 @@ Resolved with Alex via `/ungate`. Answers to the seven sub-decisions:
    scan) as its own reusable mechanism, not bolted onto inventory
    specifically — is captured as a new gate-stub, `G-041`
    (`Docs/tickets/gated/G-041-generalized-freeform-text-detection.md`),
-   with no milestone slot assigned yet and no current blocking
-   dependency. M-INVENTORY's schema (nullable `ownerEntityId`, a
-   `denomination` column instead of a fixed shape) was deliberately kept
-   simple enough not to foreclose that future work.
+   reserved on the new `Docs/milestones/MILESTONES_V1_9_MCP.md` (Milestone
+   M-DETECT), with no current blocking dependency. M-INVENTORY's schema
+   (nullable `ownerEntityId`, a `denomination` column instead of a fixed
+   shape) was deliberately kept simple enough not to foreclose that future
+   work.
 
 7. **Query surface: yes to both.** `get_entity` includes an entity's
    assigned items; `prep_brief` surfaces campaign wealth and
    unassigned/pool items as prep context. Ticketed as M-INVENTORY.3.
+
+**Follow-up gate filed after this resolution:** while confirming point 4
+above, Alex separately raised wanting structured, reusable item
+*templates* — the same shape of problem `G-036` (stat block templates,
+v1.8) solves for monsters. Filed as `G-042`
+(`Docs/tickets/gated/G-042-item-template-system.md`), reserved alongside
+`G-041` on the new `Docs/milestones/MILESTONES_V1_9_MCP.md` (Milestone
+M-ITEMTEMPLATE) rather than resolved in this same session — this is a
+genuinely new open question (template scope/storage, template→instance
+relationship, field shape, whether image rendering applies, creation-flow
+integration), not something answerable from context already gathered here.
+Loot-table generation (drawing individual items, including template-defined
+ones, into a weighted/random table) was flagged by Alex as anticipated
+future scope that likely lands in the same v1.9 milestone once `G-042`
+resolves — noted on the milestone doc, not filed as its own gate yet since
+its shape depends on `G-042`'s answer.
 
 Ticketed via `/ungate` against `Docs/milestones/MILESTONES_V1_5_MCP.md`
 Milestone M-INVENTORY: `T-142` (schema + `pc` entity type, `queue/`),
