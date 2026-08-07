@@ -267,6 +267,42 @@ jobs:
           BASE_BRANCH: ${{ github.base_ref }}
         run: scripts/ci-scope-guard.sh "origin/$BASE_BRANCH" "$HEAD_BRANCH" "$BASE_BRANCH"
 
+  # ── Report Guard ───────────────────────────────────────────────────────────
+  # For a ticket-implementation PR (head branch prefix `feat/*`, same
+  # detection as scope-guard's above): hard-fails when the diff adds a
+  # Docs/tickets/reports/ file that isn't structurally complete against
+  # REPORT_TEMPLATE.md — a required heading missing, a leftover `<...>`
+  # template placeholder, or a `## Test evidence` section with no
+  # recognizable tool-output marker. Does not check whether the report's
+  # claims are *true* (that's T-113/T-114). Logic lives in
+  # packages/core/src/ci/report-guard.ts (unit-tested there);
+  # scripts/ci-report-guard.sh is the same kind of thin, reusable entry
+  # point as gate-guard's/scope-guard's above. Why: Docs/tickets/gated/resolved/G-020 § Q2.
+  report-guard:
+    name: Report Guard
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: "Check any newly-added report is structurally complete"
+        env:
+          HEAD_BRANCH: ${{ github.head_ref }}
+        run: scripts/ci-report-guard.sh "origin/${{ github.base_ref }}" "$HEAD_BRANCH"
+
   # ── Mockup Guard ──────────────────────────────────────────────────────────
   # Docs/mockups/ is generated manually in Claude Design during planning
   # sessions and is read-only to agents (see Docs/mockups/README.md). A

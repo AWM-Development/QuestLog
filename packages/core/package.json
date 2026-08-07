@@ -15,7 +15,8 @@
 		"typecheck": "tsc --noEmit",
 		"lint": "biome check .",
 		"ci-gate-guard": "tsx src/ci/gate-guard.ts",
-		"ci-scope-guard": "tsx src/ci/scope-guard.ts"
+		"ci-scope-guard": "tsx src/ci/scope-guard.ts",
+		"ci-report-guard": "tsx src/ci/report-guard.ts"
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.79.0",

@@ -176,7 +176,7 @@ resolution (`Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md
 - [x] **M-PIPELINE.15 — CI scope guard: diff confined to the ticket's declared `Context files:`, `Docs/mockups/` untouched, base is `develop`** (T-111)
   Exit: see T-111.
 
-- [ ] **M-PIPELINE.16 — CI report-completeness validator against `REPORT_TEMPLATE.md`** (T-112)
+- [x] **M-PIPELINE.16 — CI report-completeness validator against `REPORT_TEMPLATE.md`** (T-112)
   No placeholder text, required sections present, test-evidence block contains real runner output rather than a "tests pass" claim.
   Exit: see T-112.
 
