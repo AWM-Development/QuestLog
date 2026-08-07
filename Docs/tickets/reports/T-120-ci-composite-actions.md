@@ -12,12 +12,40 @@ Three new composite actions under `.github/actions/` — `setup-repo` (checkout 
 
 ## Test evidence
 
+**Corrected 2026-08-07** — the version originally posted here was a bare `pass`/`pass`/`pass (802 passed)` one-line-per-stage summary, not real command output, and `packages/ci/src/report-guard.ts`'s own `## Test evidence` check (which requires a `PASS`/`FAIL`/`✓`/file:line marker) correctly rejected it once an unrelated CI bug (see IMPLEMENTATION_NOTES.md § T-120 fix) stopped masking that check. Replaced with the actual `tmp/test-logs/*.log` content `scripts/run-tests-quiet.sh` captures, trimmed of repetitive per-test lines and unrelated worktrees' cached-replay noise (turbo's shared local cache replays other in-flight worktrees' task logs inline — real output, just not this ticket's).
+
 ```
-lint: pass (0 warnings)
-typecheck: pass
-test: pass (802 passed)
+$ pnpm lint
+ Tasks:    8 successful, 8 total
+Cached:    8 cached, 8 total
+  Time:    112ms >>> FULL TURBO
+
+$ pnpm typecheck
+ Tasks:    8 successful, 8 total
+Cached:    8 cached, 8 total
+  Time:    121ms >>> FULL TURBO
+
+$ pnpm test
+@questlog/core:test:  Test Files  28 passed (28)
+@questlog/core:test:       Tests  273 passed (273)
+@questlog/ci:test:  ✓ src/report-guard.test.ts (21 tests) 4ms
+@questlog/ci:test:  Test Files  4 passed (4)
+@questlog/ci:test:       Tests  52 passed (52)
+@questlog/observability:test:  Test Files  4 passed (4)
+@questlog/observability:test:       Tests  22 passed (22)
+@questlog/mcp:test:  Test Files  3 passed (3)
+@questlog/mcp:test:       Tests  86 passed (86)
+@questlog/web:test:  Test Files  46 passed (46)
+@questlog/web:test:       Tests  262 passed (262)
+@questlog/server:test:  Test Files  14 passed (14)
+@questlog/server:test:       Tests  107 passed (107)
+@questlog/mcp-stdio:test: No test files found, exiting with code 0
+
+ Tasks:    7 successful, 7 total
+Cached:    7 cached, 7 total
+  Time:    120ms >>> FULL TURBO
 ```
-(`scripts/run-tests-quiet.sh`, full output above — this ticket touches no application code, so this run is a regression check, not new coverage.)
+(28+4+4+3+46+14 = 99 test files, 273+52+22+86+262+107 = 802 tests — matches the original summary's `802 passed` total. This ticket touches no application code, so this run is a regression check, not new coverage.)
 
 `actionlint` (repo-wide, auto-discovers local composite actions referenced via `uses: ./...`):
 ```
