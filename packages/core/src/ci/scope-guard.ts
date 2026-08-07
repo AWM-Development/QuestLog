@@ -1,23 +1,17 @@
+// Layout: constants → exported types → exported pure logic (parseContextFiles,
+// runScopeGuard) with their private helpers immediately above each → private
+// real-git/CLI wiring (gitChangedFiles/realDeps/printResult) → CLI entry.
+// Only `parseContextFiles` and `runScopeGuard` are exported — per
+// .claude/rules/scripts.md Shape 1, those are the two functions
+// scope-guard.test.ts calls directly with synthetic deps; everything below
+// them is the real git/fs wiring the CLI entry point uses and tests never
+// touch, so it stays module-private. Same shape as gate-guard.ts.
 import { execFileSync } from "node:child_process";
 import { readRepoFile, resolveRepoRoot } from "./guard-utils.js";
 
 const TICKET_FILE_RE = /^Docs\/tickets\/(in-progress|done)\/(T-\d+)-.*\.md$/;
 const CONTEXT_FILES_HEADER_RE = /^Context files/;
 const CONTEXT_FILES_ITEM_RE = /^\s+-\s*(\S+)/;
-
-// EXECUTOR_ROUTINE.md's Definition of Done requires these on every
-// ticket-implementation PR regardless of the ticket's actual scope, and no
-// ticket ever lists them under its own Context files: — confirmed noisy on
-// the first real PR this job ran against (Docs/IMPLEMENTATION_NOTES.md § T-111).
-const STANDARD_WRAPUP_FILES = new Set([
-	"CHANGELOG.md",
-	"Docs/IMPLEMENTATION_NOTES.md",
-]);
-const MILESTONE_DOC_RE = /^Docs\/milestones\/.*\.md$/;
-
-function isStandardWrapupFile(path: string): boolean {
-	return STANDARD_WRAPUP_FILES.has(path) || MILESTONE_DOC_RE.test(path);
-}
 
 /** Parses the `Context files (load ONLY these):` block into its bare paths — dropping any trailing `§`/parenthetical explanation, per TICKET_SPEC.md's field format. */
 export function parseContextFiles(content: string): string[] {
@@ -72,6 +66,26 @@ function findTicketFile(changed: ChangedFile[]): ChangedFile | null {
 		matches.find((f) => f.path.startsWith("Docs/tickets/in-progress/")) ??
 		null
 	);
+}
+
+// The full Step 7 wrap-up file set (EXECUTOR_ROUTINE.md), cross-checked
+// against this exemption: milestone-doc checkbox flip and the ticket file's
+// own in-progress/ → done/ move are covered by MILESTONE_DOC_RE and the
+// `file.path === ticketFile.path` check in runScopeGuard respectively; the
+// report and usage.json are always newly-created (`added` status) so the
+// addedFiles check already exempts them. CHANGELOG.md and
+// IMPLEMENTATION_NOTES.md are the only two that are (a) always modified,
+// never added, and (b) never declared in any ticket's Context files: — the
+// ones this allowlist exists for. Confirmed noisy on this PR's own first
+// live CI run (Docs/IMPLEMENTATION_NOTES.md § T-111).
+const STANDARD_WRAPUP_FILES = new Set([
+	"CHANGELOG.md",
+	"Docs/IMPLEMENTATION_NOTES.md",
+]);
+const MILESTONE_DOC_RE = /^Docs\/milestones\/.*\.md$/;
+
+function isStandardWrapupFile(path: string): boolean {
+	return STANDARD_WRAPUP_FILES.has(path) || MILESTONE_DOC_RE.test(path);
 }
 
 /** The CI job's real entry function — everything `main()` does besides argv/exit wiring. Called directly by tests with synthetic-diff deps, and by `main()` with real git deps. */
