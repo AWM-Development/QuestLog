@@ -6,7 +6,7 @@ Complexity tier: L
 
 Strategy-gate flag: yes
 
-Priority: P2
+Priority: P1
 
 Branch: feat/m-pipeline/t-114-ci-red-check-job
 

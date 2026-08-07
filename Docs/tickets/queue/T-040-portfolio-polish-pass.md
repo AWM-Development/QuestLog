@@ -18,7 +18,7 @@ Milestone ref: M-AUDIT.4 (`Docs/milestones/MILESTONES_V1_1_MCP.md`)
 
 Complexity tier: D
 
-Priority: P2
+Priority: P1
 
 Context files (load broadly):
   - README.md (root — the first thing an outside reviewer opens)

@@ -6,7 +6,7 @@ Complexity tier: L
 
 Strategy-gate flag: yes
 
-Priority: P2
+Priority: P1
 
 Blocked on: T-108 — must be merged into develop first
 
