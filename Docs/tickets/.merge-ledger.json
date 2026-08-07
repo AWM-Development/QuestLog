@@ -24,6 +24,30 @@
     "mergedAt": "2026-08-06T13:37:32Z"
   },
   {
+    "ticketId": "T-101",
+    "prNumber": 209,
+    "branch": "feat/m-interact/t-101-retrofit-tool-descriptions-interaction-philosophy",
+    "mergedAt": "2026-08-06T18:49:50Z"
+  },
+  {
+    "ticketId": "T-102",
+    "prNumber": 210,
+    "branch": "feat/m-efficiency/t-102-xs-tier-established-pattern-fast-path",
+    "mergedAt": "2026-08-06T18:59:32Z"
+  },
+  {
+    "ticketId": "T-104",
+    "prNumber": 217,
+    "branch": "chore/m-pipeline/t-104-cite-not-restate-implementation-notes-rationale",
+    "mergedAt": "2026-08-06T22:22:59Z"
+  },
+  {
+    "ticketId": "T-105",
+    "prNumber": 212,
+    "branch": "feat/m-pipeline/t-105-agents-md-canonical-constitution",
+    "mergedAt": "2026-08-06T20:09:42Z"
+  },
+  {
     "ticketId": "T-110",
     "prNumber": 179,
     "branch": "feat/m-pipeline/t-110-ci-gate-guard",
@@ -70,5 +94,35 @@
     "prNumber": 204,
     "branch": "feat/m-efficiency/t-127-worktree-bootstrap-on-create",
     "mergedAt": "2026-08-06T14:50:04Z"
+  },
+  {
+    "ticketId": "T-130",
+    "prNumber": 207,
+    "branch": "fix/m-efficiency/t-130-local-worktree-db-verification-gate",
+    "mergedAt": "2026-08-06T17:58:28Z"
+  },
+  {
+    "ticketId": "T-132",
+    "prNumber": 214,
+    "branch": "chore/m-audit/t-132-bootstrap-drift-audit",
+    "mergedAt": "2026-08-06T21:44:49Z"
+  },
+  {
+    "ticketId": "T-134",
+    "prNumber": 215,
+    "branch": "feat/m-efficiency/t-134-d-tier-docs-only-fast-path",
+    "mergedAt": "2026-08-06T21:57:46Z"
+  },
+  {
+    "ticketId": "T-145",
+    "prNumber": 225,
+    "branch": "chore/m-audit/t-145-file-org-architecture-docs-audit",
+    "mergedAt": "2026-08-07T17:59:03Z"
+  },
+  {
+    "ticketId": "T-147",
+    "prNumber": 227,
+    "branch": "chore/m-pipeline/t-147-session-worktree-default",
+    "mergedAt": "2026-08-07T17:57:43Z"
   }
 ]

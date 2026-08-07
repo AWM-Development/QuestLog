@@ -237,7 +237,7 @@ uniform live GitHub check for every run (`EXECUTOR_ROUTINE.md` Step 1,
 rewritten by T-116/`M-EFFICIENCY.6`). A merge-triggered GitHub Action
 (`.github/workflows/ticket-status-ledger.yml`) writes `{ ticketId, prNumber,
 branch, mergedAt }` into `Docs/tickets/.merge-ledger.json` the moment a
-`feat/<group>/t-###-<slug>` branch merges, so the pre-flight can resolve the
+`(feat|chore|fix|refactor)/<group>/t-###-<slug>` branch merges, so the pre-flight can resolve the
 already-merged case for free by reading one small file instead of re-deriving
 it from GitHub's full PR history every night. The ledger is deliberately not
 the whole story, though — it only ever fires on merge, so it has nothing to
