@@ -2,7 +2,11 @@
 
 **Purpose:** Non-obvious decisions and gotchas that aren't derivable from reading the code. Read at the start of every session. Add an entry when you make a non-obvious decision. Retired entries: `Docs/IMPLEMENTATION_NOTES_ARCHIVE.md`.
 
-**Last Updated:** 2026-08-06
+**Last Updated:** 2026-08-07
+
+## G-024 — Party as a real parent of campaigns, not a tag (2026-08-07)
+
+Decided but not yet built: a future `partyId` FK belongs on `campaigns` (nullable, optional) so a group's later campaign can join back to an earlier one's lore — a shared label on entities/sessions can't deliver that on its own. Existing reads stay `campaignId`-scoped by default; cross-campaign access, when built, should be an opt-in search-time join, not copy/import. Full rationale: `Docs/tickets/gated/resolved/G-024-campaign-source-party-conceptual-model.md`.
 
 ## T-132 — Bootstrap architecture & pattern drift audit (2026-08-06)
 
