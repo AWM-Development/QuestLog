@@ -74,7 +74,7 @@ M-CANON.1 has no dependency and can ship first. M-CANON.2 depends on M-CANON.1's
   Extracted entities carry a `metadata` marker (e.g. `extractedFrom: sourceId`) distinguishing them from manually authored ones, so Alex can identify and refine them via existing `list_entities`/`get_entity` review — no new UI. Note: iterating on extraction specificity (wrong granularity, duplicate/near-duplicate entities) may want entity archival, now covered by T-088/T-089/T-090 (`G-006` resolved 2026-07-30 — soft-archive as a hide mechanism) — this task ships without waiting on those, since they're independent tickets, not a hard blocker.
   Exit: a created entity's metadata records which source/extraction produced it; `get_entity`/`list_entities` surface that marker in their existing output shape.
 
-- [ ] **M-EXTRACT.4 — Reusable LLM structured-extraction call pattern** (T-118)
+- [x] **M-EXTRACT.4 — Reusable LLM structured-extraction call pattern** (T-118)
   T-078's Out-of-scope line deferred any LLM-based extraction as "a bigger design question not resolved in `G-015`" — `G-021` resolves it. Before rewriting extraction itself, establish one reusable, DI-testable structured-output call to Claude (tool-use/JSON-schema-constrained), following the one-client-per-vendor precedent `voyage.client.ts` already sets, so this and future LLM features share a pattern instead of each rolling its own Anthropic SDK plumbing.
   Exit: a mocked-client unit test proves the new function returns a parsed, typed result from a fixture schema and throws `LlmApiError` on malformed output; nothing wired into extraction yet.
 
