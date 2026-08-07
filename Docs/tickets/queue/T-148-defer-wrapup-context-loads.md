@@ -1,4 +1,18 @@
-# T-142 — Defer wrap-up-only Context files to the step that actually uses them
+# T-148 — Defer wrap-up-only Context files to the step that actually uses them
+
+**Renumbered twice.** Originally `T-142`, which had already been
+independently claimed by
+`Docs/tickets/queue/T-142-inventory-wealth-schema-pc-entity-type.md`
+(M-INVENTORY.1, `Docs/milestones/MILESTONES_V1_5_MCP.md`, committed
+~9 minutes earlier the same day) — moved to `T-146` on 2026-08-07 during
+a `/T-145` file-org milestone-docs audit, same class as the
+`T-127`→`T-130`/`T-126`→`T-128` renumberings. That fix was never pushed
+before a separate concurrent session independently claimed `T-146` for
+`Docs/tickets/queue/T-146-lineup-milestone-progress-deployed-version.md`
+on `origin/develop` — a second real collision, caught by re-scanning
+`origin/develop` before drafting `T-128` in the same session. Moved again
+to `T-148` (confirmed free against `origin/develop`, highest ticket at
+the time was `T-147`).
 
 Milestone ref: M-EFFICIENCY.20 (`Docs/milestones/MILESTONES_V1_2_MCP.md`)
 
@@ -8,7 +22,7 @@ Strategy-gate flag: no
 
 Priority: P2
 
-Branch: feat/m-efficiency/t-142-defer-wrapup-context-loads
+Branch: feat/m-efficiency/t-148-defer-wrapup-context-loads
 
 Context files (load ONLY these):
   - Docs/tickets/EXECUTOR_ROUTINE.md § Step 3 (the "Every other tier" bullet list), § Step 6 (the `BLOCKED_TEMPLATE.md` bullet), § Step 7 (the `REPORT_TEMPLATE.md` bullet) — the only file this ticket edits
@@ -44,7 +58,7 @@ Scope: Amend three places in `Docs/tickets/EXECUTOR_ROUTINE.md`:
    appears in the ticket's `Context files:` list — e.g. "Skip
    `Docs/tickets/REPORT_TEMPLATE.md`/`Docs/tickets/BLOCKED_TEMPLATE.md`
    here even if the ticket names them — Step 7/Step 6 read them
-   immediately before use instead (T-142), since both are structural
+   immediately before use instead (T-148), since both are structural
    constants read once per run, not ticket-specific context."
 
 2. **Step 6** — currently opens directly with:
@@ -55,7 +69,7 @@ Scope: Amend three places in `Docs/tickets/EXECUTOR_ROUTINE.md`:
      "Efficiency notes" section ...
    ```
    Insert a new first bullet: "Read `Docs/tickets/BLOCKED_TEMPLATE.md`
-   now — Step 3 no longer reads it upfront (T-142)." before the existing
+   now — Step 3 no longer reads it upfront (T-148)." before the existing
    "Fill out..." bullet.
 
 3. **Step 7** — currently opens with the milestone-checkbox/IMPLEMENTATION_NOTES/CHANGELOG
@@ -66,7 +80,7 @@ Scope: Amend three places in `Docs/tickets/EXECUTOR_ROUTINE.md`:
    ```
    Insert a new bullet immediately before that one: "Read
    `Docs/tickets/REPORT_TEMPLATE.md` now — Step 3 no longer reads it
-   upfront (T-142)." (Placed right before the "Write the report" bullet,
+   upfront (T-148)." (Placed right before the "Write the report" bullet,
    not at the very top of Step 7, since the milestone-checkbox/notes/changelog
    bullets ahead of it don't need the template.)
 
