@@ -25,6 +25,28 @@ pnpm typecheck      # tsc -b, all packages
 pnpm test           # Vitest, all packages (needs Postgres on :5433, migrated)
 ```
 
+## Session isolation — work in your own worktree
+
+This applies to **every local session, not just the nightly executor.**
+`T-069` built worktree isolation (`tmp/worktrees/<name>/`, cut from
+`origin/develop`) for the ticket pipeline specifically — but two ordinary
+interactive sessions sharing the primary checkout collide exactly the
+same way, since the problem is files on disk, not git branches (`T-147`).
+
+Before editing anything: if you're running locally (not a fresh,
+inherently-isolated remote sandbox) and your working directory is the
+shared primary checkout rather than already a `tmp/worktrees/*` path,
+create/enter your own worktree first:
+
+```bash
+git fetch origin develop
+git worktree add tmp/worktrees/<short-slug> -B <branch-name> origin/develop
+cd tmp/worktrees/<short-slug>
+```
+
+Then do all work there — commits, pushes, everything. Skip this only for
+genuinely read-only sessions that make no edits.
+
 ## Pointer map — load only when the ticket directs you to
 
 - Conventions detail → `Docs/DEVELOPMENT_GUIDE.md`
