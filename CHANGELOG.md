@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-120
+
+- **`ci.yml` / `e2e-release-check.yml` share three new composite actions instead of hand-rolling the same setup steps at five call sites.** `.github/actions/setup-repo` (checkout + pnpm + Node + `pnpm install --frozen-lockfile`), `.github/actions/restore-turbo-cache` (the `.turbo/cache` restore step), and `.github/actions/provision-test-databases` (test-tier DB provisioning/migration) replace the duplicated inline steps T-117's audit flagged (findings #1–#3) — no behavior change, byte-for-byte equivalent to what ran before.
+
 ### Changed — T-147
 
 - **Worktree isolation is now the default for every local session, not just the nightly ticket pipeline.** `T-069`/`T-070` already isolated the executor/`/promote-execute`/`/lineup`/`/morning-review`/`/ungate` into their own `tmp/worktrees/<name>/`; `AGENTS.md` now carries the same rule for any local session (interactive planning, ad hoc audits, anything) before it edits anything, and `session-start.sh` prints a loud reminder when a local session is running in the shared primary checkout instead of a worktree.
