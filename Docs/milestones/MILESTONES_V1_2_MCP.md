@@ -53,7 +53,7 @@ This milestone builds the actual instrumentation instead of continuing to guess:
   Exit: `TICKET_SPEC.md` documents both fields with a concrete S/M/L rubric; `ticket-writer` and the report templates reference assigning/echoing them.
 
 - [ ] **M-OBS.7 — Cost model config: fully-loaded rate, review-time estimate, human-hour-equivalent by tier** (T-051)
-  A small, clearly-labeled-as-assumptions config (`packages/core/src/observability/cost-model.ts`) holding what no transcript can supply: Alex's fully-loaded hourly rate, a default review-time-per-ticket estimate, and human-engineer-hour-equivalents per complexity tier (from M-OBS.6) — plus pure functions computing "total system cost" (agent + reviewer-subagent + review-time cost) and the cost-vs-human-equivalent ratio per tier.
+  A small, clearly-labeled-as-assumptions config (`packages/core/src/usage-capture/cost-model.ts`) holding what no transcript can supply: Alex's fully-loaded hourly rate, a default review-time-per-ticket estimate, and human-engineer-hour-equivalents per complexity tier (from M-OBS.6) — plus pure functions computing "total system cost" (agent + reviewer-subagent + review-time cost) and the cost-vs-human-equivalent ratio per tier.
   Exit: both functions unit-tested against fixture inputs; the assumption-vs-measurement distinction is explicit in code comments.
 
 - [x] **M-OBS.8 — Fix `manually_inspected` false-positive detection** (T-096)

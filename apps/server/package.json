@@ -13,7 +13,7 @@
 		"lint": "biome check .",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "tsx ../../packages/core/src/db/migrate.ts",
-		"capture-usage": "tsx ../../packages/core/src/observability/capture-usage.ts",
+		"capture-usage": "tsx ../../packages/core/src/usage-capture/capture-usage.ts",
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
 		"smoke:mcp-remote": "tsx --env-file=../../.env scripts/mcp-remote-smoke.ts",

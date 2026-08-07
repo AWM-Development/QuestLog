@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import type { UsageArtifact } from "@questlog/core/observability/artifact.js";
+import type { UsageArtifact } from "@questlog/core/usage-capture/artifact.js";
 import { describe, expect, it } from "vitest";
 import {
 	mapReportToTicketReport,

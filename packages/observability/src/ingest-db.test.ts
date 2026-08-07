@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { testDbUrl } from "@questlog/core/db/test-db-url.js";
-import type { UsageArtifact } from "@questlog/core/observability/artifact.js";
+import type { UsageArtifact } from "@questlog/core/usage-capture/artifact.js";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres, { type Sql } from "postgres";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";

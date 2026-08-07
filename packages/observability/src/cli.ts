@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import type { UsageArtifact } from "@questlog/core/observability/artifact.js";
+import type { UsageArtifact } from "@questlog/core/usage-capture/artifact.js";
 import type { Database } from "./db/index.js";
 import {
 	type ReportType,
@@ -21,7 +21,7 @@ function inferReportType(content: string): ReportType {
  * to re-run against the same pair. `db` is injected (not imported from
  * ./db/index.js directly) so this stays testable against a test database
  * without opening the real OBSERVABILITY_DATABASE_URL connection — same
- * thin-shell/tested-service split as packages/core/src/observability/capture-usage.ts.
+ * thin-shell/tested-service split as packages/core/src/usage-capture/capture-usage.ts.
  */
 export async function ingestUsageArtifact(
 	db: Database,

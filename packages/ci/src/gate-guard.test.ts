@@ -179,7 +179,7 @@ describe("runGateGuard", () => {
 	it("ignores non-ticket files in the diff", () => {
 		const result = runGateGuard(
 			deps({
-				listChangedFiles: () => ["packages/core/src/ci/gate-guard.ts"],
+				listChangedFiles: () => ["packages/ci/src/gate-guard.ts"],
 			}),
 		);
 		expect(result.ok).toBe(true);

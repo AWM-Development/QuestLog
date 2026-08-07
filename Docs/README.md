@@ -1,6 +1,6 @@
 # QuestLog Documentation
 
-**Last Updated:** 2026-07-27
+**Last Updated:** 2026-08-07
 
 This folder contains all project documentation and planning artifacts.
 
@@ -17,6 +17,9 @@ This folder contains all project documentation and planning artifacts.
   - Read this before any frontend work. It supersedes PRD §5 for all visual/component details.
   - Contains the full CSS token set, component anatomy, and old→new token migration mapping.
   - Covers the entity-driven color system, four-plane depth hierarchy, and hover card interaction spec.
+
+### Architecture & Navigation
+- **ARCHITECTURE.md** — Start here to find your way around the repo. A human-navigable map: what lives in each top-level directory, placement rules for where new code goes, the file-count/file-size heuristics used to keep things that way, and a short system-architecture section (MCP tool → router → service → Drizzle request flow, the v1 MCP-first pivot). Read this before `DEVELOPMENT_GUIDE.md` if you're disoriented in the tree, not instead of it — this doc is about *where*, `DEVELOPMENT_GUIDE.md` is about *how*.
 
 ### Task Source
 - **milestones/MILESTONES_V1_MCP.md** — **Canonical task source for v1 (shipped).** Agents and humans select work from this file only. Describes the June 2026 MCP-first pivot ("Shape C") and the current milestone states (M1–M3 status, the M-MCP milestone tasks, and the explicit "Deferred to v2" list that no ticket may be written against).
@@ -44,12 +47,9 @@ The live process for getting work done. A nightly executor picks tickets off a q
 ### Mockups
 - **mockups/README.md** — How visual specs get into the pipeline: generated manually in Claude Design during planning, saved under `mockups/<view>/`, read-only to agents (CI hard-fails any PR touching this directory). A ticket's `Mockup:` field replaces the old 🎨 gate — see this file for the full 🎨-vs-🧠 distinction.
 
-### Audits
-Point-in-time, evidence-based snapshots of code-vs-spec drift. Not living docs — read them for their dated findings, don't expect them to track current state past their audit date.
-- **AUDIT_2026-07.md** — Milestones 1–3 build health and state inventory (audited against commit `ce4eecd`), plus the dead-weight/doc-supersession inventory that seeded the ticket-pipeline migration.
-- **AUDIT_2026-07-M4.md** — Milestone 4 (session editor, entity detection & linking, post-save processing, UI component library) state inventory, same methodology.
-
 ### Historical
+- **archive/AUDIT_2026-07.md** — Milestones 1–3 build health and state inventory (audited against commit `ce4eecd`), plus the dead-weight/doc-supersession inventory that seeded the ticket-pipeline migration. Point-in-time, not a living doc — read for its dated findings, don't expect it to track current state past its audit date.
+- **archive/AUDIT_2026-07-M4.md** — Milestone 4 (session editor, entity detection & linking, post-save processing, UI component library) state inventory, same methodology and same caveat.
 - **milestones-archive/M{X}/** — `PLAN.md` / `REPORT.md` / `DESIGN_SPEC.md` (where applicable) for milestones executed under the old pre-ticket "overnight agent" workflow (a daily plan-implement-review loop, retired 2026-07 in favor of the ticket pipeline once it had proven itself via `M-MCP.0`/`M-MCP.1`). Currently holds M4.1, M4.2, M4.5. Kept for historical reference only — nothing here reflects current process, and none of it should be treated as a template for new work.
 
 ### Analysis

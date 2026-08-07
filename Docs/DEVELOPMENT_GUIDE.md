@@ -649,7 +649,7 @@ Every AI coding session reads `CLAUDE.md` first. If the methodology evolves, upd
 
 ### Running the Audit
 
-Two prior audits are the concrete template for what a full doc/code audit looks like in this repo — evidence-cited verdicts (`done-and-verified` / `done-unchecked` / `partial` / `absent`), not a re-reading of checkboxes: `Docs/AUDIT_2026-07.md` (Milestones 1–3, build health, dead-weight inventory) and `Docs/AUDIT_2026-07-M4.md` (Milestone 4). Run a new one the same way when code vs. spec drift needs checking: state vs. code inventory per task, doc-freshness pass across `Docs/`, and infrastructure gaps (CLAUDE.md, PR template, CI, CHANGELOG, Docs/milestones/MILESTONES_V1_MCP.md consistency).
+Two prior audits are the concrete template for what a full doc/code audit looks like in this repo — evidence-cited verdicts (`done-and-verified` / `done-unchecked` / `partial` / `absent`), not a re-reading of checkboxes: `Docs/archive/AUDIT_2026-07.md` (Milestones 1–3, build health, dead-weight inventory) and `Docs/archive/AUDIT_2026-07-M4.md` (Milestone 4). Run a new one the same way when code vs. spec drift needs checking: state vs. code inventory per task, doc-freshness pass across `Docs/`, and infrastructure gaps (CLAUDE.md, PR template, CI, CHANGELOG, Docs/milestones/MILESTONES_V1_MCP.md consistency).
 
 ---
 
