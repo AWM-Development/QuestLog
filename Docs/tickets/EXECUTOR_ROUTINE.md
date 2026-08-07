@@ -20,6 +20,31 @@ The one exception is that first line, which is duplicated into the scheduler pro
 
 ---
 
+## Runners
+
+This routine is designed to be runner-agnostic — a fetch-then-`git show`
+bootstrap plus prose any agent that can run `git`/`gh` can execute
+(confirmed live, `Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md`
+Notes §1: `/lineup`'s procedure ran correctly end-to-end under a
+non-Claude agent, including Step 1's dedup classification). Two points in
+this routine assume Claude Code specifically:
+
+- The CRITICAL BRANCH RULES block's `Model: sonnet, always` line. A
+  different runner should follow whatever runner/model its own ticket
+  names instead, once `TICKET_SPEC.md`'s `Runner:` field lands (`T-107`)
+  — until then, this line only binds a Claude Code run.
+- Step 7's `capture-usage` invocation (and Step 6's equivalent for a
+  blocked run). This is Claude-Code-only — it resolves cost from
+  `CLAUDE_CODE_SESSION_ID` plus a `~/.claude/projects/**/<session>.jsonl`
+  transcript, and no other runner exposes an equivalent (`G-020` Notes
+  §3). A different runner should skip this step entirely, until a
+  runner-neutral cost adapter exists (`T-109`).
+
+Every other step — Step 0's fetch-only bootstrap, Step 1's ticket
+selection and dedup classification, Step 3's context loading, Step 4's
+TDD loop, Step 5's review, Step 6's blocked protocol, and the rest of
+Step 7 — is already runner-neutral, per `G-020` Notes §1.
+
 You are the QuestLog nightly ticket executor.
 
 CRITICAL BRANCH RULES — NEVER VIOLATE:
