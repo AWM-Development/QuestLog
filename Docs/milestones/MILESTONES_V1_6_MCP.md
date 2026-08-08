@@ -1,7 +1,7 @@
 # QuestLog — v1.6 Milestones (Pipeline Robustness)
 
 **Location:** `Docs/milestones/MILESTONES_V1_6_MCP.md`
-**Status:** Placeholder, same convention as `v1.5` — all four milestones below are fully gated, none has a task list yet. Not yet a task source `CLAUDE.md` points to; gets added there once at least one milestone below has real tasks (mirrors `MILESTONES_V1_5_MCP.md`'s own Status line). Scoped entirely to the pipeline itself (how tickets get built), not to QuestLog the product. `v1.5` was already reserved for `G-022`/`G-023` (MCP app polish, inventory management) before this doc was opened, so this work takes the next free slot rather than colliding with it.
+**Status:** Placeholder, same convention as `v1.5` — three of the four milestones below are still fully gated; `M-ROBUST.1` has a real ticket (`T-153`) as of `G-026`'s resolution. Not yet a task source `CLAUDE.md` points to; gets added there once at least one milestone below has real tasks (mirrors `MILESTONES_V1_5_MCP.md`'s own Status line). Scoped entirely to the pipeline itself (how tickets get built), not to QuestLog the product. `v1.5` was already reserved for `G-022`/`G-023` (MCP app polish, inventory management) before this doc was opened, so this work takes the next free slot rather than colliding with it.
 **Created:** 2026-08-02, opened directly by `G-020`'s Q4 follow-through (`Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md` § Resolution) rather than resolving a single gate the way v1.4 opened from `G-012` — `G-020` deliberately left Q4's five candidates un-ticketed and un-scoped, logging them as roadmap; this doc is the home for what happens once each is actually decided.
 
 ## Why v1.6 exists
@@ -11,7 +11,7 @@
 This doc exists so those four gates' eventual resolutions have a milestone to land in, rather than each spawning its own successor doc the way `G-012` → v1.4 did. `M-PIPELINE` itself stays the home for pipeline work that's already scoped and shippable (its own backlog from `G-020` Q1/Q2, plus whatever else surfaces the same way M-PIPELINE.6/.7 did — found during a morning review, not planned). v1.6 is specifically the *not-yet-scoped* pipeline-robustness surface.
 
 **Open gates:**
-- `G-026` (`Docs/tickets/gated/G-026-second-runner-parallel-execution-lane.md`) — blocks M-ROBUST.1.
+- `G-026` — resolved (`Docs/tickets/gated/resolved/G-026-second-runner-parallel-execution-lane.md`); drafted `T-153`.
 - `G-027` (`Docs/tickets/gated/G-027-external-visibility-surfaces-slack-tracker.md`) — blocks M-ROBUST.2.
 - `G-028` (`Docs/tickets/gated/G-028-automated-review-bots-second-opinion.md`) — blocks M-ROBUST.3.
 - `G-029` (`Docs/tickets/gated/G-029-ci-event-driven-triggers.md`) — blocks M-ROBUST.4.
@@ -26,8 +26,8 @@ This doc exists so those four gates' eventual resolutions have a milestone to la
 
 ### Tasks
 
-- [ ] **M-ROBUST.1 — Second runner as a parallel execution lane** (Gated on: G-026)
-  Devin cloud fan-out (or an equivalent), one machine per ticket, alongside the nightly Claude Code executor. `T-069`'s claim-push mutex already makes cross-lane ticket collision safe in principle; `G-026` decides which runner, concurrency limits, and sequencing against `T-109`'s cost adapter.
+- [ ] **M-ROBUST.1 — Second runner as a parallel execution lane** (T-153)
+  Devin cloud fan-out, one ticket at a time, alongside the nightly Claude Code executor. `T-069`'s claim-push mutex is trusted as-is for cross-lane ticket collision safety (no additional lane-assignment rule). Sequenced after `T-109`'s cost adapter lands — see `T-153`'s `Blocked on:` — per `G-026`'s resolution.
 
 - [ ] **M-ROBUST.2 — External visibility surfaces: Slack delivery + ticket-tracker mirror** (Gated on: G-027)
   `/lineup`/blocked-run/`/ungate` delivery to Slack, and whether an external tracker (Linear/Jira) mirrors `Docs/tickets/` without displacing it as canonical. Two candidates under one gate — see `G-027`.

@@ -900,3 +900,7 @@ Full audit findings, what was reviewed-and-left-alone, and the file-count/file-s
 ## G-025 — Superseded-lore history: `chunk_corrections` as the persisted audit trail (2026-08-08)
 
 `confirm_correct_lore` (T-076) already knew, transiently, which chunks it superseded and what replaced them, but persisted only the `status: "superseded"` flip — nothing recorded the *link* back to the correction that caused it, so "what did we used to think and when did it change" was unrecoverable once the transaction committed. `G-025`'s resolution (a dedicated audit/on-demand `get_chunk_history` tool, not a flag on an existing read tool, not proactive) needed that link to exist somewhere durable first — see `T-152` for the new `chunk_corrections` table and service. Full rationale: `Docs/tickets/gated/resolved/G-025-superseded-lore-history-visibility.md` § Resolution.
+
+## G-026 — Second runner (Devin cloud lane): claim-push mutex trusted alone, no lane-assignment rule (2026-08-08)
+
+`G-026`'s resolution committed to a second execution lane (Devin cloud, one ticket at a time, sequenced after `T-109`) without adding any explicit lane-assignment or priority/tier-split rule on top of `T-069`'s existing claim-push mutex — two lanes racing to push a claim on the same candidate is exactly the collision that mutex was already built to make safe, so a second rule would duplicate it. Full rationale: `Docs/tickets/gated/resolved/G-026-second-runner-parallel-execution-lane.md` § Resolution. `T-153` is the drafted ticket.
