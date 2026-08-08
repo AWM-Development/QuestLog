@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-113
+
+- **CI exit-condition evidence recomputation for ticket-implementation PRs.** A new `exit-condition-guard` CI job checks any `Docs/tickets/reports/` file newly added by a `feat/*`-branch PR: for each bullet in its `## Exit condition check` section that cites a specific test file/name, confirms that file actually exists in the PR's diff and that the named test appears in it — hard-fails on a false citation, passes a bullet naming no specific file/test as "unverifiable mechanically" rather than failing it. Recomputes the report's own claims instead of trusting them; distinct from `T-055` (mechanical diff-stat sync, not a claims check) and `T-114`'s red-check (which runs tests, this only confirms they exist). Logic lives in `packages/ci/src/exit-condition-guard.ts` (unit-tested, same DI'd shape as `gate-guard.ts`/`scope-guard.ts`/`report-guard.ts`). Part of `G-020`'s Q2 "instruction → invariant" candidate set.
+
 ### Added — T-107
 
 - **`TICKET_SPEC.md` gains a `Runner: claude-code | devin` field**, immediately before `Model:`. `Model:` now only applies when `Runner: claude-code` — a `Runner: devin` ticket omits it, since model selection there is Cognition's concern, not this pipeline's. Every ticket drafted before a second runner exists defaults to `claude-code`. `ticket-writer`'s field-filling step now proposes `Runner` alongside `Model`, same confirmation discipline as `Priority`. Implements `G-020` Q1(b); the field stays documented-but-inert (no executor selection-logic change) until `T-109`'s runner adapter and a real second-runner ticket land.
