@@ -8,7 +8,6 @@ Strategy-gate flag: no
 
 Priority: P1
 
-Blocked on: T-120 — must be merged into develop first
 
 Branch: feat/m-efficiency/t-123-smoke-test-reusable-workflow
 
