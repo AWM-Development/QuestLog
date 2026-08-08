@@ -35,6 +35,9 @@ export const ticketRuns = pgTable(
 	{
 		id: uuid("id").defaultRandom().primaryKey(),
 		ticketId: text("ticket_id"),
+		// Nullable placeholder column, ingest.ts defaults it — see
+		// IMPLEMENTATION_NOTES.md § T-108 for why.
+		runner: text("runner"),
 		emptyRun: boolean("empty_run").notNull().default(false),
 		sessionId: text("session_id").notNull(),
 		inputTokens: integer("input_tokens").notNull(),
