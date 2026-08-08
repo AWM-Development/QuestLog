@@ -11,11 +11,11 @@ This is an interactive-session command, run with Alex present — it proposes an
 
 ## Procedure
 
-1. Read `Docs/IMPLEMENTATION_NOTES.md` in full, plus `CLAUDE.md`'s task-source line (which milestone docs are "shipped" vs. "in progress" right now) and each milestone doc named there for its own header Status line (e.g. `MILESTONES_V1_MCP.md`: "v1, shipped").
+1. Read `Docs/IMPLEMENTATION_NOTES.md` in full, plus `AGENTS.md`'s task-source line (which milestone docs are "shipped" vs. "in progress" right now) and each milestone doc named there for its own header Status line (e.g. `MILESTONES_V1_MCP.md`: "v1, shipped").
 
 2. For every `##` section, classify it into exactly one bucket:
    - **Archive — shipped milestone.** The section is tagged with a milestone id (`M-MCP.*` directly, or a ticket id whose own file under `Docs/tickets/done/T-###-*.md` has a `Milestone ref:` pointing at one) whose governing doc's Status line reads "shipped," **and** the content is either fully superseded by a later section already in the file, or describes something that's now just how the shipped system works — stable, not a gotcha a fresh session would trip on.
-   - **Archive — superseded/dead surface.** The section describes a surface `CLAUDE.md` marks as not currently live (e.g. pre-pivot "Milestone 4.x" web-UI entries — check against CLAUDE.md's "the only kept web surface is SourcesPage; everything else is v2" line), regardless of which milestone doc nominally owns it. This can fire even for entries tagged to a milestone that predates the current numbering entirely.
+   - **Archive — superseded/dead surface.** The section describes a surface `AGENTS.md` marks as not currently live (e.g. pre-pivot "Milestone 4.x" web-UI entries — check against AGENTS.md's "the only kept web surface is SourcesPage; everything else is v2" line), regardless of which milestone doc nominally owns it. This can fire even for entries tagged to a milestone that predates the current numbering entirely.
    - **Keep — pipeline/tooling, still current.** The section documents pipeline mechanics (test infra, CI, executor routine, branch model) that stay live independent of which milestone shipped it. These often carry `Milestone ref: none` on their originating ticket — do not archive on a milestone-shipped basis alone; a pipeline-hygiene entry can outlive the milestone it was written during.
    - **Keep — active/in-progress.** Tied to a milestone doc still marked "in progress" (today: v1.1, v1.2), or describes code still under active change.
    - **Uncertain.** State your reasoning; do not force a guess into one of the buckets above.

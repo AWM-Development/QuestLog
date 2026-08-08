@@ -25,7 +25,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 }
 ```
 
-Examples already in the repo: `packages/core/src/observability/capture-usage.ts` (`captureUsage`), `packages/observability/src/cli.ts` (`ingestUsageArtifact`), both `db/migrate.ts` files (`migrationsFolder`/`REQUIRED_EXTENSIONS` consumed elsewhere).
+Examples already in the repo: `packages/core/src/usage-capture/capture-usage.ts` (`captureUsage`), `packages/observability/src/cli.ts` (`ingestUsageArtifact`), both `db/migrate.ts` files (`migrationsFolder`/`REQUIRED_EXTENSIONS` consumed elsewhere).
 
 **The guarded block must itself be covered by at least one test that calls the exported entry function the way the CLI does — not just the logic it delegates to.** A ticket's own review caught exactly this gap once already: a test suite called the lower-level upsert functions directly, never the CLI's own entry function, so a bug in the CLI's own argument-wiring could have shipped despite every other test passing.
 

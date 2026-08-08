@@ -1,0 +1,134 @@
+[
+  {
+    "ticketId": "T-083",
+    "prNumber": 193,
+    "branch": "feat/m-seed/t-083-create-entity-lore-seeding",
+    "mergedAt": "2026-08-06T13:48:41Z"
+  },
+  {
+    "ticketId": "T-084",
+    "prNumber": 192,
+    "branch": "feat/m-efficiency/t-084-tier-gated-executor-process-weight",
+    "mergedAt": "2026-08-04T23:56:53Z"
+  },
+  {
+    "ticketId": "T-092",
+    "prNumber": 194,
+    "branch": "feat/m-audit/t-092-upload-endpoint-auth-gap-decision",
+    "mergedAt": "2026-08-05T15:49:17Z"
+  },
+  {
+    "ticketId": "T-100",
+    "prNumber": 201,
+    "branch": "feat/m-interact/t-100-agent-interaction-philosophy-rule",
+    "mergedAt": "2026-08-06T13:37:32Z"
+  },
+  {
+    "ticketId": "T-101",
+    "prNumber": 209,
+    "branch": "feat/m-interact/t-101-retrofit-tool-descriptions-interaction-philosophy",
+    "mergedAt": "2026-08-06T18:49:50Z"
+  },
+  {
+    "ticketId": "T-102",
+    "prNumber": 210,
+    "branch": "feat/m-efficiency/t-102-xs-tier-established-pattern-fast-path",
+    "mergedAt": "2026-08-06T18:59:32Z"
+  },
+  {
+    "ticketId": "T-104",
+    "prNumber": 217,
+    "branch": "chore/m-pipeline/t-104-cite-not-restate-implementation-notes-rationale",
+    "mergedAt": "2026-08-06T22:22:59Z"
+  },
+  {
+    "ticketId": "T-105",
+    "prNumber": 212,
+    "branch": "feat/m-pipeline/t-105-agents-md-canonical-constitution",
+    "mergedAt": "2026-08-06T20:09:42Z"
+  },
+  {
+    "ticketId": "T-106",
+    "prNumber": 236,
+    "branch": "feat/m-pipeline/t-106-executor-routine-runners-section",
+    "mergedAt": "2026-08-07T20:50:29Z"
+  },
+  {
+    "ticketId": "T-110",
+    "prNumber": 179,
+    "branch": "feat/m-pipeline/t-110-ci-gate-guard",
+    "mergedAt": "2026-08-04T23:36:10Z"
+  },
+  {
+    "ticketId": "T-111",
+    "prNumber": 219,
+    "branch": "feat/m-pipeline/t-111-ci-scope-guard",
+    "mergedAt": "2026-08-07T14:07:50Z"
+  },
+  {
+    "ticketId": "T-112",
+    "prNumber": 222,
+    "branch": "feat/m-pipeline/t-112-ci-report-completeness-validator",
+    "mergedAt": "2026-08-07T15:37:11Z"
+  },
+  {
+    "ticketId": "T-116",
+    "prNumber": 182,
+    "branch": "feat/m-efficiency/t-116-pr-merge-status-ledger-action",
+    "mergedAt": "2026-08-04T23:29:41Z"
+  },
+  {
+    "ticketId": "T-118",
+    "prNumber": 231,
+    "branch": "feat/m-extract/t-118-llm-structured-extraction-client-pattern",
+    "mergedAt": "2026-08-07T19:59:59Z"
+  },
+  {
+    "ticketId": "T-120",
+    "prNumber": 232,
+    "branch": "feat/m-efficiency/t-120-ci-composite-actions",
+    "mergedAt": "2026-08-07T20:32:23Z"
+  },
+  {
+    "ticketId": "T-125",
+    "prNumber": 191,
+    "branch": "feat/m-efficiency/t-125-session-bootstrap-speed",
+    "mergedAt": "2026-08-05T01:06:13Z"
+  },
+  {
+    "ticketId": "T-127",
+    "prNumber": 204,
+    "branch": "feat/m-efficiency/t-127-worktree-bootstrap-on-create",
+    "mergedAt": "2026-08-06T14:50:04Z"
+  },
+  {
+    "ticketId": "T-130",
+    "prNumber": 207,
+    "branch": "fix/m-efficiency/t-130-local-worktree-db-verification-gate",
+    "mergedAt": "2026-08-06T17:58:28Z"
+  },
+  {
+    "ticketId": "T-132",
+    "prNumber": 214,
+    "branch": "chore/m-audit/t-132-bootstrap-drift-audit",
+    "mergedAt": "2026-08-06T21:44:49Z"
+  },
+  {
+    "ticketId": "T-134",
+    "prNumber": 215,
+    "branch": "feat/m-efficiency/t-134-d-tier-docs-only-fast-path",
+    "mergedAt": "2026-08-06T21:57:46Z"
+  },
+  {
+    "ticketId": "T-145",
+    "prNumber": 225,
+    "branch": "chore/m-audit/t-145-file-org-architecture-docs-audit",
+    "mergedAt": "2026-08-07T17:59:03Z"
+  },
+  {
+    "ticketId": "T-147",
+    "prNumber": 227,
+    "branch": "chore/m-pipeline/t-147-session-worktree-default",
+    "mergedAt": "2026-08-07T17:57:43Z"
+  }
+]

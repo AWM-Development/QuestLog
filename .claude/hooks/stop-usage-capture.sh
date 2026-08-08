@@ -5,7 +5,7 @@
 # own transcript (already logged to JSONL by Claude Code) is the only ground
 # truth. This script is a thin pass-through: it hands the hook's stdin
 # payload straight to packages/core's capture-usage entry point, which does
-# all the actual parsing/computation (packages/core/src/observability/).
+# all the actual parsing/computation (packages/core/src/usage-capture/).
 # See Docs/tickets/done/T-046-executor-usage-capture-hook.md.
 set -euo pipefail
 

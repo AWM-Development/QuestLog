@@ -16,7 +16,7 @@ import type { MessageSource } from "../db/schema/index.js";
 import { NotFoundError, ValidationError } from "../lib/errors.js";
 import type { ContextCitation } from "./context.service.js";
 import { contextService } from "./context.service.js";
-import type { StreamDeltaCallback } from "./llm.service.js";
+import type { LlmUsage, StreamDeltaCallback } from "./llm.service.js";
 import { LLM_CONFIG, llmService } from "./llm.service.js";
 
 // ---------------------------------------------------------------------------
@@ -50,7 +50,7 @@ export interface ChatResult {
 	content: string;
 	citations: ContextCitation[];
 	confidence: number;
-	usage: { inputTokens: number; outputTokens: number };
+	usage: LlmUsage;
 }
 
 // ---------------------------------------------------------------------------

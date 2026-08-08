@@ -1,0 +1,29 @@
+name: Provision and migrate test-tier databases
+description: >-
+  Migrate once per schema family into a template database, then clone every
+  test-tier database from its matching template instead of replaying the
+  full migration set per database. Postgres refuses to clone a template with
+  open connections — each migrate command's own tool closes its connection
+  on exit (migrate.ts's `client.end()`), so by the time the CREATE DATABASE
+  ... TEMPLATE loop below starts, both templates are already
+  connection-free. Why: Docs/tickets/T-086, Docs/IMPLEMENTATION_NOTES.md
+  § T-071 (also § T-027). Extracted (identical line-for-line across call
+  sites) per Docs/tickets/reports/T-117-github-actions-lean-audit.md
+  finding #2.
+
+runs:
+  using: composite
+  steps:
+    - name: Provision and migrate test-tier databases
+      shell: bash
+      run: |
+        source scripts/test-db-names.sh
+        for template in "${TEST_DB_TEMPLATES[@]}"; do
+          PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog_test -c "CREATE DATABASE ${template}"
+        done
+        DATABASE_URL="postgresql://questlog:questlog@localhost:5433/${TEST_DB_TEMPLATE_CORE}" eval "$(test_db_migrate_cmd "$TEST_DB_NAME_CORE")"
+        DATABASE_URL="postgresql://questlog:questlog@localhost:5433/${TEST_DB_TEMPLATE_OBSERVABILITY}" eval "$(test_db_migrate_cmd "$TEST_DB_NAME_OBSERVABILITY")"
+        for dbname in "${TEST_DB_NAMES_CI[@]}"; do
+          template="$(test_db_template_name "$dbname")"
+          PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog_test -c "CREATE DATABASE ${dbname} TEMPLATE ${template}"
+        done

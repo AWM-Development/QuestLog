@@ -492,6 +492,59 @@ describe("contextService", () => {
 	});
 
 	// -----------------------------------------------------------------------
+	// Test: searchChunks — ranked chunks without a conversationId
+	// -----------------------------------------------------------------------
+	it("searchChunks ranks chunks from two different sources by combined score, without a conversationId", async () => {
+		const [otherSource] = await db
+			.insert(sources)
+			.values({
+				campaignId,
+				name: "session-notes.txt",
+				type: "file",
+				status: "done",
+			})
+			.returning();
+		const otherSourceId = otherSource?.id ?? "";
+
+		await db.insert(chunks).values([
+			{
+				campaignId,
+				sourceId,
+				content: "Strahd von Zarovich is the vampire lord of Barovia.",
+				embedding: basisVector(0),
+				metadata: { position: 0 },
+				createdAt: new Date("2024-01-01T00:00:00Z"),
+			},
+			{
+				campaignId,
+				sourceId: otherSourceId,
+				content: "Strahd recently attacked the village of Barovia.",
+				embedding: basisVector(0),
+				metadata: { position: 0 },
+				createdAt: new Date("2024-12-31T00:00:00Z"),
+			},
+		]);
+
+		const mockFetch = createMockFetch(basisVector(0));
+
+		const results = await contextService.searchChunks(db, {
+			campaignId,
+			query: "Strahd Barovia",
+			fetchFn: mockFetch,
+		});
+
+		expect(results).toHaveLength(2);
+		// Ranked by combinedScore, descending
+		expect(results[0]?.combinedScore).toBeGreaterThanOrEqual(
+			results[1]?.combinedScore ?? 0,
+		);
+		// Both sources represented
+		const sourceIds = results.map((r) => r.sourceId);
+		expect(sourceIds).toContain(sourceId);
+		expect(sourceIds).toContain(otherSourceId);
+	});
+
+	// -----------------------------------------------------------------------
 	// Test 9: top-k 40 — greedy packer limits inclusions to token budget
 	// -----------------------------------------------------------------------
 	it("limits included chunks to token budget even when 40 candidates are retrieved", async () => {

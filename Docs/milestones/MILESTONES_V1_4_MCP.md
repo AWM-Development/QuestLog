@@ -30,11 +30,11 @@ v1.4 closes all three with one written policy plus a retrofit pass, so future to
 
 ### Tasks
 
-- [ ] **M-INTERACT.1 — Write the agent-interaction policy into `.claude/rules/mcp.md`** (T-100)
+- [x] **M-INTERACT.1 — Write the agent-interaction policy into `.claude/rules/mcp.md`** (T-100)
   Add a new section to the existing rules file (alongside the current "Write tools — preview/confirm/audit" and "Error shape" sections) stating the three-axis policy: (1) a tool description for any `confirm_*`-paired tool must instruct the model to summarize the proposed change to the user before calling confirm; (2) a tool description for any tool that starts async background work must instruct the model to proactively poll its status tool and narrate progress, generalizing `ingest_text`'s existing pattern into a standing rule rather than a one-off; (3) global error-tone guidance — the model should translate a `{ error: { code, message } }` result into a plain, non-alarming explanation with a suggested next step, not relay raw JSON — written once (in `ONBOARDING_INSTRUCTIONS`, per the DRY discipline that already governs that file, not duplicated per tool description).
   Exit: `.claude/rules/mcp.md` states all three rules in prescriptive, checkable language (a reviewer can point at a tool description and say whether it complies).
 
-- [ ] **M-INTERACT.2 — Retrofit existing tools to the new policy** (T-101)
+- [x] **M-INTERACT.2 — Retrofit existing tools to the new policy** (T-101)
   Add the error-tone sentence to `ONBOARDING_INSTRUCTIONS` (`packages/mcp/src/content/onboarding-instructions.ts`). Audit every write-tool description in `packages/mcp/src/content/tool-descriptions.ts` (`create_campaign`, `create_entity`, `append_entity_note`, `update_entity`/`confirm_update_entity`, `log_session`/`confirm_log_session`, `ingest_text`, `correct_lore`) against M-INTERACT.1's confirmation-narration and proactive-status-checking rules, and update any description that doesn't already comply.
   Exit: every `confirm_*`-paired tool's description instructs narration-before-confirm; `ingest_text`'s existing status-polling guidance is unchanged in substance (it already complies) but the rule is now written down so future tools match it; `ONBOARDING_INSTRUCTIONS` carries the error-tone sentence once.
 

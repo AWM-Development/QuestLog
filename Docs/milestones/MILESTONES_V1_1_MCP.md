@@ -61,6 +61,7 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 
 - [ ] **M-REMOTE.7 — Deploy + connect a real Claude Project + full remote test pass** (T-034)
   Deploy the above to dev, connect it as a real Claude.ai Custom Connector in an actual Project, re-run the v1 test plan (this session's table) against the remote transport end-to-end, then repeat for prod. **The Custom Connector setup itself is an Alex-only action** — it happens inside Alex's own Claude.ai account and cannot be scripted.
+  **Automatable half shipped** (`Docs/tickets/done/T-034-deploy-connect-claude-project.md`) — checkbox held pending Alex's real Custom Connector connection; see the ticket's own report for the checklist.
 
 - [x] **M-REMOTE.8 — Agent-interaction strategy for MCP-hooked sessions** (T-065, T-066, T-067)
   Resolved via `/ungate` on 2026-07-28 (`G-005`): no new MCP transport for
@@ -95,9 +96,11 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 
 - [ ] **M-CICD.2 — Post-merge smoke-test workflow (dev)** (T-036)
   A new, separate GitHub Actions workflow triggered on push to `develop`: migrate, verify schema + pgvector/pg_trgm extensions, one create/read/delete round-trip against the real dev Neon branch. Automates exactly what was done by hand during v1 sign-off. Does **not** touch or replace the existing PR-gate test suite.
+  **Code shipped** (`Docs/tickets/done/T-036-post-merge-smoke-test-dev.md`) — checkbox held pending the Alex-only `DEV_DATABASE_URL` GitHub Actions secret and a confirmed real workflow run; see the ticket's own report for the checklist.
 
 - [ ] **M-CICD.3 — Post-merge smoke-test workflow (prod)** (T-037)
   Same shape, triggered on push to `main`, against the real prod branch. **Read-only** by default (health + schema/extension checks, no automated write/delete) — an unattended write against prod on every merge felt like a bigger call than to default into silently; revisit if Alex wants prod's check to match dev's full round-trip.
+  **Code shipped** (`Docs/tickets/done/T-037-post-merge-smoke-test-prod.md`) — checkbox held pending the Alex-only `PROD_DATABASE_URL` GitHub Actions secret and a confirmed real workflow run; see the ticket's own report for the checklist.
 
 ---
 
@@ -137,26 +140,90 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   Surfaced during a `/morning-review` of T-072, not by a PRD section. `T-069` established `tmp/worktrees/T-###/` and never wired anything to remove one — `Docs/IMPLEMENTATION_NOTES.md` § T-069's own follow-up fix (T-070) already found this live: a worktree routinely still sits on disk right after its PR lands, since nothing ever runs `git worktree remove` on it. `T-072` compounds this: a finished worktree now also leaves a running `docker compose` stack (its own Postgres container, volume, and network) behind, not just inert files — an accumulating resource cost, not merely disk clutter. Both are reaped by the same trigger (a worktree's branch has a merged PR), so this covers them as one lifecycle fix rather than two separate ones, per `T-072`'s own report ("Anything Alex must decide").
   Exit: see T-087.
 
+**The tasks below (M-PIPELINE.8–19) extend this milestone per `G-020`'s
+resolution (`Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md`)
+— runner-agnosticism (Q1) and CI-enforced invariants (Q2). Two groups:**
+
+*Runner-agnosticism (Q1 — full commitment):*
+
+- [ ] **M-PIPELINE.8 — Runner-neutral `CLAUDE_PROJECT_DIR` default** (T-138)
+  `scripts/worktree-postgres-env.sh:7` and `.claude/hooks/session-start.sh:54` both hard-require `CLAUDE_PROJECT_DIR` with no fallback; under a runner that doesn't export it, a partial recovery (only the `cd` line fixed) silently reintroduces the `T-071`/`T-072`/`T-099` shared-Postgres collision instead of failing loudly. `G-020` Notes §2.
+  Exit: see T-138.
+
+- [x] **M-PIPELINE.9 — Adopt `AGENTS.md` as the canonical constitution** (T-105)
+  `CLAUDE.md` becomes a thin pointer to `AGENTS.md`, which carries the actual runner-neutral content (Principles, Commands, Pointer map, Hard rules) — the cross-tool convention every non-Claude runner checks for by default, per `G-020`'s Q3 research. `G-020` Notes §1 ("the routine is already portable by accident of good design") — this closes the one deliberate naming gap.
+  Exit: see T-105.
+
+- [x] **M-PIPELINE.10 — `EXECUTOR_ROUTINE.md` "Runners" section** (T-106)
+  Names which steps are Claude-Code-specific (the `Model: sonnet` field, hook-based usage capture) vs. runner-neutral, per `G-020` Q1(c) — a short section, not a per-runner fork of the routine. Blocked on T-105 (references `AGENTS.md`).
+  Exit: see T-106.
+
+- [ ] **M-PIPELINE.11 — Generalize `TICKET_SPEC.md`'s `Model:` field to `Runner:` + `Model:`** (T-107)
+  Per `G-020` Q1(b): `Runner: claude-code | devin`, with `Model:` only meaningful when `Runner: claude-code`. Updates `TICKET_SPEC.md` and `ticket-writer`'s field-filling step.
+  Exit: see T-107.
+
+- [ ] **M-PIPELINE.12 — `runner` dimension on `ticket_runs`** (T-108)
+  Nullable `runner` column (backfilled `'claude-code'` for existing rows), the established placeholder-column pattern (`packages/observability/src/schema/tables.ts`'s existing `complexityTier`/`filesChanged` columns). Schema-only — no adapter yet. `G-020` Notes §3.
+  Exit: see T-108.
+
+- [ ] **M-PIPELINE.13 — Runner-neutral cost adapter interface** (T-109)
+  A `RunnerCostAdapter` interface with Claude Code's existing transcript-based implementation as the reference case; a real Devin/ACU implementation is deferred until a second runner actually executes a ticket, per `G-020` Notes §3's honest options ("a `runner` dimension with per-runner views... `T-051`'s human-hour-equivalent model is runner-neutral and survives either way"). Blocked on T-108.
+  Exit: see T-109.
+
+*CI-enforced invariants (Q2 — all candidates, per Alex's call to build out the full backlog):*
+
+- [x] **M-PIPELINE.14 — CI gate guard: fail a PR whose ticket carries an unresolved `Gated on:`/unmet `Blocked on:`** (T-110)
+  The cheapest, highest-value check per `G-020` Q2 — directly the failure mode the Devin investigation session surfaced (skipped strategy-review stops). Required status check on `develop`.
+  Exit: see T-110.
+
+- [x] **M-PIPELINE.15 — CI scope guard: diff confined to the ticket's declared `Context files:`, `Docs/mockups/` untouched, base is `develop`** (T-111)
+  Exit: see T-111.
+
+- [x] **M-PIPELINE.16 — CI report-completeness validator against `REPORT_TEMPLATE.md`** (T-112)
+  No placeholder text, required sections present, test-evidence block contains real runner output rather than a "tests pass" claim.
+  Exit: see T-112.
+
+- [ ] **M-PIPELINE.17 — Exit-condition evidence recomputation** (T-113)
+  CI cross-checks the report's "Exit condition check" section against the diff itself (referenced test files actually exist and were touched) rather than trusting the agent's prose. Distinct from the already-queued `T-055` (PR diff-stat sync, a mechanical stat sync, not a claims check) — see T-113's own Context files for the boundary.
+  Exit: see T-113.
+
+- [ ] **M-PIPELINE.18 — Red-check CI job: a PR's new tests must fail against `develop`'s pre-change implementation** (T-114)
+  TDD enforced as a CI job, not a written rule — `G-020` Q2's most novel and highest-risk candidate. Scoped conservatively: identify new/changed test files via the PR diff, run only those against a temporary checkout of `develop`'s source, require at least one failure.
+  Exit: see T-114.
+
+- [ ] **M-PIPELINE.19 — Wire the enforcement guards into the executor's own pre-flight** (T-115)
+  So a run fails fast locally (Step 1) rather than only at PR time, per `G-020` Q2's "whether the same logic also runs as a pre-flight." Blocked on T-110, T-111, T-112, T-113, T-114.
+  Exit: see T-115.
+
+**`G-020` Q4 follow-through — now gated, not just logged as prose.** All five
+candidates raised here were subsequently filed as real gate-stubs
+(`G-026`–`G-029`, Slack and the external tracker grouped under one gate)
+blocking a new milestone, `M-ROBUST` (`Docs/milestones/MILESTONES_V1_6_MCP.md`)
+— see that doc for the full task list and each gate's own Open question.
+Nothing here is ticketed yet; `/ungate` resolves each gate in its own
+session before `M-ROBUST`'s tasks get real Scope/Exit-condition fields.
+
 ---
 
 ## Milestone M-AUDIT: Portfolio & Architecture Audit
 
-**Goal:** confirm v1.1's architecture is sound, secure, and scalable toward the deferred v2 scope, and that the repository reads well to an outside reviewer (both a technical audience and a general "is this a well-run project" read).
+**Goal:** confirm v1.1's architecture is sound and secure. (Scalability-into-v2 and portfolio-polish, originally M-AUDIT.3/M-AUDIT.4 below, moved to `v1.10`'s `M-RELEASE` — see note below.)
 
 ### Tasks
 
-- [ ] **M-AUDIT.1 — Extend `T-017`'s scope to cover v1.1** (T-017, amended in place)
+- [x] **M-AUDIT.1 — Extend `T-017`'s scope to cover v1.1** (T-017, amended in place) — SUPERSEDED
   `T-017` (architecture & pattern audit) already existed in the backlog, already unblocked (its trigger condition — the M-MCP hardening backlog being in `done/` — was already satisfied). Amended to also cover the M-REMOTE and M-CICD additions once they ship, rather than filing a duplicate. Stays interactive/Alex-present, never auto-promoted — unchanged from its original design.
+  **Superseded 2026-08-06** (`Docs/tickets/archive/T-017-architecture-pattern-audit.md`): its scope had drifted stale — last amended for v1.1 while v1.2/v1.3/v1.4 shipped underneath it — so Alex retired it rather than amending a second time, replacing it with `T-132` (`Docs/tickets/queue/T-132-bootstrap-drift-audit.md`, same 7 audit dimensions, widened through v1.4) plus a new companion `T-133` (`Docs/tickets/queue/T-133-drift-audit-command.md`, a recurring `/drift-audit` command). Checked off here as resolved-by-supersession, not as shipped; T-132/T-133 are v1.2-family follow-on work, not part of this milestone's own task list.
 
 - [x] **M-AUDIT.2 — Security review of the new remote-MCP surface** (T-038)
   The OAuth shim, the new HTTP transport, the existing (currently unauthenticated) `POST /api/campaigns/:id/sources/upload` REST endpoint now sitting behind the same public Fly apps, and the new GitHub Actions secrets M-CICD.2/M-CICD.3 introduce. Produces a written report + follow-up tickets for anything found, same shape as T-017. Severe findings follow the Blocked Protocol rather than being remediated unilaterally.
 
-- [ ] **M-AUDIT.3 — Scalability-into-v2 review** (T-039)
-  Whether current infrastructure choices (Neon Free-tier compute, in-process MCP tool calls, single-instance assumptions) hold up against the deferred v2 web-app scope in `Docs/milestones/MILESTONES_V1_MCP.md`'s "Deferred to v2" table. Interactive, not autonomous — same reasoning as T-017 (judging "will this scale" needs Alex's institutional context, not just what's in the rules docs).
+- [x] **M-AUDIT.3 — Scalability-into-v2 review** (T-039) — MOVED
+  **Moved 2026-08-07** to `M-RELEASE.1` (`Docs/milestones/MILESTONES_V1_10_MCP.md`), unchanged in scope. Its real trigger condition was always broader than v1.1 — it needs every MCP-roadmap milestone done, not just this version's — so bundling it under `v1.1`'s `M-AUDIT` was misleading about when it actually runs. Checked off here as resolved-by-relocation, not as shipped.
 
-- [ ] **M-AUDIT.4 — Portfolio polish pass** (T-040)
-  README quality, an architecture overview, demo script/screenshots, "how to run this" clarity for someone who has never seen the repo. Interactive — "does this read well to an outside reviewer" is a judgment call, not something to automate blind.
+- [x] **M-AUDIT.4 — Portfolio polish pass** (T-040) — MOVED
+  **Moved 2026-08-07** to `M-RELEASE.2` (`Docs/milestones/MILESTONES_V1_10_MCP.md`), unchanged in scope, same reasoning as M-AUDIT.3 above — it's the pre-req for Alex taking the repo from private to public, not a v1.1-specific closeout. Checked off here as resolved-by-relocation, not as shipped.
 
 ### Ordering constraint
 
-M-REMOTE.2 (T-029) has no code dependency on M-REMOTE.1 — it's standalone OAuth-server plumbing that never touches the relocated tool factory — so it can ship in parallel with, or even before, M-REMOTE.1. Everything else in M-REMOTE that isn't M-REMOTE.2 does depend on M-REMOTE.1: M-REMOTE.1 → (M-REMOTE.4, M-REMOTE.5, M-REMOTE.6 in any order) → M-REMOTE.3 (needs both M-REMOTE.1 and M-REMOTE.2) → M-REMOTE.7 (needs everything else in M-REMOTE). M-REMOTE.4 and M-REMOTE.5 additionally wait on `G-001` (`Docs/tickets/gated/G-001-write-tool-preview-confirm-scope.md`) resolving via `/ungate`, independent of the merge-dependency chain. M-CICD.2 → M-CICD.3 (reuses its script). M-AUDIT.2 waits on the M-REMOTE and M-CICD code tickets it reviews; M-AUDIT.1/3/4 are interactive and pulled in by Alex when the rest of v1.1 is far enough along, not auto-promoted. M-PIPELINE.1 depends on nothing in this doc and blocks nothing in it — it changes the executor's own runtime, not any product surface, so it can ship at any point. It is `P0` for a scheduling reason rather than a dependency one: every concurrent run made before it lands is exposed to the collisions it fixes, so its value decays the longer it waits. One interaction worth knowing about, not a dependency: `T-060` (queued, `P1`) touches `global-setup.ts`'s truncation path for a *within-run* race, a different problem in the same family as the *cross-agent* one `G-008` now covers — if both land near each other, expect to reconcile them by hand.
+M-REMOTE.2 (T-029) has no code dependency on M-REMOTE.1 — it's standalone OAuth-server plumbing that never touches the relocated tool factory — so it can ship in parallel with, or even before, M-REMOTE.1. Everything else in M-REMOTE that isn't M-REMOTE.2 does depend on M-REMOTE.1: M-REMOTE.1 → (M-REMOTE.4, M-REMOTE.5, M-REMOTE.6 in any order) → M-REMOTE.3 (needs both M-REMOTE.1 and M-REMOTE.2) → M-REMOTE.7 (needs everything else in M-REMOTE). M-REMOTE.4 and M-REMOTE.5 additionally wait on `G-001` (`Docs/tickets/gated/G-001-write-tool-preview-confirm-scope.md`) resolving via `/ungate`, independent of the merge-dependency chain. M-CICD.2 → M-CICD.3 (reuses its script). M-AUDIT.2 waits on the M-REMOTE and M-CICD code tickets it reviews; M-AUDIT.1 is interactive and pulled in by Alex when the rest of v1.1 is far enough along, not auto-promoted (M-AUDIT.3/4 moved to `v1.10`'s `M-RELEASE`, see above). M-PIPELINE.1 depends on nothing in this doc and blocks nothing in it — it changes the executor's own runtime, not any product surface, so it can ship at any point. It is `P0` for a scheduling reason rather than a dependency one: every concurrent run made before it lands is exposed to the collisions it fixes, so its value decays the longer it waits. One interaction worth knowing about, not a dependency: `T-060` (queued, `P1`) touches `global-setup.ts`'s truncation path for a *within-run* race, a different problem in the same family as the *cross-agent* one `G-008` now covers — if both land near each other, expect to reconcile them by hand.

@@ -17,13 +17,13 @@ export const GET_ENTITY_DESCRIPTION =
 	"Look up a single entity by id or by fuzzy name match. Exactly one of entityId or name must be provided.";
 
 export const CREATE_ENTITY_DESCRIPTION =
-	"Create a new entity (npc, location, faction, item, or arc) in a campaign. Direct write — only ever inserts a new row, no preview/confirm needed.";
+	"Create a new entity (npc, location, faction, item, or arc) in a campaign. Searches ingested lore for a matching description first: a high-confidence match seeds the description and is cited in the response, a caller-supplied description is never overwritten (a seeded draft is appended alongside it instead), and lower-confidence matches still come back as citations to review. Direct write — only ever inserts a new row, no preview/confirm needed.";
 
 export const APPEND_ENTITY_NOTE_DESCRIPTION =
 	"Append a note to an existing entity's description, without overwriting its prior content. Direct write — additive only, no preview/confirm needed.";
 
 export const UPDATE_ENTITY_DESCRIPTION =
-	"Preview a change to an existing entity's name, type, or description: returns the proposed before/after field values without persisting anything. Call confirm_update_entity with the returned token to save it.";
+	"Preview a change to an existing entity's name, type, or description: returns the proposed before/after field values without persisting anything. Summarize the proposed change to the user in plain language before calling confirm_update_entity with the returned token to save it.";
 
 export const CONFIRM_UPDATE_ENTITY_DESCRIPTION =
 	"Confirm a previously-previewed update_entity change-set: applies the proposed field changes to the entity.";
@@ -41,7 +41,7 @@ export const CONFIRM_UNARCHIVE_ENTITY_DESCRIPTION =
 	"Confirm a previously-previewed unarchive_entity change: sets the entity's status back to active.";
 
 export const LOG_SESSION_DESCRIPTION =
-	"Preview a new session log: detects entity mentions in the content and returns the session record plus entity links that would be written, without persisting anything. Call confirm_log_session with the returned token to save it.";
+	"Preview a new session log: detects entity mentions in the content and returns the session record plus entity links that would be written, without persisting anything. Summarize the proposed session record and entity links to the user in plain language before calling confirm_log_session with the returned token to save it.";
 
 export const CONFIRM_LOG_SESSION_DESCRIPTION =
 	"Confirm a previously-previewed log_session change-set: creates the session record, links its confirmed entities, chunks + embeds the content, and applies entity consolidation updates, all inside a single transaction.";
@@ -61,7 +61,7 @@ export const GET_SOURCE_STATUS_DESCRIPTION =
 	"Check the processing status of a source created via ingest_text (or file upload): pending, extracting, chunking, embedding, done, or error.";
 
 export const CORRECT_LORE_DESCRIPTION =
-	"Preview a lore correction: given correction text plus exactly one of sourceId (all that source's non-superseded chunks), chunkIds (explicit targets), or entityId (attribution only — empty target set, a pure addition). Returns a token and preview payload without marking anything superseded. Call confirm_correct_lore (separate tool) with the token to apply.";
+	"Preview a lore correction: given correction text plus exactly one of sourceId (all that source's non-superseded chunks), chunkIds (explicit targets), or entityId (attribution only — empty target set, a pure addition). Returns a token and preview payload without marking anything superseded. Summarize the proposed correction and what it would supersede to the user in plain language before calling confirm_correct_lore (separate tool) with the token to apply.";
 
 export const CONFIRM_CORRECT_LORE_DESCRIPTION =
 	"Confirm a previously-previewed correct_lore change-set: chunks + embeds the correction as new authoritative content and marks every target chunk superseded, all inside a single transaction.";

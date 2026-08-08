@@ -1,4 +1,7 @@
-import { createTestDb } from "@questlog/core/db/test-helpers.js";
+import {
+	createAccessToken,
+	createTestDb,
+} from "@questlog/core/db/test-helpers.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
 import { createMemoryStorage } from "@questlog/core/services/storage.service.js";
 /**
@@ -35,6 +38,7 @@ afterAll(async () => {
 
 describe("POST /api/campaigns/:campaignId/sources/upload", () => {
 	let campaignId: string;
+	let accessToken: string;
 
 	beforeEach(async () => {
 		await db.execute(sql`BEGIN`);
@@ -43,6 +47,7 @@ describe("POST /api/campaigns/:campaignId/sources/upload", () => {
 			theme: "fantasy",
 		});
 		campaignId = campaign.id;
+		accessToken = await createAccessToken(db);
 	});
 
 	afterEach(async () => {
@@ -58,6 +63,10 @@ describe("POST /api/campaigns/:campaignId/sources/upload", () => {
 		return form;
 	}
 
+	function authHeaders(form: FormData) {
+		return { ...form.getHeaders(), authorization: `Bearer ${accessToken}` };
+	}
+
 	it("accepts a valid text file and returns source with status pending", async () => {
 		const form = makeTextPayload("hello world", "notes.txt");
 
@@ -65,7 +74,7 @@ describe("POST /api/campaigns/:campaignId/sources/upload", () => {
 			method: "POST",
 			url: `/api/campaigns/${campaignId}/sources/upload`,
 			payload: form.getBuffer(),
-			headers: form.getHeaders(),
+			headers: authHeaders(form),
 		});
 
 		expect(response.statusCode).toBe(200);
@@ -85,7 +94,7 @@ describe("POST /api/campaigns/:campaignId/sources/upload", () => {
 			method: "POST",
 			url: `/api/campaigns/${campaignId}/sources/upload`,
 			payload: form.getBuffer(),
-			headers: form.getHeaders(),
+			headers: authHeaders(form),
 		});
 
 		expect(response.statusCode).toBe(200);
@@ -105,7 +114,7 @@ describe("POST /api/campaigns/:campaignId/sources/upload", () => {
 			method: "POST",
 			url: `/api/campaigns/${campaignId}/sources/upload`,
 			payload: form.getBuffer(),
-			headers: form.getHeaders(),
+			headers: authHeaders(form),
 		});
 
 		expect(response.statusCode).toBe(200);
@@ -123,7 +132,7 @@ describe("POST /api/campaigns/:campaignId/sources/upload", () => {
 			method: "POST",
 			url: `/api/campaigns/${campaignId}/sources/upload`,
 			payload: form.getBuffer(),
-			headers: form.getHeaders(),
+			headers: authHeaders(form),
 		});
 
 		expect(response.statusCode).toBe(400);
@@ -137,7 +146,7 @@ describe("POST /api/campaigns/:campaignId/sources/upload", () => {
 			method: "POST",
 			url: "/api/campaigns/not-a-uuid/sources/upload",
 			payload: form.getBuffer(),
-			headers: form.getHeaders(),
+			headers: authHeaders(form),
 		});
 
 		expect(response.statusCode).toBe(400);
@@ -147,11 +156,43 @@ describe("POST /api/campaigns/:campaignId/sources/upload", () => {
 		const response = await app.inject({
 			method: "POST",
 			url: `/api/campaigns/${campaignId}/sources/upload`,
-			headers: { "content-type": "multipart/form-data; boundary=---" },
+			headers: {
+				"content-type": "multipart/form-data; boundary=---",
+				authorization: `Bearer ${accessToken}`,
+			},
 			payload: "------\r\n\r\n------",
 		});
 
 		// Fastify multipart may return 400 or 500 depending on the malformed body
 		expect([400, 500]).toContain(response.statusCode);
+	});
+
+	it("rejects a request with no bearer token with 401", async () => {
+		const form = makeTextPayload("content");
+
+		const response = await app.inject({
+			method: "POST",
+			url: `/api/campaigns/${campaignId}/sources/upload`,
+			payload: form.getBuffer(),
+			headers: form.getHeaders(),
+		});
+
+		expect(response.statusCode).toBe(401);
+	});
+
+	it("rejects a request with an invalid bearer token with 401", async () => {
+		const form = makeTextPayload("content");
+
+		const response = await app.inject({
+			method: "POST",
+			url: `/api/campaigns/${campaignId}/sources/upload`,
+			payload: form.getBuffer(),
+			headers: {
+				...form.getHeaders(),
+				authorization: "Bearer not-a-real-token",
+			},
+		});
+
+		expect(response.statusCode).toBe(401);
 	});
 });

@@ -1,4 +1,4 @@
-import type { UsageArtifact } from "@questlog/core/observability/artifact.js";
+import type { UsageArtifact } from "@questlog/core/usage-capture/artifact.js";
 import { eq } from "drizzle-orm";
 import type { Database } from "./db/index.js";
 import {
@@ -18,8 +18,6 @@ export interface TicketRunRow {
 	durationMs: number;
 	turnCount: number;
 	turnsToGreen: number | null;
-	humanMessageCount: number;
-	manuallyInspected: boolean;
 	appliesRate: "intro" | "standard";
 	theoreticalCostIntroUsd: number;
 	theoreticalCostStandardUsd: number;
@@ -43,8 +41,6 @@ export function mapUsageArtifactToTicketRun(
 		durationMs: artifact.duration_ms,
 		turnCount: artifact.turn_count,
 		turnsToGreen: artifact.turns_to_green,
-		humanMessageCount: artifact.human_message_count,
-		manuallyInspected: artifact.manually_inspected,
 		appliesRate: artifact.theoretical_cost_usd.applies_rate,
 		theoreticalCostIntroUsd: artifact.theoretical_cost_usd.intro_usd,
 		theoreticalCostStandardUsd: artifact.theoretical_cost_usd.standard_usd,

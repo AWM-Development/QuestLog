@@ -30,36 +30,20 @@ jobs:
           --health-retries 5
 
     steps:
+      # Bare checkout first so the runner can resolve the local composite
+      # action below (a `uses: ./...` reference requires the repo already
+      # checked out) — setup-repo's own checkout step then re-checks out
+      # with the real ref/fetch-depth, superseding this one.
       - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-repo
 
-      - uses: pnpm/action-setup@v5
-
-      - uses: actions/setup-node@v5
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # ── Turborepo local cache ────────────────────────────────────────────
-      # Persists .turbo/cache (gitignored, turbo's on-disk task cache) across
-      # runs so lint/typecheck/build cache-hit when their inputs haven't
-      # changed. test:e2e stays uncached — turbo.json marks it cache:false.
-      # test itself has no such override, so turbo caches it too and will
-      # replay a prior run's real-DB result when the task hash is unchanged;
+      # test:e2e stays uncached — turbo.json marks it cache:false. test
+      # itself has no such override, so turbo caches it too and will replay
+      # a prior run's real-DB result when the task hash is unchanged;
       # that's only safe because the hash covers all first-party inputs, so
       # a replay only ever fires when nothing that could change the DB-backed
-      # result actually changed. Restore-keys fallback (lockfile hash only)
-      # so a source-only miss still restores the last cacheable state instead
-      # of starting fully cold. Why: Docs/tickets/T-086.
-      - name: Restore Turborepo cache
-        uses: actions/cache@v5
-        with:
-          path: .turbo/cache
-          key: turbo-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml', 'turbo.json', 'biome.json', 'tsconfig.base.json', 'apps/**/*.ts', 'apps/**/*.tsx', 'apps/**/tsconfig*.json', 'packages/**/*.ts', 'packages/**/*.tsx', 'packages/**/tsconfig*.json') }}
-          restore-keys: |
-            turbo-${{ runner.os }}-
+      # result actually changed. Why: Docs/tickets/T-086.
+      - uses: ./.github/actions/restore-turbo-cache
 
       # ── Lint ──────────────────────────────────────────────────────────────
       - name: Lint
@@ -85,27 +69,7 @@ jobs:
           fi
           echo "✅ No test.only or test.skip found."
 
-      # ── Provision and migrate every test-tier database ──────────────────
-      # Migrate once per schema family into a template database, then clone
-      # every test-tier database from its matching template instead of
-      # replaying the full migration set per database. Postgres refuses to
-      # clone a template with open connections — each migrate command's own
-      # tool closes its connection on exit (migrate.ts's `client.end()`), so
-      # by the time the CREATE DATABASE ... TEMPLATE loop below starts, both
-      # templates are already connection-free. Why: Docs/tickets/T-086,
-      # Docs/IMPLEMENTATION_NOTES.md § T-071 (also § T-027).
-      - name: Provision and migrate test-tier databases
-        run: |
-          source scripts/test-db-names.sh
-          for template in "${TEST_DB_TEMPLATES[@]}"; do
-            PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog_test -c "CREATE DATABASE ${template}"
-          done
-          DATABASE_URL="postgresql://questlog:questlog@localhost:5433/${TEST_DB_TEMPLATE_CORE}" eval "$(test_db_migrate_cmd "$TEST_DB_NAME_CORE")"
-          DATABASE_URL="postgresql://questlog:questlog@localhost:5433/${TEST_DB_TEMPLATE_OBSERVABILITY}" eval "$(test_db_migrate_cmd "$TEST_DB_NAME_OBSERVABILITY")"
-          for dbname in "${TEST_DB_NAMES_CI[@]}"; do
-            template="$(test_db_template_name "$dbname")"
-            PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog_test -c "CREATE DATABASE ${dbname} TEMPLATE ${template}"
-          done
+      - uses: ./.github/actions/provision-test-databases
 
       # ── Full test suite ───────────────────────────────────────────────────
       # Unit + integration only (real DB, mocked external APIs). The real-API
@@ -197,6 +161,96 @@ jobs:
           else
             echo "✅ Migration guard passed — no schema changes detected."
           fi
+
+  # ── Gate Guard ─────────────────────────────────────────────────────────────
+  # Fails a PR whose diff introduces or leaves a ticket file carrying an
+  # unresolved `Gated on:` or an unmet `Blocked on:` — the machine-checked
+  # version of the invariant CLAUDE.md/EXECUTOR_ROUTINE.md already state in
+  # prose. Logic lives in packages/ci/src/gate-guard.ts (unit-tested
+  # there); scripts/ci-gate-guard.sh is the same reusable entry point T-115's
+  # pre-flight wiring will call. Why: Docs/tickets/gated/resolved/G-020.
+  gate-guard:
+    name: Gate Guard
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      # Bare checkout first so the runner can resolve the local composite
+      # action below (a `uses: ./...` reference requires the repo already
+      # checked out) — setup-repo's own checkout step then re-checks out
+      # with the real ref/fetch-depth, superseding this one.
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-repo
+        with:
+          fetch-depth: 0
+
+      - name: "Check for unresolved Gated on: / unmet Blocked on:"
+        run: scripts/ci-gate-guard.sh origin/${{ github.base_ref }}
+
+  # ── Scope Guard ────────────────────────────────────────────────────────────
+  # For a ticket-implementation PR (head branch prefix `feat/*`, TICKET_SPEC.md's
+  # "Branch naming" convention): warns (does not fail) when the diff touches a
+  # path outside the ticket's declared `Context files:` and not newly created
+  # by this diff; hard-fails if the diff touches `Docs/mockups/` (narrower
+  # version of mockup-guard's own check, scoped to ticket-implementation PRs)
+  # or if the PR's base branch isn't `develop`. Logic lives in
+  # packages/ci/src/scope-guard.ts (unit-tested there); scripts/ci-scope-guard.sh
+  # is the same kind of thin, reusable entry point as gate-guard's above.
+  # Why: Docs/tickets/gated/resolved/G-020 § Q2.
+  scope-guard:
+    name: Scope Guard
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      # Bare checkout first so the runner can resolve the local composite
+      # action below (a `uses: ./...` reference requires the repo already
+      # checked out) — setup-repo's own checkout step then re-checks out
+      # with the real ref/fetch-depth, superseding this one.
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-repo
+        with:
+          fetch-depth: 0
+
+      - name: "Check diff is confined to declared Context files:, base is develop"
+        # github.head_ref is attacker-controlled (a fork's branch name) — pass
+        # it through env, never interpolate it directly into the run: script,
+        # per actionlint's expression-injection check.
+        env:
+          HEAD_BRANCH: ${{ github.head_ref }}
+          BASE_BRANCH: ${{ github.base_ref }}
+        run: scripts/ci-scope-guard.sh "origin/$BASE_BRANCH" "$HEAD_BRANCH" "$BASE_BRANCH"
+
+  # ── Report Guard ───────────────────────────────────────────────────────────
+  # For a ticket-implementation PR (head branch prefix `feat/*`, same
+  # detection as scope-guard's above): hard-fails when the diff adds a
+  # Docs/tickets/reports/ file that isn't structurally complete against
+  # REPORT_TEMPLATE.md — a required heading missing, a leftover `<...>`
+  # template placeholder, or a `## Test evidence` section with no
+  # recognizable tool-output marker. Does not check whether the report's
+  # claims are *true* (that's T-113/T-114). Logic lives in
+  # packages/ci/src/report-guard.ts (unit-tested there);
+  # scripts/ci-report-guard.sh is the same kind of thin, reusable entry
+  # point as gate-guard's/scope-guard's above. Why: Docs/tickets/gated/resolved/G-020 § Q2.
+  report-guard:
+    name: Report Guard
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      # Bare checkout first so the runner can resolve the local composite
+      # action below (a `uses: ./...` reference requires the repo already
+      # checked out) — setup-repo's own checkout step then re-checks out
+      # with the real ref/fetch-depth, superseding this one.
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-repo
+        with:
+          fetch-depth: 0
+
+      - name: "Check any newly-added report is structurally complete"
+        env:
+          HEAD_BRANCH: ${{ github.head_ref }}
+        run: scripts/ci-report-guard.sh "origin/${{ github.base_ref }}" "$HEAD_BRANCH"
 
   # ── Mockup Guard ──────────────────────────────────────────────────────────
   # Docs/mockups/ is generated manually in Claude Design during planning

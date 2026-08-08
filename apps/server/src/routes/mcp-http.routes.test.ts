@@ -1,7 +1,8 @@
-import { createHash, randomBytes } from "node:crypto";
 import { LATEST_PROTOCOL_VERSION } from "@modelcontextprotocol/sdk/types.js";
-import { createTestDb } from "@questlog/core/db/test-helpers.js";
-import { mcpOauthService } from "@questlog/core/services/mcp-oauth.service.js";
+import {
+	createAccessToken,
+	createTestDb,
+} from "@questlog/core/db/test-helpers.js";
 import { sql } from "drizzle-orm";
 import {
 	afterAll,
@@ -53,40 +54,11 @@ const EXPECTED_TOOLS = [
 	"confirm_log_session",
 	"ingest_text",
 	"get_source_status",
+	"confirm_ingest_entities",
 	"correct_lore",
+	"confirm_correct_lore",
 	"help",
 ];
-
-function resourceUrl() {
-	return "http://127.0.0.1:80/mcp";
-}
-
-function makePkcePair() {
-	const codeVerifier = randomBytes(32).toString("base64url");
-	const codeChallenge = createHash("sha256")
-		.update(codeVerifier)
-		.digest("base64url");
-	return { codeVerifier, codeChallenge };
-}
-
-async function getAccessToken() {
-	const client = await mcpOauthService.registerClient(db, {
-		redirectUri: "https://claude.ai/api/mcp/callback",
-	});
-	const { codeVerifier, codeChallenge } = makePkcePair();
-	const { code } = await mcpOauthService.createAuthorizationCode(db, {
-		clientId: client.clientId,
-		codeChallenge,
-		resource: resourceUrl(),
-	});
-	const tokens = await mcpOauthService.exchangeAuthorizationCode(db, {
-		code,
-		clientId: client.clientId,
-		codeVerifier,
-		resource: resourceUrl(),
-	});
-	return tokens.accessToken;
-}
 
 function initializeRequestBody() {
 	return {
@@ -160,8 +132,8 @@ describe("mcp-http routes", () => {
 	});
 
 	describe("POST /mcp — with a valid bearer token", () => {
-		it("completes the initialize handshake and tools/list returns all 19 tools", async () => {
-			const accessToken = await getAccessToken();
+		it("completes the initialize handshake and tools/list returns all 21 tools", async () => {
+			const accessToken = await createAccessToken(db);
 
 			const initResponse = await app.inject({
 				method: "POST",

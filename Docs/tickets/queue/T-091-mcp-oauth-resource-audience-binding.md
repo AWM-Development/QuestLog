@@ -2,6 +2,8 @@
 
 Milestone ref: none — follow-up from T-038's security review (`Docs/tickets/reports/T-038-security-review-remote-mcp-surface.md`, Area 1)
 
+Complexity tier: S
+
 Priority: P2
 
 Branch: feat/m-audit/t-091-mcp-oauth-resource-audience-binding

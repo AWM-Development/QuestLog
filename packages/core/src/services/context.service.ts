@@ -72,6 +72,15 @@ export const CONTEXT_CONFIG = {
 	keywordSearchThreshold: 0.1,
 	/** Score boost when a chunk appears in both vector and keyword results. */
 	dualMatchBoost: 0.1,
+
+	/**
+	 * Minimum chunk score (same scale as this module's `confidence`) for
+	 * `create_entity`'s lore-seeding (T-083, G-016) to draft a description
+	 * from a search match instead of leaving it to the caller. No usage data
+	 * exists yet to tune this precisely — an explicit, documented default
+	 * open to adjustment, not a number treated as final.
+	 */
+	seedConfidenceThreshold: 0.7,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -87,6 +96,15 @@ export interface ContextInput {
 	tokenBudget?: number;
 	/** Number of candidate chunks to retrieve before budget trimming. Default: 40. */
 	searchLimit?: number;
+	/** Override fetch for testing (passed through to search service). */
+	fetchFn?: FetchFn;
+}
+
+export interface SearchChunksInput {
+	campaignId: string;
+	query: string;
+	/** Number of candidate chunks to retrieve per search leg. Default: 40. */
+	limit?: number;
 	/** Override fetch for testing (passed through to search service). */
 	fetchFn?: FetchFn;
 }
@@ -281,6 +299,32 @@ function formatEntity(entity: {
 
 export const contextService = {
 	/**
+	 * Run the hybrid vector + keyword search, merge, and recency re-rank steps
+	 * used by `assemble`'s chunk section — without a `conversationId`, token
+	 * budget trimming, or formatted context text. For callers (e.g. entity
+	 * seeding) that only need ranked candidate chunks.
+	 */
+	async searchChunks(
+		db: Database,
+		input: SearchChunksInput,
+	): Promise<Array<SearchResult & { combinedScore: number }>> {
+		const {
+			campaignId,
+			query,
+			limit = CONTEXT_CONFIG.defaultSearchLimit,
+		} = input;
+		const fetchFn = input.fetchFn ?? globalThis.fetch;
+
+		const [vectorResults, kwResults] = await Promise.all([
+			searchService.search(db, { campaignId, query, limit, fetchFn }),
+			keywordSearch(db, campaignId, query, limit),
+		]);
+
+		const rawResults = mergeSearchResults(vectorResults, kwResults);
+		return applyRecencyWeighting(rawResults);
+	},
+
+	/**
 	 * Assemble a context window for the given query and campaign.
 	 *
 	 * Always returns a valid AssembledContext — callers do not need to handle
@@ -311,21 +355,13 @@ export const contextService = {
 
 		if (!campaign) throw new NotFoundError("Campaign", campaignId);
 
-		// -- Hybrid search: vector + keyword in parallel -----------------------
-		const [vectorResults, kwResults] = await Promise.all([
-			searchService.search(db, {
-				campaignId,
-				query,
-				limit: searchLimit,
-				fetchFn,
-			}),
-			keywordSearch(db, campaignId, query, searchLimit),
-		]);
-
-		const rawResults = mergeSearchResults(vectorResults, kwResults);
-
-		// -- Recency re-ranking ------------------------------------------------
-		const rankedResults = applyRecencyWeighting(rawResults);
+		// -- Hybrid search: vector + keyword, merged and recency re-ranked -----
+		const rankedResults = await contextService.searchChunks(db, {
+			campaignId,
+			query,
+			limit: searchLimit,
+			fetchFn,
+		});
 
 		// Select chunks that fit within the chunk token budget.
 		// We use "continue" rather than "break" so that a smaller chunk that

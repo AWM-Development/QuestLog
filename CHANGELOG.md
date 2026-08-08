@@ -10,6 +10,114 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-08-08
+
+### Added — T-106
+
+- **`EXECUTOR_ROUTINE.md` gains a "Runners" section.** Documents which two steps of the pipeline routine are Claude-Code-specific (the `Model: sonnet, always` line, and Step 7/6's `capture-usage` invocation) and what a different runner should do instead, plus confirms every other step is already runner-neutral. Implements `G-020` Q1(c)'s decision not to fork the routine per runner — the routine stays one document, portable by construction.
+
+### Changed — T-120
+
+- **`ci.yml` / `e2e-release-check.yml` share three new composite actions instead of hand-rolling the same setup steps at five call sites.** `.github/actions/setup-repo` (checkout + pnpm + Node + `pnpm install --frozen-lockfile`), `.github/actions/restore-turbo-cache` (the `.turbo/cache` restore step), and `.github/actions/provision-test-databases` (test-tier DB provisioning/migration) replace the duplicated inline steps T-117's audit flagged (findings #1–#3) — no behavior change, byte-for-byte equivalent to what ran before.
+
+### Added — T-118
+
+- **Reusable structured-output call pattern for Claude.** `llm.service.ts`'s `createLlmService(client?)` gains `callClaudeStructured<T>`, a single-call, DI-testable method that forces Claude to respond via a caller-supplied JSON schema (a `tool_choice`-forced tool call) and returns the parsed, typed result — throwing `LlmApiError` if the response has no matching tool call or a non-object payload. No conversation history, no streaming, no wiring into any feature yet; it exists standalone so `T-119` (entity-candidate detection) and future structured-extraction call sites can share one implementation instead of each rolling their own Anthropic tool-use plumbing.
+
+### Changed — T-147
+
+- **Worktree isolation is now the default for every local session, not just the nightly ticket pipeline.** `T-069`/`T-070` already isolated the executor/`/promote-execute`/`/lineup`/`/morning-review`/`/ungate` into their own `tmp/worktrees/<name>/`; `AGENTS.md` now carries the same rule for any local session (interactive planning, ad hoc audits, anything) before it edits anything, and `session-start.sh` prints a loud reminder when a local session is running in the shared primary checkout instead of a worktree.
+
+### Added — T-112
+
+- **CI report-completeness validator for ticket-implementation PRs.** A new `report-guard` CI job checks any `Docs/tickets/reports/` file newly added by a `feat/*`-branch PR against `REPORT_TEMPLATE.md`'s structure: hard-fails if a required `## ` heading is missing, a leftover `<...>` template placeholder is still present, or the `## Test evidence` section has no recognizable tool-output marker (`PASS`/`FAIL`/`✓`/a file:line pattern) rather than a bare "tests pass" claim. Does not check whether the report's claims are *true* — that's `T-113`/`T-114`. Logic lives in `packages/core/src/ci/report-guard.ts` (unit-tested, same DI'd, `gate-guard.ts`-modeled shape as `T-110`/`T-111`); its `validateReportStructure` helper is generic over the required-headings list so `T-115` can reuse it for `BLOCKED_TEMPLATE.md`'s shape without duplicating the check. Part of `G-020`'s Q2 "instruction → invariant" candidate set.
+
+### Added — T-111
+
+- **CI scope guard for ticket-implementation PRs.** A new `scope-guard` CI job checks a `feat/*`-branch PR's diff against its ticket's declared `Context files:` list: warns (never fails) when the diff touches a path outside both that list and the diff's own newly-created files; hard-fails if the diff touches `Docs/mockups/` or targets a base branch other than `develop`. Logic lives in `packages/core/src/ci/scope-guard.ts` (unit-tested), following the same DI'd, `gate-guard.ts`-modeled shape; `scripts/ci-scope-guard.sh` is the reusable entry point `T-115`'s pre-flight wiring will call. Part of `G-020`'s Q2 "instruction → invariant" candidate set.
+
+### Added — T-104
+
+- **Cite-not-restate rule for `IMPLEMENTATION_NOTES.md` rationale.** Once a piece of rationale is captured in full in `Docs/IMPLEMENTATION_NOTES.md`, rule files (`.claude/rules/*.md`, `AGENTS.md`/`CLAUDE.md`), code comments, and future ticket files must cite it with a one-line pointer instead of restating it in full — closing the gap (`G-013`) that let the same `trustProxy`/Fly-proxy explanation get independently reinvented across three separate files. Tickets/reports already in `done/`/`archive/`/`reports/` stay exempt, as point-in-time records. `.claude/agents/reviewer.md` check 6 now flags this even at a single call site in a diff, not just duplication within the diff itself.
+
+### Added — T-134
+
+- **New `D` complexity tier, a sibling to `S` for tickets whose entire Scope is prose/markdown edits only, regardless of file count.** Unlike `XS`, `D` has no single-file or same-call-site-precedent requirement — a multi-file docs sweep (e.g. T-105's 8-file reference update) qualifies as long as every named file is `.md`. `D` reuses T-084's existing docs/config-only Step 4 branch unchanged (single end-of-work `scripts/run-tests-quiet.sh` pass, no per-checkpoint Red/Green/Refactor) and gets `XS`'s Step 5 reviewer-skip — cutting the nightly executor's cost on legitimately docs-only, multi-file tickets that previously still paid for a full `reviewer` subagent pass.
+
+### Changed — T-105
+
+- **`AGENTS.md` is now the canonical repo constitution** (Principles, Commands, Pointer map, Hard rules, task-source line) — the cross-tool convention spec-kit, Devin, Cursor, and other runners check for by default, per `G-020`'s Q1 resolution. `CLAUDE.md` is now a 6-line pointer at `AGENTS.md`, kept only so Claude Code's own auto-load convention still finds a file at that path. References to the constitution across `Docs/tickets/`'s spec docs and `.claude/skills/`/`.claude/commands/` now cite `AGENTS.md`; `EXECUTOR_ROUTINE.md`'s context-loading steps now read `AGENTS.md` for real content instead of `CLAUDE.md`.
+
+### Added — T-102
+
+- **New `XS` complexity tier, one notch below `S`, for tickets that are a single-line-or-near-single-line change in one existing file, reusing a pattern already implemented at another call site in that exact same file.** `ticket-writer` may only assign it when it can quote both the target and precedent call sites verbatim in the ticket's Scope — otherwise the ticket stays `S`. An `XS` ticket cuts the nightly executor's process weight harder than T-084's docs-only `S` path: Step 3 skips `Context files:` reads entirely (the ticket body already has everything needed), Step 4 collapses to one write-test-and-fix pass instead of per-checkpoint Red/Green/Refactor, and Step 5 skips the `reviewer` subagent invocation altogether — deferred to Alex's own `/morning-review` judgment instead. Targets the same waste T-090 exemplified: a one-line, zero-ambiguity fix that cost $3.11 across 109 turns under the standard process.
+
+### Changed — T-101
+
+- **`update_entity`, `log_session`, and `correct_lore`'s tool descriptions now instruct the calling model to summarize the proposed change to the user in plain language before calling their paired `confirm_*` tool**, retrofitting T-100's agent-interaction policy onto the tools that predate it. `create_campaign`, `create_entity`, `append_entity_note`, and `ingest_text` needed no change (direct writes or already-compliant async guidance).
+
+### Added — T-130
+
+- **The local-worktree (non-remote) branch of the `SessionStart` hook now verifies its own database provisioning instead of trusting it silently succeeded**, matching the verification gate the remote-sandbox branch already had (T-098). A database that's missing, missing a required extension, or has no applied migrations now fails the hook loudly with a diagnostic naming the specific database and unmet criterion, instead of falling through to a confusing test failure minutes into real ticket work. The underlying readiness check is shared between both branches via a new `scripts/db-readiness.sh`, not duplicated. Ships as part of G-035's resolution to make local execution the primary ticket-execution path.
+- **Same-PR follow-up:** the local branch also now shares its create-if-missing-then-migrate logic with the remote branch (`ensure_database_provisioned()`, same injected-runner shape as the readiness check above) instead of each branch reimplementing it, and gained the remote branch's T-125 fast-path skip — a healthy worktree's session-start no longer pays a full `db:migrate` per database on every session when nothing changed.
+
+### Added — T-095
+
+- **The nightly executor now ingests every ticket's run into the observability store as part of its own wrap-up.** `EXECUTOR_ROUTINE.md` Step 7 (shipped) and Step 6 (blocked) each run `pnpm --filter @questlog/observability ingest <usage.json> <report>` right after the usage-capture invocation — T-053 built the store and CLI, but nothing called it until now, so every prior ticket's data only reached the store via a manual pull. A missing or unreachable `OBSERVABILITY_DATABASE_URL` logs a warning and exits cleanly instead of failing the wrap-up. `packages/observability`'s `ingest` CLI also now closes its DB connection on every exit path (previously only failure paths did, so a successful run hung instead of exiting) — needed for the command to actually terminate.
+- **Uses T-036's established `pnpm --filter <pkg> <script> <args>` invocation form (no `run`, no `--`)** to avoid a known pnpm quirk where `run <script> -- <args>` forwards a literal `--` as the script's first argument on this repo's pnpm version. The CLI also strips a leading `--` defensively, since this ticket's own exit condition (and a habit-typed invocation) still uses the `run ... --` form.
+- **Real Neon `observability` branch provisioned and `OBSERVABILITY_DATABASE_URL` set** (M-OBS.3b's Alex-only manual step, completed post-merge-review) — the store is live, not just wired.
+- **Post-merge-review fix: `assertValidObservabilityDatabaseUrl` is now exported and directly unit-tested (`db/index.test.ts`), mirroring `packages/core/src/db/index.test.ts`'s existing pattern for its sibling validator.** The gap was a copy-paste bug in `vitest.config.ts` — it set `DATABASE_URL` instead of `OBSERVABILITY_DATABASE_URL` in the test env, so this package's own env var was never available under test. Fixed, with `global-setup.ts` updated to match.
+
+### Added — T-127
+
+- **The nightly executor now bootstraps a new worktree's environment (`pnpm install` + per-worktree Postgres provisioning) as part of picking up a ticket**, instead of discovering it's missing on the first test command. `EXECUTOR_ROUTINE.md` Step 2 (fresh pickup) and Step 1 case 4 (resumed abandoned branch) both call `session-start.sh` immediately after entering the worktree — verified idempotent on a real throwaway worktree run twice.
+
+### Added — T-083
+
+- **`create_entity` now searches ingested lore before creating an entity and offers to seed its description from what it finds.** A match scoring at or above the new `seedConfidenceThreshold` (default `0.7`) drafts a description from the matching chunk(s), stores the contributing chunk ids and confidence as `attributes.seededFrom`, and is cited in the response. A caller-supplied `description` is never overwritten — the seeded draft is appended alongside it as a separate, clearly labeled section. Matches spanning more than one source list each source's excerpt separately rather than blending them, so a conflict between sources is visible instead of silently resolved. Below-threshold (or absent) matches still come back as citations for the caller to review. The tool's response now returns `{ ...entity, citations, confidence, seeded }`. (Post-merge-review fix: the seed/confidence gate now takes the max raw score across all search results instead of assuming the top-ranked-by-recency result was also the top-scoring one.)
+
+### Added — T-100
+
+- **`.claude/rules/mcp.md` now states a standing agent-interaction policy** (resolving `G-012`'s interaction-philosophy axis): any tool description paired with a `confirm_*` tool must instruct the model to narrate the proposed change in plain language before confirming; any tool starting async background work must instruct the model to proactively poll its status tool and narrate progress; and tool errors should be translated into a plain, non-alarming explanation rather than relayed as raw JSON. The error-tone sentence itself now ships in `ONBOARDING_INSTRUCTIONS`, applying to every tool at once. `tool-descriptions.ts` itself is untouched here — retrofitting individual tool descriptions for compliance is T-101.
+
+### Fixed — T-092
+
+- **`POST /api/campaigns/:campaignId/sources/upload` and `POST /api/conversation/:conversationId/stream` now require a valid bearer token**, closing the gap flagged by T-038's security review (both routes were previously reachable by anyone who has or guesses a campaign UUID, no credential required). Reuses `/mcp`'s existing `requireBearerToken` scheme (G-017's resolution) rather than a new, lighter mechanism. Known consequence, accepted by G-017: `SourcesPage` (the one kept v1 web surface) has no token-issuance story of its own yet and will get 401'd on real uploads until a follow-up addresses that — out of scope for this ticket.
+
+### Fixed — T-110 (correction, surfaced while filing T-126)
+
+- **The gate guard (`packages/core/src/ci/gate-guard.ts`) no longer fails a PR for a `backlog/` ticket carrying an unresolved `Gated on:` or unmet `Blocked on:`.** That's `backlog/`'s designed resting state (`TICKET_SPEC.md` Lifecycle, `GATE_SPEC.md`), not a violation — T-110's original scope included `backlog/` in the enforced set with no carve-out, so any newly-drafted `backlog/` ticket following the pipeline's own normal process failed CI. `queue/`, `in-progress/`, and `done/` are unaffected — a ticket is only ever supposed to reach those once both fields have actually cleared.
+
+### Added — T-125
+
+- **`session-start.sh`'s remote-sandbox branch now installs `pgvector` from source, pinned to `0.8.5`, instead of via apt/PGDG.** Investigation (`G-034`) found the sandbox's egress proxy hard-blocks `apt.postgresql.org`/PGDG (403 on the CONNECT tunnel) as a matter of policy, not a fixable config issue, and Ubuntu's own `noble/universe` package (0.6.0) is three minors behind what `hnsw.iterative_scan` needs (`IMPLEMENTATION_NOTES.md` § T-016) — meaning every remote executor session had been silently running against the wrong pgvector version. Building from source against GitHub (confirmed reachable) with `OPTFLAGS=""` (pgvector's default `-march=native` reliably segfaulted Postgres on `CREATE EXTENSION`, confirmed via a from-scratch Docker rebuild) now brings the sandbox to parity with `docker-compose.yml`/`ci.yml`, which already pin `pgvector/pgvector:0.8.5-pg16`.
+- **`session-start.sh`'s remote-sandbox branch now fast-paths its per-package `db:migrate` loop** — before running the loop, it checks every `TEST_DB_NAMES` database against the same existence/extensions/migration criteria the end-of-run verification gate already enforces, and skips straight to that gate (with a logged reason) when every database already qualifies. A genuinely fresh or partially-migrated database still runs the full loop unchanged.
+- **pnpm's warm-cache install behavior confirmed live** (not assumed) during this ticket's own session — `pnpm install` completed in 928ms with `Lockfile is up to date, resolution step is skipped`, the short-circuit shape pnpm only takes when its content-addressable store and `node_modules` are already warm and consistent with the lockfile.
+
+### Changed — T-084
+
+- **The nightly executor no longer runs a full TDD Red/Green/Refactor cycle on docs/config-only work.** `EXECUTOR_ROUTINE.md` Step 4 now branches on a ticket's `Complexity tier` field: an S-tier ticket whose Scope names only `.md`/config files skips the red-phase ceremony and runs a single end-of-work `pnpm lint && pnpm typecheck && pnpm test` pass instead of looping it per checkpoint — the same regression gate every tier still has to clear, just not repeated for a change with no meaningful "failing test" to write. M/L-tier tickets, and any S-tier ticket that touches application code, are unaffected. `TICKET_SPEC.md`'s Complexity tier field notes now document this as a consequence of the tier, not just its observability purpose.
+
+### Added — T-110
+
+- **New CI job "Gate Guard"** fails a PR whose diff introduces or leaves a ticket file (under `Docs/tickets/{queue,backlog,in-progress,done}/`) carrying an unresolved `Gated on: G-###` (the referenced gate still open under `Docs/tickets/gated/`), or a `Blocked on: T-###` naming a ticket with no file under `Docs/tickets/done/` yet. A ticket that drops the line as part of the same diff (a normal promotion) is unaffected — the check reads the file's landing state, not its history. A `Gated on:` reference that's already resolved and moved to `Docs/tickets/gated/resolved/` warns instead of failing (a sync-bug signal for Alex, not a hard stop). Reusable logic lives in `packages/core/src/ci/gate-guard.ts`; `scripts/ci-gate-guard.sh` is the same entry point a future pre-flight wiring (T-115) will call locally before a run even opens a PR.
+
+### Added — T-116
+
+- **Merge-triggered ticket-status ledger.** A new GitHub Action (`.github/workflows/ticket-status-ledger.yml`) fires when a `feat/<group>/t-###-<slug>` branch merges into `develop` and records `{ ticketId, prNumber, branch, mergedAt }` into `Docs/tickets/.merge-ledger.json`. The nightly executor's pre-flight (`EXECUTOR_ROUTINE.md` Step 1) now reads this ledger first and only falls back to a narrow, per-candidate live GitHub check for anything the ledger doesn't resolve, replacing every run's full paginated PR-history scan and full branch listing with a small file read in the common case. Also supports `workflow_dispatch` with `pr_number`/`dry_run` inputs for on-demand (re-)ledgering of an already-merged PR.
+
+### Added — T-081
+
+- **Entities created via `confirm_ingest_entities` are now marked as machine-extracted.** Each such entity gets `attributes.extractedFrom` set to the id of the source it was detected from, so a reviewer can tell an auto-extracted entity apart from a manually created one. `get_entity` and `list_entities` already return the full entity row, so both surface the marker with no response-shape change. Completes M-EXTRACT.3.
+
+### Added — T-082
+
+- **`contextService.searchChunks(db, { campaignId, query, limit, fetchFn })`** extracts `assemble`'s hybrid vector + keyword search, merge, and recency re-ranking steps into a standalone helper that returns ranked chunks without requiring a `conversationId` or paying for token-budget trimming and formatted context text. `assemble` now calls this helper internally instead of duplicating the logic, so there's exactly one implementation; its existing public behavior and return shape are unchanged. Lays the groundwork for T-083's lore-seeded `create_entity`, which needs ranked candidate chunks outside of a conversation.
+
+### Added — T-117
+
+- **GitHub Actions lean-ness audit** (`Docs/tickets/reports/T-117-github-actions-lean-audit.md`) — recommendations-only review of all four workflow files (`ci.yml`, `e2e-release-check.yml`, `smoke-test-dev.yml`, `smoke-test-prod.yml`) ahead of Milestone 1.1's real enforcement gates. Flags cross-workflow step duplication (Turborepo cache restore, test-DB provisioning, checkout/pnpm/node/install preamble), `@v4`/`@v5` action-version drift with no documented reason, several warning-only checks that can never actually fail a PR, and a handful of smaller sprawl items — each tagged `keep | consolidate | remove | tighten`. No workflow files changed by this ticket; follow-up tickets are Alex's call.
+
 ## [1.1.1] - 2026-08-02
 
 ### Added — T-080

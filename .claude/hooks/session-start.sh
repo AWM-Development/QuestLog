@@ -4,6 +4,28 @@ set -euo pipefail
 
 cd "$CLAUDE_PROJECT_DIR"
 
+# --- shared-primary-directory warning: begin ---
+# The hook itself can't relocate this session (each Bash call's cwd is
+# fixed by the harness for the session's lifetime) — this is a mechanical
+# nudge reinforcing AGENTS.md's "Session isolation" rule, not the
+# enforcement mechanism itself. Only fires locally: a remote sandbox is
+# already a fresh, disposable checkout with nothing else sharing it. Why:
+# Docs/IMPLEMENTATION_NOTES.md § T-147 (two interactive sessions collided
+# in the shared primary checkout the same day this was added).
+if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
+  case "$CLAUDE_PROJECT_DIR" in
+    */tmp/worktrees/*) ;;
+    *)
+      echo "⚠️  session-start.sh: this session is in the SHARED PRIMARY checkout, not an isolated worktree."
+      echo "⚠️  Per AGENTS.md 'Session isolation': before editing anything, run —"
+      echo "⚠️    git fetch origin develop && git worktree add tmp/worktrees/<short-slug> -B <branch-name> origin/develop"
+      echo "⚠️    cd tmp/worktrees/<short-slug>"
+      echo "⚠️  — then do all work there. Skip only if this session makes no edits."
+      ;;
+  esac
+fi
+# --- shared-primary-directory warning: end ---
+
 pnpm install
 
 # --- develop-sync guard: begin (extracted verbatim by the T-041 repro
@@ -48,6 +70,13 @@ if [ "$current_branch" = "develop" ] && git diff --quiet 2>/dev/null && git diff
 fi
 # --- develop-ff guard: end ---
 
+# Canonical DB name list + the shared "is this database actually ready"
+# check — sourced once, here, so both branches below use the identical
+# check instead of two independently-drifting copies. Why: § T-027 (names),
+# § T-130 (readiness check extraction).
+source "$CLAUDE_PROJECT_DIR/scripts/test-db-names.sh"
+source "$CLAUDE_PROJECT_DIR/scripts/db-readiness.sh"
+
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   # Worktree-scoped Postgres provisioning (T-072) — see Docs/IMPLEMENTATION_NOTES.md § T-072.
   case "$CLAUDE_PROJECT_DIR" in
@@ -64,20 +93,69 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
     sleep 1
   done
 
-  # Test-tier only (TEST_DB_NAMES_CI excludes the dev DB) — see § T-072.
+  # db_readiness_issue's own psql invocation for this branch: docker-compose,
+  # non-superuser `questlog` role. See scripts/db-readiness.sh for why this
+  # is injected rather than hardcoded into the shared check. Both functions
+  # below are only ever called by name (db_readiness_issue/
+  # ensure_database_provisioned's own $run_query/$create_fn params, in
+  # scripts/db-readiness.sh) — shellcheck can't see that indirection through
+  # a sourced file it doesn't follow (SC1091), hence the disables.
+  # shellcheck disable=SC2329
+  local_psql_query() {
+    local conn_db="$1" query="$2"
+    PGPASSWORD=questlog psql -h localhost -p "$QUESTLOG_PG_PORT" -U questlog -d "$conn_db" -tAc "$query" 2>/dev/null || echo none
+  }
+
   # docker-compose.yml's POSTGRES_DB only creates `questlog` itself; every
   # other name needs an explicit CREATE DATABASE, same as ci.yml's own
   # provisioning step. Why this wasn't always here: Docs/IMPLEMENTATION_NOTES.md § T-098.
-  source "$CLAUDE_PROJECT_DIR/scripts/test-db-names.sh"
+  # shellcheck disable=SC2329
+  local_create_database() {
+    PGPASSWORD=questlog psql -h localhost -p "$QUESTLOG_PG_PORT" -U questlog -d questlog -c "CREATE DATABASE $1"
+  }
+
+  # Fast-path (mirrors T-125's remote-branch pre-check, ported here per the
+  # same audit): skip the create/migrate loop entirely when every
+  # TEST_DB_NAMES_CI database already satisfies the verification gate's own
+  # criteria — a warm worktree re-running this hook shouldn't pay N
+  # `db:migrate` invocations just to no-op every time. Why: Docs/IMPLEMENTATION_NOTES.md § T-130.
+  all_databases_ready=true
   for dbname in "${TEST_DB_NAMES_CI[@]}"; do
-    db_exists=$(PGPASSWORD=questlog psql -h localhost -p "$QUESTLOG_PG_PORT" -U questlog -d questlog -tAc \
-      "SELECT 1 FROM pg_database WHERE datname='${dbname}'" 2>/dev/null || echo none)
-    if [ "$db_exists" != "1" ]; then
-      PGPASSWORD=questlog psql -h localhost -p "$QUESTLOG_PG_PORT" -U questlog -d questlog -c "CREATE DATABASE ${dbname}"
+    if [ -n "$(db_readiness_issue local_psql_query "$dbname")" ]; then
+      all_databases_ready=false
+      break
     fi
-    DATABASE_URL="postgresql://questlog:questlog@localhost:${QUESTLOG_PG_PORT}/${dbname}" \
-      eval "$(test_db_migrate_cmd "$dbname")"
   done
+
+  if [ "$all_databases_ready" = true ]; then
+    echo "session-start.sh: fast-path — all ${#TEST_DB_NAMES_CI[@]} database(s) already satisfy the verification gate's criteria, skipping create/migrate loop"
+  else
+    # Test-tier only (TEST_DB_NAMES_CI excludes the dev DB) — see § T-072.
+    for dbname in "${TEST_DB_NAMES_CI[@]}"; do
+      ensure_database_provisioned local_psql_query local_create_database \
+        "postgresql://questlog:questlog@localhost:${QUESTLOG_PG_PORT}/${dbname}" "$dbname"
+    done
+  fi
+
+  # Verification gate (T-130) — ports T-098's remote-branch gate to this
+  # branch: confirm the actual end state landed instead of trusting the loop
+  # above silently succeeded (a silent gap here has already cost two real
+  # tickets real turns — T-064, T-092 — both discovering a missing/
+  # unmigrated questlog_test_observability mid-session instead of at
+  # hook-exit). Why: Docs/IMPLEMENTATION_NOTES.md § T-130.
+  failed=""
+  for dbname in "${TEST_DB_NAMES_CI[@]}"; do
+    issue="$(db_readiness_issue local_psql_query "$dbname")"
+    if [ -n "$issue" ]; then
+      failed="$issue"
+      break
+    fi
+  done
+
+  if [ -n "$failed" ]; then
+    echo "session-start.sh: PROVISIONING FAILED — ${failed}" >&2
+    exit 1
+  fi
 
   exit 0
 fi
@@ -126,29 +204,26 @@ fi
 # healthy system — never let this line itself fail the hook.
 dpkg --configure -a >/dev/null 2>&1 || true
 
-if ! dpkg -s postgresql-16-pgvector >/dev/null 2>&1; then
-  # Ubuntu's own postgresql-16-pgvector package is pinned at 0.6.0 — three
-  # minors behind the 0.8.0 that hnsw.iterative_scan needs (recall-cliff
-  # fix, IMPLEMENTATION_NOTES.md § T-016). Try PGDG's repo first (ships
-  # 0.8.x); fall back to Ubuntu's package on any failure, including the
-  # egress proxy blocking apt.postgresql.org — a live possibility here,
-  # since the launchpad PPAs already 403 in this sandbox. This whole
-  # attempt must never fail the run; only the final fallback install may.
-  pgdg_ok=false
-  if command -v lsb_release >/dev/null 2>&1 &&
-    wget -qO /tmp/pgdg.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc 2>/dev/null &&
-    gpg --dearmor -o /usr/share/keyrings/pgdg.gpg /tmp/pgdg.asc 2>/dev/null; then
-    echo "deb [signed-by=/usr/share/keyrings/pgdg.gpg] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" \
-      >/etc/apt/sources.list.d/pgdg.list
-    if apt-get update -qq 2>/dev/null && apt-get install -y -qq postgresql-16-pgvector 2>/dev/null; then
-      pgdg_ok=true
-    fi
-    rm -f /etc/apt/sources.list.d/pgdg.list /tmp/pgdg.asc
-  fi
-  if [ "$pgdg_ok" != true ]; then
-    apt-get update -qq
-    apt-get install -y -qq postgresql-16-pgvector
-  fi
+# Ubuntu's postgresql-16-pgvector is three minors behind the 0.8.5
+# hnsw.iterative_scan needs, and PGDG is unreachable from this sandbox's
+# egress proxy — built from source instead, pinned to match
+# docker-compose.yml/ci.yml. Full investigation: IMPLEMENTATION_NOTES.md
+# § T-125 / § G-034. Readiness check is the .sql file `make install`
+# leaves behind, not dpkg (no record of a source build) — this block runs
+# before Postgres starts below, so a live-DB query isn't possible yet.
+PGVECTOR_VERSION=0.8.5
+PGVECTOR_SQL="/usr/share/postgresql/16/extension/vector--${PGVECTOR_VERSION}.sql"
+if [ ! -f "$PGVECTOR_SQL" ]; then
+  apt-get update -qq
+  apt-get install -y -qq build-essential postgresql-server-dev-16 git
+  rm -rf /tmp/pgvector-build
+  git clone --quiet --branch "v${PGVECTOR_VERSION}" --depth 1 \
+    https://github.com/pgvector/pgvector.git /tmp/pgvector-build
+  # OPTFLAGS="" is load-bearing, not cosmetic — pgvector's default
+  # -march=native segfaulted Postgres on CREATE EXTENSION (§ G-034).
+  make -C /tmp/pgvector-build OPTFLAGS="" -j"$(nproc)" >/dev/null
+  make -C /tmp/pgvector-build OPTFLAGS="" install >/dev/null
+  rm -rf /tmp/pgvector-build
 fi
 
 PG_CONF=/etc/postgresql/16/main/postgresql.conf
@@ -182,29 +257,57 @@ fi
 # Extension creation is left to `db:migrate` (apps/server/src/db/migrate.ts
 # runs `CREATE EXTENSION IF NOT EXISTS` before applying migrations), so each
 # database only needs an existence check plus one migrate call here.
-# Isolated per-package test DBs (T-026/T-027). Canonical name list:
-# scripts/test-db-names.sh — also sourced by ci.yml and
-# e2e-release-check.yml. Why: Docs/IMPLEMENTATION_NOTES.md § T-027.
-source "$CLAUDE_PROJECT_DIR/scripts/test-db-names.sh"
+# Isolated per-package test DBs (T-026/T-027). Canonical name list and the
+# shared db_readiness_issue() check (§ T-130) were already sourced above,
+# before the local/remote branch split.
+
+# db_readiness_issue's own psql invocation for this branch: native
+# superuser psql. See scripts/db-readiness.sh for why this is injected
+# rather than hardcoded into the shared check.
+remote_psql_query() {
+  local conn_db="$1" query="$2"
+  sudo -u postgres psql -p "$PGPORT" -d "$conn_db" -tAc "$query" 2>/dev/null || echo none
+}
+
+remote_create_database() {
+  sudo -u postgres psql -p "$PGPORT" -c "CREATE DATABASE $1 OWNER ${DB_USER}"
+}
+
+# Fast-path (T-125): skip the per-package db:migrate loop entirely when
+# every TEST_DB_NAMES database already satisfies the same criteria the
+# verification gate below checks anyway — a warm sandbox re-running this
+# hook shouldn't pay N `db:migrate` invocations' cost just to no-op every
+# time. Falls through to the unchanged loop on ANY unmet criterion (first
+# reason wins, remaining databases aren't checked), so a genuinely fresh or
+# partially-migrated database always still runs the full loop below.
+all_databases_ready=true
 for dbname in "${TEST_DB_NAMES[@]}"; do
-  db_exists=$(sudo -u postgres psql -p "$PGPORT" -tAc "SELECT 1 FROM pg_database WHERE datname='${dbname}'")
-  if [ "$db_exists" != "1" ]; then
-    sudo -u postgres psql -p "$PGPORT" -c "CREATE DATABASE ${dbname} OWNER ${DB_USER}"
+  if [ -n "$(db_readiness_issue remote_psql_query "$dbname")" ]; then
+    all_databases_ready=false
+    break
   fi
-  DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${PGPORT}/${dbname}" \
-    eval "$(test_db_migrate_cmd "$dbname")"
 done
+
+if [ "$all_databases_ready" = true ]; then
+  echo "session-start.sh: fast-path — all ${#TEST_DB_NAMES[@]} database(s) already satisfy the verification gate's criteria, skipping per-package db:migrate loop"
+else
+  for dbname in "${TEST_DB_NAMES[@]}"; do
+    ensure_database_provisioned remote_psql_query remote_create_database \
+      "postgresql://${DB_USER}:${DB_PASSWORD}@localhost:${PGPORT}/${dbname}" "$dbname"
+  done
+fi
 
 # Verification gate (T-098) — the recurring cost of this subsystem has
 # never been that the sandbox breaks (that box isn't ours to control),
 # it's been that a broken step failed silently under `set -e` above,
 # surfacing 20+ turns later as unexplained test failures. Confirm the
 # actual end state and fail loudly with a specific diagnostic instead.
-# Extension list is parsed from migrate.ts, not hand-copied, so it can
-# never drift from the app's own source of truth.
-required_extensions=$(grep 'REQUIRED_EXTENSIONS' "$CLAUDE_PROJECT_DIR/packages/core/src/db/migrate.ts" \
-  | head -1 | grep -oE '"[a-zA-Z_]+"' | tr -d '"')
-
+# Per-database readiness (existence/extensions/migrations) is checked via
+# the shared db_readiness_issue() (§ T-130), the same function the
+# fast-path pre-check above uses. This gate must always run, whether or not
+# the fast-path fired, so a database that looked ready to the pre-check but
+# somehow wasn't (or a connection-level failure the pre-check can't see)
+# still gets caught here.
 failed=""
 if ! pg_isready -h localhost -p "$PGPORT" -q; then
   failed="connection to localhost:${PGPORT}"
@@ -212,32 +315,9 @@ fi
 
 if [ -z "$failed" ]; then
   for dbname in "${TEST_DB_NAMES[@]}"; do
-    # 2>/dev/null || echo 0/none on every check here, not just the migration
-    # count below — a psql connection error (not just an empty result) must
-    # still reach the "$failed" diagnostic instead of letting `set -e` kill
-    # the script first, which would silently defeat this gate's entire point.
-    db_exists=$(sudo -u postgres psql -p "$PGPORT" -tAc "SELECT 1 FROM pg_database WHERE datname='${dbname}'" 2>/dev/null || echo none)
-    if [ "$db_exists" != "1" ]; then
-      failed="database ${dbname} does not exist"
-      break
-    fi
-    # packages/observability has its own independent schema (G-003) with no
-    # vector/pg_trgm columns — its migrate script legitimately never creates
-    # these, so checking for them there is a false alarm, not a real failure.
-    # Same distinction test_db_migrate_cmd() already draws by dbname.
-    if [ "$dbname" != "$TEST_DB_NAME_OBSERVABILITY" ]; then
-      for ext in $required_extensions; do
-        ext_ok=$(sudo -u postgres psql -p "$PGPORT" -d "$dbname" -tAc "SELECT 1 FROM pg_extension WHERE extname='${ext}'" 2>/dev/null || echo none)
-        if [ "$ext_ok" != "1" ]; then
-          failed="extension ${ext} missing on database ${dbname}"
-          break 2
-        fi
-      done
-    fi
-    migration_count=$(sudo -u postgres psql -p "$PGPORT" -d "$dbname" -tAc \
-      "SELECT count(*) FROM drizzle.__drizzle_migrations" 2>/dev/null || echo 0)
-    if [ "${migration_count:-0}" -lt 1 ]; then
-      failed="database ${dbname} has no applied migrations (drizzle.__drizzle_migrations empty or missing)"
+    issue="$(db_readiness_issue remote_psql_query "$dbname")"
+    if [ -n "$issue" ]; then
+      failed="$issue"
       break
     fi
   done
