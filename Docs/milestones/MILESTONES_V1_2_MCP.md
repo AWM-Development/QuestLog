@@ -39,9 +39,9 @@ This milestone builds the actual instrumentation instead of continuing to guess:
 - [x] **M-OBS.3 — Persist usage/efficiency/report data to a queryable store** (T-053)
   Ingest T-046's per-run JSON artifacts, T-047's efficiency notes, **and each ticket's morning/blocked report content** (outcome, what shipped, test evidence, reviewer verdict, "anything Alex must decide") into a real, queryable store — including reviewer-verdict/remediation-pass as structured fields, cache-read ratio, cost-per-changed-line, and blocked-outcome data as a first-class case. Resolved via `G-003`: a separate Neon branch/schema in a new `packages/observability` package, not new tables in `packages/core`.
 
-- [ ] **M-OBS.3b — Wire observability ingestion into the executor routine** (T-095)
+- [x] **M-OBS.3b — Wire observability ingestion into the executor routine** (T-095)
   T-053 built the store and CLI (`ingestUsageArtifact`) but explicitly deferred live-pipeline wiring as a follow-up; no ticket for that follow-up existed until now, so `EXECUTOR_ROUTINE.md` has never actually called it — every ticket's usage/report data has only reached the store via a manual CLI invocation. Wires the CLI into Step 6/7's wrap-up, with the missing/unset-`OBSERVABILITY_DATABASE_URL` case made non-fatal (provisioning the real secret stays Alex's manual step).
-  **Code shipped** (`Docs/tickets/done/T-095-wire-observability-ingestion-into-executor-routine.md`) — checkbox held pending the Alex-only `OBSERVABILITY_DATABASE_URL` secret and a confirmed real ingestion run; see the ticket's own report for the checklist.
+  **Complete** (`Docs/tickets/done/T-095-wire-observability-ingestion-into-executor-routine.md`) — the Alex-only `OBSERVABILITY_DATABASE_URL` secret was provisioned and a real ingestion run confirmed post-merge-review (`CHANGELOG.md`'s T-095 entry); the store is live, not just wired.
 
 - [ ] **M-OBS.4 — API endpoint(s) serving usage/efficiency/report data** (T-054, T-055)
   Read path over M-OBS.3's store — per-ticket and aggregate views (tokens, cost, duration, diff-size correlation, efficiency notes), plus a log/feed endpoint serving report content for browsing (T-054), and syncing PR diff stats (files/lines changed) automatically by ticket id rather than requiring a manual `gh pr list` pull (T-055). Both blocked on T-053's schema landing first.
