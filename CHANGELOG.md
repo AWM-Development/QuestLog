@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-108
+
+- **Observability's `ticket_runs` table gains a `runner` dimension.** Nullable `runner` text column (same placeholder-column pattern as `complexityTier`/`filesChanged`) — every pre-existing row is backfilled to `'claude-code'` via the migration, and `ingest.ts`'s upsert path defaults any future unset value to `'claude-code'` too, so today's ingestion keeps working unchanged. No adapter populates a different value yet; that's `T-109`. Implements `G-020` Q1's runner-dimension option.
+
 ### Added — T-107
 
 - **`TICKET_SPEC.md` gains a `Runner: claude-code | devin` field**, immediately before `Model:`. `Model:` now only applies when `Runner: claude-code` — a `Runner: devin` ticket omits it, since model selection there is Cognition's concern, not this pipeline's. Every ticket drafted before a second runner exists defaults to `claude-code`. `ticket-writer`'s field-filling step now proposes `Runner` alongside `Model`, same confirmation discipline as `Priority`. Implements `G-020` Q1(b); the field stays documented-but-inert (no executor selection-logic change) until `T-109`'s runner adapter and a real second-runner ticket land.

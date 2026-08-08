@@ -162,7 +162,7 @@ resolution (`Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md
   Per `G-020` Q1(b): `Runner: claude-code | devin`, with `Model:` only meaningful when `Runner: claude-code`. Updates `TICKET_SPEC.md` and `ticket-writer`'s field-filling step.
   Exit: see T-107.
 
-- [ ] **M-PIPELINE.12 — `runner` dimension on `ticket_runs`** (T-108)
+- [x] **M-PIPELINE.12 — `runner` dimension on `ticket_runs`** (T-108)
   Nullable `runner` column (backfilled `'claude-code'` for existing rows), the established placeholder-column pattern (`packages/observability/src/schema/tables.ts`'s existing `complexityTier`/`filesChanged` columns). Schema-only — no adapter yet. `G-020` Notes §3.
   Exit: see T-108.
 
