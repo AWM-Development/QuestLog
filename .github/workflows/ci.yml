@@ -343,6 +343,54 @@ jobs:
             echo "✅ Implementation notes check passed."
           fi
 
+  # ── Red-Check (TDD Enforcement) ──────────────────────────────────────────
+  # For a ticket-implementation PR (head branch prefix `feat/*`, same
+  # detection as scope-guard's/report-guard's above): identifies the PR's
+  # added/modified test files, then requires at least one of them (excluding
+  # any exempt as a pure test-only refactor — unchanged/lower assertion
+  # count vs. develop) to fail when run against develop's pre-change
+  # implementation. Proves a test was written to exercise genuinely new
+  # behavior, not written after the fact against an implementation that
+  # already existed. Deliberately excluded from the executor's own
+  # pre-flight (T-115) — it needs a completed diff to run against. Logic
+  # lives in packages/ci/src/red-check-guard.ts (branching logic
+  # unit-tested there; the worktree/vitest orchestration behind it is
+  # real-deps-only, see that file's header); scripts/ci-red-check-guard.sh
+  # is the same kind of thin, reusable entry point as the other guards'
+  # above. Why: Docs/tickets/gated/resolved/G-020 § Q2.
+  red-check:
+    name: Red-Check (TDD Enforcement)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    services:
+      postgres:
+        image: pgvector/pgvector:0.8.5-pg16
+        env:
+          POSTGRES_USER: questlog
+          POSTGRES_PASSWORD: questlog
+          POSTGRES_DB: questlog_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-repo
+        with:
+          fetch-depth: 0
+
+      - uses: ./.github/actions/provision-test-databases
+
+      - name: "Red-check — PR's new tests must fail against develop's pre-change implementation"
+        env:
+          HEAD_BRANCH: ${{ github.head_ref }}
+        run: scripts/ci-red-check-guard.sh "origin/${{ github.base_ref }}" "$HEAD_BRANCH"
+
   # ── Workflow Self-Validation ──────────────────────────────────────────────
   actionlint:
     name: Validate workflow files
