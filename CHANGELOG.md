@@ -10,6 +10,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+## [1.1.2] - 2026-08-08
+
 ### Added — T-106
 
 - **`EXECUTOR_ROUTINE.md` gains a "Runners" section.** Documents which two steps of the pipeline routine are Claude-Code-specific (the `Model: sonnet, always` line, and Step 7/6's `capture-usage` invocation) and what a different runner should do instead, plus confirms every other step is already runner-neutral. Implements `G-020` Q1(c)'s decision not to fork the routine per runner — the routine stays one document, portable by construction.
