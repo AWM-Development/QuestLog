@@ -187,7 +187,7 @@ resolution (`Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md
   CI cross-checks the report's "Exit condition check" section against the diff itself (referenced test files actually exist and were touched) rather than trusting the agent's prose. Distinct from the already-queued `T-055` (PR diff-stat sync, a mechanical stat sync, not a claims check) — see T-113's own Context files for the boundary.
   Exit: see T-113.
 
-- [ ] **M-PIPELINE.18 — Red-check CI job: a PR's new tests must fail against `develop`'s pre-change implementation** (T-114)
+- [x] **M-PIPELINE.18 — Red-check CI job: a PR's new tests must fail against `develop`'s pre-change implementation** (T-114)
   TDD enforced as a CI job, not a written rule — `G-020` Q2's most novel and highest-risk candidate. Scoped conservatively: identify new/changed test files via the PR diff, run only those against a temporary checkout of `develop`'s source, require at least one failure.
   Exit: see T-114.
 
