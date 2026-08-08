@@ -130,6 +130,24 @@ describe("hasRealisticTestEvidence", () => {
 			hasRealisticTestEvidence("all tests pass, everything is great"),
 		).toBe(false);
 	});
+
+	it("accepts scripts/run-tests-quiet.sh's own stage: pass summary shape", () => {
+		expect(
+			hasRealisticTestEvidence(
+				"lint: pass (0 warnings)\ntypecheck: pass\ntest: pass (808 passed)",
+			),
+		).toBe(true);
+	});
+
+	it("accepts scripts/run-tests-quiet.sh's own stage: FAIL summary shape", () => {
+		expect(hasRealisticTestEvidence("test: FAIL")).toBe(true);
+	});
+
+	it("still rejects prose that merely contains the word pass mid-sentence", () => {
+		expect(
+			hasRealisticTestEvidence("I'd like this to pass review, please"),
+		).toBe(false);
+	});
 });
 
 describe("validateReportStructure", () => {
