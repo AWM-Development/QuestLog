@@ -56,3 +56,48 @@ Renumbered 2026-08-02: originally filed as `G-023`, colliding with a
   same branch, same session) rather than renumbering the already-referenced
   one — same resolution precedent as `G-012`/`G-013` in
   `Docs/tickets/gated/G-013-documentation-duplication-reduction-strategy.md`.
+
+## Resolution (2026-08-08)
+
+Decided with Alex, all three sub-decisions:
+
+1. **How:** a new dedicated MCP tool, `get_chunk_history` — not a flag on
+   `query_lore`/`get_entity`, and not a UI surface. `query_lore`'s
+   citations already expose `chunkId` (`context.service.ts`'s
+   `SearchResult` shape), which is how a calling model gets the id to pass
+   into the new tool in the first place.
+2. **Why/when:** audit-only, on demand. No change to `correct_lore`'s own
+   preview response — it does not proactively narrate what it's about to
+   supersede. A DM reaches for this only when explicitly asking "what did
+   we used to think / what changed," not as part of the normal correction
+   flow.
+3. **Milestone:** folds into `M-POLISH` (v1.5) as a fourth task rather than
+   `G-022`'s own already-closed scope, a new v1.3/M-CANON task, or a new
+   version slot — same "small, well-scoped follow-up" shape as
+   `M-POLISH.1`–`.3`, checked against `G-022`'s resolution per this
+   gate-stub's own Notes and confirmed not to already cover it (`G-022`
+   scoped to tool-description consistency, `ONBOARDING_INSTRUCTIONS` drift,
+   and `apps/mcp-stdio` diagnostics only — nothing about lore-history
+   visibility).
+
+**Mechanism gap found during scoping, not anticipated by the open
+question:** nothing in the codebase actually *persists* a link between a
+correction and what it superseded — `confirm_correct_lore` only flips
+`status` to `"superseded"` on the target chunks; the correction text and
+which chunks it replaced were known only transiently, inside that one
+transaction. `get_chunk_history` therefore needed a new persisted event
+log (`chunk_corrections` table) as a prerequisite, not just a read path
+over data that already existed. See `T-152` for the full schema/service/
+tool design (`Docs/IMPLEMENTATION_NOTES.md` § G-025 has the one-line
+pointer).
+
+Tickets drafted: `T-152` (P1, `queue/`), tagged onto M-POLISH.4 in
+`Docs/milestones/MILESTONES_V1_5_MCP.md`.
+
+No other `Blocks:`/`Gated on: G-025` references existed anywhere in
+`backlog/`, `queue/`, `in-progress/`, or the milestone docs — swept and
+confirmed empty (this gate's own `Blocks: none yet` was accurate).
+
+Next open gate for a future `/ungate` run: `G-026` (second-runner
+parallel execution lane, v1.6/M-ROBUST) — the current earliest under
+`Docs/tickets/gated/`.

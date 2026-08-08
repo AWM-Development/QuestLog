@@ -18,14 +18,15 @@ These two milestones are otherwise unconnected — they're bundled into one vers
 **Resolved gates going into this milestone:**
 - `G-022` (`Docs/tickets/gated/resolved/G-022-mcp-app-polish-milestone.md`) — resolved 2026-08-06 via `/ungate`, together with Alex. Scoped M-POLISH to three concrete pieces: tool-description naming/format consistency (beyond v1.4's interaction-philosophy axes), an `ONBOARDING_INSTRUCTIONS` drift test tying it to `server.ts`'s registered tool list, and `apps/mcp-stdio` startup diagnostics (no known concrete UX complaints from Alex — the rough edge was found by inspecting `apps/mcp-stdio/src/main.ts` itself: no error handling or logging around DB/storage connect). See the resolved gate-stub for full rationale.
 - `G-023` (`Docs/tickets/gated/resolved/G-023-inventory-management-design.md`) — resolved 2026-08-07 via `/ungate`, together with Alex. Dedicated `inventory_items`/`campaign_wealth` tables (not an extension of the narrative `item` entity type), a new `pc`/`character` entity type for per-character ownership, a single abstracted wealth total per campaign structured to extend to multi-denomination later without a migration, unified loot/party-inventory via a nullable `ownerEntityId` on `inventory_items`, and — the most consequential call — inventory tools (`add_item`/`transfer_item`/`adjust_wealth`/`list_inventory`) skip preview/confirm and audit-log entirely, a deliberate first-of-a-kind "quick action" tool class distinct from `G-001`'s lore-mutation rule. Session-log auto-detection of loot/wealth explicitly deferred out of v1 scope, generalized into its own future gate `G-041`. See the resolved gate-stub for full rationale.
+- `G-025` (`Docs/tickets/gated/resolved/G-025-superseded-lore-history-visibility.md`) — resolved 2026-08-08 via `/ungate`, together with Alex. A dedicated audit/on-demand MCP tool (`get_chunk_history`), not a flag on an existing read tool and not a UI surface — surfaces what `correct_lore`/`confirm_correct_lore` (M-CANON, v1.3) already supersedes but never previously exposed back to the user. Landed as M-POLISH.4 rather than a new milestone, per the gate-stub's own note to check whether it should fold into wherever `G-022` resolved. See the resolved gate-stub for full rationale.
 
 ---
 
 ## Milestone M-POLISH: MCP App Polish
 
-**Goal:** Close three concrete consistency/robustness gaps beyond v1.4's interaction-philosophy scope: tool-description naming/format drift, `ONBOARDING_INSTRUCTIONS`'s hand-maintained tool list silently going stale as new tools ship, and `apps/mcp-stdio`'s bare stdio entrypoint surfacing raw stack traces on startup failure instead of a diagnosable message.
+**Goal:** Close consistency/robustness/visibility gaps beyond v1.4's interaction-philosophy scope: tool-description naming/format drift, `ONBOARDING_INSTRUCTIONS`'s hand-maintained tool list silently going stale as new tools ship, `apps/mcp-stdio`'s bare stdio entrypoint surfacing raw stack traces on startup failure instead of a diagnosable message, and (M-POLISH.4, added via `G-025`) superseded-lore history being fully mechanized by M-CANON but never surfaced back to the user.
 
-**Context:** No PRD section covers this — new scope identified via `G-012`'s resolution, split into `G-022`, resolved 2026-08-06 (see "Resolved gates" above).
+**Context:** No PRD section covers this — new scope identified via `G-012`'s resolution, split into `G-022`, resolved 2026-08-06; M-POLISH.4 added separately via `G-025`, resolved 2026-08-08 (see "Resolved gates" above).
 
 ### Tasks
 
@@ -41,9 +42,13 @@ These two milestones are otherwise unconnected — they're bundled into one vers
   Refactor `main.ts` into an exported, testable `main()` that wraps storage init + `server.connect` in try/catch: a diagnosable stderr message + non-zero exit on failure, a one-line stderr "ready" message on success.
   Exit: unit tests cover both paths; manual proof (broken DB connection string → diagnosable stderr, not a raw stack trace) pasted in the ticket report.
 
+- [ ] **M-POLISH.4 — `get_chunk_history` MCP tool** (T-152)
+  New `chunk_corrections` table persisting each `confirm_correct_lore` event (superseded chunk ids, replacement text, new chunk ids, timestamp), plus a dedicated audit/on-demand read tool exposing it — resolves `G-025` (superseded-lore history was fully mechanized by M-CANON but never surfaced back to the user).
+  Exit: migration applies cleanly; a correction's `chunk_corrections` row round-trips through `chunkHistoryService.listForChunk`; `get_chunk_history` returns the correction event for a superseded chunk and `[]` for one never superseded.
+
 ### Ordering constraint
 
-None — the three tasks touch disjoint files and can ship in any order.
+M-POLISH.1–3 touch disjoint files and can ship in any order. M-POLISH.4 is independent of all three (separate files, separate table) and can ship in any order relative to them too.
 
 ---
 
