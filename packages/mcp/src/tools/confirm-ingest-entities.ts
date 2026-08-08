@@ -23,7 +23,7 @@ export function registerConfirmIngestEntities(
 			description: CONFIRM_INGEST_ENTITIES_DESCRIPTION,
 			inputSchema: ConfirmIngestEntitiesInput,
 		},
-		withToolErrors(async ({ token, candidateIndices }) => {
+		withToolErrors(async ({ token, candidateIndices, entityTypeOverrides }) => {
 			const result = await writeRequestService.confirm(
 				db,
 				token,
@@ -31,18 +31,35 @@ export function registerConfirmIngestEntities(
 					const { campaignId, sourceId, candidates } =
 						rawPayload as IngestEntitiesPayload;
 
-					const selected = candidateIndices
-						? candidateIndices
-								.map((index) => candidates[index])
-								.filter((c): c is EntityCandidateProposal => c !== undefined)
-						: candidates;
+					const indices =
+						candidateIndices ?? candidates.map((_, index) => index);
 
 					const entityIds: string[] = [];
-					for (const candidate of selected) {
+					const rejected: Array<{ index: number; reason: string }> = [];
+
+					for (const index of indices) {
+						const candidate = candidates[index];
+						if (!candidate) continue;
+
+						// Per-candidate rejection, not batch-level — see IMPLEMENTATION_NOTES.md § G-021 (T-119).
+						let entityType: string = candidate.entityType;
+						if (candidate.entityType === "unclassified") {
+							const override = entityTypeOverrides?.[String(index)];
+							if (!override) {
+								rejected.push({
+									index,
+									reason:
+										"unclassified candidate requires an entityType override",
+								});
+								continue;
+							}
+							entityType = override;
+						}
+
 						const entity = await entityService.create(tx, {
 							campaignId,
 							name: candidate.name,
-							type: candidate.entityType,
+							type: entityType,
 							description: candidate.description,
 							sourceId,
 							attributes: { extractedFrom: sourceId },
@@ -50,7 +67,7 @@ export function registerConfirmIngestEntities(
 						entityIds.push(entity.id);
 					}
 
-					return { entityIds };
+					return { entityIds, rejected };
 				},
 			);
 
