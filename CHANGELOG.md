@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-119
+
+- **`ingest_text`'s entity-candidate detection now uses an LLM structured-extraction call instead of the T-078 capitalization heuristic.** `entityService.detectCandidates` replaces `findProperNounSpans`/`guessEntityType` with a single call through `T-118`'s `callClaudeStructured`, keeping its existing signature, contract, and dedup/overlap-with-`detectSpans` behavior. Candidate proposals can now come back `entityType: "unclassified"` for a genuinely ambiguous span (not added to `ENTITY_TYPES` itself); `confirm_ingest_entities` requires a real entity type override per unclassified candidate before creating it — supplying one creates the entity with that type, omitting one rejects just that candidate (not the rest of the batch) via a new `entityTypeOverrides` input and a `rejected` field in the response. T-078's heuristic is left in place, unused, pending a future cleanup ticket. See `IMPLEMENTATION_NOTES.md` § G-021 for the design rationale.
+
 ### Added — T-107
 
 - **`TICKET_SPEC.md` gains a `Runner: claude-code | devin` field**, immediately before `Model:`. `Model:` now only applies when `Runner: claude-code` — a `Runner: devin` ticket omits it, since model selection there is Cognition's concern, not this pipeline's. Every ticket drafted before a second runner exists defaults to `claude-code`. `ticket-writer`'s field-filling step now proposes `Runner` alongside `Model`, same confirmation discipline as `Priority`. Implements `G-020` Q1(b); the field stays documented-but-inert (no executor selection-logic change) until `T-109`'s runner adapter and a real second-runner ticket land.
