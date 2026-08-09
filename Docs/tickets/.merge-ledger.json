@@ -91,9 +91,9 @@
   },
   {
     "ticketId": "T-114",
-    "prNumber": 246,
-    "branch": "feat/m-pipeline/t-114-ci-red-check-job",
-    "mergedAt": "2026-08-08T23:04:48Z"
+    "prNumber": 251,
+    "branch": "chore/m-pipeline/t-114-red-check-guard-cleanup",
+    "mergedAt": "2026-08-09T18:16:44Z"
   },
   {
     "ticketId": "T-116",
