@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-108
+
+- **Observability's `ticket_runs` table gains a `runner` dimension.** Nullable `runner` text column (same placeholder-column pattern as `complexityTier`/`filesChanged`) — every pre-existing row is backfilled to `'claude-code'` via the migration, and `ingest.ts`'s upsert path defaults any future unset value to `'claude-code'` too, so today's ingestion keeps working unchanged. No adapter populates a different value yet; that's `T-109`. Implements `G-020` Q1's runner-dimension option.
+
 ### Added — T-114
 
 - **New CI job, "Red-Check (TDD Enforcement)"** — for a ticket-implementation PR, identifies its added/modified test file(s), then requires at least one of them (excluding any that are a pure refactor of existing test code — assertion count unchanged or lower than `develop`'s version) to fail when run against `develop`'s pre-change implementation. Catches a test written after its implementation, or one that doesn't actually exercise new behavior — TDD enforced as a machine-checked CI job rather than only a written rule agents are trusted to follow. Implements `G-020` Q2's red-check candidate (the most novel/highest-risk of the five, deliberately scoped conservatively). Logic in `packages/ci/src/red-check-guard.ts`; entry point `scripts/ci-red-check-guard.sh`.
