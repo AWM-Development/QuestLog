@@ -6,7 +6,7 @@
 // runRedCheckGuard() is the testable core — every branch is exercised with
 // injected deps, same pattern as scope-guard.ts/report-guard.ts. The
 // worktree-checkout + vitest-subprocess plumbing behind
-// runTestFileAgainstPreChangeSource() (real deps only) is pure
+// runTestAgainstPreChangeWorktree() (real deps only) is pure
 // orchestration around git/vitest with nothing first-party to assert
 // against — the same Shape-1 exception db:migrate.ts relies on
 // (.claude/rules/scripts.md) — verified by actually running it, not unit
@@ -158,7 +158,7 @@ function packageDirFor(path: string): string {
 	return `${scope}/${name}`;
 }
 
-function runTestFileAgainstPreChangeSource(
+function runTestAgainstPreChangeWorktree(
 	repoRoot: string,
 	baseRef: string,
 	path: string,
@@ -179,8 +179,9 @@ function runTestFileAgainstPreChangeSource(
 		mkdirSync(dirname(abs), { recursive: true });
 		writeFileSync(abs, headContent);
 
-		const packageDir = join(worktreeDir, packageDirFor(path));
-		const relativeToPackage = path.slice(packageDirFor(path).length + 1);
+		const relativePackageDir = packageDirFor(path);
+		const packageDir = join(worktreeDir, relativePackageDir);
+		const relativeToPackage = path.slice(relativePackageDir.length + 1);
 		try {
 			execFileSync("pnpm", ["exec", "vitest", "run", relativeToPackage], {
 				cwd: packageDir,
@@ -199,10 +200,11 @@ function runTestFileAgainstPreChangeSource(
 
 function realDeps(baseRef: string, headBranch: string): RedCheckGuardDeps {
 	const repoRoot = resolveRepoRoot();
+	const readFile = (path: string) => readRepoFile(repoRoot, path);
 	return {
 		headBranch,
 		changedFiles: () => gitChangedFiles(repoRoot, baseRef),
-		readFile: (path) => readRepoFile(repoRoot, path),
+		readFile,
 		readBaseFile: (path) => {
 			try {
 				return execFileSync("git", ["show", `${baseRef}:${path}`], {
@@ -214,9 +216,9 @@ function realDeps(baseRef: string, headBranch: string): RedCheckGuardDeps {
 			}
 		},
 		runTestFileAgainstPreChangeSource: (path) => {
-			const headContent = readRepoFile(repoRoot, path);
+			const headContent = readFile(path);
 			if (headContent === null) return false;
-			return runTestFileAgainstPreChangeSource(
+			return runTestAgainstPreChangeWorktree(
 				repoRoot,
 				baseRef,
 				path,
