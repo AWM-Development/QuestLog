@@ -8,7 +8,6 @@ Strategy-gate flag: yes
 
 Priority: P1
 
-
 Branch: feat/m-pipeline/t-109-runner-cost-adapter-interface
 
 Context files (load ONLY these):

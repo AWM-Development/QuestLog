@@ -8,7 +8,6 @@ Strategy-gate flag: yes
 
 Priority: P1
 
-
 Branch: feat/m-pipeline/t-115-wire-enforcement-guards-into-preflight
 
 Context files (load ONLY these):

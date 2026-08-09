@@ -91,9 +91,9 @@
   },
   {
     "ticketId": "T-114",
-    "prNumber": 246,
-    "branch": "feat/m-pipeline/t-114-ci-red-check-job",
-    "mergedAt": "2026-08-08T23:04:48Z"
+    "prNumber": 251,
+    "branch": "chore/m-pipeline/t-114-red-check-guard-cleanup",
+    "mergedAt": "2026-08-09T18:16:44Z"
   },
   {
     "ticketId": "T-116",
@@ -118,6 +118,12 @@
     "prNumber": 232,
     "branch": "feat/m-efficiency/t-120-ci-composite-actions",
     "mergedAt": "2026-08-07T20:32:23Z"
+  },
+  {
+    "ticketId": "T-121",
+    "prNumber": 252,
+    "branch": "feat/m-efficiency/t-121-ci-guard-jobs-shared-checkout",
+    "mergedAt": "2026-08-09T21:15:41Z"
   },
   {
     "ticketId": "T-125",
