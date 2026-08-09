@@ -9,6 +9,10 @@ import {
 
 export interface TicketRunRow {
 	ticketId: string | null;
+	// Optional, not `string | null` — undefined means "no adapter supplied a
+	// value" and upsertTicketRun defaults it to 'claude-code'; T-109's
+	// adapter is the first caller expected to ever pass a real value.
+	runner?: string;
 	emptyRun: boolean;
 	sessionId: string;
 	inputTokens: number;
@@ -90,20 +94,26 @@ export async function upsertTicketRun(
 	db: Database,
 	row: TicketRunRow,
 ): Promise<void> {
-	if (row.ticketId === null) {
-		await db.insert(ticketRuns).values(row);
+	// Defaults here, not at the DB level — see IMPLEMENTATION_NOTES.md § T-108.
+	const values = { ...row, runner: row.runner ?? "claude-code" };
+
+	if (values.ticketId === null) {
+		await db.insert(ticketRuns).values(values);
 		return;
 	}
 
 	const [existing] = await db
 		.select({ id: ticketRuns.id })
 		.from(ticketRuns)
-		.where(eq(ticketRuns.ticketId, row.ticketId));
+		.where(eq(ticketRuns.ticketId, values.ticketId));
 
 	if (existing) {
-		await db.update(ticketRuns).set(row).where(eq(ticketRuns.id, existing.id));
+		await db
+			.update(ticketRuns)
+			.set(values)
+			.where(eq(ticketRuns.id, existing.id));
 	} else {
-		await db.insert(ticketRuns).values(row);
+		await db.insert(ticketRuns).values(values);
 	}
 }
 
