@@ -84,6 +84,12 @@
     "mergedAt": "2026-08-07T15:37:11Z"
   },
   {
+    "ticketId": "T-113",
+    "prNumber": 245,
+    "branch": "feat/m-pipeline/t-113-exit-condition-evidence-recomputation",
+    "mergedAt": "2026-08-09T16:17:13Z"
+  },
+  {
     "ticketId": "T-114",
     "prNumber": 246,
     "branch": "feat/m-pipeline/t-114-ci-red-check-job",
