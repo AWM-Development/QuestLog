@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-109
+
+- **Runner-neutral `RunnerCostAdapter` interface for usage capture.** A new `RunnerCostAdapter` (`resolveTicketId()` / `captureRun(projectDir)`) in `packages/core/src/usage-capture/runner-adapter.ts` separates "what did this run cost" from Claude Code's specific transcript-based way of measuring it. `capture-usage.ts`'s `captureUsage` is now a thin wrapper around a `claude-code` implementation of the interface — zero behavior change for existing runs. A degraded runner with no transcript access (e.g. a future Devin lane) can report wall-clock duration and its own vendor-unit cost figure without fabricating a token/cache breakdown; `turnsToGreen`/`humanMessageCount` stay honestly `null` rather than guessed. Building a real non-Claude-Code adapter is deferred until a second runner actually executes a ticket, per `G-020` Notes §3. See `IMPLEMENTATION_NOTES.md` § T-109.
+
 ### Added — T-113
 
 - **CI exit-condition evidence recomputation for ticket-implementation PRs.** A new `exit-condition-guard` CI job checks any `Docs/tickets/reports/` file newly added by a `feat/*`-branch PR: for each bullet in its `## Exit condition check` section that cites a specific test file/name, confirms that file actually exists in the PR's diff and that the named test appears in it — hard-fails on a false citation, passes a bullet naming no specific file/test as "unverifiable mechanically" rather than failing it. Recomputes the report's own claims instead of trusting them; distinct from `T-055` (mechanical diff-stat sync, not a claims check) and `T-114`'s red-check (which runs tests, this only confirms they exist). Logic lives in `packages/ci/src/exit-condition-guard.ts` (unit-tested, same DI'd shape as `gate-guard.ts`/`scope-guard.ts`/`report-guard.ts`). Part of `G-020`'s Q2 "instruction → invariant" candidate set.
