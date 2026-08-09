@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-121
+
+- **`ci.yml`'s `doc-sync`, `migration-guard`, `mockup-guard`, and `impl-notes-health` jobs merged into one `guards` job.** They previously each ran an independent full-history checkout and independently recomputed the same PR changed-file diff; now there's one shared checkout and one diff computation (exposed as a job output), consumed by four check steps with unchanged pass/fail behavior (including the warning-only vs. hard-fail paths). Each check step runs `if: always()` so one guard failing still lets the others run, matching the old independent-jobs behavior. Cuts three redundant full-history checkouts + diff recomputations per PR. Implements `T-117` audit finding #4.
+
 ### Added — T-113
 
 - **CI exit-condition evidence recomputation for ticket-implementation PRs.** A new `exit-condition-guard` CI job checks any `Docs/tickets/reports/` file newly added by a `feat/*`-branch PR: for each bullet in its `## Exit condition check` section that cites a specific test file/name, confirms that file actually exists in the PR's diff and that the named test appears in it — hard-fails on a false citation, passes a bullet naming no specific file/test as "unverifiable mechanically" rather than failing it. Recomputes the report's own claims instead of trusting them; distinct from `T-055` (mechanical diff-stat sync, not a claims check) and `T-114`'s red-check (which runs tests, this only confirms they exist). Logic lives in `packages/ci/src/exit-condition-guard.ts` (unit-tested, same DI'd shape as `gate-guard.ts`/`scope-guard.ts`/`report-guard.ts`). Part of `G-020`'s Q2 "instruction → invariant" candidate set.
