@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-154
+
+- **Worktree-scoped Postgres provisioning redesigned: one shared, long-lived instance with worktree-suffixed database names, replacing a dedicated container per worktree on a checksum-derived port.** `packages/core/src/db/test-db-url.ts` now derives the isolation key (`resolveWorktreeDbSuffix()`) from the calling process's own working directory instead of the `QUESTLOG_PG_PORT`/`CLAUDE_PROJECT_DIR`-derived env var the old design required a session to remember to export — a `vitest run` invoked directly, with no setup script sourced at all, now still resolves the correct database. `docker-compose.yml` pins a fixed project name so every worktree's `docker compose up -d` targets the same instance; `scripts/worktree-postgres-env.sh` is removed. `scripts/reap-worktree.sh` now drops a worktree's suffixed databases instead of tearing down a per-worktree container. See `IMPLEMENTATION_NOTES.md` § T-154.
+
 ### Added — T-144
 
 - **Inventory/wealth surfaced in `get_entity` and `prep_brief`.** `get_entity` now includes an `items` field — that entity's assigned `inventory_items` rows (empty array, not an omitted field, when it owns none); applies to any entity type, not just `pc`. `prep_brief` now includes `wealth` (all `campaign_wealth` rows) and `unassignedItems` (unassigned/party-pool items, capped at 10) as prep context. Both reuse `inventoryService.listInventory` (`T-143`) — no new MCP tools, no changes to `list_inventory`'s own response shape.

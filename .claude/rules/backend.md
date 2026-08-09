@@ -33,7 +33,7 @@ Two isolation strategies, pick based on whether the code under test opens its ow
 - **Default:** wrap each test in `BEGIN`/`ROLLBACK` (`beforeEach`/`afterEach`), using `createTestDb()` from `packages/core/src/db/test-helpers.ts`.
 - **Code under test calls `db.transaction()` itself** (e.g. `conversation.service.ts` chat path): a nested raw `BEGIN` doesn't compose with Drizzle's transaction handling. Use `deleteCampaignTree()` (also in `test-helpers.ts`) for explicit FK-safe cleanup instead.
 
-Each package has its own physical test database on `:5433` (`questlog_test_core`, `questlog_test_server`, `questlog_test_mcp` — canonical list in `scripts/test-db-names.sh`, see `.claude/rules/db.md` § Test database) that must be migrated before running tests — `global-setup.ts` only truncates, it does not run migrations. If a test fails with a missing-column error, run `db:migrate` against the relevant package's test database first.
+Each package has its own physical test database on `:5433` (`questlog_test_core`, `questlog_test_server`, `questlog_test_mcp` — canonical list in `scripts/test-db-names.sh`, see `.claude/rules/db.md` § Test database), worktree-suffixed automatically (T-154) — that must be migrated before running tests — `global-setup.ts` only truncates, it does not run migrations. If a test fails with a missing-column error, run `db:migrate` against the relevant package's test database first.
 
 There is no `.integration.test.ts` naming tier — every plain `*.test.ts` file runs in the same default vitest tier regardless of whether it hits the real test DB; the only suffix that actually changes what runs when is `*.e2e.test.ts` (see below).
 

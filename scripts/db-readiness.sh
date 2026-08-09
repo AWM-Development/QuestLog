@@ -47,7 +47,12 @@ db_readiness_issue() {
 		echo "database ${dbname} does not exist"
 		return
 	fi
-	if [ "$dbname" != "$TEST_DB_NAME_OBSERVABILITY" ]; then
+	# Glob-matched, not exact — T-154 suffixes physical dbnames with a
+	# worktree tag, so an exact match against the bare base name would
+	# always miss inside a worktree.
+	case "$dbname" in
+	"$TEST_DB_NAME_OBSERVABILITY" | "$TEST_DB_NAME_OBSERVABILITY"__*) ;;
+	*)
 		local ext ext_ok
 		for ext in $QUESTLOG_DB_REQUIRED_EXTENSIONS; do
 			ext_ok=$("$run_query" "$dbname" "SELECT 1 FROM pg_extension WHERE extname='${ext}'")
@@ -56,7 +61,8 @@ db_readiness_issue() {
 				return
 			fi
 		done
-	fi
+		;;
+	esac
 	local migration_count
 	migration_count=$("$run_query" "$dbname" "SELECT count(*) FROM drizzle.__drizzle_migrations")
 	if ! [[ "$migration_count" =~ ^[0-9]+$ ]]; then
