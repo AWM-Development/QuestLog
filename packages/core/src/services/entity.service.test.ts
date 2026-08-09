@@ -18,6 +18,7 @@ import {
 import { NotFoundError } from "../lib/errors.js";
 import { campaignService } from "./campaign.service.js";
 import { entityService, extractExcerpt } from "./entity.service.js";
+import type { LlmService } from "./llm.service.js";
 import type { FetchFn } from "./voyage.client.js";
 
 const { db, close } = createTestDb();
@@ -32,6 +33,24 @@ function createMockFetch(embedding: number[]): FetchFn {
 		ok: true,
 		json: async () => ({ data: [{ embedding, index: 0 }] }),
 	})) as unknown as FetchFn;
+}
+
+/** Mock structured-extraction client — decouples detectCandidates tests from the real Anthropic API (mirrors createMockFetch's role for Voyage). */
+function createMockLlmService(
+	candidates: Array<{
+		name: string;
+		entityType: string;
+		description: string;
+		startIndex: number;
+		endIndex: number;
+	}>,
+): Pick<LlmService, "callClaudeStructured"> {
+	return {
+		callClaudeStructured: vi.fn().mockResolvedValue({
+			data: { candidates },
+			usage: { inputTokens: 0, outputTokens: 0 },
+		}),
+	};
 }
 
 async function insertEntity(
@@ -776,31 +795,78 @@ describe("entityService.detectCandidates", () => {
 		await db.execute(sql`ROLLBACK`);
 	});
 
-	it("proposes an NPC candidate from an unrecognized proper noun in an NPC-shaped sentence", async () => {
+	it("returns a candidate matching the structured-extraction client's mocked response", async () => {
 		const text = "The party met Vespera Nightveil at the gates.";
+		const startIndex = text.indexOf("Vespera Nightveil");
+		const endIndex = startIndex + "Vespera Nightveil".length;
+		const llmService = createMockLlmService([
+			{
+				name: "Vespera Nightveil",
+				entityType: "npc",
+				description: "Vespera Nightveil, met at the gates.",
+				startIndex,
+				endIndex,
+			},
+		]);
+
 		const candidates = await entityService.detectCandidates(db, {
 			campaignId,
 			text,
+			llmService,
 		});
 
-		const vespera = candidates.find((c) => c.name === "Vespera Nightveil");
-		expect(vespera).toBeDefined();
-		expect(vespera?.entityType).toBe("npc");
-		expect(vespera?.description.length).toBeGreaterThan(0);
-		expect(vespera?.description).toContain("Vespera Nightveil");
-		expect(vespera?.startIndex).toBe(text.indexOf("Vespera Nightveil"));
-		expect(vespera?.endIndex).toBe(
-			text.indexOf("Vespera Nightveil") + "Vespera Nightveil".length,
-		);
+		expect(candidates).toEqual([
+			{
+				name: "Vespera Nightveil",
+				entityType: "npc",
+				description: "Vespera Nightveil, met at the gates.",
+				startIndex,
+				endIndex,
+			},
+		]);
+		expect(llmService.callClaudeStructured).toHaveBeenCalledTimes(1);
 	});
 
-	it("returns zero candidates when every proper noun is already covered by detectSpans", async () => {
-		await insertEntity(campaignId, "Strahd", "npc");
-		await insertEntity(campaignId, "Castle Ravenloft", "location");
-		const text = "Strahd rules from Castle Ravenloft.";
+	it("falls back to entityType 'unclassified' when the client returns a type outside ENTITY_TYPES", async () => {
+		const text = "A stranger passed through.";
+		const llmService = createMockLlmService([
+			{
+				name: "A stranger",
+				entityType: "not-a-real-type",
+				description: "An unidentifiable figure.",
+				startIndex: 0,
+				endIndex: 11,
+			},
+		]);
+
 		const candidates = await entityService.detectCandidates(db, {
 			campaignId,
 			text,
+			llmService,
+		});
+
+		expect(candidates[0]?.entityType).toBe("unclassified");
+	});
+
+	it("returns zero candidates when every proposed span is already covered by detectSpans", async () => {
+		await insertEntity(campaignId, "Strahd", "npc");
+		const text = "Strahd rules from the castle.";
+		const startIndex = text.indexOf("Strahd");
+		const endIndex = startIndex + "Strahd".length;
+		const llmService = createMockLlmService([
+			{
+				name: "Strahd",
+				entityType: "npc",
+				description: "Strahd rules from the castle.",
+				startIndex,
+				endIndex,
+			},
+		]);
+
+		const candidates = await entityService.detectCandidates(db, {
+			campaignId,
+			text,
+			llmService,
 		});
 		expect(candidates).toEqual([]);
 	});
@@ -808,47 +874,47 @@ describe("entityService.detectCandidates", () => {
 	it("collapses repeated mentions of the same new name into a single candidate", async () => {
 		const text =
 			"The party met Vespera Nightveil at dawn. Later, Vespera Nightveil wielded a dagger.";
+		const firstIndex = text.indexOf("Vespera Nightveil");
+		const secondIndex = text.indexOf(
+			"Vespera Nightveil",
+			firstIndex + "Vespera Nightveil".length,
+		);
+		const llmService = createMockLlmService([
+			{
+				name: "Vespera Nightveil",
+				entityType: "npc",
+				description: "First mention.",
+				startIndex: firstIndex,
+				endIndex: firstIndex + "Vespera Nightveil".length,
+			},
+			{
+				name: "Vespera Nightveil",
+				entityType: "npc",
+				description: "Second mention.",
+				startIndex: secondIndex,
+				endIndex: secondIndex + "Vespera Nightveil".length,
+			},
+		]);
+
 		const candidates = await entityService.detectCandidates(db, {
 			campaignId,
 			text,
+			llmService,
 		});
 
 		const matches = candidates.filter((c) => c.name === "Vespera Nightveil");
 		expect(matches).toHaveLength(1);
-		expect(matches[0]?.startIndex).toBe(text.indexOf("Vespera Nightveil"));
+		expect(matches[0]?.startIndex).toBe(firstIndex);
 	});
 
-	it("proposes one candidate of each ENTITY_TYPES value from fixture text", async () => {
-		const text = [
-			"The party met Vespera Nightveil at dawn.",
-			"They traveled to Castle Ravenloft by nightfall.",
-			"They joined the Ironfang Clan thereafter.",
-			"Vespera Nightveil wielded the Sunblade of Ashara.",
-			"This began the Shadow Prophecy in earnest.",
-		].join(" ");
-
+	it("returns an empty list for blank text without calling the structured-extraction client", async () => {
+		const llmService = createMockLlmService([]);
 		const candidates = await entityService.detectCandidates(db, {
 			campaignId,
-			text,
+			text: "   ",
+			llmService,
 		});
-
-		const byType = Object.fromEntries(
-			candidates.map((c) => [c.entityType, c]),
-		) as Record<string, (typeof candidates)[number]>;
-
-		expect(byType.npc?.name).toMatch(/Vespera/);
-		expect(byType.location?.name).toMatch(/Ravenloft|Castle/);
-		expect(byType.faction?.name).toMatch(/Ironfang|Clan/);
-		expect(byType.item?.name).toMatch(/Sunblade|Ashara/);
-		expect(byType.arc?.name).toMatch(/Shadow|Prophecy/);
-
-		for (const candidate of candidates) {
-			expect(candidate.description.length).toBeGreaterThan(0);
-			expect(candidate.startIndex).toBeGreaterThanOrEqual(0);
-			expect(candidate.endIndex).toBeGreaterThan(candidate.startIndex);
-			expect(text.slice(candidate.startIndex, candidate.endIndex)).toBe(
-				candidate.name,
-			);
-		}
+		expect(candidates).toEqual([]);
+		expect(llmService.callClaudeStructured).not.toHaveBeenCalled();
 	});
 });

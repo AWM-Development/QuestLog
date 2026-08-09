@@ -18,7 +18,16 @@ import {
 	deleteCampaignTree,
 } from "@questlog/core/db/test-helpers.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
-import { entityService } from "@questlog/core/services/entity.service.js";
+import {
+	findProperNounSpans,
+	guessEntityType,
+} from "@questlog/core/services/entity-candidate-detection.service.js";
+import {
+	CANDIDATE_EXTRACTION_TEXT_MARKER,
+	entityService,
+	extractExcerpt,
+} from "@questlog/core/services/entity.service.js";
+import type { LlmService } from "@questlog/core/services/llm.service.js";
 import { sessionService } from "@questlog/core/services/session.service.js";
 import { sourceService } from "@questlog/core/services/source.service.js";
 import { createMemoryStorage } from "@questlog/core/services/storage.service.js";
@@ -58,11 +67,80 @@ function createFailingFetch(): FetchFn {
 	})) as unknown as FetchFn;
 }
 
-async function connectedClient(fetchFn: FetchFn) {
+/**
+ * Default test double for the structured-extraction client (T-119): reuses
+ * T-078's original heuristic (`findProperNounSpans`/`guessEntityType`, kept
+ * in place but unused by production `detectCandidates` per this ticket's
+ * scope) to synthesize a plausible LLM response from the prompt's embedded
+ * text — every pre-T-119 fixture in this file keeps behaving exactly as
+ * before without per-test mocking. Recovers the raw text via
+ * `CANDIDATE_EXTRACTION_TEXT_MARKER`'s marker string (see
+ * entity.service.ts) rather than re-parsing arbitrary prompt structure.
+ */
+function createFixtureLlmService(): Pick<LlmService, "callClaudeStructured"> {
+	return {
+		callClaudeStructured: vi
+			.fn()
+			.mockImplementation(async <T>({ prompt }: { prompt: string }) => {
+				const markerIndex = prompt.indexOf(CANDIDATE_EXTRACTION_TEXT_MARKER);
+				const text =
+					markerIndex >= 0
+						? prompt.slice(
+								markerIndex + CANDIDATE_EXTRACTION_TEXT_MARKER.length,
+							)
+						: "";
+				const candidates = findProperNounSpans(text).map((span) => ({
+					name: span.name,
+					entityType: guessEntityType(text, {
+						startIndex: span.start,
+						endIndex: span.end,
+						name: span.name,
+					}),
+					description: extractExcerpt(text, {
+						startIndex: span.start,
+						endIndex: span.end,
+					}),
+					startIndex: span.start,
+					endIndex: span.end,
+				}));
+				return {
+					data: { candidates } as T,
+					usage: { inputTokens: 0, outputTokens: 0 },
+				};
+			}),
+	};
+}
+
+/** Mock structured-extraction client returning a fixed candidate list, for tests exercising a specific staged shape (e.g. an "unclassified" candidate) rather than the fixture heuristic's derived output. */
+function createMockLlmService(
+	candidates: Array<{
+		name: string;
+		entityType: string;
+		description: string;
+		startIndex: number;
+		endIndex: number;
+	}>,
+): Pick<LlmService, "callClaudeStructured"> {
+	return {
+		callClaudeStructured: vi.fn().mockResolvedValue({
+			data: { candidates },
+			usage: { inputTokens: 0, outputTokens: 0 },
+		}),
+	};
+}
+
+async function connectedClient(
+	fetchFn: FetchFn,
+	llmService: Pick<
+		LlmService,
+		"callClaudeStructured"
+	> = createFixtureLlmService(),
+) {
 	const server = createMcpServer({
 		db,
 		fetchFn,
 		storage: createMemoryStorage(),
+		llmService,
 	});
 	const client = new Client({ name: "test-client", version: "0.0.0" });
 	const [clientTransport, serverTransport] =
@@ -2498,6 +2576,96 @@ describe("confirm_ingest_entities tool (T-080)", () => {
 			.from(entities)
 			.where(eq(entities.campaignId, campaignId));
 		expect(entityRows).toHaveLength(1);
+	});
+
+	it("rejects an unclassified candidate with no override but still creates the rest of the batch (G-021 Resolution §2)", async () => {
+		const content = "A stranger passed through the gates.";
+		const client = await connectedClient(
+			createMockFetch(basisVector(0)),
+			createMockLlmService([
+				{
+					name: "A stranger",
+					entityType: "unclassified",
+					description: "An unidentifiable figure.",
+					startIndex: 0,
+					endIndex: 11,
+				},
+				{
+					name: "Vespera Nightveil",
+					entityType: "npc",
+					description: "Mentioned in passing.",
+					startIndex: content.length,
+					endIndex: content.length,
+				},
+			]),
+		);
+		const { token, sourceId } = await stageCandidates(client, content);
+
+		const confirmResult = await client.callTool({
+			name: "confirm_ingest_entities",
+			arguments: { token },
+		});
+
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { entityIds, rejected } = JSON.parse(confirmContent[0]?.text ?? "{}");
+		expect(entityIds).toHaveLength(1);
+		expect(rejected).toEqual([
+			expect.objectContaining({
+				index: 0,
+				reason: expect.stringContaining("entityType override"),
+			}),
+		]);
+
+		const entityRows = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.campaignId, campaignId));
+		expect(entityRows).toHaveLength(1);
+		expect(entityRows[0]?.name).toBe("Vespera Nightveil");
+		expect(sourceId).toBeTruthy();
+	});
+
+	it("creates an unclassified candidate with the entityType supplied via entityTypeOverrides", async () => {
+		const content = "A stranger passed through the gates.";
+		const client = await connectedClient(
+			createMockFetch(basisVector(0)),
+			createMockLlmService([
+				{
+					name: "A stranger",
+					entityType: "unclassified",
+					description: "An unidentifiable figure.",
+					startIndex: 0,
+					endIndex: 11,
+				},
+			]),
+		);
+		const { token } = await stageCandidates(client, content);
+
+		const confirmResult = await client.callTool({
+			name: "confirm_ingest_entities",
+			arguments: { token, entityTypeOverrides: { "0": "npc" } },
+		});
+
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { entityIds, rejected } = JSON.parse(confirmContent[0]?.text ?? "{}");
+		expect(entityIds).toHaveLength(1);
+		expect(rejected).toEqual([]);
+
+		const entityRows = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.campaignId, campaignId));
+		expect(entityRows).toHaveLength(1);
+		expect(entityRows[0]?.name).toBe("A stranger");
+		expect(entityRows[0]?.type).toBe("npc");
 	});
 });
 

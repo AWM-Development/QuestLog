@@ -11,7 +11,7 @@ import type { ToolDeps } from "./types.js";
 
 export function registerIngestText(
 	server: McpServer,
-	{ db, storage, fetchFn }: ToolDeps,
+	{ db, storage, fetchFn, llmService }: ToolDeps,
 ) {
 	server.registerTool(
 		"ingest_text",
@@ -70,6 +70,7 @@ export function registerIngestText(
 				const candidates = await entityService.detectCandidates(db, {
 					campaignId: resolvedCampaignId,
 					text: content,
+					llmService,
 				});
 				const entityCandidates = candidates.length
 					? {
