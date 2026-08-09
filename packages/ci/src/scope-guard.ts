@@ -1,10 +1,9 @@
 // Layout: constants → exported types → exported logic → private CLI wiring →
 // CLI entry. parseContextFiles/runScopeGuard are exported for
 // scope-guard.test.ts (Shape 1, .claude/rules/scripts.md); findTicketFile is
-// also exported — exit-condition-guard.ts (T-113) reuses it rather than
-// re-deriving "which changed file is this PR's own ticket file" a second
-// time (same done/-then-in-progress/ precedence, .claude/rules/scripts.md's
-// "Don't duplicate helpers across scripts").
+// also exported for reuse by any future guard needing "which changed file
+// is this PR's own ticket file" (same done/-then-in-progress/ precedence,
+// .claude/rules/scripts.md's "Don't duplicate helpers across scripts").
 import {
 	type ChangedFile,
 	gitChangedFiles,

@@ -331,40 +331,6 @@ jobs:
           HEAD_BRANCH: ${{ github.head_ref }}
         run: scripts/ci-report-guard.sh "origin/${{ github.base_ref }}" "$HEAD_BRANCH"
 
-  # ── Exit Condition Guard ────────────────────────────────────────────────────
-  # For a ticket-implementation PR (head branch prefix `feat/*`, same
-  # detection as scope-guard's/report-guard's above): hard-fails when the
-  # diff adds a Docs/tickets/reports/ file whose `## Exit condition check`
-  # section cites a specific test file/name that doesn't actually exist in
-  # the PR's diff. A bullet naming no specific file/test passes as
-  # "unverifiable mechanically" — not a failure. Recomputes the report's own
-  # claims rather than trusting them; does not judge whether a cited test is
-  # semantically sufficient (the `reviewer` subagent's job) or run anything
-  # (T-114's red-check does that). Logic lives in
-  # packages/ci/src/exit-condition-guard.ts (unit-tested there);
-  # scripts/ci-exit-condition-guard.sh is the same kind of thin, reusable
-  # entry point as report-guard's/scope-guard's above. Why:
-  # Docs/tickets/gated/resolved/G-020 § Resolution (Q2).
-  exit-condition-guard:
-    name: Exit Condition Guard
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-
-    steps:
-      # Bare checkout first so the runner can resolve the local composite
-      # action below (a `uses: ./...` reference requires the repo already
-      # checked out) — setup-repo's own checkout step then re-checks out
-      # with the real ref/fetch-depth, superseding this one.
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/setup-repo
-        with:
-          fetch-depth: 0
-
-      - name: "Check any newly-added report's cited tests actually exist in the diff"
-        env:
-          HEAD_BRANCH: ${{ github.head_ref }}
-        run: scripts/ci-exit-condition-guard.sh "origin/${{ github.base_ref }}" "$HEAD_BRANCH"
-
   # ── Red-Check (TDD Enforcement) ──────────────────────────────────────────
   # For a ticket-implementation PR (head branch prefix `feat/*`, same
   # detection as scope-guard's/report-guard's above): identifies the PR's

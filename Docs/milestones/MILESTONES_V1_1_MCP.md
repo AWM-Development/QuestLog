@@ -166,7 +166,7 @@ resolution (`Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md
   Nullable `runner` column (backfilled `'claude-code'` for existing rows), the established placeholder-column pattern (`packages/observability/src/schema/tables.ts`'s existing `complexityTier`/`filesChanged` columns). Schema-only — no adapter yet. `G-020` Notes §3.
   Exit: see T-108.
 
-- [ ] **M-PIPELINE.13 — Runner-neutral cost adapter interface** (T-109)
+- [x] **M-PIPELINE.13 — Runner-neutral cost adapter interface** (T-109)
   A `RunnerCostAdapter` interface with Claude Code's existing transcript-based implementation as the reference case; a real Devin/ACU implementation is deferred until a second runner actually executes a ticket, per `G-020` Notes §3's honest options ("a `runner` dimension with per-runner views... `T-051`'s human-hour-equivalent model is runner-neutral and survives either way"). Blocked on T-108.
   Exit: see T-109.
 

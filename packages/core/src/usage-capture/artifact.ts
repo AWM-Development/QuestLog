@@ -35,6 +35,8 @@ export interface UsageArtifact extends TokenTotalsArtifactFields {
 	theoretical_cost_usd: CostArtifact;
 	reviewer_subagent: ReviewerSubagentArtifact | null;
 	total_system_cost_usd: CostArtifact;
+	/** Optional so every pre-T-109 fixture/artifact (no runner concept yet) stays a valid UsageArtifact unchanged. Absent means "unknown" — ingest-side defaulting to 'claude-code' happens in upsertTicketRun, not here (T-108). */
+	runner?: string;
 }
 
 function toCostArtifact(cost: TheoreticalCostResult): CostArtifact {
@@ -60,6 +62,7 @@ export function buildUsageArtifact(params: {
 	main: UsageSummary;
 	reviewerSubagent: TokenTotals | null;
 	asOf?: Date;
+	runner?: string;
 }): UsageArtifact {
 	const asOf = params.asOf ?? new Date();
 	const mainCostArtifact = toCostArtifact(
@@ -91,5 +94,6 @@ export function buildUsageArtifact(params: {
 		theoretical_cost_usd: mainCostArtifact,
 		reviewer_subagent: reviewerArtifact,
 		total_system_cost_usd: totalCostArtifact,
+		runner: params.runner,
 	};
 }
