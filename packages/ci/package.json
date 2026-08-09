@@ -16,6 +16,7 @@
 		"gate-guard": "tsx src/gate-guard.ts",
 		"scope-guard": "tsx src/scope-guard.ts",
 		"report-guard": "tsx src/report-guard.ts",
+		"exit-condition-guard": "tsx src/exit-condition-guard.ts",
 		"red-check-guard": "tsx src/red-check-guard.ts"
 	},
 	"devDependencies": {

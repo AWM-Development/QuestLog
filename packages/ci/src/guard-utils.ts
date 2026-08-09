@@ -54,3 +54,24 @@ export function gitChangedFiles(
 		})
 		.filter((f) => f.path.length > 0);
 }
+
+/**
+ * Parses a block of `- ` bulleted lines into whole bullets, merging any
+ * unmarked continuation line into the bullet above it — the wrap shape both
+ * a ticket's `Exit condition:` field and a report's `## Exit condition
+ * check` section use (TICKET_SPEC.md / REPORT_TEMPLATE.md). Shared by both
+ * sides of exit-condition-guard.ts (T-113) rather than parsed twice.
+ */
+export function parseBulletList(text: string): string[] {
+	const bullets: string[] = [];
+	for (const rawLine of text.split("\n")) {
+		const line = rawLine.trim();
+		if (line === "") continue;
+		if (line.startsWith("- ")) {
+			bullets.push(line.slice(2).trim());
+		} else if (bullets.length > 0) {
+			bullets[bullets.length - 1] += ` ${line}`;
+		}
+	}
+	return bullets;
+}
