@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-123
+
+- **`smoke-test-dev.yml` and `smoke-test-prod.yml` now call a shared reusable workflow.** New `.github/workflows/smoke-test.yml` (`workflow_call`) holds the checkout/install/poll-`/health`/run-smoke-test steps both files previously duplicated; each caller keeps its own distinct `on:` trigger and passes its environment's base URL, npm script, and scoped `DATABASE_URL` secret as inputs. Both callers also pick up `.github/actions/setup-repo` (via the reusable workflow, internally) in place of separately-pinned `actions/checkout@v4`/`pnpm/action-setup@v4`/`actions/setup-node@v4` steps, closing the `@v4`/`@v5` drift `T-117`'s audit flagged. No change to trigger conditions, poll behavior, or which secret backs which environment. Implements `T-117` audit finding #1's last bullet.
+
 ### Added — T-109
 
 - **Runner-neutral `RunnerCostAdapter` interface for usage capture.** A new `RunnerCostAdapter` (`resolveTicketId()` / `captureRun(projectDir)`) in `packages/core/src/usage-capture/runner-adapter.ts` separates "what did this run cost" from Claude Code's specific transcript-based way of measuring it. `capture-usage.ts`'s `captureUsage` is now a thin wrapper around a `claude-code` implementation of the interface — zero behavior change for existing runs. A degraded runner with no transcript access (e.g. a future Devin lane) can report wall-clock duration and its own vendor-unit cost figure without fabricating a token/cache breakdown; `turnsToGreen`/`humanMessageCount` stay honestly `null` rather than guessed. Building a real non-Claude-Code adapter is deferred until a second runner actually executes a ticket, per `G-020` Notes §3. See `IMPLEMENTATION_NOTES.md` § T-109.
