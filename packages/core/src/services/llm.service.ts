@@ -309,3 +309,6 @@ function wrapError(error: unknown): LlmApiError {
 
 /** Default instance for production use. */
 export const llmService = createLlmService();
+
+/** Shape of a service instance from `createLlmService` — for callers that inject an override (mirrors `FetchFn`'s role for Voyage). */
+export type LlmService = ReturnType<typeof createLlmService>;

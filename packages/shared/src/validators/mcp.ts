@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ENTITY_TYPES } from "../constants/index.js";
 import { CampaignCreateInput } from "./campaign.js";
 
 export const QueryLoreInput = z.object({
@@ -31,6 +32,8 @@ export type IngestTextInput = z.infer<typeof IngestTextInput>;
 export const ConfirmIngestEntitiesInput = z.object({
 	token: z.string().uuid(),
 	candidateIndices: z.array(z.number().int().min(0)).optional(),
+	// Keyed by candidate index (as a string — see IMPLEMENTATION_NOTES.md § G-021, T-119).
+	entityTypeOverrides: z.record(z.string(), z.enum(ENTITY_TYPES)).optional(),
 });
 export type ConfirmIngestEntitiesInput = z.infer<
 	typeof ConfirmIngestEntitiesInput

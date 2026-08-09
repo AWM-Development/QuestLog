@@ -39,7 +39,7 @@ Recap the ticket's morning report (or the PR description, if there's no ticket r
 
 ## 3. Code review
 
-Form your own independent judgment on the diff (`git diff origin/develop...<head-branch>`) — don't just restate the report's reviewer verdict. Check what `.claude/agents/reviewer.md` checks (pattern deviation against the matching `.claude/rules/*.md`, functionality gaps vs. the ticket's Scope, test theater vs. real assertions, scope creep vs. Out of scope, DRY/sprawl — the same pattern or literal reinstantiated across more than one file in this diff instead of consolidated) plus ordinary correctness/efficiency concerns. List concrete `file:line` findings with a suggested edit where you have one. If nothing rises to a real finding, say that plainly rather than manufacturing nitpicks.
+Form your own independent judgment on the diff (`git diff origin/develop...<head-branch>`) — don't just restate the report's reviewer verdict. Read `.claude/agents/reviewer.md` in full and apply every item in its checklist, not a paraphrase of it — including item 6's mechanistic tracing (identifier reuse, redundant computation, failure paths, boundary conditions, closures) for any function in the diff that isn't a thin passthrough — plus ordinary correctness/efficiency concerns. List concrete `file:line` findings with a suggested edit where you have one. If nothing rises to a real finding, say that plainly rather than manufacturing nitpicks.
 
 ## 4. Plain English explanation
 
