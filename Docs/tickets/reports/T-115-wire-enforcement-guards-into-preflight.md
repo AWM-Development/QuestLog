@@ -2,7 +2,7 @@
 
 **Outcome:** shipped
 **Branch:** feat/m-pipeline/t-115-wire-enforcement-guards-into-preflight
-**Diff:** 6 files changed, +30/-4 lines (see final stat below)
+**Diff:** 6 files changed, +86/-4 lines
 **Complexity tier:** D
 **Strategy-gate flag:** yes
 
