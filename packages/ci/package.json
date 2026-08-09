@@ -15,7 +15,8 @@
 		"lint": "biome check .",
 		"gate-guard": "tsx src/gate-guard.ts",
 		"scope-guard": "tsx src/scope-guard.ts",
-		"report-guard": "tsx src/report-guard.ts"
+		"report-guard": "tsx src/report-guard.ts",
+		"red-check-guard": "tsx src/red-check-guard.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",

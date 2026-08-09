@@ -78,6 +78,12 @@
     "mergedAt": "2026-08-07T15:37:11Z"
   },
   {
+    "ticketId": "T-114",
+    "prNumber": 246,
+    "branch": "feat/m-pipeline/t-114-ci-red-check-job",
+    "mergedAt": "2026-08-08T23:04:48Z"
+  },
+  {
     "ticketId": "T-116",
     "prNumber": 182,
     "branch": "feat/m-efficiency/t-116-pr-merge-status-ledger-action",
