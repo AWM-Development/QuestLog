@@ -30,12 +30,13 @@ export interface TicketRunRow {
 	totalSystemCostStandardUsd: number;
 }
 
-/** Maps T-046's `*.usage.json` artifact shape into an insertable `ticket_runs` row. */
+/** Maps T-046's `*.usage.json` artifact shape into an insertable `ticket_runs` row. `artifact.runner` is optional (T-109) — absent on every pre-T-109 fixture, which leaves `row.runner` undefined and falls through to `upsertTicketRun`'s own 'claude-code' default, same as before this field existed. */
 export function mapUsageArtifactToTicketRun(
 	artifact: UsageArtifact,
 ): TicketRunRow {
 	return {
 		ticketId: artifact.ticket_id,
+		runner: artifact.runner,
 		emptyRun: artifact.empty_run,
 		sessionId: artifact.session_id,
 		inputTokens: artifact.input_tokens,

@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-109
+
+- **Runner-neutral `RunnerCostAdapter` interface for usage capture.** A new `RunnerCostAdapter` (`resolveTicketId()` / `captureRun(projectDir)`) in `packages/core/src/usage-capture/runner-adapter.ts` separates "what did this run cost" from Claude Code's specific transcript-based way of measuring it. `capture-usage.ts`'s `captureUsage` is now a thin wrapper around a `claude-code` implementation of the interface — zero behavior change for existing runs. A degraded runner with no transcript access (e.g. a future Devin lane) can report wall-clock duration and its own vendor-unit cost figure without fabricating a token/cache breakdown; `turnsToGreen`/`humanMessageCount` stay honestly `null` rather than guessed. Building a real non-Claude-Code adapter is deferred until a second runner actually executes a ticket, per `G-020` Notes §3. See `IMPLEMENTATION_NOTES.md` § T-109.
+
+### Removed — T-109
+
+- **`exit-condition-guard` CI job.** Its regex-based citation check couldn't distinguish a report bullet's leading verbatim quote of the ticket's own exit-condition text (which routinely names a file/quotes phrasing as context) from the report's own citation of new evidence, producing false-positive hard failures on reports written in the standard convention. The `reviewer` subagent's existing test-theater check already covers the substantive risk this guard was approximating via regex, making it redundant as well as fragile. See `IMPLEMENTATION_NOTES.md` § T-113.
+
 ### Changed — T-121
 
 - **`ci.yml`'s `doc-sync`, `migration-guard`, `mockup-guard`, and `impl-notes-health` jobs merged into one `guards` job.** They previously each ran an independent full-history checkout and independently recomputed the same PR changed-file diff; now there's one shared checkout and one diff computation (exposed as a job output), consumed by four check steps with unchanged pass/fail behavior (including the warning-only vs. hard-fail paths). Each check step runs `if: always()` so one guard failing still lets the others run, matching the old independent-jobs behavior. Cuts three redundant full-history checkouts + diff recomputations per PR. Implements `T-117` audit finding #4.
