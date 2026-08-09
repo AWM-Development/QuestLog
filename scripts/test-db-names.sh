@@ -4,6 +4,30 @@
 # the names exist in exactly one place. Every DB-touching package gets its
 # own physical database — no shared `dependsOn` ordering stands in for
 # isolation. Why: Docs/IMPLEMENTATION_NOTES.md § T-027, § G-008.
+
+# Mirrors packages/core/src/db/test-db-url.ts's resolveWorktreeDbSuffix()
+# exactly (same marker, same slice, same sanitize regex, same truncation) —
+# the bash-side half of T-154's single-shared-Postgres-instance redesign.
+# Can't literally share code across bash/TS, so kept in sync by hand; if you
+# change one, change both. $1 = a project dir (session-start.sh always
+# passes $CLAUDE_PROJECT_DIR, which it already requires). Prints nothing
+# (not even a trailing newline) when $1 isn't under tmp/worktrees/.
+worktree_db_suffix() {
+	local project_dir="$1"
+	node -e '
+		const marker = "/tmp/worktrees/";
+		const dir = process.argv[1];
+		const idx = dir.indexOf(marker);
+		if (idx === -1) process.exit(0);
+		const rest = dir.slice(idx + marker.length);
+		const name = rest.split("/")[0];
+		if (!name) process.exit(0);
+		process.stdout.write(
+			name.toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 24),
+		);
+	' "$project_dir"
+}
+
 TEST_DB_NAME_DEV=questlog
 TEST_DB_NAME_CORE=questlog_test_core
 TEST_DB_NAME_SERVER=questlog_test_server
@@ -23,8 +47,11 @@ TEST_DB_NAMES_CI=("$TEST_DB_NAME_CORE" "$TEST_DB_NAME_SERVER" "$TEST_DB_NAME_MCP
 # bash 3.2 by default (no associative-array support), and session-start.sh
 # must run under that. Why: Docs/IMPLEMENTATION_NOTES.md § T-053.
 test_db_migrate_cmd() {
+	# Glob-matched, not exact — T-154 suffixes physical dbnames with a
+	# worktree tag (questlog_test_observability__t_109), so an exact match
+	# against the bare base name would always miss inside a worktree.
 	case "$1" in
-		"$TEST_DB_NAME_OBSERVABILITY")
+		"$TEST_DB_NAME_OBSERVABILITY" | "$TEST_DB_NAME_OBSERVABILITY"__*)
 			echo "pnpm --filter @questlog/observability db:migrate"
 			;;
 		*)
@@ -48,7 +75,7 @@ TEST_DB_TEMPLATES=("$TEST_DB_TEMPLATE_CORE" "$TEST_DB_TEMPLATE_OBSERVABILITY")
 # than duplicating that logic with a second, independently-maintained switch.
 test_db_template_name() {
 	case "$1" in
-		"$TEST_DB_NAME_OBSERVABILITY")
+		"$TEST_DB_NAME_OBSERVABILITY" | "$TEST_DB_NAME_OBSERVABILITY"__*)
 			echo "$TEST_DB_TEMPLATE_OBSERVABILITY"
 			;;
 		*)

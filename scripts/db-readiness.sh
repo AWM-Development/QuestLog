@@ -47,7 +47,12 @@ db_readiness_issue() {
 		echo "database ${dbname} does not exist"
 		return
 	fi
-	if [ "$dbname" != "$TEST_DB_NAME_OBSERVABILITY" ]; then
+	# Glob-matched, not exact — T-154 suffixes physical dbnames with a
+	# worktree tag, so an exact match against the bare base name would
+	# always miss inside a worktree.
+	case "$dbname" in
+	"$TEST_DB_NAME_OBSERVABILITY" | "$TEST_DB_NAME_OBSERVABILITY"__*) ;;
+	*)
 		local ext ext_ok
 		for ext in $QUESTLOG_DB_REQUIRED_EXTENSIONS; do
 			ext_ok=$("$run_query" "$dbname" "SELECT 1 FROM pg_extension WHERE extname='${ext}'")
@@ -56,7 +61,8 @@ db_readiness_issue() {
 				return
 			fi
 		done
-	fi
+		;;
+	esac
 	local migration_count
 	migration_count=$("$run_query" "$dbname" "SELECT count(*) FROM drizzle.__drizzle_migrations")
 	if ! [[ "$migration_count" =~ ^[0-9]+$ ]]; then
@@ -88,5 +94,15 @@ ensure_database_provisioned() {
 	if [ "$db_exists" != "1" ]; then
 		"$create_fn" "$dbname"
 	fi
-	DATABASE_URL="$database_url" eval "$(test_db_migrate_cmd "$dbname")"
+	# OBSERVABILITY_DATABASE_URL, not just DATABASE_URL — found live during
+	# T-154/T-131 verification: packages/observability/src/db/migrate.ts reads
+	# `OBSERVABILITY_DATABASE_URL ?? DATABASE_URL ?? ...`, so once a worktree
+	# actually has a `.env` (T-131), a real hosted OBSERVABILITY_DATABASE_URL
+	# in that file silently outranks this test-only override and migrates the
+	# real Neon observability branch instead of the local test database —
+	# exactly the class of bug this whole redesign exists to kill. Harmless
+	# for every other package's migrate command, which only ever reads
+	# DATABASE_URL. See Docs/IMPLEMENTATION_NOTES.md § T-154.
+	DATABASE_URL="$database_url" OBSERVABILITY_DATABASE_URL="$database_url" \
+		eval "$(test_db_migrate_cmd "$dbname")"
 }

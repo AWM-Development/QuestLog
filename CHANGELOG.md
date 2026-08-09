@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-154
+
+- **Worktree-scoped Postgres provisioning redesigned: one shared, long-lived instance with worktree-suffixed database names, replacing a dedicated container per worktree on a checksum-derived port.** `packages/core/src/db/test-db-url.ts` now derives the isolation key (`resolveWorktreeDbSuffix()`) from the calling process's own working directory instead of the `QUESTLOG_PG_PORT`/`CLAUDE_PROJECT_DIR`-derived env var the old design required a session to remember to export — a `vitest run` invoked directly, with no setup script sourced at all, now still resolves the correct database. `docker-compose.yml` pins a fixed project name so every worktree's `docker compose up -d` targets the same instance; `scripts/worktree-postgres-env.sh` is removed. `scripts/reap-worktree.sh` now drops a worktree's suffixed databases instead of tearing down a per-worktree container. See `IMPLEMENTATION_NOTES.md` § T-154.
+
+### Added — T-131
+
+- **Fresh ticket worktrees now inherit the primary checkout's `.env`.** `git worktree add` never carries gitignored files, so every worktree previously started with no local secrets (`ANTHROPIC_API_KEY`, `VOYAGE_API_KEY`, `OBSERVABILITY_DATABASE_URL`, etc.) at all. `.claude/hooks/session-start.sh`'s local worktree-provisioning branch now copies the primary checkout's `.env` into a new worktree if the worktree doesn't already have its own — never overwrites an existing one.
+
 ### Added — T-109
 
 - **Runner-neutral `RunnerCostAdapter` interface for usage capture.** A new `RunnerCostAdapter` (`resolveTicketId()` / `captureRun(projectDir)`) in `packages/core/src/usage-capture/runner-adapter.ts` separates "what did this run cost" from Claude Code's specific transcript-based way of measuring it. `capture-usage.ts`'s `captureUsage` is now a thin wrapper around a `claude-code` implementation of the interface — zero behavior change for existing runs. A degraded runner with no transcript access (e.g. a future Devin lane) can report wall-clock duration and its own vendor-unit cost figure without fabricating a token/cache breakdown; `turnsToGreen`/`humanMessageCount` stay honestly `null` rather than guessed. Building a real non-Claude-Code adapter is deferred until a second runner actually executes a ticket, per `G-020` Notes §3. See `IMPLEMENTATION_NOTES.md` § T-109.
