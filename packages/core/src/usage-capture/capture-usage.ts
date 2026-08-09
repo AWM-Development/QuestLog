@@ -7,7 +7,12 @@ import {
 } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { type UsageArtifact, buildUsageArtifact } from "./artifact.js";
+import type { UsageArtifact } from "./artifact.js";
+import {
+	type RunCaptureResult,
+	type RunnerCostAdapter,
+	buildUsageArtifactFromRunCaptureResult,
+} from "./runner-adapter.js";
 import {
 	type TokenTotals,
 	addTokenTotals,
@@ -48,30 +53,51 @@ function readSiblingSubagentTotals(transcriptPath: string): TokenTotals | null {
 	}, ZERO_TOTALS);
 }
 
-/** Thin wrapper: reads the transcript(s), delegates all computation to observability's pure functions, writes the artifact file. No active ticket means no artifact — skips reading the transcript entirely rather than writing a session it's not tracking. */
+/** The `claude-code` implementation of `RunnerCostAdapter` (T-109 / `G-020` § Notes 3) — reads the main transcript plus any sibling `subagents/*.jsonl` and reports the full token/cache breakdown. `captureRun`'s `projectDir` parameter is part of the interface's shape but unused here: the transcript path is already known from `payload`, unlike a runner that would need it to locate its own local logs. */
+export function createClaudeCodeRunnerCostAdapter(
+	payload: HookPayload,
+	deps: CaptureUsageDeps,
+): RunnerCostAdapter {
+	return {
+		resolveTicketId: deps.resolveTicketId,
+		captureRun(): RunCaptureResult {
+			const mainJsonl = readFileSync(payload.transcript_path, "utf-8");
+			const mainSummary = summarizeUsage(mainJsonl);
+			const reviewerSubagentTotals = readSiblingSubagentTotals(
+				payload.transcript_path,
+			);
+
+			return {
+				runner: "claude-code",
+				ticketId: deps.resolveTicketId(),
+				sessionId: payload.session_id,
+				durationMs: mainSummary.durationMs,
+				turnCount: mainSummary.turnCount,
+				turnsToGreen: mainSummary.turnsToGreen,
+				humanMessageCount: null,
+				tokenTotals: mainSummary,
+				reviewerSubagentTokenTotals: reviewerSubagentTotals,
+				vendorCost: null,
+			};
+		},
+	};
+}
+
+/** Thin wrapper: delegates all computation to the `claude-code` `RunnerCostAdapter` and writes the artifact file. No active ticket means no artifact — skips reading the transcript entirely rather than writing a session it's not tracking (checked via `resolveTicketId()` before `captureRun()` is ever called). */
 export function captureUsage(
 	payload: HookPayload,
 	projectDir: string,
 	deps: CaptureUsageDeps,
 ): { artifactPath: string | null; artifact: UsageArtifact | null } {
-	const ticketId = deps.resolveTicketId();
+	const adapter = createClaudeCodeRunnerCostAdapter(payload, deps);
+	const ticketId = adapter.resolveTicketId();
 	const relativePath = resolveArtifactPath(ticketId);
 	if (relativePath === null) {
 		return { artifactPath: null, artifact: null };
 	}
 
-	const mainJsonl = readFileSync(payload.transcript_path, "utf-8");
-	const mainSummary = summarizeUsage(mainJsonl);
-	const reviewerSubagentTotals = readSiblingSubagentTotals(
-		payload.transcript_path,
-	);
-
-	const artifact = buildUsageArtifact({
-		ticketId,
-		sessionId: payload.session_id,
-		main: mainSummary,
-		reviewerSubagent: reviewerSubagentTotals,
-	});
+	const result = adapter.captureRun(projectDir);
+	const artifact = buildUsageArtifactFromRunCaptureResult(result);
 
 	const artifactPath = join(projectDir, relativePath);
 	mkdirSync(dirname(artifactPath), { recursive: true });
