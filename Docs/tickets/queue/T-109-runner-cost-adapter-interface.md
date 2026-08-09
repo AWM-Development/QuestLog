@@ -8,8 +8,6 @@ Strategy-gate flag: yes
 
 Priority: P1
 
-Blocked on: T-108 — must be merged into develop first
-
 Branch: feat/m-pipeline/t-109-runner-cost-adapter-interface
 
 Context files (load ONLY these):
