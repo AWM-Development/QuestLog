@@ -78,9 +78,22 @@ jobs:
       - name: Test
         run: pnpm turbo test
 
-  # ── Doc-Sync Warning ──────────────────────────────────────────────────────
-  doc-sync:
-    name: Doc-Sync Check
+  # ── Guards ─────────────────────────────────────────────────────────────────
+  # doc-sync, migration-guard, mockup-guard, and impl-notes-health each used
+  # to be a separate job that independently ran a full-history checkout and
+  # independently recomputed the same `git diff --name-only
+  # origin/<base>...HEAD` file list. Consolidated onto one shared checkout +
+  # one diff computation (exposed as this job's `changed-files` output),
+  # consumed by each check step below — the check logic itself (including
+  # doc-sync/impl-notes-health's warning-only exit-0 paths and
+  # migration-guard/mockup-guard's hard exit-1 paths) is unchanged. Each step
+  # after the diff computation runs `if: always()` so an earlier step's
+  # failure doesn't skip the checks after it, preserving the old
+  # independent-jobs behavior where one guard failing never stopped another
+  # from running. Why: Docs/tickets/reports/T-117-github-actions-lean-audit.md
+  # finding #4.
+  guards:
+    name: Guards (doc-sync · migration · mockup · impl-notes-health)
     runs-on: ubuntu-latest
     # Only relevant on PRs; skip on direct pushes to main (post-merge)
     if: github.event_name == 'pull_request'
@@ -90,13 +103,22 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Check for code changes without Docs/ update
+      - name: Compute changed files
+        id: changed-files
+        run: |
+          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
+          {
+            echo "changed<<CHANGED_EOF"
+            echo "$CHANGED"
+            echo "CHANGED_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Doc-Sync Check
+        if: always()
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
+          CHANGED: ${{ steps.changed-files.outputs.changed }}
         run: |
-          # Get list of changed files in this PR
-          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
-
           CODE_CHANGED=false
           DOCS_CHANGED=false
 
@@ -121,21 +143,11 @@ jobs:
 
           echo "✅ Doc-sync check passed."
 
-  # ── Migration Guard ───────────────────────────────────────────────────────
-  migration-guard:
-    name: Migration Guard
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Check schema changes have migrations
+      - name: Migration Guard
+        if: always()
+        env:
+          CHANGED: ${{ steps.changed-files.outputs.changed }}
         run: |
-          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
-
           SCHEMA_CHANGED=false
           MIGRATION_ADDED=false
 
@@ -160,6 +172,73 @@ jobs:
             echo "✅ Migration guard passed — schema change has a corresponding migration."
           else
             echo "✅ Migration guard passed — no schema changes detected."
+          fi
+
+      - name: Mockup Guard
+        if: always()
+        env:
+          CHANGED: ${{ steps.changed-files.outputs.changed }}
+        run: |
+          if echo "$CHANGED" | grep -qE "^Docs/mockups/"; then
+            echo ""
+            echo "❌ This PR modifies Docs/mockups/. Mockups are read-only to agents —"
+            echo "   generated manually by Alex in Claude Design during planning sessions."
+            echo "   Revert changes under Docs/mockups/ from this branch."
+            exit 1
+          fi
+
+          echo "✅ Mockup guard passed — Docs/mockups/ untouched."
+
+      - name: Check IMPLEMENTATION_NOTES.md size
+        if: always()
+        run: |
+          FILE="Docs/IMPLEMENTATION_NOTES.md"
+          LINE_COUNT=$(wc -l < "$FILE")
+          LIMIT=300
+
+          echo "ℹ️ $FILE is $LINE_COUNT lines (limit: $LIMIT)."
+
+          if [ "$LINE_COUNT" -gt "$LIMIT" ]; then
+            echo ""
+            echo "⚠️ IMPLEMENTATION_NOTES.md has grown past $LIMIT lines ($LINE_COUNT)."
+            echo "   Consider archiving resolved or stable entries to Docs/IMPLEMENTATION_NOTES_ARCHIVE.md"
+            echo "   before merging, to keep session startup reads fast."
+            echo "   This is a warning only — not a hard failure."
+          else
+            echo "✅ Size check passed."
+          fi
+
+      - name: Check write obligation for sensitive file changes
+        if: always()
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          CHANGED: ${{ steps.changed-files.outputs.changed }}
+        run: |
+          SENSITIVE_CHANGED=false
+          IMPL_NOTES_CHANGED=false
+
+          while IFS= read -r file; do
+            # Sensitive patterns: service files, schema, AI/LLM layer
+            if echo "$file" | grep -qE "\.(service|schema|router)\.(ts|tsx)$|schema/tables\.ts|/ai/"; then
+              SENSITIVE_CHANGED=true
+            fi
+            if echo "$file" | grep -qE "^Docs/IMPLEMENTATION_NOTES\.md$"; then
+              IMPL_NOTES_CHANGED=true
+            fi
+          done <<< "$CHANGED"
+
+          if $SENSITIVE_CHANGED && ! $IMPL_NOTES_CHANGED; then
+            if echo "$PR_TITLE" | grep -q "\[skip-impl-notes\]"; then
+              echo "ℹ️ Implementation notes check skipped via [skip-impl-notes] in PR title."
+              exit 0
+            fi
+            echo ""
+            echo "⚠️ Service, schema, or AI files changed without updating IMPLEMENTATION_NOTES.md."
+            echo "   If a non-obvious decision was made, document it before merging."
+            echo "   If no new decision was needed, add [skip-impl-notes] to your PR title."
+            echo "   This is a warning only — not a hard failure."
+          else
+            echo "✅ Implementation notes check passed."
           fi
 
   # ── Gate Guard ─────────────────────────────────────────────────────────────
@@ -285,97 +364,6 @@ jobs:
         env:
           HEAD_BRANCH: ${{ github.head_ref }}
         run: scripts/ci-exit-condition-guard.sh "origin/${{ github.base_ref }}" "$HEAD_BRANCH"
-
-  # ── Mockup Guard ──────────────────────────────────────────────────────────
-  # Docs/mockups/ is generated manually in Claude Design during planning
-  # sessions and is read-only to agents (see Docs/mockups/README.md). A
-  # ticket branch touching it means an executor edited a mockup instead of
-  # just reading it — hard fail, not a warning.
-  mockup-guard:
-    name: Mockup Guard
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Check diff does not touch Docs/mockups/
-        run: |
-          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
-
-          if echo "$CHANGED" | grep -qE "^Docs/mockups/"; then
-            echo ""
-            echo "❌ This PR modifies Docs/mockups/. Mockups are read-only to agents —"
-            echo "   generated manually by Alex in Claude Design during planning sessions."
-            echo "   Revert changes under Docs/mockups/ from this branch."
-            exit 1
-          fi
-
-          echo "✅ Mockup guard passed — Docs/mockups/ untouched."
-
-  # ── IMPLEMENTATION_NOTES Health ───────────────────────────────────────────
-  impl-notes-health:
-    name: Implementation Notes Health
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-
-    steps:
-      - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Check IMPLEMENTATION_NOTES.md size
-        run: |
-          FILE="Docs/IMPLEMENTATION_NOTES.md"
-          LINE_COUNT=$(wc -l < "$FILE")
-          LIMIT=300
-
-          echo "ℹ️ $FILE is $LINE_COUNT lines (limit: $LIMIT)."
-
-          if [ "$LINE_COUNT" -gt "$LIMIT" ]; then
-            echo ""
-            echo "⚠️ IMPLEMENTATION_NOTES.md has grown past $LIMIT lines ($LINE_COUNT)."
-            echo "   Consider archiving resolved or stable entries to Docs/IMPLEMENTATION_NOTES_ARCHIVE.md"
-            echo "   before merging, to keep session startup reads fast."
-            echo "   This is a warning only — not a hard failure."
-          else
-            echo "✅ Size check passed."
-          fi
-
-      - name: Check write obligation for sensitive file changes
-        env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          CHANGED=$(git diff --name-only origin/${{ github.base_ref }}...HEAD)
-
-          SENSITIVE_CHANGED=false
-          IMPL_NOTES_CHANGED=false
-
-          while IFS= read -r file; do
-            # Sensitive patterns: service files, schema, AI/LLM layer
-            if echo "$file" | grep -qE "\.(service|schema|router)\.(ts|tsx)$|schema/tables\.ts|/ai/"; then
-              SENSITIVE_CHANGED=true
-            fi
-            if echo "$file" | grep -qE "^Docs/IMPLEMENTATION_NOTES\.md$"; then
-              IMPL_NOTES_CHANGED=true
-            fi
-          done <<< "$CHANGED"
-
-          if $SENSITIVE_CHANGED && ! $IMPL_NOTES_CHANGED; then
-            if echo "$PR_TITLE" | grep -q "\[skip-impl-notes\]"; then
-              echo "ℹ️ Implementation notes check skipped via [skip-impl-notes] in PR title."
-              exit 0
-            fi
-            echo ""
-            echo "⚠️ Service, schema, or AI files changed without updating IMPLEMENTATION_NOTES.md."
-            echo "   If a non-obvious decision was made, document it before merging."
-            echo "   If no new decision was needed, add [skip-impl-notes] to your PR title."
-            echo "   This is a warning only — not a hard failure."
-          else
-            echo "✅ Implementation notes check passed."
-          fi
 
   # ── Red-Check (TDD Enforcement) ──────────────────────────────────────────
   # For a ticket-implementation PR (head branch prefix `feat/*`, same
