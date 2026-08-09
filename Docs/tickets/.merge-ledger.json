@@ -120,6 +120,12 @@
     "mergedAt": "2026-08-07T20:32:23Z"
   },
   {
+    "ticketId": "T-121",
+    "prNumber": 252,
+    "branch": "feat/m-efficiency/t-121-ci-guard-jobs-shared-checkout",
+    "mergedAt": "2026-08-09T21:15:41Z"
+  },
+  {
     "ticketId": "T-125",
     "prNumber": 191,
     "branch": "feat/m-efficiency/t-125-session-bootstrap-speed",
