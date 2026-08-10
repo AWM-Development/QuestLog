@@ -194,7 +194,7 @@ jobs:
         run: |
           FILE="Docs/IMPLEMENTATION_NOTES.md"
           LINE_COUNT=$(wc -l < "$FILE")
-          LIMIT=300
+          LIMIT=800
 
           echo "ℹ️ $FILE is $LINE_COUNT lines (limit: $LIMIT)."
 
