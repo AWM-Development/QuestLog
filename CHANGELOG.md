@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-138
+
+- **`scripts/worktree-postgres-env.sh` and `.claude/hooks/session-start.sh` now default `CLAUDE_PROJECT_DIR` instead of hard-requiring it.** A no-op under Claude Code (which always exports the variable); a runner that doesn't export it now falls back to `git rev-parse --show-toplevel`, deriving the same worktree-scoped value instead of hard-failing or — worse — silently colliding two concurrent agents onto the same Postgres port and compose project. See `IMPLEMENTATION_NOTES.md` § T-138.
+
 ### Changed — T-123
 
 - **`smoke-test-dev.yml` and `smoke-test-prod.yml` now call a shared reusable workflow.** New `.github/workflows/smoke-test.yml` (`workflow_call`) holds the checkout/install/poll-`/health`/run-smoke-test steps both files previously duplicated; each caller keeps its own distinct `on:` trigger and passes its environment's base URL, npm script, and scoped `DATABASE_URL` secret as inputs. Both callers also pick up `.github/actions/setup-repo` (via the reusable workflow, internally) in place of separately-pinned `actions/checkout@v4`/`pnpm/action-setup@v4`/`actions/setup-node@v4` steps, closing the `@v4`/`@v5` drift `T-117`'s audit flagged. No change to trigger conditions, poll behavior, or which secret backs which environment. Implements `T-117` audit finding #1's last bullet.
