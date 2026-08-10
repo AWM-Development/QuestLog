@@ -150,6 +150,12 @@
     "mergedAt": "2026-08-10T13:16:23Z"
   },
   {
+    "ticketId": "T-124",
+    "prNumber": 261,
+    "branch": "feat/m-efficiency/t-124-ci-small-sprawl-cleanups",
+    "mergedAt": "2026-08-10T20:08:33Z"
+  },
+  {
     "ticketId": "T-125",
     "prNumber": 191,
     "branch": "feat/m-efficiency/t-125-session-bootstrap-speed",
