@@ -138,6 +138,12 @@
     "mergedAt": "2026-08-09T21:15:41Z"
   },
   {
+    "ticketId": "T-122",
+    "prNumber": 256,
+    "branch": "feat/m-efficiency/t-122-doc-sync-impl-notes-real-gates",
+    "mergedAt": "2026-08-10T16:57:37Z"
+  },
+  {
     "ticketId": "T-123",
     "prNumber": 254,
     "branch": "feat/m-efficiency/t-123-smoke-test-reusable-workflow",
