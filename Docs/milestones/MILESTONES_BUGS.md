@@ -21,7 +21,7 @@ Every other milestone doc in `Docs/milestones/` tracks planned feature work for 
 
 ### Tasks
 
-- [ ] **M-BUG.1 — `ingest_text` failing on QuestLog (prod): stale model string** (T-154)
+- [ ] **M-BUG.1 — `ingest_text` failing on QuestLog (prod): stale model string** (T-155)
   Every `ingest_text` call against prod fails immediately with a 404 `not_found_error` citing `model: claude-sonnet-4-20250514` — a decommissioned model ID hardcoded in `packages/core/src/services/llm.service.ts`'s `LLM_CONFIG`, used by every `callClaudeStructured`/`callClaude`/`callClaudeStreaming` call site including entity-candidate extraction (`entity.service.ts`'s `detectCandidates`, on `ingest_text`'s critical path). Other prod tools (`list_campaigns`, `create_campaign`, `get_source_status`) are unaffected, confirming the service itself is healthy and this is scoped to the one stale config value.
   Exit: `LLM_CONFIG.model` points at a currently-valid model ID; a live prod `ingest_text` call (or an equivalent manual verification against the deployed service) no longer 404s with `not_found_error`.
 
