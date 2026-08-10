@@ -84,9 +84,10 @@ jobs:
   # independently recomputed the same `git diff --name-only
   # origin/<base>...HEAD` file list. Consolidated onto one shared checkout +
   # one diff computation (exposed as this job's `changed-files` output),
-  # consumed by each check step below — the check logic itself (including
-  # doc-sync/impl-notes-health's warning-only exit-0 paths and
-  # migration-guard/mockup-guard's hard exit-1 paths) is unchanged. Each step
+  # consumed by each check step below. All four checks now hard-fail
+  # (`exit 1`) on their violation path — doc-sync/impl-notes-health's
+  # warning-only exit-0 paths were tightened into real gates by T-122,
+  # matching migration-guard/mockup-guard's existing behavior. Each step
   # after the diff computation runs `if: always()` so an earlier step's
   # failure doesn't skip the checks after it, preserving the old
   # independent-jobs behavior where one guard failing never stopped another
@@ -136,9 +137,8 @@ jobs:
               echo "ℹ️ Doc-sync check skipped via [skip-doc-check] in PR title."
               exit 0
             fi
-            echo "⚠️ Code changed without a Docs/ update. If intentional, add [skip-doc-check] to your PR title."
-            # Warning only — not a hard fail
-            exit 0
+            echo "❌ Code changed without a Docs/ update. If intentional, add [skip-doc-check] to your PR title."
+            exit 1
           fi
 
           echo "✅ Doc-sync check passed."
@@ -200,10 +200,10 @@ jobs:
 
           if [ "$LINE_COUNT" -gt "$LIMIT" ]; then
             echo ""
-            echo "⚠️ IMPLEMENTATION_NOTES.md has grown past $LIMIT lines ($LINE_COUNT)."
-            echo "   Consider archiving resolved or stable entries to Docs/IMPLEMENTATION_NOTES_ARCHIVE.md"
+            echo "❌ IMPLEMENTATION_NOTES.md has grown past $LIMIT lines ($LINE_COUNT)."
+            echo "   Archive resolved or stable entries to Docs/IMPLEMENTATION_NOTES_ARCHIVE.md"
             echo "   before merging, to keep session startup reads fast."
-            echo "   This is a warning only — not a hard failure."
+            exit 1
           else
             echo "✅ Size check passed."
           fi
@@ -233,10 +233,9 @@ jobs:
               exit 0
             fi
             echo ""
-            echo "⚠️ Service, schema, or AI files changed without updating IMPLEMENTATION_NOTES.md."
-            echo "   If a non-obvious decision was made, document it before merging."
-            echo "   If no new decision was needed, add [skip-impl-notes] to your PR title."
-            echo "   This is a warning only — not a hard failure."
+            echo "❌ Service, schema, or AI files changed without updating IMPLEMENTATION_NOTES.md."
+            echo "   Document the non-obvious decision before merging, or add [skip-impl-notes] to your PR title."
+            exit 1
           else
             echo "✅ Implementation notes check passed."
           fi
