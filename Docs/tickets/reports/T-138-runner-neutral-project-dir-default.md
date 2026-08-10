@@ -68,6 +68,6 @@ Straightforward — the ticket's own Relevant background section already inlined
 
 ## Anything Alex must decide
 
-**Deliberate deviation from the `T-073`/`sim-claim-step.sh` precedent, flagging rather than silently doing it:** `sim-claim-step.sh` was dropped from the repo after its ticket (its race-condition demo was reimplemented synthetically outside the real code, so once its output was pasted into the report it had no ongoing value). `scripts/sim-worktree-env-fallback.sh` was kept instead — it sources the real, shipped `worktree-postgres-env.sh` against a real `git worktree add` checkout, so it's cheap to keep and now stands as a live regression check against this exact fallback silently reverting. Not wired into `scripts/run-tests-quiet.sh` (that only runs `pnpm lint`/`typecheck`/`test`, not standalone shell scripts) — it's a manually-run fixture, same invocation shape as `sim-claim-step.sh` was. If this convention should instead always drop the script (matching `T-073` exactly), say so and it can be removed.
+**Resolved (2026-08-10):** the initial cut of this report flagged a deliberate deviation from the `T-073`/`sim-claim-step.sh` precedent — keeping `scripts/sim-worktree-env-fallback.sh` in the repo as a live regression check instead of dropping it after use. Alex asked for it to be removed to match `T-073` exactly. Done: the script is deleted; its unfixed/fixed output (already pasted in Test evidence above) remains the record, and `Docs/IMPLEMENTATION_NOTES.md` § T-138 now reflects the drop instead of the keep.
 
 Otherwise: none.
