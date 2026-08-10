@@ -117,7 +117,7 @@ This milestone builds the actual instrumentation instead of continuing to guess:
   T-117's audit (finding #1's last bullet) noted `smoke-test-dev.yml`/`smoke-test-prod.yml` are structurally identical aside from base URL, secret name, and npm script filter. Extracts the shared steps into a `workflow_call` reusable workflow, keeping each environment's own trigger in a thin caller file. Also adopts T-120's `.github/actions/setup-repo` for its preamble, carrying the `@v4`→`@v5` version alignment (T-117 finding #2) forward without a separate ticket.
   Exit: see T-123 — one shared reusable workflow, two thin callers, zero remaining `@v4` pins in either file.
 
-- [ ] **M-EFFICIENCY.12 — Small CI sprawl cleanups: guard ordering, dead cache step, actionlint install** (T-124)
+- [x] **M-EFFICIENCY.12 — Small CI sprawl cleanups: guard ordering, dead cache step, actionlint install** (T-124)
   Bundles three independent, low-risk fixes from T-117's audit (findings #10, #13, #14): reorder `ci.yml`'s test.only/skip guard to run before install/lint/typecheck/build instead of after; drop `e2e-release-check.yml`'s documented no-op Turborepo-cache-restore step; replace `ci.yml`'s `actionlint` job's uncached `curl | bash` binary install with a pinned action or pinned-version download.
   Exit: see T-124 — guard runs first in the `pr` job, dead cache step removed, actionlint install pinned.
 

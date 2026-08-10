@@ -35,6 +35,24 @@ jobs:
       # checked out) — setup-repo's own checkout step then re-checks out
       # with the real ref/fetch-depth, superseding this one.
       - uses: actions/checkout@v5
+
+      # ── Guard: no test.only or test.skip ─────────────────────────────────
+      # Runs first, right after the bare checkout above — a plain grep over
+      # already-checked-out source that needs none of setup-repo's install
+      # output. A stray .only/.skip should fail in seconds, not after paying
+      # for install + Lint + Typecheck + Build first. Why:
+      # Docs/tickets/reports/T-117-github-actions-lean-audit.md finding #10.
+      - name: Check for test.only / test.skip
+        run: |
+          if grep -rn --include="*.test.ts" --include="*.test.tsx" \
+               -E "(test|it|describe)\.(only|skip)\(" \
+               apps/ packages/; then
+            echo ""
+            echo "❌ Found test.only or test.skip. Remove them or link to a tracking issue."
+            exit 1
+          fi
+          echo "✅ No test.only or test.skip found."
+
       - uses: ./.github/actions/setup-repo
 
       # test:e2e stays uncached — turbo.json marks it cache:false. test
@@ -56,18 +74,6 @@ jobs:
       # ── Build ─────────────────────────────────────────────────────────────
       - name: Build
         run: pnpm turbo build
-
-      # ── Guard: no test.only or test.skip ─────────────────────────────────
-      - name: Check for test.only / test.skip
-        run: |
-          if grep -rn --include="*.test.ts" --include="*.test.tsx" \
-               -E "(test|it|describe)\.(only|skip)\(" \
-               apps/ packages/; then
-            echo ""
-            echo "❌ Found test.only or test.skip. Remove them or link to a tracking issue."
-            exit 1
-          fi
-          echo "✅ No test.only or test.skip found."
 
       - uses: ./.github/actions/provision-test-databases
 
@@ -386,7 +392,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # Pinned to a specific actionlint release (both the download script's
+      # own ref and the binary version it fetches) instead of the prior
+      # `main`-branch script fetch, which pulled and executed unpinned code
+      # on every run. Why: Docs/tickets/reports/T-117-github-actions-lean-audit.md
+      # finding #14.
       - name: Install and run actionlint
         run: |
-          bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          bash <(curl -s https://raw.githubusercontent.com/rhysd/actionlint/v1.7.12/scripts/download-actionlint.bash) 1.7.12
           ./actionlint -color
