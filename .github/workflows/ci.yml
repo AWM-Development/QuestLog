@@ -84,9 +84,10 @@ jobs:
   # independently recomputed the same `git diff --name-only
   # origin/<base>...HEAD` file list. Consolidated onto one shared checkout +
   # one diff computation (exposed as this job's `changed-files` output),
-  # consumed by each check step below — the check logic itself (including
-  # doc-sync/impl-notes-health's warning-only exit-0 paths and
-  # migration-guard/mockup-guard's hard exit-1 paths) is unchanged. Each step
+  # consumed by each check step below. All four checks now hard-fail
+  # (`exit 1`) on their violation path — doc-sync/impl-notes-health's
+  # warning-only exit-0 paths were tightened into real gates by T-122,
+  # matching migration-guard/mockup-guard's existing behavior. Each step
   # after the diff computation runs `if: always()` so an earlier step's
   # failure doesn't skip the checks after it, preserving the old
   # independent-jobs behavior where one guard failing never stopped another
