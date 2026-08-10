@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — docs
+
+- **`IMPLEMENTATION_NOTES.md` archive pass; CI size gate raised 300 → 800.** T-122 turned the `impl-notes-health` size check into a real, unconditional `exit 1` gate with no override flag, but the file was already 964 lines (3.2x the 300-line limit) at the time — blocking every subsequent PR into `develop`/`main`, including this one. Ran `/archive-implementation-notes`: 19 sections (198 lines) covering shipped v1 (`M-MCP.3`, `T-019`, `T-024`, `T-025`) and v1.1 product-feature work (`T-029`–`T-092`, the `M-REMOTE`/`M-CICD`/`M-AUDIT` tickets) moved verbatim to `Docs/IMPLEMENTATION_NOTES_ARCHIVE.md`. Two sections (`T-027`, `T-042`) were left as Uncertain per the skill's own rule — old but still actively cross-referenced by name elsewhere in the file — not archived without an explicit call. Post-archive: 766 lines, still over an initial 750 cap; raised to 800 (Alex's call) rather than force-archiving the Uncertain entries or dropping the gate.
+
 ### Changed — T-122
 
 - **`ci.yml`'s `doc-sync` and `impl-notes-health` guard checks are now real failing gates.** All three previously warning-only violation paths — `doc-sync`'s missing-`Docs/`-update check, `impl-notes-health`'s `IMPLEMENTATION_NOTES.md` size check, and its sensitive-file write-obligation check — now `exit 1` on a real violation instead of always `exit 0`. The existing `[skip-doc-check]`/`[skip-impl-notes]` PR-title escape hatches are unchanged and still exit 0. Matches `migration-guard`/`mockup-guard`'s existing hard-fail behavior in the same job. Implements `T-117` audit finding #3, per Alex's decision during the `/morning-review` follow-up on T-117 (2026-08-03).
