@@ -63,13 +63,6 @@ jobs:
         with:
           ref: ${{ inputs.ref || github.ref }}
 
-      # Mirrors ci.yml — kept structurally parallel even though this
-      # workflow only runs test:e2e (uncacheable): lint/typecheck/build
-      # aren't invoked here, so this step is a no-op today, not a source of
-      # divergence if a future change adds one of those tasks to this
-      # workflow. Why: Docs/tickets/T-086.
-      - uses: ./.github/actions/restore-turbo-cache
-
       - uses: ./.github/actions/provision-test-databases
 
       - name: Real-API e2e tests
