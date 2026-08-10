@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-036, T-037
+
+- **`DEV_DATABASE_URL`/`PROD_DATABASE_URL` GitHub Actions secrets added; M-CICD.2/M-CICD.3 closed.** Alex added both secrets. `gh run list` confirms real successful runs of `smoke-test-dev.yml` against `develop` and `smoke-test-prod.yml` against `main` — both milestone checkboxes flipped.
+
+### Changed — T-035
+
+- **`questlog-dev`'s Fly GitHub-integration connection confirmed; M-CICD.1 closed.** `Docs/DEPLOY_SETUP_CHECKLIST.md` §3.1's dashboard-connection step is checked off (Alex connected it 2026-08-10), and M-CICD.1's milestone checkbox is flipped on Alex's explicit confirmation. Noted in the milestone doc: `fly releases -a questlog-dev` hadn't yet shown a release for a post-connection `develop` merge at the time of flipping — worth a quick look next time a `develop` merge lands, just to see the new release show up.
+
 ### Changed — docs
 
 - **`IMPLEMENTATION_NOTES.md` archive pass; CI size gate raised 300 → 800.** T-122 turned the `impl-notes-health` size check into a real, unconditional `exit 1` gate with no override flag, but the file was already 964 lines (3.2x the 300-line limit) at the time — blocking every subsequent PR into `develop`/`main`, including this one. Ran `/archive-implementation-notes`: 19 sections (198 lines) covering shipped v1 (`M-MCP.3`, `T-019`, `T-024`, `T-025`) and v1.1 product-feature work (`T-029`–`T-092`, the `M-REMOTE`/`M-CICD`/`M-AUDIT` tickets) moved verbatim to `Docs/IMPLEMENTATION_NOTES_ARCHIVE.md`. Two sections (`T-027`, `T-042`) were left as Uncertain per the skill's own rule — old but still actively cross-referenced by name elsewhere in the file — not archived without an explicit call. Post-archive: 766 lines, still over an initial 750 cap; raised to 800 (Alex's call) rather than force-archiving the Uncertain entries or dropping the gate.
