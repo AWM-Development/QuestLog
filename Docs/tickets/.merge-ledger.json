@@ -132,6 +132,12 @@
     "mergedAt": "2026-08-09T21:15:41Z"
   },
   {
+    "ticketId": "T-123",
+    "prNumber": 254,
+    "branch": "feat/m-efficiency/t-123-smoke-test-reusable-workflow",
+    "mergedAt": "2026-08-10T13:16:23Z"
+  },
+  {
     "ticketId": "T-125",
     "prNumber": 191,
     "branch": "feat/m-efficiency/t-125-session-bootstrap-speed",
