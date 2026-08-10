@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-036, T-037
+
+- **`DEV_DATABASE_URL`/`PROD_DATABASE_URL` GitHub Actions secrets added; M-CICD.2/M-CICD.3 closed.** Alex added both secrets. `gh run list` confirms real successful runs of `smoke-test-dev.yml` against `develop` and `smoke-test-prod.yml` against `main` — both milestone checkboxes flipped.
+
 ### Changed — T-035
 
 - **`questlog-dev`'s Fly GitHub-integration connection confirmed; M-CICD.1 closed.** `Docs/DEPLOY_SETUP_CHECKLIST.md` §3.1's dashboard-connection step is checked off (Alex connected it 2026-08-10), and M-CICD.1's milestone checkbox is flipped on Alex's explicit confirmation. Noted in the milestone doc: `fly releases -a questlog-dev` hadn't yet shown a release for a post-connection `develop` merge at the time of flipping — worth a quick look next time a `develop` merge lands, just to see the new release show up.

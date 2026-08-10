@@ -95,13 +95,13 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   Fly's native GitHub integration (the same mechanism already decided on for prod in T-024 §3 — "one fewer secret to manage, no risk of two deploy mechanisms racing"), tracking `develop`. Updates `fly.dev.toml`'s header comment and `Docs/DEPLOY_SETUP_CHECKLIST.md`, both of which currently say dev is manual-deploy-only. **The Fly dashboard connection itself is an Alex-only action**, same as prod's equivalent step.
   **Confirmed by Alex 2026-08-10** (`Docs/DEPLOY_SETUP_CHECKLIST.md` §3.1). Note for the record: at the time this was checked off, `fly releases -a questlog-dev` still showed no release since v133 (Aug 9 14:45 UTC) — predating every merge to `develop` that day (T-138, the smoke-test fix, T-122) — so the connection itself was confirmed live but a merge-triggered dev release hadn't yet been independently observed via the CLI. Flipped on Alex's explicit confirmation rather than held for that observation.
 
-- [ ] **M-CICD.2 — Post-merge smoke-test workflow (dev)** (T-036)
+- [x] **M-CICD.2 — Post-merge smoke-test workflow (dev)** (T-036)
   A new, separate GitHub Actions workflow triggered on push to `develop`: migrate, verify schema + pgvector/pg_trgm extensions, one create/read/delete round-trip against the real dev Neon branch. Automates exactly what was done by hand during v1 sign-off. Does **not** touch or replace the existing PR-gate test suite.
-  **Code shipped** (`Docs/tickets/done/T-036-post-merge-smoke-test-dev.md`) — checkbox held pending the Alex-only `DEV_DATABASE_URL` GitHub Actions secret and a confirmed real workflow run; see the ticket's own report for the checklist.
+  **Confirmed 2026-08-10** — Alex added the `DEV_DATABASE_URL` GitHub Actions secret; `gh run list --workflow=smoke-test-dev.yml` shows real successful runs against `develop` (e.g. run `31411623681`, 2026-08-10T16:57:41Z, and `31402444575`, 2026-08-10T15:13:46Z).
 
-- [ ] **M-CICD.3 — Post-merge smoke-test workflow (prod)** (T-037)
+- [x] **M-CICD.3 — Post-merge smoke-test workflow (prod)** (T-037)
   Same shape, triggered on push to `main`, against the real prod branch. **Read-only** by default (health + schema/extension checks, no automated write/delete) — an unattended write against prod on every merge felt like a bigger call than to default into silently; revisit if Alex wants prod's check to match dev's full round-trip.
-  **Code shipped** (`Docs/tickets/done/T-037-post-merge-smoke-test-prod.md`) — checkbox held pending the Alex-only `PROD_DATABASE_URL` GitHub Actions secret and a confirmed real workflow run; see the ticket's own report for the checklist.
+  **Confirmed 2026-08-10** — Alex added the `PROD_DATABASE_URL` GitHub Actions secret; `gh run list --workflow=smoke-test-prod.yml` shows a real successful run against `main` (run `31264298965`, 2026-08-08T15:22:32Z).
 
 ---
 
