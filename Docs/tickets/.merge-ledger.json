@@ -102,6 +102,12 @@
     "mergedAt": "2026-08-09T18:16:44Z"
   },
   {
+    "ticketId": "T-115",
+    "prNumber": 249,
+    "branch": "feat/m-pipeline/t-115-wire-enforcement-guards-into-preflight",
+    "mergedAt": "2026-08-10T13:23:26Z"
+  },
+  {
     "ticketId": "T-116",
     "prNumber": 182,
     "branch": "feat/m-efficiency/t-116-pr-merge-status-ledger-action",
