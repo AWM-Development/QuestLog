@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-138
+
+- **`scripts/worktree-postgres-env.sh` and `.claude/hooks/session-start.sh` now default `CLAUDE_PROJECT_DIR` instead of hard-requiring it.** A no-op under Claude Code (which always exports the variable); a runner that doesn't export it now falls back to `git rev-parse --show-toplevel`, deriving the same worktree-scoped value instead of hard-failing or — worse — silently colliding two concurrent agents onto the same Postgres port and compose project. See `IMPLEMENTATION_NOTES.md` § T-138.
+
 ### Added — T-115
 
 - **The nightly executor's own pre-flight now runs the same enforcement scripts CI does, before committing effort to a ticket.** Right after `EXECUTOR_ROUTINE.md` Step 2's pickup commit (the first point a real `origin/develop...HEAD` diff exists for a freshly-picked or resumed candidate), the routine now invokes every `scripts/ci-*-guard.sh` script found on disk, except `ci-red-check-guard.sh` — discovered dynamically by glob rather than named individually, so a future guard added or removed (`T-113`'s own `ci-exit-condition-guard.sh` was retired mid-lifecycle, during this same ticket's development — see `IMPLEMENTATION_NOTES.md` § T-115) never needs a doc update to stay accurate. A candidate that fails gate-guard (an unresolved `Gated on:`/unmet `Blocked on:` slipping past Step 1's own hand check — a sync bug) is abandoned before its worktree is even pushed, same skip-and-note treatment as an already-blocked candidate. Every other discovered guard is wired in for the same reason but only bites meaningfully on a case-4 resume, whose branch may already carry an interrupted prior session's work; a fresh pick's diff is too small for most of them to have anything to check. `T-114`'s red-check is the one permanent, named exclusion — it needs a completed implementation diff that doesn't exist until after Step 4. Implements `G-020` Q2's "does the same logic also run as a pre-flight" resolution.
