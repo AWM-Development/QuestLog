@@ -38,6 +38,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Bare checkout first so the runner can resolve the local composite
+      # action below (a `uses: ./...` reference requires the repo already
+      # checked out) — setup-repo's own checkout step then re-checks out
+      # with the real ref/fetch-depth, superseding this one.
+      - uses: actions/checkout@v5
       - uses: ./.github/actions/setup-repo
 
       # ── Wait for the deploy to be live ───────────────────────────────────

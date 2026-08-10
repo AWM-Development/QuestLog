@@ -146,7 +146,7 @@ resolution (`Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md
 
 *Runner-agnosticism (Q1 — full commitment):*
 
-- [ ] **M-PIPELINE.8 — Runner-neutral `CLAUDE_PROJECT_DIR` default** (T-138)
+- [x] **M-PIPELINE.8 — Runner-neutral `CLAUDE_PROJECT_DIR` default** (T-138)
   `scripts/worktree-postgres-env.sh:7` and `.claude/hooks/session-start.sh:54` both hard-require `CLAUDE_PROJECT_DIR` with no fallback; under a runner that doesn't export it, a partial recovery (only the `cd` line fixed) silently reintroduces the `T-071`/`T-072`/`T-099` shared-Postgres collision instead of failing loudly. `G-020` Notes §2.
   Exit: see T-138.
 
@@ -191,7 +191,7 @@ resolution (`Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md
   TDD enforced as a CI job, not a written rule — `G-020` Q2's most novel and highest-risk candidate. Scoped conservatively: identify new/changed test files via the PR diff, run only those against a temporary checkout of `develop`'s source, require at least one failure.
   Exit: see T-114.
 
-- [ ] **M-PIPELINE.19 — Wire the enforcement guards into the executor's own pre-flight** (T-115)
+- [x] **M-PIPELINE.19 — Wire the enforcement guards into the executor's own pre-flight** (T-115)
   So a run fails fast locally (Step 1) rather than only at PR time, per `G-020` Q2's "whether the same logic also runs as a pre-flight." Blocked on T-110, T-111, T-112, T-113, T-114.
   Exit: see T-115.
 

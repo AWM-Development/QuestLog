@@ -2,6 +2,9 @@
 # SessionStart hook — runs for every session, local and remote.
 set -euo pipefail
 
+# Runner-neutral default — see Docs/IMPLEMENTATION_NOTES.md § T-138.
+: "${CLAUDE_PROJECT_DIR:=$(git rev-parse --show-toplevel)}"
+
 cd "$CLAUDE_PROJECT_DIR"
 
 # --- shared-primary-directory warning: begin ---

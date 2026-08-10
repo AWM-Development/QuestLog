@@ -4,7 +4,8 @@
 # Meant to be sourced, not executed.
 set -euo pipefail
 
-: "${CLAUDE_PROJECT_DIR:?CLAUDE_PROJECT_DIR must be set}"
+# Runner-neutral default — see Docs/IMPLEMENTATION_NOTES.md § T-138.
+: "${CLAUDE_PROJECT_DIR:=$(git rev-parse --show-toplevel)}"
 
 WORKTREE_NAME="$(basename "$CLAUDE_PROJECT_DIR")"
 PORT_RANGE=500
