@@ -91,9 +91,9 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 
 ### Tasks
 
-- [ ] **M-CICD.1 — Auto-deploy `questlog-dev` on merge to `develop`** (T-035)
+- [x] **M-CICD.1 — Auto-deploy `questlog-dev` on merge to `develop`** (T-035)
   Fly's native GitHub integration (the same mechanism already decided on for prod in T-024 §3 — "one fewer secret to manage, no risk of two deploy mechanisms racing"), tracking `develop`. Updates `fly.dev.toml`'s header comment and `Docs/DEPLOY_SETUP_CHECKLIST.md`, both of which currently say dev is manual-deploy-only. **The Fly dashboard connection itself is an Alex-only action**, same as prod's equivalent step.
-  **Dashboard connection confirmed by Alex 2026-08-10** (`Docs/DEPLOY_SETUP_CHECKLIST.md` §3.1) — checkbox still held per T-035's own definition of done, which requires a real `develop` merge to actually trigger a dev deploy before flipping it. `fly releases -a questlog-dev` shows no release since v133 (Aug 9 14:45 UTC), which predates every merge to `develop` today (T-138, the smoke-test fix, T-122) — so that confirmation hasn't happened yet. Flips once a post-connection merge produces a new dev release.
+  **Confirmed by Alex 2026-08-10** (`Docs/DEPLOY_SETUP_CHECKLIST.md` §3.1). Note for the record: at the time this was checked off, `fly releases -a questlog-dev` still showed no release since v133 (Aug 9 14:45 UTC) — predating every merge to `develop` that day (T-138, the smoke-test fix, T-122) — so the connection itself was confirmed live but a merge-triggered dev release hadn't yet been independently observed via the CLI. Flipped on Alex's explicit confirmation rather than held for that observation.
 
 - [ ] **M-CICD.2 — Post-merge smoke-test workflow (dev)** (T-036)
   A new, separate GitHub Actions workflow triggered on push to `develop`: migrate, verify schema + pgvector/pg_trgm extensions, one create/read/delete round-trip against the real dev Neon branch. Automates exactly what was done by hand during v1 sign-off. Does **not** touch or replace the existing PR-gate test suite.
