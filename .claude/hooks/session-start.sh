@@ -2,6 +2,14 @@
 # SessionStart hook — runs for every session, local and remote.
 set -euo pipefail
 
+# Runner-neutral default (T-138): Claude Code always exports
+# CLAUDE_PROJECT_DIR, so this is a no-op there. A runner that doesn't
+# export it would otherwise hard-fail on this cd, or worse — a partial fix
+# repairing only the cd would leave every hook below deriving worktree
+# state from the wrong directory. See
+# Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md § Notes 2.
+: "${CLAUDE_PROJECT_DIR:=$(git rev-parse --show-toplevel)}"
+
 cd "$CLAUDE_PROJECT_DIR"
 
 # --- shared-primary-directory warning: begin ---
