@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Fixed — T-155
+
+- **`ingest_text` 404ing on prod — stale Claude model id.** `LLM_CONFIG.model` was pinned to `claude-sonnet-4-20250514`, a decommissioned model id, causing every `ingest_text` call to fail immediately with a `404 not_found_error` (entity-candidate extraction is the LLM call on that path). Updated to `claude-sonnet-5`. Fixes every caller of the shared LLM service (chat, entity extraction), not just `ingest_text`.
+
 ### Changed — T-124
 
 - **Three small CI cleanups from T-117's audit.** `ci.yml`'s `pr` job now runs the "no `test.only`/`test.skip`" guard immediately after checkout, before install/Lint/Typecheck/Build, so a stray `.only`/`.skip` fails in seconds instead of after paying for the full setup and three quality gates first. `e2e-release-check.yml`'s documented no-op "Restore Turborepo cache" step is removed. `ci.yml`'s `actionlint` job no longer fetches its install script from `actionlint`'s `main` branch via `curl | bash`; it now pins both the script's own ref and the binary version to a specific release tag (`v1.7.12`).
