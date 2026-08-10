@@ -1,4 +1,4 @@
-# T-154 — Fix stale `LLM_CONFIG.model` breaking `ingest_text` on prod
+# T-155 — Fix stale `LLM_CONFIG.model` breaking `ingest_text` on prod
 
 Milestone ref: M-BUG.1 (`Docs/milestones/MILESTONES_BUGS.md`)
 
@@ -8,7 +8,7 @@ Strategy-gate flag: no
 
 Priority: P0
 
-Branch: feat/m-bug/t-154-fix-stale-llm-config-model-id
+Branch: feat/m-bug/t-155-fix-stale-llm-config-model-id
 
 Context files (load ONLY these):
   - packages/core/src/services/llm.service.ts (`LLM_CONFIG` at lines ~25-32; the string being replaced is used at all three call sites in this file — `callClaude`, `callClaudeStreaming`, `callClaudeStructured`)
