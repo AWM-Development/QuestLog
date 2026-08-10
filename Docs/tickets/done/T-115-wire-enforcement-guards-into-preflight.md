@@ -6,7 +6,7 @@ Complexity tier: D
 
 Strategy-gate flag: yes
 
-Priority: P1
+Priority: P0
 
 Branch: feat/m-pipeline/t-115-wire-enforcement-guards-into-preflight
 
