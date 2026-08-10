@@ -54,6 +54,24 @@
     "mergedAt": "2026-08-07T20:50:29Z"
   },
   {
+    "ticketId": "T-107",
+    "prNumber": 243,
+    "branch": "feat/m-pipeline/t-107-ticket-spec-runner-field",
+    "mergedAt": "2026-08-08T18:15:27Z"
+  },
+  {
+    "ticketId": "T-108",
+    "prNumber": 244,
+    "branch": "feat/m-pipeline/t-108-ticket-runs-runner-dimension",
+    "mergedAt": "2026-08-09T14:44:03Z"
+  },
+  {
+    "ticketId": "T-109",
+    "prNumber": 250,
+    "branch": "feat/m-pipeline/t-109-runner-cost-adapter-interface",
+    "mergedAt": "2026-08-09T21:22:34Z"
+  },
+  {
     "ticketId": "T-110",
     "prNumber": 179,
     "branch": "feat/m-pipeline/t-110-ci-gate-guard",
@@ -72,6 +90,24 @@
     "mergedAt": "2026-08-07T15:37:11Z"
   },
   {
+    "ticketId": "T-113",
+    "prNumber": 245,
+    "branch": "feat/m-pipeline/t-113-exit-condition-evidence-recomputation",
+    "mergedAt": "2026-08-09T16:17:13Z"
+  },
+  {
+    "ticketId": "T-114",
+    "prNumber": 251,
+    "branch": "chore/m-pipeline/t-114-red-check-guard-cleanup",
+    "mergedAt": "2026-08-09T18:16:44Z"
+  },
+  {
+    "ticketId": "T-115",
+    "prNumber": 249,
+    "branch": "feat/m-pipeline/t-115-wire-enforcement-guards-into-preflight",
+    "mergedAt": "2026-08-10T13:23:26Z"
+  },
+  {
     "ticketId": "T-116",
     "prNumber": 182,
     "branch": "feat/m-efficiency/t-116-pr-merge-status-ledger-action",
@@ -84,10 +120,34 @@
     "mergedAt": "2026-08-07T19:59:59Z"
   },
   {
+    "ticketId": "T-119",
+    "prNumber": 248,
+    "branch": "feat/m-extract/t-119-llm-based-entity-candidate-detection",
+    "mergedAt": "2026-08-09T16:10:43Z"
+  },
+  {
     "ticketId": "T-120",
     "prNumber": 232,
     "branch": "feat/m-efficiency/t-120-ci-composite-actions",
     "mergedAt": "2026-08-07T20:32:23Z"
+  },
+  {
+    "ticketId": "T-121",
+    "prNumber": 252,
+    "branch": "feat/m-efficiency/t-121-ci-guard-jobs-shared-checkout",
+    "mergedAt": "2026-08-09T21:15:41Z"
+  },
+  {
+    "ticketId": "T-122",
+    "prNumber": 256,
+    "branch": "feat/m-efficiency/t-122-doc-sync-impl-notes-real-gates",
+    "mergedAt": "2026-08-10T16:57:37Z"
+  },
+  {
+    "ticketId": "T-123",
+    "prNumber": 254,
+    "branch": "feat/m-efficiency/t-123-smoke-test-reusable-workflow",
+    "mergedAt": "2026-08-10T13:16:23Z"
   },
   {
     "ticketId": "T-125",
@@ -118,6 +178,12 @@
     "prNumber": 215,
     "branch": "feat/m-efficiency/t-134-d-tier-docs-only-fast-path",
     "mergedAt": "2026-08-06T21:57:46Z"
+  },
+  {
+    "ticketId": "T-138",
+    "prNumber": 255,
+    "branch": "feat/m-pipeline/t-138-runner-neutral-project-dir-default",
+    "mergedAt": "2026-08-10T14:51:43Z"
   },
   {
     "ticketId": "T-145",

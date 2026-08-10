@@ -1,7 +1,7 @@
 # QuestLog — v1.1 Milestones (Remote MCP)
 
 **Location:** `Docs/milestones/MILESTONES_V1_1_MCP.md`
-**Status:** CANONICAL task source for v1.1, supplementing `Docs/milestones/MILESTONES_V1_MCP.md` (v1 — shipped, kept as-is for historical record; v1's own "only task source" line now points here for anything past M-MCP.5).
+**Status:** v1.1 — shipped 2026-08-10, kept as-is for historical record. Supplements `Docs/milestones/MILESTONES_V1_MCP.md` (v1 — shipped, kept as-is for historical record; v1's own "only task source" line now points here for anything past M-MCP.5). Its own "only task source" line now points to `Docs/milestones/MILESTONES_V1_2_MCP.md` for anything past M-AUDIT.
 **Created:** 2026-07-22, immediately after v1 was signed off and deployed.
 
 ## Why v1.1 exists
@@ -59,9 +59,9 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   The MCP server's `instructions` field (shown to the model at connection time) plus a dedicated `help`/`get_started` tool, covering the "upload a campaign, start tracking a session" workflow Alex asked for explicitly.
   Exit: a fresh client connection surfaces the workflow summary without the user having to ask; calling `help` returns it on demand.
 
-- [ ] **M-REMOTE.7 — Deploy + connect a real Claude Project + full remote test pass** (T-034)
+- [x] **M-REMOTE.7 — Deploy + connect a real Claude Project + full remote test pass** (T-034)
   Deploy the above to dev, connect it as a real Claude.ai Custom Connector in an actual Project, re-run the v1 test plan (this session's table) against the remote transport end-to-end, then repeat for prod. **The Custom Connector setup itself is an Alex-only action** — it happens inside Alex's own Claude.ai account and cannot be scripted.
-  **Automatable half shipped** (`Docs/tickets/done/T-034-deploy-connect-claude-project.md`) — checkbox held pending Alex's real Custom Connector connection; see the ticket's own report for the checklist.
+  **Automatable half shipped** (`Docs/tickets/done/T-034-deploy-connect-claude-project.md`) — `verify-mcp-remote.ts`'s full OAuth + tool-call flow passed end-to-end against `questlog-dev` (see that ticket's report). **Closed 2026-08-10 on Alex's explicit call**, ahead of his own manual Custom Connector walkthrough (which surfaced two real prod-only blockers not yet resolved — `MCP_ACCESS_PASSPHRASE` unset on `questlog-prod`, and `questlog-prod` still running 2 machines against the single-machine session-store constraint T-034 documented for dev). Alex is doing that walkthrough himself right after this release and will open a new milestone for anything it turns up, rather than holding this checkbox open for it.
 
 - [x] **M-REMOTE.8 — Agent-interaction strategy for MCP-hooked sessions** (T-065, T-066, T-067)
   Resolved via `/ungate` on 2026-07-28 (`G-005`): no new MCP transport for
@@ -91,16 +91,17 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
 
 ### Tasks
 
-- [ ] **M-CICD.1 — Auto-deploy `questlog-dev` on merge to `develop`** (T-035)
+- [x] **M-CICD.1 — Auto-deploy `questlog-dev` on merge to `develop`** (T-035)
   Fly's native GitHub integration (the same mechanism already decided on for prod in T-024 §3 — "one fewer secret to manage, no risk of two deploy mechanisms racing"), tracking `develop`. Updates `fly.dev.toml`'s header comment and `Docs/DEPLOY_SETUP_CHECKLIST.md`, both of which currently say dev is manual-deploy-only. **The Fly dashboard connection itself is an Alex-only action**, same as prod's equivalent step.
+  **Confirmed by Alex 2026-08-10** (`Docs/DEPLOY_SETUP_CHECKLIST.md` §3.1). Note for the record: at the time this was checked off, `fly releases -a questlog-dev` still showed no release since v133 (Aug 9 14:45 UTC) — predating every merge to `develop` that day (T-138, the smoke-test fix, T-122) — so the connection itself was confirmed live but a merge-triggered dev release hadn't yet been independently observed via the CLI. Flipped on Alex's explicit confirmation rather than held for that observation.
 
-- [ ] **M-CICD.2 — Post-merge smoke-test workflow (dev)** (T-036)
+- [x] **M-CICD.2 — Post-merge smoke-test workflow (dev)** (T-036)
   A new, separate GitHub Actions workflow triggered on push to `develop`: migrate, verify schema + pgvector/pg_trgm extensions, one create/read/delete round-trip against the real dev Neon branch. Automates exactly what was done by hand during v1 sign-off. Does **not** touch or replace the existing PR-gate test suite.
-  **Code shipped** (`Docs/tickets/done/T-036-post-merge-smoke-test-dev.md`) — checkbox held pending the Alex-only `DEV_DATABASE_URL` GitHub Actions secret and a confirmed real workflow run; see the ticket's own report for the checklist.
+  **Confirmed 2026-08-10** — Alex added the `DEV_DATABASE_URL` GitHub Actions secret; `gh run list --workflow=smoke-test-dev.yml` shows real successful runs against `develop` (e.g. run `31411623681`, 2026-08-10T16:57:41Z, and `31402444575`, 2026-08-10T15:13:46Z).
 
-- [ ] **M-CICD.3 — Post-merge smoke-test workflow (prod)** (T-037)
+- [x] **M-CICD.3 — Post-merge smoke-test workflow (prod)** (T-037)
   Same shape, triggered on push to `main`, against the real prod branch. **Read-only** by default (health + schema/extension checks, no automated write/delete) — an unattended write against prod on every merge felt like a bigger call than to default into silently; revisit if Alex wants prod's check to match dev's full round-trip.
-  **Code shipped** (`Docs/tickets/done/T-037-post-merge-smoke-test-prod.md`) — checkbox held pending the Alex-only `PROD_DATABASE_URL` GitHub Actions secret and a confirmed real workflow run; see the ticket's own report for the checklist.
+  **Confirmed 2026-08-10** — Alex added the `PROD_DATABASE_URL` GitHub Actions secret; `gh run list --workflow=smoke-test-prod.yml` shows a real successful run against `main` (run `31264298965`, 2026-08-08T15:22:32Z).
 
 ---
 
@@ -146,7 +147,7 @@ resolution (`Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md
 
 *Runner-agnosticism (Q1 — full commitment):*
 
-- [ ] **M-PIPELINE.8 — Runner-neutral `CLAUDE_PROJECT_DIR` default** (T-138)
+- [x] **M-PIPELINE.8 — Runner-neutral `CLAUDE_PROJECT_DIR` default** (T-138)
   `scripts/worktree-postgres-env.sh:7` and `.claude/hooks/session-start.sh:54` both hard-require `CLAUDE_PROJECT_DIR` with no fallback; under a runner that doesn't export it, a partial recovery (only the `cd` line fixed) silently reintroduces the `T-071`/`T-072`/`T-099` shared-Postgres collision instead of failing loudly. `G-020` Notes §2.
   Exit: see T-138.
 
@@ -158,15 +159,15 @@ resolution (`Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md
   Names which steps are Claude-Code-specific (the `Model: sonnet` field, hook-based usage capture) vs. runner-neutral, per `G-020` Q1(c) — a short section, not a per-runner fork of the routine. Blocked on T-105 (references `AGENTS.md`).
   Exit: see T-106.
 
-- [ ] **M-PIPELINE.11 — Generalize `TICKET_SPEC.md`'s `Model:` field to `Runner:` + `Model:`** (T-107)
+- [x] **M-PIPELINE.11 — Generalize `TICKET_SPEC.md`'s `Model:` field to `Runner:` + `Model:`** (T-107)
   Per `G-020` Q1(b): `Runner: claude-code | devin`, with `Model:` only meaningful when `Runner: claude-code`. Updates `TICKET_SPEC.md` and `ticket-writer`'s field-filling step.
   Exit: see T-107.
 
-- [ ] **M-PIPELINE.12 — `runner` dimension on `ticket_runs`** (T-108)
+- [x] **M-PIPELINE.12 — `runner` dimension on `ticket_runs`** (T-108)
   Nullable `runner` column (backfilled `'claude-code'` for existing rows), the established placeholder-column pattern (`packages/observability/src/schema/tables.ts`'s existing `complexityTier`/`filesChanged` columns). Schema-only — no adapter yet. `G-020` Notes §3.
   Exit: see T-108.
 
-- [ ] **M-PIPELINE.13 — Runner-neutral cost adapter interface** (T-109)
+- [x] **M-PIPELINE.13 — Runner-neutral cost adapter interface** (T-109)
   A `RunnerCostAdapter` interface with Claude Code's existing transcript-based implementation as the reference case; a real Devin/ACU implementation is deferred until a second runner actually executes a ticket, per `G-020` Notes §3's honest options ("a `runner` dimension with per-runner views... `T-051`'s human-hour-equivalent model is runner-neutral and survives either way"). Blocked on T-108.
   Exit: see T-109.
 
@@ -183,15 +184,15 @@ resolution (`Docs/tickets/gated/resolved/G-020-pipeline-audit-and-improvement.md
   No placeholder text, required sections present, test-evidence block contains real runner output rather than a "tests pass" claim.
   Exit: see T-112.
 
-- [ ] **M-PIPELINE.17 — Exit-condition evidence recomputation** (T-113)
+- [x] **M-PIPELINE.17 — Exit-condition evidence recomputation** (T-113)
   CI cross-checks the report's "Exit condition check" section against the diff itself (referenced test files actually exist and were touched) rather than trusting the agent's prose. Distinct from the already-queued `T-055` (PR diff-stat sync, a mechanical stat sync, not a claims check) — see T-113's own Context files for the boundary.
   Exit: see T-113.
 
-- [ ] **M-PIPELINE.18 — Red-check CI job: a PR's new tests must fail against `develop`'s pre-change implementation** (T-114)
+- [x] **M-PIPELINE.18 — Red-check CI job: a PR's new tests must fail against `develop`'s pre-change implementation** (T-114)
   TDD enforced as a CI job, not a written rule — `G-020` Q2's most novel and highest-risk candidate. Scoped conservatively: identify new/changed test files via the PR diff, run only those against a temporary checkout of `develop`'s source, require at least one failure.
   Exit: see T-114.
 
-- [ ] **M-PIPELINE.19 — Wire the enforcement guards into the executor's own pre-flight** (T-115)
+- [x] **M-PIPELINE.19 — Wire the enforcement guards into the executor's own pre-flight** (T-115)
   So a run fails fast locally (Step 1) rather than only at PR time, per `G-020` Q2's "whether the same logic also runs as a pre-flight." Blocked on T-110, T-111, T-112, T-113, T-114.
   Exit: see T-115.
 

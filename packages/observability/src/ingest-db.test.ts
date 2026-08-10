@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { testDbUrl } from "@questlog/core/db/test-db-url.js";
 import type { UsageArtifact } from "@questlog/core/usage-capture/artifact.js";
+import { eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres, { type Sql } from "postgres";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
@@ -80,6 +81,55 @@ describe("upsertTicketRun idempotency", () => {
 
 		const all = await db.select().from(ticketRuns);
 		expect(all).toHaveLength(2);
+	});
+});
+
+describe("upsertTicketRun runner default (T-108)", () => {
+	it("defaults runner to 'claude-code' on insert when the row doesn't supply one", async () => {
+		const artifact = JSON.parse(
+			readFixture("T-999.usage.json"),
+		) as UsageArtifact;
+		const row = mapUsageArtifactToTicketRun(artifact);
+		expect(row.runner).toBeUndefined();
+
+		await upsertTicketRun(db, row);
+
+		const [inserted] = await db
+			.select()
+			.from(ticketRuns)
+			.where(eq(ticketRuns.ticketId, "T-999"));
+		expect(inserted?.runner).toBe("claude-code");
+	});
+
+	it("defaults runner to 'claude-code' on update when the row doesn't supply one", async () => {
+		const artifact = JSON.parse(
+			readFixture("T-999.usage.json"),
+		) as UsageArtifact;
+		const row = mapUsageArtifactToTicketRun(artifact);
+
+		await upsertTicketRun(db, row);
+		await upsertTicketRun(db, { ...row, turnCount: 999 });
+
+		const [updated] = await db
+			.select()
+			.from(ticketRuns)
+			.where(eq(ticketRuns.ticketId, "T-999"));
+		expect(updated?.runner).toBe("claude-code");
+	});
+
+	it("preserves an explicit runner value instead of overwriting it with the default", async () => {
+		const artifact = JSON.parse(
+			readFixture("T-999.usage.json"),
+		) as UsageArtifact;
+		const row = { ...mapUsageArtifactToTicketRun(artifact), runner: "devin" };
+
+		await upsertTicketRun(db, row);
+
+		const [inserted] = await db
+			.select()
+			.from(ticketRuns)
+			.where(eq(ticketRuns.ticketId, "T-999"));
+		expect(inserted?.runner).toBe("devin");
 	});
 });
 

@@ -1,3 +1,4 @@
+import type Anthropic from "@anthropic-ai/sdk";
 import { ENTITY_TYPES, type EntityType } from "@questlog/shared";
 import { and, eq, sql } from "drizzle-orm";
 import type { Database, Transaction } from "../db/index.js";
@@ -7,11 +8,11 @@ import { first } from "../lib/utils.js";
 import { CONTEXT_CONFIG, contextService } from "./context.service.js";
 import type { ContextCitation } from "./context.service.js";
 import {
-	findProperNounSpans,
-	guessEntityType,
 	rangesOverlap,
 	tokenizeWords,
 } from "./entity-candidate-detection.service.js";
+import { llmService as defaultLlmService } from "./llm.service.js";
+import type { LlmService } from "./llm.service.js";
 import type { FetchFn } from "./voyage.client.js";
 
 export interface EntitySpan {
@@ -24,10 +25,13 @@ export interface EntitySpan {
 	candidates: { id: string; name: string }[];
 }
 
+/** Widens `EntityType` with "unclassified" — see IMPLEMENTATION_NOTES.md § G-021 (T-119) for why this isn't added to `ENTITY_TYPES` itself. */
+export type EntityCandidateEntityType = EntityType | "unclassified";
+
 /** A proposed new entity from free text — not yet linked to a DB row. */
 export interface EntityCandidateProposal {
 	name: string;
-	entityType: EntityType;
+	entityType: EntityCandidateEntityType;
 	description: string;
 	startIndex: number;
 	endIndex: number;
@@ -42,6 +46,68 @@ interface DetectSpansInput {
 interface DetectCandidatesInput {
 	campaignId: string;
 	text: string;
+	/** Injectable structured-extraction client override (tests inject a mock; production defaults to the real client) — mirrors `createSeeded`'s `fetchFn` override for Voyage. */
+	llmService?: Pick<LlmService, "callClaudeStructured">;
+}
+
+/** Raw shape returned by the structured-extraction call, before entityType validation. */
+interface RawCandidateExtraction {
+	name: string;
+	entityType: string;
+	description: string;
+	startIndex: number;
+	endIndex: number;
+}
+
+interface CandidateExtractionResult {
+	candidates: RawCandidateExtraction[];
+}
+
+const CANDIDATE_EXTRACTION_SCHEMA_NAME = "propose_entity_candidates";
+
+const CANDIDATE_EXTRACTION_PROMPT_PREAMBLE = `Identify every new named entity (NPC, location, faction, item, or story arc) mentioned in the document text below that is not already a known entity. For each one, report its name, a best-guess entityType, a one-sentence description drawn from the text, and the character start/end offsets of its first mention in the text. Use entityType "unclassified" only when the entity genuinely cannot be classified into any of ${ENTITY_TYPES.join(", ")}.`;
+
+/** Marker separating the fixed preamble from the raw document text — exported so tests can recover the original text from a captured prompt without re-parsing arbitrary prompt structure. */
+export const CANDIDATE_EXTRACTION_TEXT_MARKER = "\n\nDocument text:\n";
+
+function buildCandidateExtractionPrompt(text: string): string {
+	return `${CANDIDATE_EXTRACTION_PROMPT_PREAMBLE}${CANDIDATE_EXTRACTION_TEXT_MARKER}${text}`;
+}
+
+const CANDIDATE_EXTRACTION_SCHEMA: Anthropic.Tool.InputSchema = {
+	type: "object",
+	properties: {
+		candidates: {
+			type: "array",
+			items: {
+				type: "object",
+				properties: {
+					name: { type: "string" },
+					entityType: {
+						type: "string",
+						enum: [...ENTITY_TYPES, "unclassified"],
+					},
+					description: { type: "string" },
+					startIndex: { type: "number" },
+					endIndex: { type: "number" },
+				},
+				required: [
+					"name",
+					"entityType",
+					"description",
+					"startIndex",
+					"endIndex",
+				],
+			},
+		},
+	},
+	required: ["candidates"],
+};
+
+function toCandidateEntityType(raw: string): EntityCandidateEntityType {
+	return (ENTITY_TYPES as readonly string[]).includes(raw)
+		? (raw as EntityType)
+		: "unclassified";
 }
 
 interface EntityCandidate {
@@ -321,7 +387,7 @@ export const entityService = {
 
 	async detectCandidates(
 		db: Database,
-		{ campaignId, text }: DetectCandidatesInput,
+		{ campaignId, text, llmService = defaultLlmService }: DetectCandidatesInput,
 	): Promise<EntityCandidateProposal[]> {
 		if (!text.trim()) return [];
 
@@ -334,34 +400,34 @@ export const entityService = {
 			end: s.endIndex,
 		}));
 
+		const { data } =
+			await llmService.callClaudeStructured<CandidateExtractionResult>({
+				prompt: buildCandidateExtractionPrompt(text),
+				schemaName: CANDIDATE_EXTRACTION_SCHEMA_NAME,
+				schema: CANDIDATE_EXTRACTION_SCHEMA,
+				schemaDescription:
+					"Structured list of new-entity candidates proposed from the document text.",
+			});
+
 		const proposals: EntityCandidateProposal[] = [];
 		const seenNames = new Set<string>();
-		for (const span of findProperNounSpans(text)) {
+		for (const raw of data.candidates ?? []) {
+			const span = { start: raw.startIndex, end: raw.endIndex };
 			if (covered.some((c) => rangesOverlap(c, span))) continue;
 
 			// Same name mentioned more than once in one document proposes only
 			// once, keyed off its first (earliest) occurrence — otherwise a
 			// document mentioning "Vespera Nightveil" twice would stage two
 			// candidates for confirmation instead of one.
-			if (seenNames.has(span.name)) continue;
-			seenNames.add(span.name);
-
-			const entityType = guessEntityType(text, {
-				startIndex: span.start,
-				endIndex: span.end,
-				name: span.name,
-			});
-			if (!(ENTITY_TYPES as readonly string[]).includes(entityType)) continue;
+			if (seenNames.has(raw.name)) continue;
+			seenNames.add(raw.name);
 
 			proposals.push({
-				name: span.name,
-				entityType,
-				description: extractExcerpt(text, {
-					startIndex: span.start,
-					endIndex: span.end,
-				}),
-				startIndex: span.start,
-				endIndex: span.end,
+				name: raw.name,
+				entityType: toCandidateEntityType(raw.entityType),
+				description: raw.description,
+				startIndex: raw.startIndex,
+				endIndex: raw.endIndex,
 			});
 		}
 

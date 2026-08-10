@@ -1,6 +1,9 @@
 // Layout: constants → exported types → exported logic → private CLI wiring →
-// CLI entry. Only parseContextFiles/runScopeGuard are exported (Shape 1,
-// .claude/rules/scripts.md) — those are what scope-guard.test.ts calls.
+// CLI entry. parseContextFiles/runScopeGuard are exported for
+// scope-guard.test.ts (Shape 1, .claude/rules/scripts.md); findTicketFile is
+// also exported for reuse by any future guard needing "which changed file
+// is this PR's own ticket file" (same done/-then-in-progress/ precedence,
+// .claude/rules/scripts.md's "Don't duplicate helpers across scripts").
 import {
 	type ChangedFile,
 	gitChangedFiles,
@@ -46,7 +49,7 @@ export interface ScopeGuardResult {
 	warnings: string[];
 }
 
-function findTicketFile(changed: ChangedFile[]): ChangedFile | null {
+export function findTicketFile(changed: ChangedFile[]): ChangedFile | null {
 	const matches = changed.filter((f) => TICKET_FILE_RE.test(f.path));
 	// A shipped ticket's diff against develop shows it only under done/ (added) —
 	// in-progress/ never appears in a normal wrap-up diff since develop's tree

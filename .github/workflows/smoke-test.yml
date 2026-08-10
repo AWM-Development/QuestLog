@@ -1,0 +1,70 @@
+name: Smoke Test (reusable)
+
+# Shared implementation for smoke-test-dev.yml / smoke-test-prod.yml — both
+# are otherwise structurally identical (checkout → pnpm/node/install → poll
+# /health → run a smoke-test script with a scoped DATABASE_URL). Extracted
+# via workflow_call so the poll/run logic only exists once. Why:
+# Docs/tickets/reports/T-117-github-actions-lean-audit.md finding #1's last
+# bullet. Callers keep their own distinct `on:` trigger — that's what stays
+# visible at a glance without opening this file.
+
+on:
+  workflow_call:
+    inputs:
+      base-url-env-name:
+        description: >-
+          Name of the caller's env var holding base-url (e.g.
+          DEV_BASE_URL/PROD_BASE_URL) — used only to make log output name
+          the right environment, since the caller's own env var name isn't
+          otherwise visible from inside a called workflow.
+        required: true
+        type: string
+      base-url:
+        description: Base URL to poll and smoke-test against.
+        required: true
+        type: string
+      smoke-script:
+        description: pnpm --filter @questlog/server script to run (smoke:dev/smoke:prod).
+        required: true
+        type: string
+    secrets:
+      DATABASE_URL:
+        description: Scoped connection string for this environment's smoke test.
+        required: true
+
+jobs:
+  smoke-test:
+    name: Smoke Test — ${{ inputs.base-url-env-name }}
+    runs-on: ubuntu-latest
+
+    steps:
+      # Bare checkout first so the runner can resolve the local composite
+      # action below (a `uses: ./...` reference requires the repo already
+      # checked out) — setup-repo's own checkout step then re-checks out
+      # with the real ref/fetch-depth, superseding this one.
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-repo
+
+      # ── Wait for the deploy to be live ───────────────────────────────────
+      # Fly deploys asynchronously after the caller's own push trigger —
+      # poll rather than assume it's already done.
+      - name: Poll /health until the deploy is live
+        run: |
+          for i in $(seq 1 20); do
+            if curl -sf "${{ inputs.base-url }}/health" | grep -q '"status":"ok"'; then
+              echo "✅ ${{ inputs.base-url-env-name }} (${{ inputs.base-url }})/health is up."
+              exit 0
+            fi
+            echo "Waiting for ${{ inputs.base-url-env-name }} ($i/20)..."
+            sleep 15
+          done
+          echo "❌ ${{ inputs.base-url-env-name }} (${{ inputs.base-url }})/health never became healthy."
+          exit 1
+
+      # ── Full round trip ───────────────────────────────────────────────────
+      # DATABASE_URL is the caller's scoped secret, passed through and never
+      # exported more broadly than this one step.
+      - name: Run smoke test
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: pnpm --filter @questlog/server ${{ inputs.smoke-script }} "${{ inputs.base-url }}"

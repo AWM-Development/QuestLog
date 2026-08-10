@@ -11,6 +11,12 @@ export default defineConfig({
 	test: {
 		globals: true,
 		sequence: { concurrent: false },
+		// T-108 added a second DB-touching, truncating test file
+		// (db/migrate.test.ts) alongside ingest-db.test.ts — sequence.concurrent
+		// only serializes tests within one file, so two files each truncating
+		// ticket_runs could otherwise race across Vitest's default parallel
+		// file workers.
+		fileParallelism: false,
 		// Relative path required, not a @questlog/core-style alias — Vitest's
 		// globalSetup loader bypasses Vite's resolver (same reason as
 		// packages/mcp/vitest.config.ts). Why: Docs/IMPLEMENTATION_NOTES.md § T-027.

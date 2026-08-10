@@ -10,6 +10,72 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-08-10
+
+### Changed — T-034
+
+- **v1.1 closed out; M-REMOTE.7 checkbox flipped.** `verify-mcp-remote.ts`'s full OAuth + tool-call flow already passed end-to-end against `questlog-dev`. Alex closed the milestone checkbox explicitly ahead of his own manual Custom Connector walkthrough (planned for right after this release) rather than holding it open for that confirmation — two real prod-only blockers surfaced along the way and are recorded on the milestone task itself (`MCP_ACCESS_PASSPHRASE` unset on `questlog-prod`; `questlog-prod` still at 2 machines against the single-machine session-store constraint). Any findings from that walkthrough become a new milestone, not a reopening of this one. `Docs/milestones/MILESTONES_V1_1_MCP.md` and `AGENTS.md`'s task-source line both now mark v1.1 shipped.
+
+### Changed — T-036, T-037
+
+- **`DEV_DATABASE_URL`/`PROD_DATABASE_URL` GitHub Actions secrets added; M-CICD.2/M-CICD.3 closed.** Alex added both secrets. `gh run list` confirms real successful runs of `smoke-test-dev.yml` against `develop` and `smoke-test-prod.yml` against `main` — both milestone checkboxes flipped.
+
+### Changed — T-035
+
+- **`questlog-dev`'s Fly GitHub-integration connection confirmed; M-CICD.1 closed.** `Docs/DEPLOY_SETUP_CHECKLIST.md` §3.1's dashboard-connection step is checked off (Alex connected it 2026-08-10), and M-CICD.1's milestone checkbox is flipped on Alex's explicit confirmation. Noted in the milestone doc: `fly releases -a questlog-dev` hadn't yet shown a release for a post-connection `develop` merge at the time of flipping — worth a quick look next time a `develop` merge lands, just to see the new release show up.
+
+### Changed — docs
+
+- **`IMPLEMENTATION_NOTES.md` archive pass; CI size gate raised 300 → 800.** T-122 turned the `impl-notes-health` size check into a real, unconditional `exit 1` gate with no override flag, but the file was already 964 lines (3.2x the 300-line limit) at the time — blocking every subsequent PR into `develop`/`main`, including this one. Ran `/archive-implementation-notes`: 19 sections (198 lines) covering shipped v1 (`M-MCP.3`, `T-019`, `T-024`, `T-025`) and v1.1 product-feature work (`T-029`–`T-092`, the `M-REMOTE`/`M-CICD`/`M-AUDIT` tickets) moved verbatim to `Docs/IMPLEMENTATION_NOTES_ARCHIVE.md`. Two sections (`T-027`, `T-042`) were left as Uncertain per the skill's own rule — old but still actively cross-referenced by name elsewhere in the file — not archived without an explicit call. Post-archive: 766 lines, still over an initial 750 cap; raised to 800 (Alex's call) rather than force-archiving the Uncertain entries or dropping the gate.
+
+### Changed — T-122
+
+- **`ci.yml`'s `doc-sync` and `impl-notes-health` guard checks are now real failing gates.** All three previously warning-only violation paths — `doc-sync`'s missing-`Docs/`-update check, `impl-notes-health`'s `IMPLEMENTATION_NOTES.md` size check, and its sensitive-file write-obligation check — now `exit 1` on a real violation instead of always `exit 0`. The existing `[skip-doc-check]`/`[skip-impl-notes]` PR-title escape hatches are unchanged and still exit 0. Matches `migration-guard`/`mockup-guard`'s existing hard-fail behavior in the same job. Implements `T-117` audit finding #3, per Alex's decision during the `/morning-review` follow-up on T-117 (2026-08-03).
+
+### Changed — T-138
+
+- **`scripts/worktree-postgres-env.sh` and `.claude/hooks/session-start.sh` now default `CLAUDE_PROJECT_DIR` instead of hard-requiring it.** A no-op under Claude Code (which always exports the variable); a runner that doesn't export it now falls back to `git rev-parse --show-toplevel`, deriving the same worktree-scoped value instead of hard-failing or — worse — silently colliding two concurrent agents onto the same Postgres port and compose project. See `IMPLEMENTATION_NOTES.md` § T-138.
+
+### Added — T-115
+
+- **The nightly executor's own pre-flight now runs the same enforcement scripts CI does, before committing effort to a ticket.** Right after `EXECUTOR_ROUTINE.md` Step 2's pickup commit (the first point a real `origin/develop...HEAD` diff exists for a freshly-picked or resumed candidate), the routine now invokes every `scripts/ci-*-guard.sh` script found on disk, except `ci-red-check-guard.sh` — discovered dynamically by glob rather than named individually, so a future guard added or removed (`T-113`'s own `ci-exit-condition-guard.sh` was retired mid-lifecycle, during this same ticket's development — see `IMPLEMENTATION_NOTES.md` § T-115) never needs a doc update to stay accurate. A candidate that fails gate-guard (an unresolved `Gated on:`/unmet `Blocked on:` slipping past Step 1's own hand check — a sync bug) is abandoned before its worktree is even pushed, same skip-and-note treatment as an already-blocked candidate. Every other discovered guard is wired in for the same reason but only bites meaningfully on a case-4 resume, whose branch may already carry an interrupted prior session's work; a fresh pick's diff is too small for most of them to have anything to check. `T-114`'s red-check is the one permanent, named exclusion — it needs a completed implementation diff that doesn't exist until after Step 4. Implements `G-020` Q2's "does the same logic also run as a pre-flight" resolution.
+
+### Changed — T-123
+
+- **`smoke-test-dev.yml` and `smoke-test-prod.yml` now call a shared reusable workflow.** New `.github/workflows/smoke-test.yml` (`workflow_call`) holds the checkout/install/poll-`/health`/run-smoke-test steps both files previously duplicated; each caller keeps its own distinct `on:` trigger and passes its environment's base URL, npm script, and scoped `DATABASE_URL` secret as inputs. Both callers also pick up `.github/actions/setup-repo` (via the reusable workflow, internally) in place of separately-pinned `actions/checkout@v4`/`pnpm/action-setup@v4`/`actions/setup-node@v4` steps, closing the `@v4`/`@v5` drift `T-117`'s audit flagged. No change to trigger conditions, poll behavior, or which secret backs which environment. Implements `T-117` audit finding #1's last bullet.
+
+### Added — T-109
+
+- **Runner-neutral `RunnerCostAdapter` interface for usage capture.** A new `RunnerCostAdapter` (`resolveTicketId()` / `captureRun(projectDir)`) in `packages/core/src/usage-capture/runner-adapter.ts` separates "what did this run cost" from Claude Code's specific transcript-based way of measuring it. `capture-usage.ts`'s `captureUsage` is now a thin wrapper around a `claude-code` implementation of the interface — zero behavior change for existing runs. A degraded runner with no transcript access (e.g. a future Devin lane) can report wall-clock duration and its own vendor-unit cost figure without fabricating a token/cache breakdown; `turnsToGreen`/`humanMessageCount` stay honestly `null` rather than guessed. Building a real non-Claude-Code adapter is deferred until a second runner actually executes a ticket, per `G-020` Notes §3. See `IMPLEMENTATION_NOTES.md` § T-109.
+
+### Removed — T-109
+
+- **`exit-condition-guard` CI job.** Its regex-based citation check couldn't distinguish a report bullet's leading verbatim quote of the ticket's own exit-condition text (which routinely names a file/quotes phrasing as context) from the report's own citation of new evidence, producing false-positive hard failures on reports written in the standard convention. The `reviewer` subagent's existing test-theater check already covers the substantive risk this guard was approximating via regex, making it redundant as well as fragile. See `IMPLEMENTATION_NOTES.md` § T-113.
+
+### Changed — T-121
+
+- **`ci.yml`'s `doc-sync`, `migration-guard`, `mockup-guard`, and `impl-notes-health` jobs merged into one `guards` job.** They previously each ran an independent full-history checkout and independently recomputed the same PR changed-file diff; now there's one shared checkout and one diff computation (exposed as a job output), consumed by four check steps with unchanged pass/fail behavior (including the warning-only vs. hard-fail paths). Each check step runs `if: always()` so one guard failing still lets the others run, matching the old independent-jobs behavior. Cuts three redundant full-history checkouts + diff recomputations per PR. Implements `T-117` audit finding #4.
+
+### Added — T-113
+
+- **CI exit-condition evidence recomputation for ticket-implementation PRs.** A new `exit-condition-guard` CI job checks any `Docs/tickets/reports/` file newly added by a `feat/*`-branch PR: for each bullet in its `## Exit condition check` section that cites a specific test file/name, confirms that file actually exists in the PR's diff and that the named test appears in it — hard-fails on a false citation, passes a bullet naming no specific file/test as "unverifiable mechanically" rather than failing it. Recomputes the report's own claims instead of trusting them; distinct from `T-055` (mechanical diff-stat sync, not a claims check) and `T-114`'s red-check (which runs tests, this only confirms they exist). Logic lives in `packages/ci/src/exit-condition-guard.ts` (unit-tested, same DI'd shape as `gate-guard.ts`/`scope-guard.ts`/`report-guard.ts`). Part of `G-020`'s Q2 "instruction → invariant" candidate set.
+
+### Changed — T-119
+
+- **`ingest_text`'s entity-candidate detection now uses an LLM structured-extraction call instead of the T-078 capitalization heuristic.** `entityService.detectCandidates` replaces `findProperNounSpans`/`guessEntityType` with a single call through `T-118`'s `callClaudeStructured`, keeping its existing signature, contract, and dedup/overlap-with-`detectSpans` behavior. Candidate proposals can now come back `entityType: "unclassified"` for a genuinely ambiguous span (not added to `ENTITY_TYPES` itself); `confirm_ingest_entities` requires a real entity type override per unclassified candidate before creating it — supplying one creates the entity with that type, omitting one rejects just that candidate (not the rest of the batch) via a new `entityTypeOverrides` input and a `rejected` field in the response. T-078's heuristic is left in place, unused, pending a future cleanup ticket. See `IMPLEMENTATION_NOTES.md` § G-021 for the design rationale.
+
+### Added — T-108
+
+- **Observability's `ticket_runs` table gains a `runner` dimension.** Nullable `runner` text column (same placeholder-column pattern as `complexityTier`/`filesChanged`) — every pre-existing row is backfilled to `'claude-code'` via the migration, and `ingest.ts`'s upsert path defaults any future unset value to `'claude-code'` too, so today's ingestion keeps working unchanged. No adapter populates a different value yet; that's `T-109`. Implements `G-020` Q1's runner-dimension option.
+
+### Added — T-114
+
+- **New CI job, "Red-Check (TDD Enforcement)"** — for a ticket-implementation PR, identifies its added/modified test file(s), then requires at least one of them (excluding any that are a pure refactor of existing test code — assertion count unchanged or lower than `develop`'s version) to fail when run against `develop`'s pre-change implementation. Catches a test written after its implementation, or one that doesn't actually exercise new behavior — TDD enforced as a machine-checked CI job rather than only a written rule agents are trusted to follow. Implements `G-020` Q2's red-check candidate (the most novel/highest-risk of the five, deliberately scoped conservatively). Logic in `packages/ci/src/red-check-guard.ts`; entry point `scripts/ci-red-check-guard.sh`.
+
+### Added — T-107
+
+- **`TICKET_SPEC.md` gains a `Runner: claude-code | devin` field**, immediately before `Model:`. `Model:` now only applies when `Runner: claude-code` — a `Runner: devin` ticket omits it, since model selection there is Cognition's concern, not this pipeline's. Every ticket drafted before a second runner exists defaults to `claude-code`. `ticket-writer`'s field-filling step now proposes `Runner` alongside `Model`, same confirmation discipline as `Priority`. Implements `G-020` Q1(b); the field stays documented-but-inert (no executor selection-logic change) until `T-109`'s runner adapter and a real second-runner ticket land.
+
 ## [1.1.2] - 2026-08-08
 
 ### Added — T-106

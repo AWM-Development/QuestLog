@@ -43,8 +43,16 @@ const INLINE_CODE_SPAN_RE = /(?<!`)`(?!`)[^`\n]+`(?!`)/g;
 const DOUBLE_QUOTED_SPAN_RE = /"[^"\n]+"/g;
 
 // Heuristic for "looks like real command output," not prose describing it:
-// PASS/FAIL/✓ markers, or a file:line reference.
-const TEST_EVIDENCE_MARKER_RE = /\bPASS\b|\bFAIL\b|✓|\S+\.\w+:\d+/;
+// PASS/FAIL/✓ markers, a file:line reference, or scripts/run-tests-quiet.sh's
+// own line-anchored `stage: pass`/`stage: fail` summary shape (e.g.
+// "lint: pass (0 warnings)", "test: pass (808 passed)") — lowercase and
+// line-anchored (`^<word>: pass`) specifically so it can't be satisfied by
+// loose prose like "all tests pass, everything is great", which has no
+// leading `word:` before "pass". Deliberately no case-insensitive flag: that
+// would let `\bPASS\b`/`\bFAIL\b` match the same loose prose case-insensitively,
+// which is exactly what the line-anchored alternative exists to avoid.
+const TEST_EVIDENCE_MARKER_RE =
+	/\bPASS\b|\bFAIL\b|✓|\S+\.\w+:\d+|^\s*\S+:\s*(pass|fail)\b/m;
 
 /** Returns the text between `heading` and the next `## ` heading (or EOF), or null if `heading` isn't present. Shared by both the reports/ and (future, T-115) blocked/ structure checks. */
 export function extractSection(

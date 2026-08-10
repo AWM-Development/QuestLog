@@ -105,15 +105,15 @@ This milestone builds the actual instrumentation instead of continuing to guess:
   T-117's audit (finding #1) named three byte-identical (or near-identical) step blocks duplicated between `ci.yml` and `e2e-release-check.yml`: the checkout→pnpm→node→install preamble, the Turborepo cache-restore step, and the DB-provisioning step (`e2e-release-check.yml`'s own comment says "Mirrors ci.yml"). Extracts each into its own composite action under `.github/actions/` so future edits only need to happen once. `smoke-test-dev.yml`/`smoke-test-prod.yml` are deliberately left out — T-123 adopts the same composite action for those files as part of its own merge, picking up the `@v4`→`@v5` alignment (T-117 finding #2) at the same time instead of two tickets touching the same lines.
   Exit: see T-120 — three composite actions exist under `.github/actions/`, `ci.yml`/`e2e-release-check.yml` call them instead of inlining the steps, zero behavior change.
 
-- [ ] **M-EFFICIENCY.9 — Consolidate ci.yml's guard jobs onto one shared checkout + diff** (T-121)
+- [x] **M-EFFICIENCY.9 — Consolidate ci.yml's guard jobs onto one shared checkout + diff** (T-121)
   T-117's audit (finding #4) noted `doc-sync`, `migration-guard`, `mockup-guard`, and `impl-notes-health` each independently `checkout@v5` with `fetch-depth: 0` and independently recompute the same `git diff --name-only origin/${{ github.base_ref }}...HEAD` changed-file list — four full-history checkouts and four diff computations per PR for what's structurally one input. Merges the four jobs into one job with a single checkout + diff step, keeping each check's own pass/fail logic (including the warning-only paths) unchanged.
   Exit: see T-121 — one shared checkout/diff feeding all four checks, byte-identical pass/fail behavior to before.
 
-- [ ] **M-EFFICIENCY.10 — Tighten doc-sync and impl-notes-health into real failing gates** (T-122)
+- [x] **M-EFFICIENCY.10 — Tighten doc-sync and impl-notes-health into real failing gates** (T-122)
   T-117's audit (finding #3) flagged that `doc-sync` and both `impl-notes-health` steps always resolve to `exit 0` even on a detected violation — they can never fail a PR today, right before M-1.1 adds real enforcement on top. Raised as a 🧠 decision during T-117's `/morning-review` follow-up (2026-08-03); Alex chose to make both real gates rather than drop them, keeping the existing `[skip-doc-check]`/`[skip-impl-notes]` PR-title escape hatches as the intentional override.
   Exit: see T-122 — doc-sync's violation branch and impl-notes-health's two checks exit 1 on a real violation with skip flag absent; the skip-flag paths still exit 0.
 
-- [ ] **M-EFFICIENCY.11 — Merge smoke-test-dev.yml / smoke-test-prod.yml into one reusable workflow** (T-123, Blocked on: T-120)
+- [x] **M-EFFICIENCY.11 — Merge smoke-test-dev.yml / smoke-test-prod.yml into one reusable workflow** (T-123, Blocked on: T-120)
   T-117's audit (finding #1's last bullet) noted `smoke-test-dev.yml`/`smoke-test-prod.yml` are structurally identical aside from base URL, secret name, and npm script filter. Extracts the shared steps into a `workflow_call` reusable workflow, keeping each environment's own trigger in a thin caller file. Also adopts T-120's `.github/actions/setup-repo` for its preamble, carrying the `@v4`→`@v5` version alignment (T-117 finding #2) forward without a separate ticket.
   Exit: see T-123 — one shared reusable workflow, two thin callers, zero remaining `@v4` pins in either file.
 
