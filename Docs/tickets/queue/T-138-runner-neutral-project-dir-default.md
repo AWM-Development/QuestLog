@@ -13,7 +13,7 @@ Complexity tier: S
 
 Strategy-gate flag: yes
 
-Priority: P1
+Priority: P0
 
 Branch: feat/m-pipeline/t-138-runner-neutral-project-dir-default
 

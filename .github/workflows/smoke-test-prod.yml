@@ -2,49 +2,22 @@ name: Smoke Test (prod)
 
 # Read-only post-merge check against real prod — no write path, ever.
 # Rationale: Docs/IMPLEMENTATION_NOTES.md § T-037.
+#
+# The actual checkout/poll/run steps live in the shared smoke-test.yml
+# (T-123) — this file only carries the trigger and this environment's
+# inputs/secrets, so `on:` stays visible here without opening that file.
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
-env:
-  PROD_BASE_URL: https://questlog-prod.fly.dev
-
 jobs:
   smoke-test-prod:
-    name: Smoke Test — questlog-prod (read-only)
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      # Fly deploys asynchronously after this push — poll rather than assume it's live.
-      - name: Poll /health until the prod deploy is live
-        run: |
-          for i in $(seq 1 20); do
-            if curl -sf "$PROD_BASE_URL/health" | grep -q '"status":"ok"'; then
-              echo "✅ $PROD_BASE_URL/health is up."
-              exit 0
-            fi
-            echo "Waiting for $PROD_BASE_URL/health ($i/20)..."
-            sleep 15
-          done
-          echo "❌ $PROD_BASE_URL/health never became healthy."
-          exit 1
-
-      # DATABASE_URL scoped to this step only, not job-wide.
-      - name: Run read-only smoke test against questlog-prod
-        env:
-          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
-        run: pnpm --filter @questlog/server smoke:prod "$PROD_BASE_URL"
+    uses: ./.github/workflows/smoke-test.yml
+    with:
+      base-url-env-name: PROD_BASE_URL
+      base-url: https://questlog-prod.fly.dev
+      smoke-script: smoke:prod
+    secrets:
+      DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
