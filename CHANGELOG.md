@@ -10,6 +10,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+## [1.1.3] - 2026-08-10
+
+### Changed — T-034
+
+- **v1.1 closed out; M-REMOTE.7 checkbox flipped.** `verify-mcp-remote.ts`'s full OAuth + tool-call flow already passed end-to-end against `questlog-dev`. Alex closed the milestone checkbox explicitly ahead of his own manual Custom Connector walkthrough (planned for right after this release) rather than holding it open for that confirmation — two real prod-only blockers surfaced along the way and are recorded on the milestone task itself (`MCP_ACCESS_PASSPHRASE` unset on `questlog-prod`; `questlog-prod` still at 2 machines against the single-machine session-store constraint). Any findings from that walkthrough become a new milestone, not a reopening of this one. `Docs/milestones/MILESTONES_V1_1_MCP.md` and `AGENTS.md`'s task-source line both now mark v1.1 shipped.
+
 ### Changed — T-036, T-037
 
 - **`DEV_DATABASE_URL`/`PROD_DATABASE_URL` GitHub Actions secrets added; M-CICD.2/M-CICD.3 closed.** Alex added both secrets. `gh run list` confirms real successful runs of `smoke-test-dev.yml` against `develop` and `smoke-test-prod.yml` against `main` — both milestone checkboxes flipped.

@@ -1,7 +1,7 @@
 # QuestLog — v1.1 Milestones (Remote MCP)
 
 **Location:** `Docs/milestones/MILESTONES_V1_1_MCP.md`
-**Status:** CANONICAL task source for v1.1, supplementing `Docs/milestones/MILESTONES_V1_MCP.md` (v1 — shipped, kept as-is for historical record; v1's own "only task source" line now points here for anything past M-MCP.5).
+**Status:** v1.1 — shipped 2026-08-10, kept as-is for historical record. Supplements `Docs/milestones/MILESTONES_V1_MCP.md` (v1 — shipped, kept as-is for historical record; v1's own "only task source" line now points here for anything past M-MCP.5). Its own "only task source" line now points to `Docs/milestones/MILESTONES_V1_2_MCP.md` for anything past M-AUDIT.
 **Created:** 2026-07-22, immediately after v1 was signed off and deployed.
 
 ## Why v1.1 exists
@@ -59,9 +59,9 @@ Signing v1 off without surfacing that distinction clearly was a mistake — see 
   The MCP server's `instructions` field (shown to the model at connection time) plus a dedicated `help`/`get_started` tool, covering the "upload a campaign, start tracking a session" workflow Alex asked for explicitly.
   Exit: a fresh client connection surfaces the workflow summary without the user having to ask; calling `help` returns it on demand.
 
-- [ ] **M-REMOTE.7 — Deploy + connect a real Claude Project + full remote test pass** (T-034)
+- [x] **M-REMOTE.7 — Deploy + connect a real Claude Project + full remote test pass** (T-034)
   Deploy the above to dev, connect it as a real Claude.ai Custom Connector in an actual Project, re-run the v1 test plan (this session's table) against the remote transport end-to-end, then repeat for prod. **The Custom Connector setup itself is an Alex-only action** — it happens inside Alex's own Claude.ai account and cannot be scripted.
-  **Automatable half shipped** (`Docs/tickets/done/T-034-deploy-connect-claude-project.md`) — checkbox held pending Alex's real Custom Connector connection; see the ticket's own report for the checklist.
+  **Automatable half shipped** (`Docs/tickets/done/T-034-deploy-connect-claude-project.md`) — `verify-mcp-remote.ts`'s full OAuth + tool-call flow passed end-to-end against `questlog-dev` (see that ticket's report). **Closed 2026-08-10 on Alex's explicit call**, ahead of his own manual Custom Connector walkthrough (which surfaced two real prod-only blockers not yet resolved — `MCP_ACCESS_PASSPHRASE` unset on `questlog-prod`, and `questlog-prod` still running 2 machines against the single-machine session-store constraint T-034 documented for dev). Alex is doing that walkthrough himself right after this release and will open a new milestone for anything it turns up, rather than holding this checkbox open for it.
 
 - [x] **M-REMOTE.8 — Agent-interaction strategy for MCP-hooked sessions** (T-065, T-066, T-067)
   Resolved via `/ungate` on 2026-07-28 (`G-005`): no new MCP transport for
