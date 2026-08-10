@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-035
+
+- **`questlog-dev`'s Fly GitHub-integration connection confirmed.** `Docs/DEPLOY_SETUP_CHECKLIST.md` §3.1's dashboard-connection step is checked off (Alex connected it 2026-08-10). M-CICD.1's milestone checkbox stays open until a real `develop` merge is confirmed to have triggered a dev deploy, per T-035's own definition of done — no release visible in `fly releases -a questlog-dev` yet for any merge after the connection.
+
 ### Changed — T-122
 
 - **`ci.yml`'s `doc-sync` and `impl-notes-health` guard checks are now real failing gates.** All three previously warning-only violation paths — `doc-sync`'s missing-`Docs/`-update check, `impl-notes-health`'s `IMPLEMENTATION_NOTES.md` size check, and its sensitive-file write-obligation check — now `exit 1` on a real violation instead of always `exit 0`. The existing `[skip-doc-check]`/`[skip-impl-notes]` PR-title escape hatches are unchanged and still exit 0. Matches `migration-guard`/`mockup-guard`'s existing hard-fail behavior in the same job. Implements `T-117` audit finding #3, per Alex's decision during the `/morning-review` follow-up on T-117 (2026-08-03).
