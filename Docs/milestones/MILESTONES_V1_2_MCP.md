@@ -109,7 +109,7 @@ This milestone builds the actual instrumentation instead of continuing to guess:
   T-117's audit (finding #4) noted `doc-sync`, `migration-guard`, `mockup-guard`, and `impl-notes-health` each independently `checkout@v5` with `fetch-depth: 0` and independently recompute the same `git diff --name-only origin/${{ github.base_ref }}...HEAD` changed-file list — four full-history checkouts and four diff computations per PR for what's structurally one input. Merges the four jobs into one job with a single checkout + diff step, keeping each check's own pass/fail logic (including the warning-only paths) unchanged.
   Exit: see T-121 — one shared checkout/diff feeding all four checks, byte-identical pass/fail behavior to before.
 
-- [ ] **M-EFFICIENCY.10 — Tighten doc-sync and impl-notes-health into real failing gates** (T-122)
+- [x] **M-EFFICIENCY.10 — Tighten doc-sync and impl-notes-health into real failing gates** (T-122)
   T-117's audit (finding #3) flagged that `doc-sync` and both `impl-notes-health` steps always resolve to `exit 0` even on a detected violation — they can never fail a PR today, right before M-1.1 adds real enforcement on top. Raised as a 🧠 decision during T-117's `/morning-review` follow-up (2026-08-03); Alex chose to make both real gates rather than drop them, keeping the existing `[skip-doc-check]`/`[skip-impl-notes]` PR-title escape hatches as the intentional override.
   Exit: see T-122 — doc-sync's violation branch and impl-notes-health's two checks exit 1 on a real violation with skip flag absent; the skip-flag paths still exit 0.
 

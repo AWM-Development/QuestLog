@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-122
+
+- **`ci.yml`'s `doc-sync` and `impl-notes-health` guard checks are now real failing gates.** All three previously warning-only violation paths — `doc-sync`'s missing-`Docs/`-update check, `impl-notes-health`'s `IMPLEMENTATION_NOTES.md` size check, and its sensitive-file write-obligation check — now `exit 1` on a real violation instead of always `exit 0`. The existing `[skip-doc-check]`/`[skip-impl-notes]` PR-title escape hatches are unchanged and still exit 0. Matches `migration-guard`/`mockup-guard`'s existing hard-fail behavior in the same job. Implements `T-117` audit finding #3, per Alex's decision during the `/morning-review` follow-up on T-117 (2026-08-03).
+
 ### Changed — T-123
 
 - **`smoke-test-dev.yml` and `smoke-test-prod.yml` now call a shared reusable workflow.** New `.github/workflows/smoke-test.yml` (`workflow_call`) holds the checkout/install/poll-`/health`/run-smoke-test steps both files previously duplicated; each caller keeps its own distinct `on:` trigger and passes its environment's base URL, npm script, and scoped `DATABASE_URL` secret as inputs. Both callers also pick up `.github/actions/setup-repo` (via the reusable workflow, internally) in place of separately-pinned `actions/checkout@v4`/`pnpm/action-setup@v4`/`actions/setup-node@v4` steps, closing the `@v4`/`@v5` drift `T-117`'s audit flagged. No change to trigger conditions, poll behavior, or which secret backs which environment. Implements `T-117` audit finding #1's last bullet.
