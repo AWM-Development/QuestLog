@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-131
+
+- **Fresh ticket worktrees now inherit the primary checkout's local secrets.** `session-start.sh`'s local worktree-provisioning branch copies the primary checkout's gitignored `.env` into a new worktree whenever that worktree doesn't already have its own — `git worktree add` never carries gitignored files across, so any locally-scoped secret (e.g. `OBSERVABILITY_DATABASE_URL`) previously never reached a ticket's worktree at all. Non-clobbering: a worktree that already has its own `.env` is always left untouched.
+
 ### Fixed — T-155
 
 - **`ingest_text` 404ing on prod — stale Claude model id.** `LLM_CONFIG.model` was pinned to `claude-sonnet-4-20250514`, a decommissioned model id, causing every `ingest_text` call to fail immediately with a `404 not_found_error` (entity-candidate extraction is the LLM call on that path). Updated to `claude-sonnet-5`. Fixes every caller of the shared LLM service (chat, entity extraction), not just `ingest_text`.
