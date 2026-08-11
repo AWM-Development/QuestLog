@@ -202,5 +202,11 @@
     "prNumber": 227,
     "branch": "chore/m-pipeline/t-147-session-worktree-default",
     "mergedAt": "2026-08-07T17:57:43Z"
+  },
+  {
+    "ticketId": "T-155",
+    "prNumber": 264,
+    "branch": "feat/m-bug/t-155-fix-stale-llm-config-model-id",
+    "mergedAt": "2026-08-11T00:40:20Z"
   }
 ]
