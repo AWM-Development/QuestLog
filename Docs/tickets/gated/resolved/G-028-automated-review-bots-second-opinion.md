@@ -32,3 +32,26 @@ Notes: Raised in `G-020` Q4 verbatim: "automated review bots as a second
   is that it exists to judge what CI can't check, so a second opinion's
   marginal value is clearest once CI already covers the mechanical
   invariants `G-020`'s Q2 tickets are adding.
+
+## Resolution (2026-08-10)
+
+**No second reviewer — won't-fix.** `T-114` (the red-check CI job) has
+since shipped (`Docs/tickets/done/T-114-ci-red-check-job.md`), so the
+sequencing condition this gate's own Notes named is satisfied: CI now
+enforces the mechanical invariant (a PR's new tests must actually fail
+against pre-change `develop`) that a second reviewer would otherwise have
+been the only thing catching. Combined with the existing single-reviewer
+CI/`reviewer`-subagent split (CI = mechanical, `reviewer` = judgment),
+Alex judged a second opinion — hosted bot or second in-repo subagent,
+advisory or gating — as added token/dollar cost without a clear gap left
+to close for a solo-dev pipeline with no second reviewer's institutional
+knowledge to diverge from. No product/mechanism was evaluated since the
+answer to the gating open question is no regardless of mechanism.
+
+Re-open a fresh gate if a concrete gap surfaces later (e.g. the `reviewer`
+subagent's own judgment-layer checks start missing something in practice)
+rather than reviving this one — the reasoning here is tied to the current
+single-reviewer pipeline shape, not a permanent verdict.
+
+No tickets to draft or promote — `Blocks:` was "none yet" and stays that
+way; `M-ROBUST.3` is not being drafted as a result of this resolution.
