@@ -44,10 +44,8 @@ export const observabilityQueryService = {
 	/**
 	 * Trends/aggregate view: `ticket_runs` rows across an optional date
 	 * range. `empty_run` rows are excluded by default, overridable via
-	 * `includeEmptyRuns`. `manually_inspected` filtering, named in this
-	 * ticket's own exit condition, isn't implemented — that column was
-	 * dropped from the schema before this ticket landed (migration
-	 * 0001_serious_logan, commit 2af418e); see this ticket's report.
+	 * `includeEmptyRuns`. No `manually_inspected` filter — see
+	 * IMPLEMENTATION_NOTES.md § T-054 for why.
 	 */
 	async listTrends(db: Database, filters: ListTrendsFilters) {
 		const conditions = [];

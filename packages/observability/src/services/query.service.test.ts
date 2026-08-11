@@ -68,11 +68,7 @@ describe("observabilityQueryService.getTicketRun", () => {
 });
 
 describe("observabilityQueryService.listTrends", () => {
-	// `manually_inspected` was dropped from ticket_runs entirely (migration
-	// 0001_serious_logan, commit 2af418e — the field was retired as
-	// unreliable, not a gap in this ticket). This ticket's own exit condition
-	// still names it, predating that removal; see this ticket's report for
-	// the note. Only `empty_run` filtering is implemented/tested here.
+	// No manually_inspected filter/test — see IMPLEMENTATION_NOTES.md § T-054.
 	it("excludes empty_run rows by default, includes them when the filter is explicitly set", async () => {
 		await db.insert(ticketRuns).values([
 			{ ...baseRun, ticketId: "T-201", emptyRun: false },
