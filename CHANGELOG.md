@@ -18,6 +18,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 - **`ci.yml`'s Gate/Scope/Report guards consolidated into one `ticket-guards` job.** Implemented on the audit's own branch at Alex's direct request, immediately after the report above shipped (outside the ticket's original recommendations-only Scope, flagged once before proceeding). Mirrors `T-121`'s existing `guards`-job pattern for `doc-sync`/`migration-guard`/`mockup-guard`/`impl-notes-health`; saves an estimated ~2 billed minutes per PR run at no loss of check coverage.
 
+### Added — T-131
+
+- **Fresh ticket worktrees now inherit the primary checkout's local secrets.** `session-start.sh`'s local worktree-provisioning branch copies the primary checkout's gitignored `.env` into a new worktree whenever that worktree doesn't already have its own — `git worktree add` never carries gitignored files across, so any locally-scoped secret (e.g. `OBSERVABILITY_DATABASE_URL`) previously never reached a ticket's worktree at all. Non-clobbering: a worktree that already has its own `.env` is always left untouched.
+
+### Fixed — T-155
+
+- **`ingest_text` 404ing on prod — stale Claude model id.** `LLM_CONFIG.model` was pinned to `claude-sonnet-4-20250514`, a decommissioned model id, causing every `ingest_text` call to fail immediately with a `404 not_found_error` (entity-candidate extraction is the LLM call on that path). Updated to `claude-sonnet-5`. Fixes every caller of the shared LLM service (chat, entity extraction), not just `ingest_text`.
+
 ### Changed — T-124
 
 - **Three small CI cleanups from T-117's audit.** `ci.yml`'s `pr` job now runs the "no `test.only`/`test.skip`" guard immediately after checkout, before install/Lint/Typecheck/Build, so a stray `.only`/`.skip` fails in seconds instead of after paying for the full setup and three quality gates first. `e2e-release-check.yml`'s documented no-op "Restore Turborepo cache" step is removed. `ci.yml`'s `actionlint` job no longer fetches its install script from `actionlint`'s `main` branch via `curl | bash`; it now pins both the script's own ref and the binary version to a specific release tag (`v1.7.12`).
