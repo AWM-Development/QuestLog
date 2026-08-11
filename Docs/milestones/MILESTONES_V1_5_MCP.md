@@ -30,7 +30,7 @@ These two milestones are otherwise unconnected — they're bundled into one vers
 
 ### Tasks
 
-- [ ] **M-POLISH.1 — Tool-description naming & length/format consistency pass** (T-139)
+- [x] **M-POLISH.1 — Tool-description naming & length/format consistency pass** (T-139)
   Standardize the "Direct write — ..." label's placement across every direct-write tool description (`tool-descriptions.ts`) to immediately follow the first sentence, and standardize whether a trailing "Returns ..." clause is present. Lock both patterns in with new assertions in `tool-descriptions.test.ts`.
   Exit: every "Direct write" description places the label in the same position; every non-preview-only tool description ends with a "Returns ..." clause; new tests assert both across the full exported set.
 

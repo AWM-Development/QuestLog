@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-139
+
+- **Tool-description naming & format consistency pass.** Every MCP tool description now places its "Direct write — ..." label (for tools that only ever insert a new row) immediately after the description's first sentence, and every non-preview-only tool description ends with a "Returns ..." clause naming its returned shape — locked in by new tests covering the full exported set in `tool-descriptions.test.ts`, so a future tool addition that drifts from either convention fails a test instead of silently landing. No behavior change; description text only.
+
 ### Added — T-128
 
 - **CI job-count / GitHub Actions minutes audit.** New report (`Docs/tickets/reports/T-128-ci-actions-minutes-audit.md`) quantifying real per-job Actions-minute consumption across all five workflow files, pulled from live `gh api` run/job data. Highest-leverage finding: `ci.yml`'s `gate-guard`/`scope-guard`/`report-guard` jobs were each under 15 seconds of real work but billed a minimum of 1 minute each.
