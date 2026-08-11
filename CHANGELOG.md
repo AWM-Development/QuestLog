@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-055
+
+- **PR diff-stat sync into the observability store.** `packages/observability/src/diff-stat-sync.ts` looks up a ticket's merged PR by its implementation-branch naming convention (`feat/<milestone-group>/t-###-<slug>`), and writes files-changed/lines-added/lines-removed into that ticket's `ticket_runs` row — so diff-size correlation no longer needs a manual `gh pr list` pull per ticket. Runnable via `pnpm --filter @questlog/observability sync-diff-stats <T-###|all>`; the "all" mode syncs every row still missing diff stats. Not yet wired into `EXECUTOR_ROUTINE.md` or any scheduled job — that's a deliberate follow-up decision (M-OBS.4, T-054 still outstanding).
+
 ### Added — T-128
 
 - **CI job-count / GitHub Actions minutes audit.** New report (`Docs/tickets/reports/T-128-ci-actions-minutes-audit.md`) quantifying real per-job Actions-minute consumption across all five workflow files, pulled from live `gh api` run/job data. Highest-leverage finding: `ci.yml`'s `gate-guard`/`scope-guard`/`report-guard` jobs were each under 15 seconds of real work but billed a minimum of 1 minute each.

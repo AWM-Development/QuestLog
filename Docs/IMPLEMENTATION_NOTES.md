@@ -4,6 +4,14 @@
 
 **Last Updated:** 2026-08-10
 
+## T-055 — PR diff-stat sync into the observability store (2026-08-11)
+
+**Branch matching is client-side regex against a listed PR's `headRefName`, not a `gh` `--search` query.** GitHub's PR search has no head-branch wildcard qualifier (`head:` is exact-match only), so `ticketBranchPattern(ticketId)` builds `^feat/[^/]+/t-###-` and every candidate PR is fetched via a plain `gh pr list --state all --json number,headRefName,mergedAt` first, filtered locally. Only matches `feat/` (per the ticket's own scope wording), not the ledger's wider `feat|chore|fix|refactor` prefix set (`EXECUTOR_ROUTINE.md`'s T-116 note) — a future ticket widening this should confirm with Alex first, since the two conventions could plausibly drift apart on purpose (this script's job is PR diff-size correlation, not ticket-status resolution).
+
+**`syncDiffStatsForTicket` is an `UPDATE`, not an upsert.** It only writes into an already-existing `ticket_runs` row (created by `ingest.ts`'s own upsert) and silently no-ops if none exists — correct for this ticket's exit condition ("a seeded `ticket_runs` row"), but a future caller expecting insert-on-missing behavior like `upsertTicketRun` should read the docstring first.
+
+**Found live, while bootstrapping this ticket's own worktree — a real regression, not part of this ticket's scope:** T-131's `.env` propagation (above) broke local test-DB provisioning for `packages/observability` specifically. `db/migrate.ts` always prefers `OBSERVABILITY_DATABASE_URL` over `DATABASE_URL`, and `dotenv.config()` reloads `OBSERVABILITY_DATABASE_URL` from the now-propagated `.env` even when `session-start.sh`'s provisioning loop tries to override it via `DATABASE_URL` — so every fresh worktree's `questlog_test_observability` migrate call silently ran against the real remote Neon database instead of the local one, leaving the local test DB permanently unmigrated. Worked around for this session only (temporarily stripped `OBSERVABILITY_DATABASE_URL` from the worktree's own `.env`, migrated, restored it) rather than bundled into this ticket's diff. Needs its own fix — likely `migrate.ts` preferring an explicit `DATABASE_URL` override when present, or `session-start.sh` unsetting `OBSERVABILITY_DATABASE_URL` for its own provisioning subshell — flagged to Alex, not yet ticketed.
+
 ## G-024 — Party as a real parent of campaigns, not a tag (2026-08-07)
 
 Decided but not yet built: a future `partyId` FK belongs on `campaigns` (nullable, optional) so a group's later campaign can join back to an earlier one's lore — a shared label on entities/sessions can't deliver that on its own. Existing reads stay `campaignId`-scoped by default; cross-campaign access, when built, should be an opt-in search-time join, not copy/import. Full rationale: `Docs/tickets/gated/resolved/G-024-campaign-source-party-conceptual-model.md`.
