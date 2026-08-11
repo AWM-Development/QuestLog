@@ -133,7 +133,7 @@ This milestone builds the actual instrumentation instead of continuing to guess:
   Self-audit finding from a live T-100 run (2026-08-05, see T-127 ticket body for the exact transcript excerpt): `EXECUTOR_ROUTINE.md` Step 2 creates a fresh git worktree and moves straight to context loading and TDD, but nothing installs dependencies or provisions that worktree's own per-worktree Postgres stack (`T-072`) — the `SessionStart` hook only ran against the primary directory, before the worktree existed. The first test command inside the new worktree failed (`vitest: command not found`), and the executor had to notice, diagnose, and manually run `session-start.sh` before continuing — a real diagnose-and-recover detour logged as an `environment_setup` retry-log line, even though the ticket's own logic had no problems at all. Adds an explicit, unconditional bootstrap call (`CLAUDE_PROJECT_DIR="$(pwd)" bash .claude/hooks/session-start.sh`) to Step 2 immediately after entering the new worktree, on both the fresh-pickup path and Step 1 case 4's resume-an-abandoned-branch path.
   Exit: see T-127.
 
-- [ ] **M-EFFICIENCY.16 — CI job-count / GitHub Actions minutes audit** (T-128)
+- [x] **M-EFFICIENCY.16 — CI job-count / GitHub Actions minutes audit** (T-128)
   Raised during the same G-035 investigation (2026-08-05): Alex reported exceeding his GitHub Actions minutes budget from `ci.yml`'s own volume alone, with zero ticket-execution work running there — a red flag for any plan involving more GitHub Actions usage, and worth understanding on its own terms regardless. Quantifies actual minute consumption across `ci.yml`'s 7 jobs and the other 4 workflow files, and identifies concrete reduction options.
   Exit: see T-128.
 
