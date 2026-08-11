@@ -1,0 +1,24 @@
+{
+  "ticket_id": "T-128",
+  "empty_run": false,
+  "session_id": "777de060-372f-4d3c-9bbc-b85218c82b49",
+  "input_tokens": 258,
+  "output_tokens": 73770,
+  "cache_creation_input_tokens": 254243,
+  "cache_read_input_tokens": 12679450,
+  "duration_ms": 579840,
+  "turn_count": 129,
+  "turns_to_green": 105,
+  "theoretical_cost_usd": {
+    "applies_rate": "intro",
+    "intro_usd": 4.291078000000001,
+    "standard_usd": 6.436616999999999
+  },
+  "reviewer_subagent": null,
+  "total_system_cost_usd": {
+    "applies_rate": "intro",
+    "intro_usd": 4.291078000000001,
+    "standard_usd": 6.436616999999999
+  },
+  "runner": "claude-code"
+}

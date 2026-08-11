@@ -10,6 +10,14 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-128
+
+- **CI job-count / GitHub Actions minutes audit.** New report (`Docs/tickets/reports/T-128-ci-actions-minutes-audit.md`) quantifying real per-job Actions-minute consumption across all five workflow files, pulled from live `gh api` run/job data. Highest-leverage finding: `ci.yml`'s `gate-guard`/`scope-guard`/`report-guard` jobs were each under 15 seconds of real work but billed a minimum of 1 minute each.
+
+### Changed — T-128
+
+- **`ci.yml`'s Gate/Scope/Report guards consolidated into one `ticket-guards` job.** Implemented on the audit's own branch at Alex's direct request, immediately after the report above shipped (outside the ticket's original recommendations-only Scope, flagged once before proceeding). Mirrors `T-121`'s existing `guards`-job pattern for `doc-sync`/`migration-guard`/`mockup-guard`/`impl-notes-health`; saves an estimated ~2 billed minutes per PR run at no loss of check coverage.
+
 ### Added — T-131
 
 - **Fresh ticket worktrees now inherit the primary checkout's local secrets.** `session-start.sh`'s local worktree-provisioning branch copies the primary checkout's gitignored `.env` into a new worktree whenever that worktree doesn't already have its own — `git worktree add` never carries gitignored files across, so any locally-scoped secret (e.g. `OBSERVABILITY_DATABASE_URL`) previously never reached a ticket's worktree at all. Non-clobbering: a worktree that already has its own `.env` is always left untouched.
