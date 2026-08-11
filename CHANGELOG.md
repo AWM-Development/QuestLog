@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-140
+
+- **`ONBOARDING_INSTRUCTIONS` drift test.** A new test derives the live list of registered MCP tool names straight from each `packages/mcp/src/tools/*.ts` file's own `registerTool()` call and asserts every one is mentioned in `ONBOARDING_INSTRUCTIONS` — so a future tool that ships without an onboarding-prose update now fails a test instead of silently going undocumented. Fixing this test also surfaced and closed 7 real, pre-existing gaps: `archive_entity`, `confirm_archive_entity`, `unarchive_entity`, `confirm_unarchive_entity`, `correct_lore`, `confirm_correct_lore`, and `confirm_ingest_entities` are now all mentioned in the onboarding prose surfaced at MCP connect time (and by the `help` tool).
+
 ### Changed — T-139
 
 - **Tool-description naming & format consistency pass.** Every MCP tool description now places its "Direct write — ..." label (for tools that only ever insert a new row) immediately after the description's first sentence, and every non-preview-only tool description ends with a "Returns ..." clause naming its returned shape — locked in by new tests covering the full exported set in `tool-descriptions.test.ts`, so a future tool addition that drifts from either convention fails a test instead of silently landing. No behavior change; description text only.

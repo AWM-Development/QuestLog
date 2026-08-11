@@ -11,6 +11,15 @@ const TOOLS_DIR = join(CONTENT_DIR, "..", "tools");
 const REGISTER_TOOL_NAME_PATTERN = /registerTool\(\s*"([a-z_]+)"/g;
 
 /**
+ * `help` is exempt (ticket's own Out of scope note: it "uses the same
+ * constant, already covered by this same string") — without this, the
+ * assertion below would only pass by coincidence, via "help" matching as a
+ * substring of the prose's opening "QuestLog helps you manage...", not by
+ * any deliberate documentation of the `help` tool itself.
+ */
+const EXEMPT_TOOL_NAMES = new Set(["help"]);
+
+/**
  * Derives the live registered-tool-name list straight from each `tools/*.ts`
  * source file's own `server.registerTool("<name>", ...)` call — never a
  * hardcoded literal list, which would just reintroduce the drift this test
@@ -23,7 +32,7 @@ function registeredToolNames(): string[] {
 		const source = readFileSync(join(TOOLS_DIR, file), "utf8");
 		for (const match of source.matchAll(REGISTER_TOOL_NAME_PATTERN)) {
 			const name = match[1];
-			if (name) names.push(name);
+			if (name && !EXEMPT_TOOL_NAMES.has(name)) names.push(name);
 		}
 	}
 	return names;
