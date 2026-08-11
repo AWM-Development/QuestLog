@@ -89,6 +89,23 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   source "$CLAUDE_PROJECT_DIR/scripts/worktree-postgres-env.sh"
   echo "session-start.sh: worktree '${WORKTREE_NAME}' -> Postgres :${QUESTLOG_PG_PORT} (project ${COMPOSE_PROJECT_NAME})"
 
+  # --- .env propagation: begin (T-131) ---
+  # `git worktree add` never carries gitignored files into a new worktree
+  # (confirmed: `.env`/`.env.local`/`.env.*.local` in .gitignore), so any
+  # locally-scoped secret the primary checkout's `.env` holds (e.g.
+  # OBSERVABILITY_DATABASE_URL) never reaches a ticket's worktree otherwise.
+  # Copy, not symlink — a symlink would dangle once the source worktree is
+  # reaped (scripts/reap-worktree.sh), and `.env` is small enough that
+  # copying costs nothing. Why: Docs/IMPLEMENTATION_NOTES.md § T-131.
+  primary_checkout="$(git worktree list --porcelain | awk '/^worktree /{print $2; exit}')"
+  if [ -f "$primary_checkout/.env" ] && [ ! -f "$CLAUDE_PROJECT_DIR/.env" ]; then
+    cp "$primary_checkout/.env" "$CLAUDE_PROJECT_DIR/.env"
+    echo "session-start.sh: propagated primary checkout's .env into worktree '${WORKTREE_NAME}'"
+  else
+    echo "session-start.sh: worktree '${WORKTREE_NAME}' already has its own .env, leaving untouched"
+  fi
+  # --- .env propagation: end ---
+
   docker compose up -d
 
   for _ in $(seq 1 30); do
