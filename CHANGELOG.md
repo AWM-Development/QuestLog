@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-054
+
+- **Observability API read endpoints.** New read-only tRPC router (`observability.getByTicketId`, `observability.trends`, `observability.feed`) exposing T-053's observability store: per-ticket run + report detail, an aggregate trends view (date-range and `empty_run` filtering), and a paginated newest-first report feed. Uses its own DB connection, separate from the campaign-data client (G-003). Not yet consumed by any UI (M-OBS.5).
+
 ### Added — T-128
 
 - **CI job-count / GitHub Actions minutes audit.** New report (`Docs/tickets/reports/T-128-ci-actions-minutes-audit.md`) quantifying real per-job Actions-minute consumption across all five workflow files, pulled from live `gh api` run/job data. Highest-leverage finding: `ci.yml`'s `gate-guard`/`scope-guard`/`report-guard` jobs were each under 15 seconds of real work but billed a minimum of 1 minute each.
