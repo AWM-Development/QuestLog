@@ -22,7 +22,8 @@ function registeredToolNames(): string[] {
 		if (!file.endsWith(".ts") || file.endsWith(".test.ts")) continue;
 		const source = readFileSync(join(TOOLS_DIR, file), "utf8");
 		for (const match of source.matchAll(REGISTER_TOOL_NAME_PATTERN)) {
-			names.push(match[1]);
+			const name = match[1];
+			if (name) names.push(name);
 		}
 	}
 	return names;
