@@ -6,7 +6,7 @@ Complexity tier: S
 
 Strategy-gate flag: no
 
-Priority: P1
+Priority: P0
 
 Branch: fix/m-bug/t-156-observability-migrate-database-url-leak
 
