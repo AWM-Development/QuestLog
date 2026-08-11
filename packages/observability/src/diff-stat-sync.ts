@@ -73,10 +73,12 @@ async function findMergedPrForTicket(
 
 /**
  * Looks up a ticket's merged PR (by branch-naming convention, not title —
- * see `ticketBranchPattern`) and upserts its diff stats into that ticket's
- * `ticket_runs` row. When no merged PR is found, the row is left untouched
- * (diff-stat fields stay null) — an unmerged/never-existing PR is an
- * expected outcome here, not an error.
+ * see `ticketBranchPattern`) and writes its diff stats into that ticket's
+ * existing `ticket_runs` row (an `UPDATE`, not an insert-on-missing upsert
+ * like `ingest.ts`'s `upsertTicketRun` — this only ever runs after ingestion
+ * has already created the row). When no merged PR is found, the row is left
+ * untouched (diff-stat fields stay null) — an unmerged/never-existing PR is
+ * an expected outcome here, not an error.
  */
 export async function syncDiffStatsForTicket(
 	db: Database,

@@ -7,12 +7,14 @@ describe("ticketBranchPattern", () => {
 		expect(pattern.test("feat/m-obs/t-055-pr-diff-stat-sync")).toBe(true);
 	});
 
-	it("is case-insensitive on the ticket id (a lowercase branch, an uppercase ticket id)", () => {
-		const pattern = ticketBranchPattern("T-055");
-		expect(pattern.test("feat/m-obs/T-055-pr-diff-stat-sync")).toBe(false);
-		// Branch names are conventionally lowercase in this repo — the pattern
-		// itself is built lowercase to match that, not to accept both cases.
+	it("normalizes the ticket id to lowercase, matching this repo's lowercase branch-name convention", () => {
+		// Branch names are conventionally lowercase in this repo, so the
+		// pattern is built lowercase from the ticket id regardless of the
+		// id's own casing — it does not accept an uppercase branch segment.
 		expect(ticketBranchPattern("t-055").test("feat/m-obs/t-055-x")).toBe(true);
+		expect(
+			ticketBranchPattern("T-055").test("feat/m-obs/T-055-pr-diff-stat-sync"),
+		).toBe(false);
 	});
 
 	it("does not match a different ticket id that shares a numeric prefix", () => {
