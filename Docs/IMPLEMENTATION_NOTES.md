@@ -780,3 +780,7 @@ Full audit findings, what was reviewed-and-left-alone, and the file-count/file-s
 ## G-029 — No CI-event-driven triggers, either sub-case: won't-fix (2026-08-10)
 
 `G-029`'s resolution declined both an immediate post-merge promotion-sweep re-run and an auto-opened fix session on `develop` CI red — the nightly cron scheduler is already sufficient cadence at this pipeline's current scale, and the CI-red-triggers-a-session case in particular carried real risk (unattended agent work committed to a signal that can itself be flaky, no human in the loop). `M-ROBUST.4` closed WON'T FIX with no ticket drafted. Full rationale: `Docs/tickets/gated/resolved/G-029-ci-event-driven-triggers.md` § Resolution.
+
+## G-028 — No second reviewer alongside `reviewer`: won't-fix (2026-08-10)
+
+`G-028`'s resolution declined a second, independent reviewer (hosted bot or a differently-prompted second in-repo subagent, advisory or merge-gating) alongside the existing `reviewer` subagent — `T-114`'s red-check CI job now covers the mechanical invariant a second opinion would otherwise have been the main thing catching, and Alex judged the remaining cost/benefit not worth it for a solo-dev pipeline with no second reviewer's institutional knowledge to diverge from. `M-ROBUST.3` closed WON'T FIX with no ticket drafted. Full rationale: `Docs/tickets/gated/resolved/G-028-automated-review-bots-second-opinion.md` § Resolution.
