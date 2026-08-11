@@ -2,7 +2,7 @@
 
 **Outcome:** shipped
 **Branch:** feat/m-efficiency/t-128-ci-actions-minutes-audit
-**Diff:** 1 file changed (this report), additive-only
+**Diff:** 2 files changed (this report + `ci.yml`)
 **Complexity tier:** S
 **Strategy-gate flag:** no
 
@@ -13,7 +13,19 @@ consumption across all five workflow files (`ci.yml`,
 `e2e-release-check.yml`, `smoke-test-dev.yml`, `smoke-test-prod.yml`,
 `ticket-status-ledger.yml`), pulled from live `gh api` run/job data rather
 than estimated from the YAML, plus concrete ranked reduction options.
-Recommendations only — nothing under `.github/workflows/` is touched.
+
+**Addendum, post-report (Alex's explicit request, same session):** this
+ticket's own Scope/Out of scope says recommendations only, nothing under
+`.github/workflows/` touched — flagged that once before proceeding. Alex
+asked directly for finding #1 (the highest-leverage one) to be
+implemented on this same branch anyway,
+so `ci.yml`'s `gate-guard`/`scope-guard`/`report-guard` jobs are now
+consolidated into one `ticket-guards` job — same pattern `T-121` already
+used for `doc-sync`/`migration-guard`/`mockup-guard`/`impl-notes-health`
+(the `guards` job). All three guard scripts re-verified locally against
+this diff after the merge (pasted below) and `actionlint` passes clean.
+The exit condition below is written against the ticket's original,
+audit-only scope — see the note inline where it no longer literally holds.
 
 ---
 
@@ -272,7 +284,7 @@ staleness corrections rather than being silently dropped.
 
 | # | Item | Tag |
 |---|------|-----|
-| 1 | `ci.yml`'s `gate-guard`/`scope-guard`/`report-guard` are 3 separate jobs where 1 would do — each is billed a minimum 1 minute regardless of real (~13s) duration | consolidate |
+| 1 | `ci.yml`'s `gate-guard`/`scope-guard`/`report-guard` are 3 separate jobs where 1 would do — each is billed a minimum 1 minute regardless of real (~13s) duration | consolidate (**implemented on this branch, post-report — see addendum**) |
 | 2 | `ci.yml`'s `push`-triggered re-run of `pr`/`actionlint` on `develop`/`main` duplicates PR-time work, ~1:1 with `pull_request` runs in this audit's sample | consolidate (tradeoff — Alex's call) |
 | 3 | 5 of `ci.yml`'s 7 jobs do a bare `actions/checkout@v5` immediately followed by `setup-repo`'s own internal checkout | tighten |
 | 4 | `smoke-test-dev.yml`'s top-of-file comment says `push` "never fires" until T-035 connects Fly's dashboard — live data shows it already does | tighten |
@@ -296,11 +308,42 @@ No application code touched by this ticket — this is the standard
 repo-wide regression baseline, run once (S-tier docs-only path,
 `EXECUTOR_ROUTINE.md` Step 4's S-docs-only branch).
 
+**Post-addendum verification, after consolidating `ci.yml`'s three guard
+jobs into `ticket-guards`:** each guard script re-run locally, standalone,
+against this branch's actual diff — same commands the new consolidated
+job's steps run:
+
+```
+$ scripts/ci-gate-guard.sh origin/develop
+✅ Gate guard passed — no unresolved Gated on:/unmet Blocked on: found.
+
+$ scripts/ci-scope-guard.sh origin/develop feat/m-efficiency/t-128-ci-actions-minutes-audit develop
+✅ Scope guard passed.
+
+$ scripts/ci-report-guard.sh origin/develop feat/m-efficiency/t-128-ci-actions-minutes-audit
+✅ Report guard passed.
+
+$ ./actionlint -color
+(no output — clean)
+```
+
+`scripts/run-tests-quiet.sh` re-run after the workflow edit too (same
+three-line pass output as above, unchanged — a YAML-only edit doesn't
+touch anything lint/typecheck/test would catch).
+
 ## Exit condition check
 
 - `git diff`/`git status` shows zero changes under `.github/workflows/` —
-  confirmed; this ticket's diff is additive-only (this report file plus
-  the standard wrap-up files: milestone checkbox, CHANGELOG entry).
+  **no longer true as of the post-report addendum above.** The ticket's
+  own Scope/Out of scope specified an additive-only, audit-only diff, and
+  that's what the audit itself produced; `ci.yml`'s `ticket-guards`
+  consolidation was added afterward at Alex's direct, explicit request in
+  the same session, after this deviation from Scope was flagged once (per
+  `AGENTS.md`'s hard rule for autonomous runs — a 🧠 gate would be skipped
+  and filed, not overridden by a request; this wasn't that — it's an
+  in-session scope change Alex asked for directly, not a strategy
+  judgment call this session made unilaterally). `git diff --stat` against
+  `develop` now shows 2 files: this report and `.github/workflows/ci.yml`.
 - This file exists at `Docs/tickets/reports/T-128-ci-actions-minutes-audit.md`
   and names all five workflow files by filename at least once each — see
   the Audit's §1, each workflow gets its own subsection headed by its
@@ -343,16 +386,32 @@ nothing actionable (no backlog ticket's `Blocked on:` list was fully
 cleared; one stale worktree, `T-124`, was reaped after confirming its PR
 had merged).
 
+**Post-report addendum:** after the audit report was written and pushed,
+Alex asked directly, in-session, to implement finding #1 on this same
+branch despite it being explicitly out of this ticket's Scope. Flagged
+the mismatch once, then complied — a small, contained edit (one `ci.yml`
+job merge, following T-121's existing precedent almost line-for-line)
+made it low-risk to do live rather than spin up a follow-up ticket for
+something already fully specified in the just-written audit.
+
 **Retry log:** 0 retries. This ticket has no Red/Green implementation
 loop (S-tier, docs-only Scope) — the retry-log categories don't apply.
 
 ## Anything Alex must decide
 
-- **Whether to act on any of §5's `consolidate`/`tighten` findings.**
-  This ticket is recommendations-only by design. Item #1 (consolidating
-  `gate-guard`/`scope-guard`/`report-guard`) is the one I'd flag as
-  highest-leverage: ~2 billed minutes saved per PR run at zero coverage
-  loss, following T-121's own precedent almost exactly.
+- **Item #1 (consolidating `gate-guard`/`scope-guard`/`report-guard`)
+  is now implemented on this branch, at Alex's direct request** — see the
+  post-report addendum at the top of this file. Estimated ~2 billed
+  minutes saved per PR run at zero coverage loss, following T-121's own
+  precedent almost exactly; all three guard scripts re-verified locally
+  post-merge (Test evidence) and `actionlint` passes clean. Worth a
+  glance at the next few real PR runs' Checks tab to confirm the
+  consolidated `Ticket Guards` job behaves identically to the three it
+  replaced before trusting the estimate fully.
+- **§5's remaining `consolidate`/`tighten` findings (items #2–4, #8)
+  are still just recommendations** — this ticket's own Scope was
+  audit-only; only item #1 was implemented, and only because Alex asked
+  for it directly after seeing the report.
 - **Item #2 (dropping `ci.yml`'s post-merge `push` re-run) is a real
   tradeoff, not a clear win** — flagging for Alex's call rather than
   recommending outright, same as T-117's own finding #11 handled a

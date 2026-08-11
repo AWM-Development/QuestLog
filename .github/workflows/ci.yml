@@ -246,15 +246,43 @@ jobs:
             echo "✅ Implementation notes check passed."
           fi
 
-  # ── Gate Guard ─────────────────────────────────────────────────────────────
-  # Fails a PR whose diff introduces or leaves a ticket file carrying an
-  # unresolved `Gated on:` or an unmet `Blocked on:` — the machine-checked
-  # version of the invariant CLAUDE.md/EXECUTOR_ROUTINE.md already state in
-  # prose. Logic lives in packages/ci/src/gate-guard.ts (unit-tested
-  # there); scripts/ci-gate-guard.sh is the same reusable entry point T-115's
-  # pre-flight wiring will call. Why: Docs/tickets/gated/resolved/G-020.
-  gate-guard:
-    name: Gate Guard
+  # ── Ticket Guards (Gate · Scope · Report) ───────────────────────────────────
+  # Gate/Scope/Report guards used to be three separate jobs. Each is a fast,
+  # single-script check (real work: a few seconds — under the 1-minute
+  # billing floor a separate job always pays regardless of actual duration)
+  # sharing the same trigger condition and the same setup-repo preamble, so
+  # they're consolidated into one job's steps — the same pattern T-121
+  # already applied to doc-sync/migration-guard/mockup-guard/
+  # impl-notes-health below (the `guards` job). Each step runs `if:
+  # always()` so one guard's failure doesn't skip the checks after it,
+  # preserving the old independent-jobs behavior. Why (minutes case):
+  # Docs/tickets/reports/T-128-ci-actions-minutes-audit.md finding #1.
+  #
+  # - Gate Guard: fails a PR whose diff introduces or leaves a ticket file
+  #   carrying an unresolved `Gated on:` or an unmet `Blocked on:` — the
+  #   machine-checked version of the invariant CLAUDE.md/
+  #   EXECUTOR_ROUTINE.md already state in prose. Logic lives in
+  #   packages/ci/src/gate-guard.ts (unit-tested there);
+  #   scripts/ci-gate-guard.sh is the same reusable entry point T-115's
+  #   pre-flight wiring calls. Why: Docs/tickets/gated/resolved/G-020.
+  # - Scope Guard: for a ticket-implementation PR (head branch prefix
+  #   `feat/*`, TICKET_SPEC.md's "Branch naming" convention): warns (does
+  #   not fail) when the diff touches a path outside the ticket's declared
+  #   `Context files:` and not newly created by this diff; hard-fails if
+  #   the diff touches `Docs/mockups/` (narrower version of mockup-guard's
+  #   own check, scoped to ticket-implementation PRs) or if the PR's base
+  #   branch isn't `develop`. Logic lives in packages/ci/src/scope-guard.ts
+  #   (unit-tested there). Why: Docs/tickets/gated/resolved/G-020 § Q2.
+  # - Report Guard: for a ticket-implementation PR (same detection as Scope
+  #   Guard's above): hard-fails when the diff adds a Docs/tickets/reports/
+  #   file that isn't structurally complete against REPORT_TEMPLATE.md — a
+  #   required heading missing, a leftover `<...>` template placeholder, or
+  #   a `## Test evidence` section with no recognizable tool-output marker.
+  #   Does not check whether the report's claims are *true* (that's
+  #   T-113/T-114). Logic lives in packages/ci/src/report-guard.ts
+  #   (unit-tested there). Why: Docs/tickets/gated/resolved/G-020 § Q2.
+  ticket-guards:
+    name: Ticket Guards (Gate · Scope · Report)
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
 
@@ -268,35 +296,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: "Check for unresolved Gated on: / unmet Blocked on:"
+      - name: "Gate Guard — check for unresolved Gated on: / unmet Blocked on:"
+        if: always()
         run: scripts/ci-gate-guard.sh origin/${{ github.base_ref }}
 
-  # ── Scope Guard ────────────────────────────────────────────────────────────
-  # For a ticket-implementation PR (head branch prefix `feat/*`, TICKET_SPEC.md's
-  # "Branch naming" convention): warns (does not fail) when the diff touches a
-  # path outside the ticket's declared `Context files:` and not newly created
-  # by this diff; hard-fails if the diff touches `Docs/mockups/` (narrower
-  # version of mockup-guard's own check, scoped to ticket-implementation PRs)
-  # or if the PR's base branch isn't `develop`. Logic lives in
-  # packages/ci/src/scope-guard.ts (unit-tested there); scripts/ci-scope-guard.sh
-  # is the same kind of thin, reusable entry point as gate-guard's above.
-  # Why: Docs/tickets/gated/resolved/G-020 § Q2.
-  scope-guard:
-    name: Scope Guard
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-
-    steps:
-      # Bare checkout first so the runner can resolve the local composite
-      # action below (a `uses: ./...` reference requires the repo already
-      # checked out) — setup-repo's own checkout step then re-checks out
-      # with the real ref/fetch-depth, superseding this one.
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/setup-repo
-        with:
-          fetch-depth: 0
-
-      - name: "Check diff is confined to declared Context files:, base is develop"
+      - name: "Scope Guard — check diff is confined to declared Context files:, base is develop"
+        if: always()
         # github.head_ref is attacker-controlled (a fork's branch name) — pass
         # it through env, never interpolate it directly into the run: script,
         # per actionlint's expression-injection check.
@@ -305,33 +310,8 @@ jobs:
           BASE_BRANCH: ${{ github.base_ref }}
         run: scripts/ci-scope-guard.sh "origin/$BASE_BRANCH" "$HEAD_BRANCH" "$BASE_BRANCH"
 
-  # ── Report Guard ───────────────────────────────────────────────────────────
-  # For a ticket-implementation PR (head branch prefix `feat/*`, same
-  # detection as scope-guard's above): hard-fails when the diff adds a
-  # Docs/tickets/reports/ file that isn't structurally complete against
-  # REPORT_TEMPLATE.md — a required heading missing, a leftover `<...>`
-  # template placeholder, or a `## Test evidence` section with no
-  # recognizable tool-output marker. Does not check whether the report's
-  # claims are *true* (that's T-113/T-114). Logic lives in
-  # packages/ci/src/report-guard.ts (unit-tested there);
-  # scripts/ci-report-guard.sh is the same kind of thin, reusable entry
-  # point as gate-guard's/scope-guard's above. Why: Docs/tickets/gated/resolved/G-020 § Q2.
-  report-guard:
-    name: Report Guard
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-
-    steps:
-      # Bare checkout first so the runner can resolve the local composite
-      # action below (a `uses: ./...` reference requires the repo already
-      # checked out) — setup-repo's own checkout step then re-checks out
-      # with the real ref/fetch-depth, superseding this one.
-      - uses: actions/checkout@v5
-      - uses: ./.github/actions/setup-repo
-        with:
-          fetch-depth: 0
-
-      - name: "Check any newly-added report is structurally complete"
+      - name: "Report Guard — check any newly-added report is structurally complete"
+        if: always()
         env:
           HEAD_BRANCH: ${{ github.head_ref }}
         run: scripts/ci-report-guard.sh "origin/${{ github.base_ref }}" "$HEAD_BRANCH"
