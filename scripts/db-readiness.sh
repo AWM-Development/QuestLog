@@ -89,36 +89,13 @@ ensure_database_provisioned() {
 		"$create_fn" "$dbname"
 	fi
 	# Subshell so this never touches the calling session-start.sh process's
-	# own OBSERVABILITY_DATABASE_URL — a legitimate later use of that var
-	# elsewhere in the same hook run is untouched.
-	#
-	# NOTE this deliberately pre-SETS OBSERVABILITY_DATABASE_URL to
-	# $database_url, rather than unsetting it (T-156's own ticket text
-	# proposed `unset`, but that doesn't actually work — verified empirically
-	# during implementation): packages/observability/src/db/migrate.ts's own
-	# `dotenv.config({ path: "../../.env" })` call is what introduces the
-	# ambient value into that child process, not anything this shell
-	# exports — nothing upstream of that call ever exports
-	# OBSERVABILITY_DATABASE_URL into the environment, so it's never
-	# "already set" to `unset` away in the first place. `unset` leaves the
-	# var genuinely absent, and dotenv fills in absent keys from the .env
-	# file it loads — so an `unset` here is a no-op, and the real ambient
-	# .env value still wins. dotenv's one actual guarantee — it never
-	# overwrites an *already-set* var — is what this fix leans on instead:
-	# pre-setting OBSERVABILITY_DATABASE_URL here, to the same value as
-	# DATABASE_URL, makes dotenv's load of the ambient .env value a no-op,
-	# and resolves migrate.ts's `OBSERVABILITY_DATABASE_URL ?? DATABASE_URL`
-	# chain to the correct local URL directly (without ever needing to reach
-	# the `?? DATABASE_URL` fallback). Setting it to empty instead of a real
-	# URL would not fix this either: migrate.ts's `??` check treats an empty
-	# string as defined, not nullish, so it would still short-circuit past
-	# DATABASE_URL with an unusable empty connection string. Unconditional
-	# (not branched on $dbname) to keep this function's contract uniform:
-	# "$database_url is authoritative for this database" regardless of what
-	# other DB-selecting env var an ambient .env happens to carry — the
-	# non-observability test_db_migrate_cmd branch never reads
-	# OBSERVABILITY_DATABASE_URL at all, so this is a harmless no-op there.
-	# Why: Docs/tickets/done/T-156-observability-migrate-database-url-leak.md.
+	# own OBSERVABILITY_DATABASE_URL. Deliberately pre-SETS it (rather than
+	# unsetting it, as T-156's own ticket text originally proposed) to the
+	# same value as DATABASE_URL — unset doesn't work here, since dotenv
+	# fills in an absent key from .env, but never overwrites an already-set
+	# one. Unconditional across every $dbname: the non-observability
+	# test_db_migrate_cmd branch never reads this var, so it's a no-op there.
+	# Why: Docs/IMPLEMENTATION_NOTES.md § T-156.
 	(
 		DATABASE_URL="$database_url" OBSERVABILITY_DATABASE_URL="$database_url" \
 			eval "$(test_db_migrate_cmd "$dbname")"
