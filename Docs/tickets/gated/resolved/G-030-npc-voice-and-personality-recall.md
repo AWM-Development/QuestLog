@@ -34,3 +34,24 @@ Notes: Proposed as the smallest of four related feature ideas from the same
   independent). The extended discussion this gate exists for is explicitly
   about *whether* to pursue this at all, not just *how* — a "no" here is a
   complete, satisfying resolution, not a fallback.
+
+## Resolution (2026-08-10)
+
+**Not worth building right now — no ticket drafted.** Alex judged there
+isn't yet enough signal that DMs need synthesized "how to play this NPC"
+talking points over just reading the entity's existing description/notes
+during play — a real but unvalidated need, not a rejected one. None of the
+shape questions (new tool vs. `get_entity` extension, what it synthesizes
+from, fixed schema vs. free text, npc-only vs. general) were evaluated,
+since the answer to the gating question is no regardless of shape.
+
+**Explicitly revisitable, not a permanent no.** Per this doc's own framing
+("every one of these gates may resolve either way"), a not-worth-it-now
+verdict on a net-new feature idea is deferred to v2 consideration, not
+closed off — re-open a fresh gate if real play-session signal (DMs
+actually wanting this) surfaces later, rather than treating this
+resolution as foreclosing the idea.
+
+`M-NPCVOICE` closed with no task list — see the milestone doc's own update
+for how this reads next to its sibling placeholders (`M-CONTINUITY`,
+`M-PARTYKNOW`, `M-CROSSCAMPAIGN`).
