@@ -4,7 +4,7 @@ Milestone ref: M-OBS.4
 
 Complexity tier: M
 
-Priority: P2
+Priority: P0
 
 
 Branch: feat/m-obs/t-055-pr-diff-stat-sync
