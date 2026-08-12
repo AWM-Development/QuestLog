@@ -88,5 +88,16 @@ ensure_database_provisioned() {
 	if [ "$db_exists" != "1" ]; then
 		"$create_fn" "$dbname"
 	fi
-	DATABASE_URL="$database_url" eval "$(test_db_migrate_cmd "$dbname")"
+	# Subshell so this never touches the calling session-start.sh process's
+	# own OBSERVABILITY_DATABASE_URL. Deliberately pre-SETS it (rather than
+	# unsetting it, as T-156's own ticket text originally proposed) to the
+	# same value as DATABASE_URL — unset doesn't work here, since dotenv
+	# fills in an absent key from .env, but never overwrites an already-set
+	# one. Unconditional across every $dbname: the non-observability
+	# test_db_migrate_cmd branch never reads this var, so it's a no-op there.
+	# Why: Docs/IMPLEMENTATION_NOTES.md § T-156.
+	(
+		DATABASE_URL="$database_url" OBSERVABILITY_DATABASE_URL="$database_url" \
+			eval "$(test_db_migrate_cmd "$dbname")"
+	)
 }
