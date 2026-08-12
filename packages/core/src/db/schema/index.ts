@@ -1,9 +1,11 @@
 export {
 	campaigns,
+	campaignWealth,
 	chunks,
 	conversations,
 	entities,
 	entityRelationships,
+	inventoryItems,
 	mcpOauthClients,
 	mcpOauthCodes,
 	mcpOauthTokens,

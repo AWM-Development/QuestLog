@@ -497,7 +497,11 @@ describe("entityService.create", () => {
 
 	it("accepts the 'pc' entity type (T-142) — validator and creation path", async () => {
 		expect(() =>
-			EntityCreateInput.parse({ campaignId, name: "Aria Stormwind", type: "pc" }),
+			EntityCreateInput.parse({
+				campaignId,
+				name: "Aria Stormwind",
+				type: "pc",
+			}),
 		).not.toThrow();
 
 		const entity = await entityService.create(db, {
