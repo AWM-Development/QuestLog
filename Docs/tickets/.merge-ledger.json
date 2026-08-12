@@ -226,5 +226,11 @@
     "prNumber": 264,
     "branch": "feat/m-bug/t-155-fix-stale-llm-config-model-id",
     "mergedAt": "2026-08-11T00:40:20Z"
+  },
+  {
+    "ticketId": "T-156",
+    "prNumber": 273,
+    "branch": "fix/m-bug/t-156-observability-migrate-database-url-leak",
+    "mergedAt": "2026-08-12T14:11:47Z"
   }
 ]

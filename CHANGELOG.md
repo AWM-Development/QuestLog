@@ -30,6 +30,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 - **Fresh ticket worktrees now inherit the primary checkout's local secrets.** `session-start.sh`'s local worktree-provisioning branch copies the primary checkout's gitignored `.env` into a new worktree whenever that worktree doesn't already have its own — `git worktree add` never carries gitignored files across, so any locally-scoped secret (e.g. `OBSERVABILITY_DATABASE_URL`) previously never reached a ticket's worktree at all. Non-clobbering: a worktree that already has its own `.env` is always left untouched.
 
+### Fixed — T-156
+
+- **`ensure_database_provisioned`'s migrate child process no longer inherits an ambient `OBSERVABILITY_DATABASE_URL`.** Since T-131 propagated the primary checkout's `.env` into fresh worktrees, `scripts/db-readiness.sh`'s `ensure_database_provisioned()` silently lost every local `questlog_test_observability` migration to a real remote-Neon `OBSERVABILITY_DATABASE_URL`, whenever one was set in the primary checkout's `.env` — `packages/observability/src/db/migrate.ts`'s own connection-string resolution puts that var first, and nothing upstream prevented it from reaching the child process. Fixed by pre-setting `OBSERVABILITY_DATABASE_URL` (not just `DATABASE_URL`) to the intended local URL for that one call, in a subshell that never touches the calling process's own environment — see `Docs/IMPLEMENTATION_NOTES.md` § T-156 for why the ticket's own originally-proposed `unset`-based fix didn't actually work.
+
 ### Fixed — T-155
 
 - **`ingest_text` 404ing on prod — stale Claude model id.** `LLM_CONFIG.model` was pinned to `claude-sonnet-4-20250514`, a decommissioned model id, causing every `ingest_text` call to fail immediately with a `404 not_found_error` (entity-candidate extraction is the LLM call on that path). Updated to `claude-sonnet-5`. Fixes every caller of the shared LLM service (chat, entity extraction), not just `ingest_text`.
