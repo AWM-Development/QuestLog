@@ -2,9 +2,9 @@ import { resolveLocalTestDbUrl } from "@questlog/core/db/test-db-url.js";
 /**
  * Vitest globalSetup: runs once before all test suites in this package.
  *
- * Truncates both observability tables so each test run starts from a clean
+ * Truncates every observability table so each test run starts from a clean
  * slate. Own truncate list distinct from packages/core's — this package's
- * schema (ticket_runs/ticket_reports) is independent (G-003).
+ * schema is independent (G-003).
  */
 import postgres, { type Sql } from "postgres";
 import type { TestProject } from "vitest/node";
