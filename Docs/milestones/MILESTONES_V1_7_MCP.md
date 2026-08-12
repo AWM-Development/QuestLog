@@ -18,25 +18,25 @@ Each is genuinely independent — different data model, different tool surface, 
 A fifth milestone, **`M-PARTYMODEL`**, was added 2026-08-07 — not one of the original four brainstormed feature ideas above, but the resolution of a separate, earlier-filed gate (`G-024`, opened 2026-08-02, before this doc existed) whose scope is the schema/model foundation the rest of this version's cross-campaign ambitions (especially `M-CROSSCAMPAIGN`) will eventually build on. It lands here rather than a new version slot because it's the same "campaign scoping" theme, and per `/ungate`'s decision to land it wherever fits rather than open a dedicated version for two small tasks.
 
 **Open gates:**
-- `G-030` (`Docs/tickets/gated/G-030-npc-voice-and-personality-recall.md`) — blocks M-NPCVOICE.
 - `G-031` (`Docs/tickets/gated/G-031-continuity-inconsistency-detection.md`) — blocks M-CONTINUITY.
 - `G-032` (`Docs/tickets/gated/G-032-party-knowledge-epistemic-state.md`) — blocks M-PARTYKNOW.
 - `G-033` (`Docs/tickets/gated/G-033-cross-campaign-entity-borrowing.md`) — blocks M-CROSSCAMPAIGN.
 
 **Resolved gates going into this milestone:**
 - `G-024` (`Docs/tickets/gated/resolved/G-024-campaign-source-party-conceptual-model.md`) — resolved 2026-08-07 via `/ungate`, together with Alex. Party becomes a real parent of campaigns (nullable `partyId` FK on `campaigns`, not a tag on entities/sessions); every existing read stays `campaignId`-scoped by default. A `sourceId`-scoped search filter on `query_lore`/`get_entity` was approved as an independent, straightforward addition. Cross-campaign continuity itself (the actual read-time expansion) is explicitly deferred, future scope — this milestone is schema/plumbing only. See the resolved gate-stub for full rationale.
+- `G-030` (`Docs/tickets/gated/resolved/G-030-npc-voice-and-personality-recall.md`) — resolved 2026-08-10 via `/ungate`. Not worth building right now — no ticket drafted, `M-NPCVOICE` closed with no task list. Deferred to v2 consideration, not a rejected idea; see the resolved gate-stub for full rationale.
 
 ---
 
-## Milestone M-NPCVOICE: NPC Voice & Personality Recall
+## Milestone M-NPCVOICE: NPC Voice & Personality Recall — CLOSED, not pursued
 
-**Goal:** TBD — resolves from `G-030`. Placeholder section; see the gate-stub for the open question (whether this is a new tool vs. an extension of `get_entity`, what "how to play this NPC" actually synthesizes from, and whether it's worth the added surface).
+**Goal:** N/A — resolved via `G-030` (2026-08-10): not worth building right now. Not enough signal yet that DMs need synthesized "how to play this NPC" talking points over reading the entity's existing description/notes during play. None of the shape questions (new tool vs. `get_entity` extension, synthesis inputs, output schema, npc-only vs. general) were evaluated, since the answer was no regardless of shape.
 
-**Context:** No PRD section covers this — new feature idea proposed 2026-08-03 (see `G-030`).
+**Context:** No PRD section covers this — new feature idea proposed 2026-08-03, declined 2026-08-10 (see `G-030`'s resolution). Deferred to v2 consideration, not a rejected idea — re-open a fresh gate if real play-session demand surfaces later.
 
 ### Tasks
 
-_None yet — blocked on `G-030`. `/ungate` drafts this milestone's real task list on resolution (or closes the gate with no tickets if the decision is not to pursue)._
+None — closed with no tickets drafted.
 
 ---
 
