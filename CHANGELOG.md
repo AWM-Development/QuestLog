@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-141
+
+- **`apps/mcp-stdio` startup diagnostics.** The stdio binary's entrypoint now catches failures from each of its three startup steps (storage init, database init, MCP transport connect) and logs a diagnosable one-line `console.error` naming which step failed and why, instead of letting a bad `DATABASE_URL`, an unwritable `UPLOAD_PATH`, or a connect failure surface as a raw unhandled stack trace with no log line at all. On success, logs `QuestLog MCP server ready (stdio)`. New coverage in `apps/mcp-stdio/src/main.test.ts`.
+
 ### Changed — T-139
 
 - **Tool-description naming & format consistency pass.** Every MCP tool description now places its "Direct write — ..." label (for tools that only ever insert a new row) immediately after the description's first sentence, and every non-preview-only tool description ends with a "Returns ..." clause naming its returned shape — locked in by new tests covering the full exported set in `tool-descriptions.test.ts`, so a future tool addition that drifts from either convention fails a test instead of silently landing. No behavior change; description text only.
