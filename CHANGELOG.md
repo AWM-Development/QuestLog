@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-059
+
+- **Observability store: comment schema + write endpoint.** New `ticket_comments` table (`packages/observability`) and a `comment` tRPC router (`comment.list`, `comment.add`) exposing per-ticket comment threads for the observability dashboard's future Log view. `author` is hardcoded `"alex"` server-side for v1 — agent-authored comments are deferred. No UI consumes this yet (`T-058`); `OBSERVABILITY_DATABASE_URL` isn't yet a deployed Fly secret, so these endpoints won't work in production until Alex provisions it (see `IMPLEMENTATION_NOTES.md` § T-059).
+
 ### Added — T-141
 
 - **`apps/mcp-stdio` startup diagnostics.** The stdio binary's entrypoint now catches failures from each of its three startup steps (storage init, database init, MCP transport connect) and logs a diagnosable one-line `console.error` naming which step failed and why, instead of letting a bad `DATABASE_URL`, an unwritable `UPLOAD_PATH`, or a connect failure surface as a raw unhandled stack trace with no log line at all. On success, logs `QuestLog MCP server ready (stdio)`. New coverage in `apps/mcp-stdio/src/main.test.ts`.
