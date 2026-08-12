@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-140
+
+- **`ONBOARDING_INSTRUCTIONS` drift test.** A new test derives the live list of registered MCP tool names straight from each `packages/mcp/src/tools/*.ts` file's own `registerTool()` call and asserts every one is mentioned in `ONBOARDING_INSTRUCTIONS` — so a future tool that ships without an onboarding-prose update now fails a test instead of silently going undocumented. Fixing this test also surfaced and closed 7 real, pre-existing gaps: `archive_entity`, `confirm_archive_entity`, `unarchive_entity`, `confirm_unarchive_entity`, `correct_lore`, `confirm_correct_lore`, and `confirm_ingest_entities` are now all mentioned in the onboarding prose surfaced at MCP connect time (and by the `help` tool).
+
 ### Added — T-141
 
 - **`apps/mcp-stdio` startup diagnostics.** The stdio binary's entrypoint now catches failures from each of its three startup steps (storage init, database init, MCP transport connect) and logs a diagnosable one-line `console.error` naming which step failed and why, instead of letting a bad `DATABASE_URL`, an unwritable `UPLOAD_PATH`, or a connect failure surface as a raw unhandled stack trace with no log line at all. On success, logs `QuestLog MCP server ready (stdio)`. New coverage in `apps/mcp-stdio/src/main.test.ts`.
