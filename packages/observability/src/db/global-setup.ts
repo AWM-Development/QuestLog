@@ -9,7 +9,11 @@ import { resolveLocalTestDbUrl } from "@questlog/core/db/test-db-url.js";
 import postgres, { type Sql } from "postgres";
 import type { TestProject } from "vitest/node";
 
-export const TABLES_IN_DELETE_ORDER = ["ticket_reports", "ticket_runs"];
+export const TABLES_IN_DELETE_ORDER = [
+	"ticket_comments",
+	"ticket_reports",
+	"ticket_runs",
+];
 
 export async function truncateAllTables(sql: Pick<Sql, "unsafe">) {
 	try {

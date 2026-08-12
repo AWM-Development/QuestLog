@@ -1,7 +1,31 @@
 import { db } from "@questlog/core/db/index.js";
 import { buildApp } from "./server.js";
 
-const app = buildApp({ db, autoProcessUploads: true });
+/**
+ * Lazy + graceful, not a static import: `OBSERVABILITY_DATABASE_URL` isn't
+ * in the deployed Fly secrets list yet (`Docs/DEPLOY_SETUP_CHECKLIST.md`
+ * only sets `DATABASE_URL`/API keys) — a static
+ * `import "@questlog/observability/db/index.js"` throws synchronously at
+ * module-load time on an unset/invalid var (`assertValidObservabilityDatabaseUrl`),
+ * which would crash the whole server's boot over one router's dependency.
+ * Same non-fatal shape as `packages/observability/src/cli.ts`'s own
+ * `warnIngestionSkipped` — the comment router (T-059) simply throws per-request
+ * via `requireObservabilityDb` (trpc.ts) until Alex provisions the secret.
+ */
+async function loadObservabilityDb() {
+	try {
+		const mod = await import("@questlog/observability/db/index.js");
+		return mod.db;
+	} catch (err) {
+		console.warn(
+			`[observability] comment endpoints disabled — ${err instanceof Error ? err.message : String(err)}`,
+		);
+		return undefined;
+	}
+}
+
+const observabilityDb = await loadObservabilityDb();
+const app = buildApp({ db, observabilityDb, autoProcessUploads: true });
 
 const start = async () => {
 	const port = Number(process.env.PORT) || 3000;

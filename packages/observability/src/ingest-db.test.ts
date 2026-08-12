@@ -14,7 +14,7 @@ import {
 	upsertTicketReport,
 	upsertTicketRun,
 } from "./ingest.js";
-import { ticketReports, ticketRuns } from "./schema/tables.js";
+import { ticketComments, ticketReports, ticketRuns } from "./schema/tables.js";
 
 const fixturesDir = fileURLToPath(new URL("./__fixtures__", import.meta.url));
 
@@ -29,7 +29,11 @@ function readFixture(name: string): string {
 const client: Sql = postgres(testDbUrl("questlog_test_observability"), {
 	max: 1,
 });
-const db = drizzle(client, { schema: { ticketRuns, ticketReports } });
+// Full schema, not just the two tables this suite exercises — see
+// ingest-degraded-runner.test.ts's identical note.
+const db = drizzle(client, {
+	schema: { ticketRuns, ticketReports, ticketComments },
+});
 
 beforeEach(async () => {
 	await truncateAllTables(client);

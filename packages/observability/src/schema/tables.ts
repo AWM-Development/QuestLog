@@ -118,3 +118,26 @@ export const ticketReports = pgTable(
 		index("ticket_reports_ticket_id_idx").using("btree", table.ticketId),
 	],
 );
+
+// Append-only (no `updatedAt`/edit tracking — T-059 out of scope). `author`
+// is free text rather than a fixed enum so a future agent-identity value
+// (deferred per Alex's 2026-07-26 decision, see T-059's ticket) doesn't
+// require a schema migration; every row this ticket writes hardcodes
+// `"alex"` server-side. No DB-level FK to `ticketRuns`/`ticketReports` —
+// same `ticketId`-as-plain-text convention those two tables already use,
+// since neither has a unique constraint on `ticketId` to reference.
+export const ticketComments = pgTable(
+	"ticket_comments",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		ticketId: text("ticket_id").notNull(),
+		author: text("author").notNull(),
+		body: text("body").notNull(),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+	},
+	(table) => [
+		index("ticket_comments_ticket_id_idx").using("btree", table.ticketId),
+	],
+);

@@ -42,3 +42,8 @@ export {
 	PrepBriefInput,
 	QueryLoreInput,
 } from "./mcp.js";
+export {
+	AddCommentInput,
+	CommentSchema,
+	ListCommentsInput,
+} from "./comment.js";
