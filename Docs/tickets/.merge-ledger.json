@@ -210,6 +210,12 @@
     "mergedAt": "2026-08-11T15:36:32Z"
   },
   {
+    "ticketId": "T-141",
+    "prNumber": 276,
+    "branch": "feat/m-polish/t-141-mcp-stdio-startup-diagnostics",
+    "mergedAt": "2026-08-12T14:13:41Z"
+  },
+  {
     "ticketId": "T-145",
     "prNumber": 225,
     "branch": "chore/m-audit/t-145-file-org-architecture-docs-audit",
