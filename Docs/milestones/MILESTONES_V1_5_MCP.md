@@ -38,7 +38,7 @@ These two milestones are otherwise unconnected — they're bundled into one vers
   Add a test asserting every tool name registered in `createMcpServer` (`packages/mcp/src/server.ts`) is mentioned somewhere in `ONBOARDING_INSTRUCTIONS`, derived from the registration call sites rather than a hand-duplicated literal list (which would just reintroduce the same drift).
   Exit: test green today; fails when a placeholder tool name is registered but not mentioned (proof pasted in the ticket report, then reverted).
 
-- [ ] **M-POLISH.3 — `apps/mcp-stdio` startup diagnostics** (T-141)
+- [x] **M-POLISH.3 — `apps/mcp-stdio` startup diagnostics** (T-141)
   Refactor `main.ts` into an exported, testable `main()` that wraps storage init + `server.connect` in try/catch: a diagnosable stderr message + non-zero exit on failure, a one-line stderr "ready" message on success.
   Exit: unit tests cover both paths; manual proof (broken DB connection string → diagnosable stderr, not a raw stack trace) pasted in the ticket report.
 
