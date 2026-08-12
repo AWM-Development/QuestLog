@@ -1,3 +1,4 @@
+import { NotFoundError } from "@questlog/core/lib/errors.js";
 import { and, desc, eq, gte, lte } from "drizzle-orm";
 import type { Database } from "../db/index.js";
 import { ticketReports, ticketRuns } from "../schema/tables.js";
@@ -20,17 +21,24 @@ export interface ListReportsPagination {
 }
 
 export const observabilityQueryService = {
-	/** Per-ticket view: a `ticket_runs` row joined with its `ticket_reports` row(s), or `null` if `ticketId` was never ingested. */
+	/**
+	 * Per-ticket view: a `ticket_runs` row joined with its `ticket_reports`
+	 * row(s). Throws `NotFoundError` if `ticketId` was never ingested — same
+	 * "fetch this specific entity" shape as `campaignService.getById` and
+	 * `conversation.service.ts`'s lookups, not `findDuplicate`'s
+	 * return-null-for-a-branching-check shape (see IMPLEMENTATION_NOTES.md
+	 * § T-054 for why this was corrected post-merge).
+	 */
 	async getTicketRun(
 		db: Database,
 		ticketId: string,
-	): Promise<TicketRunWithReports | null> {
+	): Promise<TicketRunWithReports> {
 		const [run] = await db
 			.select()
 			.from(ticketRuns)
 			.where(eq(ticketRuns.ticketId, ticketId))
 			.limit(1);
-		if (!run) return null;
+		if (!run) throw new NotFoundError("TicketRun", ticketId);
 
 		const reports = await db
 			.select()

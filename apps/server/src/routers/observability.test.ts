@@ -1,4 +1,5 @@
 import { createTestDb } from "@questlog/core/db/test-helpers.js";
+import { NotFoundError } from "@questlog/core/lib/errors.js";
 import { createMemoryStorage } from "@questlog/core/services/storage.service.js";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 
@@ -12,9 +13,9 @@ import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 // full run, passed every time in isolation). The router is deliberately
 // thin (no business logic — see backend.md), so mocking the service layer
 // here only exercises wiring: input validation, that the right service
-// function is called with the parsed input, and that its return value
-// (including the `null` not-found shape) passes through untouched. The
-// query logic itself is covered against a real DB in
+// function is called with the parsed input, and that its return value (or
+// thrown `NotFoundError`, mapped to tRPC's NOT_FOUND) passes through
+// untouched. The query logic itself is covered against a real DB in
 // packages/observability/src/services/query.service.test.ts.
 vi.mock("@questlog/observability/services/query.service.js", () => ({
 	observabilityQueryService: {
@@ -73,15 +74,16 @@ describe("observability router", () => {
 			expect(response.json().result.data.json).toEqual(fixture);
 		});
 
-		it("returns null (the defined not-found shape) when the service finds nothing", async () => {
-			vi.mocked(observabilityQueryService.getTicketRun).mockResolvedValue(null);
+		it("returns 404 (the defined not-found shape) when the service finds nothing", async () => {
+			vi.mocked(observabilityQueryService.getTicketRun).mockRejectedValue(
+				new NotFoundError("TicketRun", "T-does-not-exist"),
+			);
 
 			const response = await trpcQuery("observability.getByTicketId", {
 				ticketId: "T-does-not-exist",
 			});
 
-			expect(response.statusCode).toBe(200);
-			expect(response.json().result.data.json).toBeNull();
+			expect(response.statusCode).toBe(404);
 		});
 
 		it("rejects an empty ticketId before reaching the service", async () => {

@@ -1,4 +1,5 @@
 import { testDbUrl } from "@questlog/core/db/test-db-url.js";
+import { NotFoundError } from "@questlog/core/lib/errors.js";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres, { type Sql } from "postgres";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
@@ -58,12 +59,10 @@ describe("observabilityQueryService.getTicketRun", () => {
 		expect(result?.reports[0]?.content).toBe("shipped fine");
 	});
 
-	it("returns null for an unseeded ticket_id", async () => {
-		const result = await observabilityQueryService.getTicketRun(
-			db,
-			"T-999-nope",
-		);
-		expect(result).toBeNull();
+	it("throws NotFoundError for an unseeded ticket_id", async () => {
+		await expect(
+			observabilityQueryService.getTicketRun(db, "T-999-nope"),
+		).rejects.toThrow(NotFoundError);
 	});
 });
 

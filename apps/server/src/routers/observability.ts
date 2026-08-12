@@ -14,7 +14,7 @@ import { procedure, router, withErrorHandling } from "../trpc.js";
  * decision. Not surfaced in any UI yet (M-OBS.5, T-057/T-058).
  */
 export const observabilityRouter = router({
-	/** Per-ticket view: a `ticket_runs` row joined with its `ticket_reports` row(s). `null` (the defined not-found shape) if `ticketId` was never ingested. */
+	/** Per-ticket view: a `ticket_runs` row joined with its `ticket_reports` row(s). tRPC `NOT_FOUND` (the defined not-found shape) if `ticketId` was never ingested. */
 	getByTicketId: procedure
 		.input(GetTicketRunInput)
 		.query(({ input }) =>
