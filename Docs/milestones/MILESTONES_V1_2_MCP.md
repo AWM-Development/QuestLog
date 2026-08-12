@@ -154,7 +154,7 @@ This milestone builds the actual instrumentation instead of continuing to guess:
   **Renumbered twice.** Originally `T-142`, which collided with `Docs/milestones/MILESTONES_V1_5_MCP.md`'s M-INVENTORY.1 claiming the same number ~9 minutes earlier the same day; moved to `T-146`, which itself turned out to collide with a separate concurrent session's own `T-146` claim on `origin/develop` before this fix was ever pushed. Landed on `T-148` (confirmed free against `origin/develop`, 2026-08-07). Real file: `Docs/tickets/queue/T-148-defer-wrapup-context-loads.md`.
   Exit: see T-148.
 
-- [ ] **M-EFFICIENCY.21 — `/lineup`: milestone progress + deployed version tracking** (T-146)
+- [x] **M-EFFICIENCY.21 — `/lineup`: milestone progress + deployed version tracking** (T-146)
   Raised by Alex (2026-08-07): `/lineup`'s report currently only surfaces the ticket queue/PR state, with no sense of where the project actually stands release-over-release — which milestones have shipped, what version is currently deployed on `main`, when it was last deployed, and how far out the next milestone is. Adds a new report section: a one-liner per completed (shipped) milestone doc, the version currently deployed to `main` (`package.json`'s version field) with the date of its `develop` → `main` promotion (from `CHANGELOG.md`'s dated section header), and the next in-progress milestone's name plus its remaining tasks — cross-referenced against each task's actual `(T-###)` ticket status rather than trusting the `[ ]` checkbox alone, since drafting this ticket found real cases of shipped tickets whose milestone checkbox was never flipped.
   Exit: see T-146.
 

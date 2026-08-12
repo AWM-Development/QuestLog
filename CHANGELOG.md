@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-146
+
+- **`/lineup` gains a "📈 Milestone Progress & Deployed Version" report section.** Lists completed milestone docs, the version currently deployed to `main` (with its `CHANGELOG.md` promotion date), and the next in-progress milestone's remaining tasks — each cross-referenced against its real `(T-###)` ticket status (`queue/`/`backlog/`/`in-progress/`/shipped-but-checkbox-stale/parked/unticketed) rather than trusting the milestone doc's `[ ]` checkbox alone. The template, procedure steps, and a worked `Docs/tickets/LINEUP_SAMPLE.md` example landed directly during this ticket's own drafting session (real drift was found live while writing the worked example — 4 shipped v1.1 tasks whose checkboxes were never flipped); this entry closes the ticket out formally (milestone checkbox, changelog, report) against that already-merged content.
+
 ### Added — T-141
 
 - **`apps/mcp-stdio` startup diagnostics.** The stdio binary's entrypoint now catches failures from each of its three startup steps (storage init, database init, MCP transport connect) and logs a diagnosable one-line `console.error` naming which step failed and why, instead of letting a bad `DATABASE_URL`, an unwritable `UPLOAD_PATH`, or a connect failure surface as a raw unhandled stack trace with no log line at all. On success, logs `QuestLog MCP server ready (stdio)`. New coverage in `apps/mcp-stdio/src/main.test.ts`.
