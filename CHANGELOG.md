@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-142
+
+- **Inventory & wealth schema, `pc` entity type.** `ENTITY_TYPES` gains `"pc"` (playable-character entities are now creatable through the existing `create_entity` tool, no other changes needed beyond the constant). New journaled migration adds `inventory_items` (owner-nullable FK to `entities` — null means unassigned/shared party pool — plus name, description, quantity, value, metadata) and `campaign_wealth` (denomination + amount, unique per campaign+denomination, so a future multi-denomination system is just additional rows). Schema-only — no service layer or MCP tools yet (`T-143`).
+
 ### Added — T-141
 
 - **`apps/mcp-stdio` startup diagnostics.** The stdio binary's entrypoint now catches failures from each of its three startup steps (storage init, database init, MCP transport connect) and logs a diagnosable one-line `console.error` naming which step failed and why, instead of letting a bad `DATABASE_URL`, an unwritable `UPLOAD_PATH`, or a connect failure surface as a raw unhandled stack trace with no log line at all. On success, logs `QuestLog MCP server ready (stdio)`. New coverage in `apps/mcp-stdio/src/main.test.ts`.

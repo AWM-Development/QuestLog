@@ -60,7 +60,7 @@ M-POLISH.1–3 touch disjoint files and can ship in any order. M-POLISH.4 is ind
 
 ### Tasks
 
-- [ ] **M-INVENTORY.1 — Inventory & wealth schema, `pc` entity type** (T-142)
+- [x] **M-INVENTORY.1 — Inventory & wealth schema, `pc` entity type** (T-142)
   Add `pc` to `ENTITY_TYPES`; add `inventory_items` (owner-nullable FK to `entities`, quantity, value, metadata) and `campaign_wealth` (denomination + amount, unique per campaign+denomination) tables with a journaled migration. No service/tool code yet.
   Exit: migration applies cleanly; `pc` validates through existing entity Zod schemas; both new tables round-trip inserts including a null-owner item.
 
