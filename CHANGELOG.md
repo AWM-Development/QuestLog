@@ -14,6 +14,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 - **`ONBOARDING_INSTRUCTIONS` drift test.** A new test derives the live list of registered MCP tool names straight from each `packages/mcp/src/tools/*.ts` file's own `registerTool()` call and asserts every one is mentioned in `ONBOARDING_INSTRUCTIONS` — so a future tool that ships without an onboarding-prose update now fails a test instead of silently going undocumented. Fixing this test also surfaced and closed 7 real, pre-existing gaps: `archive_entity`, `confirm_archive_entity`, `unarchive_entity`, `confirm_unarchive_entity`, `correct_lore`, `confirm_correct_lore`, and `confirm_ingest_entities` are now all mentioned in the onboarding prose surfaced at MCP connect time (and by the `help` tool).
 
+### Added — T-141
+
+- **`apps/mcp-stdio` startup diagnostics.** The stdio binary's entrypoint now catches failures from each of its three startup steps (storage init, database init, MCP transport connect) and logs a diagnosable one-line `console.error` naming which step failed and why, instead of letting a bad `DATABASE_URL`, an unwritable `UPLOAD_PATH`, or a connect failure surface as a raw unhandled stack trace with no log line at all. On success, logs `QuestLog MCP server ready (stdio)`. New coverage in `apps/mcp-stdio/src/main.test.ts`.
+
 ### Changed — T-139
 
 - **Tool-description naming & format consistency pass.** Every MCP tool description now places its "Direct write — ..." label (for tools that only ever insert a new row) immediately after the description's first sentence, and every non-preview-only tool description ends with a "Returns ..." clause naming its returned shape — locked in by new tests covering the full exported set in `tool-descriptions.test.ts`, so a future tool addition that drifts from either convention fails a test instead of silently landing. No behavior change; description text only.
@@ -29,6 +33,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 ### Added — T-131
 
 - **Fresh ticket worktrees now inherit the primary checkout's local secrets.** `session-start.sh`'s local worktree-provisioning branch copies the primary checkout's gitignored `.env` into a new worktree whenever that worktree doesn't already have its own — `git worktree add` never carries gitignored files across, so any locally-scoped secret (e.g. `OBSERVABILITY_DATABASE_URL`) previously never reached a ticket's worktree at all. Non-clobbering: a worktree that already has its own `.env` is always left untouched.
+
+### Fixed — T-156
+
+- **`ensure_database_provisioned`'s migrate child process no longer inherits an ambient `OBSERVABILITY_DATABASE_URL`.** Since T-131 propagated the primary checkout's `.env` into fresh worktrees, `scripts/db-readiness.sh`'s `ensure_database_provisioned()` silently lost every local `questlog_test_observability` migration to a real remote-Neon `OBSERVABILITY_DATABASE_URL`, whenever one was set in the primary checkout's `.env` — `packages/observability/src/db/migrate.ts`'s own connection-string resolution puts that var first, and nothing upstream prevented it from reaching the child process. Fixed by pre-setting `OBSERVABILITY_DATABASE_URL` (not just `DATABASE_URL`) to the intended local URL for that one call, in a subshell that never touches the calling process's own environment — see `Docs/IMPLEMENTATION_NOTES.md` § T-156 for why the ticket's own originally-proposed `unset`-based fix didn't actually work.
 
 ### Fixed — T-155
 

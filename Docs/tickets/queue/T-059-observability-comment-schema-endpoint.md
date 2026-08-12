@@ -4,7 +4,7 @@ Milestone ref: M-OBS.5
 
 Complexity tier: M
 
-Priority: P2
+Priority: P0
 
 
 Branch: feat/m-obs/t-059-observability-comment-schema-endpoint
