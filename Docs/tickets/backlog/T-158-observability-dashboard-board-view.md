@@ -10,16 +10,18 @@ Priority: P1
 
 Blocked on: T-057, T-157 — must both be merged into develop first (T-057 stands up the `apps/observability-dashboard` app shell/nav/routing this ticket extends; T-157 provides the `board.list` endpoint this ticket's UI calls)
 
+Gated on: G-043 — must be resolved via /ungate first (visual design only — the IA/columns/read-only/data-source decisions below are already settled and are not part of this gate)
+
 Branch: feat/m-obs/t-158-observability-dashboard-board-view
 
 Context files (load ONLY these):
-  - Docs/tickets/gated/resolved/G-043-ticket-board-design-and-mechanism.md (the resolved design decision this ticket implements — columns, card contents, read-only scope)
+  - Docs/tickets/gated/G-043-ticket-board-visual-design.md (the still-open visual-design gate this ticket is blocked on, and the settled non-visual decisions carried in its Notes)
   - Docs/mockups/observability-dashboard/shared.css (the token/chrome stylesheet this route draws from, same as Trends/Log)
   - Docs/mockups/observability-dashboard/index.html, log.html (existing route structure/nav pattern to extend, not restyle)
   - Docs/DESIGN_SYSTEM.md (§2 Visual Depth System, §3 Color Tokens, §4 Typography, §5 Spacing & Layout, §7.7 Buttons, §7.8 Tags & Pills — tokens only)
   - Docs/tickets/queue/T-157-observability-ticket-board-endpoint.md (the `board.list` output shape this UI renders)
 
-Mockup: none — no `Docs/mockups/board/` was drafted; `G-043`'s resolution (columns, card fields, read-only) is specific enough to build directly against, per its own Notes. If implementation surfaces a real layout ambiguity the gate didn't anticipate, stop and ask rather than inventing a visual design inline.
+Mockup: none yet — pending `G-043` resolution. Once resolved, `/ungate` fills this in with the real `Docs/mockups/board/` path before this ticket leaves `backlog/`.
 
 Runner: claude-code
 
