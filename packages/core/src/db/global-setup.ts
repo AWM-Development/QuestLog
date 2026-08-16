@@ -18,6 +18,10 @@ export const TABLES_IN_DELETE_ORDER = [
 	"write_requests",
 	"entity_relationships",
 	"session_entities",
+	// inventory_items FKs to entities; campaign_wealth FKs to campaigns —
+	// both must clear before their referenced tables (T-142 review follow-up).
+	"inventory_items",
+	"campaign_wealth",
 	"entities",
 	"sources",
 	"sessions",
