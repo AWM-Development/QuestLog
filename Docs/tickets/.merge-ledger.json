@@ -1,5 +1,11 @@
 [
   {
+    "ticketId": "T-054",
+    "prNumber": 274,
+    "branch": "feat/m-obs/t-054-observability-api-read-endpoints",
+    "mergedAt": "2026-08-16T23:08:34Z"
+  },
+  {
     "ticketId": "T-083",
     "prNumber": 193,
     "branch": "feat/m-seed/t-083-create-entity-lore-seeding",
@@ -204,6 +210,24 @@
     "mergedAt": "2026-08-10T14:51:43Z"
   },
   {
+    "ticketId": "T-139",
+    "prNumber": 270,
+    "branch": "feat/m-polish/t-139-tool-description-consistency-pass",
+    "mergedAt": "2026-08-11T15:36:32Z"
+  },
+  {
+    "ticketId": "T-140",
+    "prNumber": 275,
+    "branch": "feat/m-polish/t-140-onboarding-instructions-drift-test",
+    "mergedAt": "2026-08-12T19:57:25Z"
+  },
+  {
+    "ticketId": "T-141",
+    "prNumber": 276,
+    "branch": "feat/m-polish/t-141-mcp-stdio-startup-diagnostics",
+    "mergedAt": "2026-08-12T14:13:41Z"
+  },
+  {
     "ticketId": "T-145",
     "prNumber": 225,
     "branch": "chore/m-audit/t-145-file-org-architecture-docs-audit",
@@ -220,5 +244,11 @@
     "prNumber": 264,
     "branch": "feat/m-bug/t-155-fix-stale-llm-config-model-id",
     "mergedAt": "2026-08-11T00:40:20Z"
+  },
+  {
+    "ticketId": "T-156",
+    "prNumber": 273,
+    "branch": "fix/m-bug/t-156-observability-migrate-database-url-leak",
+    "mergedAt": "2026-08-12T14:11:47Z"
   }
 ]

@@ -42,3 +42,8 @@ export {
 	PrepBriefInput,
 	QueryLoreInput,
 } from "./mcp.js";
+export {
+	GetTicketRunInput,
+	ListReportsInput,
+	ListTrendsInput,
+} from "./observability.js";

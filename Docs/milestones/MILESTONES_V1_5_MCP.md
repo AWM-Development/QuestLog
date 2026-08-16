@@ -30,15 +30,15 @@ These two milestones are otherwise unconnected — they're bundled into one vers
 
 ### Tasks
 
-- [ ] **M-POLISH.1 — Tool-description naming & length/format consistency pass** (T-139)
+- [x] **M-POLISH.1 — Tool-description naming & length/format consistency pass** (T-139)
   Standardize the "Direct write — ..." label's placement across every direct-write tool description (`tool-descriptions.ts`) to immediately follow the first sentence, and standardize whether a trailing "Returns ..." clause is present. Lock both patterns in with new assertions in `tool-descriptions.test.ts`.
   Exit: every "Direct write" description places the label in the same position; every non-preview-only tool description ends with a "Returns ..." clause; new tests assert both across the full exported set.
 
-- [ ] **M-POLISH.2 — `ONBOARDING_INSTRUCTIONS` drift test** (T-140)
+- [x] **M-POLISH.2 — `ONBOARDING_INSTRUCTIONS` drift test** (T-140)
   Add a test asserting every tool name registered in `createMcpServer` (`packages/mcp/src/server.ts`) is mentioned somewhere in `ONBOARDING_INSTRUCTIONS`, derived from the registration call sites rather than a hand-duplicated literal list (which would just reintroduce the same drift).
   Exit: test green today; fails when a placeholder tool name is registered but not mentioned (proof pasted in the ticket report, then reverted).
 
-- [ ] **M-POLISH.3 — `apps/mcp-stdio` startup diagnostics** (T-141)
+- [x] **M-POLISH.3 — `apps/mcp-stdio` startup diagnostics** (T-141)
   Refactor `main.ts` into an exported, testable `main()` that wraps storage init + `server.connect` in try/catch: a diagnosable stderr message + non-zero exit on failure, a one-line stderr "ready" message on success.
   Exit: unit tests cover both paths; manual proof (broken DB connection string → diagnosable stderr, not a raw stack trace) pasted in the ticket report.
 
