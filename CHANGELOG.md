@@ -14,6 +14,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 - **`/morning-review`: milestone context + unblocked-ticket surfacing.** The report now includes a new "Milestone context" section — the milestone task the reviewed ticket closes (with a one-sentence stub), that milestone's remaining tasks resolved against their real ticket status (not just the `[ ]` checkbox), and any `backlog/` ticket newly unblocked by this merge. Non-ticket-shaped PRs get an explicit N/A fallback. The report is now five sections instead of four.
 
+### Added — T-054
+
+- **Observability API read endpoints.** New read-only tRPC router (`observability.getByTicketId`, `observability.trends`, `observability.feed`) exposing T-053's observability store: per-ticket run + report detail, an aggregate trends view (date-range and `empty_run` filtering), and a paginated newest-first report feed. Uses its own DB connection, separate from the campaign-data client (G-003). Not yet consumed by any UI (M-OBS.5).
+
 ### Added — T-140
 
 - **`ONBOARDING_INSTRUCTIONS` drift test.** A new test derives the live list of registered MCP tool names straight from each `packages/mcp/src/tools/*.ts` file's own `registerTool()` call and asserts every one is mentioned in `ONBOARDING_INSTRUCTIONS` — so a future tool that ships without an onboarding-prose update now fails a test instead of silently going undocumented. Fixing this test also surfaced and closed 7 real, pre-existing gaps: `archive_entity`, `confirm_archive_entity`, `unarchive_entity`, `confirm_unarchive_entity`, `correct_lore`, `confirm_correct_lore`, and `confirm_ingest_entities` are now all mentioned in the onboarding prose surfaced at MCP connect time (and by the `help` tool).

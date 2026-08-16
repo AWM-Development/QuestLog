@@ -1,5 +1,11 @@
 [
   {
+    "ticketId": "T-054",
+    "prNumber": 274,
+    "branch": "feat/m-obs/t-054-observability-api-read-endpoints",
+    "mergedAt": "2026-08-16T23:08:34Z"
+  },
+  {
     "ticketId": "T-083",
     "prNumber": 193,
     "branch": "feat/m-seed/t-083-create-entity-lore-seeding",
