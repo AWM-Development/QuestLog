@@ -25,7 +25,19 @@ Then:
 2. Look for the ticket file this PR belongs to (`Docs/tickets/done/T-###-*.md` or `Docs/tickets/blocked/T-###-*.md`) and its report (`Docs/tickets/reports/T-###-*.md`). If neither exists — this PR isn't ticket-shaped — say so and use the PR description/diff for section 1 instead.
 3. Look for a usage artifact at `Docs/tickets/cost-reports/T-###.usage.json` (produced by the executor's `Stop` hook per `Docs/tickets/done/T-046-executor-usage-capture-hook.md`, committed as part of Step 7 wrap-up). It may not exist — the hook only started capturing data going forward from when T-046 shipped, so PRs from before that (or non-ticket-shaped PRs) won't have one.
 
-Reply with exactly four sections, in this order:
+4. Resolve milestone context for the reviewed ticket. Skip this step entirely if the PR isn't ticket-shaped (step 2's existing branch) — section 3 below reads "N/A" in that case instead.
+   - Read the ticket's `Milestone ref:` field (e.g. `M-MCP.1 (Docs/milestones/MILESTONES_V1_MCP.md)` — the exact format `Docs/tickets/TICKET_SPEC.md` specifies).
+   - Open that milestone doc and locate the task line whose `(T-###)` tag matches the reviewed ticket (`Docs/tickets/TICKET_SPEC.md`'s "Milestone-doc annotations" section). Extract a one-sentence stub of what that task does — its own bold title text is normally enough; if the title alone doesn't say what the task does, take the first clause of its body prose up to the first em dash or period.
+   - Walk that same milestone doc's remaining top-level tasks — the same "don't trust the checkbox alone" resolution `.claude/commands/lineup.md` Step 4 already does: find each remaining task's real ticket file across `Docs/tickets/{queue,backlog,in-progress,done,blocked,archive}/` via its `(T-###)` tag, and report its actual status next to it:
+     - `done/` → "shipped — checkbox not yet updated"
+     - `archive/` → "parked / superseded — see `archive/`"
+     - `queue/`/`in-progress/` → genuinely next up; show `Priority:` tier
+     - `backlog/` → show its `Blocked on:`/`Gated on:` state
+     - No `(T-###)` tag at all → "unticketed"
+     Include the same one-sentence stub extraction described above for each remaining task.
+   - Scan `Docs/tickets/backlog/` (same `origin/develop` git-show-only read every other step in this file already uses, never a working tree) for any ticket whose `Blocked on:` field names the reviewed ticket's own id. For each match, check whether every other id on that same `Blocked on:` line (if more than one) also has a file under `Docs/tickets/done/` — reusing `.claude/commands/lineup.md` Step 2's promotability check, scoped here to "is this specific merge what completes the set." List each newly-unblocked ticket with a one-sentence stub of its own scope (first sentence of its `Scope:` field).
+
+Reply with exactly five sections, in this order:
 
 ## 1. Cost
 
@@ -37,11 +49,31 @@ If a `T-###.usage.json` exists, report from it: total tokens (input/output/cache
 
 Recap the ticket's morning report (or the PR description, if there's no ticket report) essentially as written — outcome, what shipped, test evidence, exit-condition check, the executor's own reviewer verdict, anything flagged for Alex to decide. This is a faithful recap, not a re-analysis — don't thin it out.
 
-## 3. Code review
+## 3. Milestone context
+
+**Milestone task:** <task id/title> (<milestone doc>)
+<one-sentence stub of what the task does>
+
+**Remaining in this milestone:**
+- <task id/title> — <stub> — <status: shipped/stale-checkbox |
+  parked/superseded | queue/in-progress, Priority tier | backlog,
+  Blocked on:/Gated on: state | unticketed>
+- ...
+(or "No remaining tasks — this was the last one in the milestone."
+if none)
+
+**Unblocked by this merge:**
+- <T-###> — <stub>
+- ...
+(or "No tickets unblocked by this merge." if none)
+
+If the reviewed PR isn't ticket-shaped (step 2's existing branch), this whole section reads: "N/A — this PR isn't ticket-shaped, no `Milestone ref:` to resolve."
+
+## 4. Code review
 
 Form your own independent judgment on the diff (`git diff origin/develop...<head-branch>`) — don't just restate the report's reviewer verdict. Read `.claude/agents/reviewer.md` in full and apply every item in its checklist, not a paraphrase of it — including item 6's mechanistic tracing (identifier reuse, redundant computation, failure paths, boundary conditions, closures) for any function in the diff that isn't a thin passthrough — plus ordinary correctness/efficiency concerns. List concrete `file:line` findings with a suggested edit where you have one. If nothing rises to a real finding, say that plainly rather than manufacturing nitpicks.
 
-## 4. Plain English explanation
+## 5. Plain English explanation
 
 Explain what was actually built, for Alex specifically: 8 years as a senior engineer, ~99% UI/UX and mobile background. He's technical and doesn't need concepts simplified, but backend/DB/architecture vocabulary that's off his home turf (migrations, query planners, indexes, embeddings/ANN search, tRPC routers, Drizzle, pgvector, hybrid search, etc.) should be translated into plain English rather than assumed. Cover concretely what changed, then — only if applicable — real-world UX implications: does this change any user-facing behavior, response time, error case, or interaction in QuestLog? If it's a pure backend/infra change with zero observable difference to using the app, say that explicitly rather than inventing a UX angle.
 
