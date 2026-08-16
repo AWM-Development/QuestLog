@@ -11,6 +11,8 @@ import type {
 	GhPrListItem,
 	GhPrViewResult,
 	GhRunner,
+	LedgerEntry,
+	LedgerReader,
 } from "./diff-stat-sync.js";
 import {
 	runDiffStatSyncCli,
@@ -74,6 +76,17 @@ function makeGh(overrides?: {
 	});
 }
 
+// Every test below drives findMergedPrForTicket's fallback path (the
+// branch-search behavior this file already covered) unless it explicitly
+// builds its own ledger with an entry — an empty ledger never short-
+// circuits `gh pr list`, so this is a no-op stand-in, not a second thing
+// under test.
+const emptyLedger: LedgerReader = async () => [];
+
+function makeLedger(entries: LedgerEntry[]): LedgerReader {
+	return async () => entries;
+}
+
 beforeEach(async () => {
 	await truncateAllTables(client);
 });
@@ -89,7 +102,7 @@ describe("syncDiffStatsForTicket", () => {
 			view: { additions: 87, deletions: 12, changedFiles: 4 },
 		});
 
-		await syncDiffStatsForTicket(db, "T-999", gh);
+		await syncDiffStatsForTicket(db, "T-999", gh, emptyLedger);
 
 		const row = await getRow("T-999");
 		expect(row?.filesChanged).toBe(4);
@@ -102,7 +115,7 @@ describe("syncDiffStatsForTicket", () => {
 		const gh = makeGh({ list: [] });
 
 		await expect(
-			syncDiffStatsForTicket(db, "T-999", gh),
+			syncDiffStatsForTicket(db, "T-999", gh, emptyLedger),
 		).resolves.toBeUndefined();
 
 		const row = await getRow("T-999");
@@ -123,10 +136,60 @@ describe("syncDiffStatsForTicket", () => {
 			],
 		});
 
-		await syncDiffStatsForTicket(db, "T-999", gh);
+		await syncDiffStatsForTicket(db, "T-999", gh, emptyLedger);
 
 		const row = await getRow("T-999");
 		expect(row?.filesChanged).toBeNull();
+	});
+
+	it("resolves the PR number straight from the ledger and never calls gh pr list, when the ticket has a ledger entry", async () => {
+		await seedTicketRun("T-999");
+		const ledger = makeLedger([
+			{
+				ticketId: "T-999",
+				prNumber: 321,
+				branch: "feat/m-obs/t-999-fixture-branch",
+				mergedAt: "2026-08-01T00:00:00Z",
+			},
+		]);
+		// No "list" entry at all — a ledger hit must resolve via "pr view"
+		// alone; any "pr list" call would throw from makeGh's unexpected-
+		// invocation branch instead of silently passing.
+		const gh = vi.fn(async (args: string[]) => {
+			if (args[0] === "pr" && args[1] === "view" && args[2] === "321") {
+				return { additions: 9, deletions: 1, changedFiles: 2 };
+			}
+			throw new Error(`unexpected gh invocation: ${args.join(" ")}`);
+		});
+
+		await syncDiffStatsForTicket(db, "T-999", gh, ledger);
+
+		const row = await getRow("T-999");
+		expect(row?.filesChanged).toBe(2);
+		expect(row?.linesAdded).toBe(9);
+		expect(row?.linesRemoved).toBe(1);
+	});
+
+	it("falls back to the branch-search when the ledger has no entry for the ticket", async () => {
+		await seedTicketRun("T-999");
+		const gh = makeGh({
+			view: { additions: 3, deletions: 2, changedFiles: 1 },
+		});
+
+		await syncDiffStatsForTicket(db, "T-999", gh, emptyLedger);
+
+		expect(gh).toHaveBeenCalledWith([
+			"pr",
+			"list",
+			"--state",
+			"all",
+			"--limit",
+			"1000",
+			"--json",
+			"number,headRefName,mergedAt",
+		]);
+		const row = await getRow("T-999");
+		expect(row?.filesChanged).toBe(1);
 	});
 });
 
@@ -150,7 +213,7 @@ describe("syncAllMissingDiffStats", () => {
 			view: { additions: 5, deletions: 5, changedFiles: 2 },
 		});
 
-		await syncAllMissingDiffStats(db, gh);
+		await syncAllMissingDiffStats(db, gh, emptyLedger);
 
 		// Only ever asked gh about the null row's ticket — the already-
 		// populated row's branch never matches the mocked list above, so a
@@ -191,7 +254,7 @@ describe("runDiffStatSyncCli", () => {
 		const cliDb = drizzle(cliClient, { schema: { ticketRuns, ticketReports } });
 		const loadDb = () => Promise.resolve({ db: cliDb });
 
-		await runDiffStatSyncCli(["T-999"], gh, loadDb);
+		await runDiffStatSyncCli(["T-999"], gh, loadDb, emptyLedger);
 
 		const row = await getRow("T-999");
 		expect(row?.filesChanged).toBe(4);

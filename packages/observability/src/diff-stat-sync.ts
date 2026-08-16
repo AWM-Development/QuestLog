@@ -1,4 +1,5 @@
-import { execFile } from "node:child_process";
+import { execFile, execFileSync } from "node:child_process";
+import { readFile } from "node:fs/promises";
 import { promisify } from "node:util";
 import { eq, isNull } from "drizzle-orm";
 import type { Database } from "./db/index.js";
@@ -7,11 +8,12 @@ import { ticketRuns } from "./schema/tables.js";
 const execFileAsync = promisify(execFile);
 
 /**
- * Matches this repo's implementation-branch convention for a ticket —
- * `feat/<milestone-group>/t-###-<slug>` (`Docs/tickets/EXECUTOR_ROUTINE.md`)
+ * Fallback-only: matches this repo's implementation-branch convention for a
+ * ticket — `feat/<milestone-group>/t-###-<slug>` (`Docs/tickets/EXECUTOR_ROUTINE.md`)
  * — so a ticket id like "T-055" matches any PR head branch of that shape
  * regardless of milestone group or slug, without either being known
- * upfront. GitHub's PR search has no head-branch wildcard qualifier, so
+ * upfront. Only used when `findMergedPrForTicket` gets a ledger miss (see
+ * below) — GitHub's PR search has no head-branch wildcard qualifier, so
  * this pattern is applied client-side against a listed PR's `headRefName`
  * rather than passed to `gh` as a `--search` string.
  */
@@ -55,15 +57,61 @@ export const runGh: GhRunner = async (args) => {
 	return JSON.parse(stdout);
 };
 
+export interface LedgerEntry {
+	ticketId: string;
+	prNumber: number;
+	branch: string;
+	mergedAt: string;
+}
+
+/** Reads and parses `Docs/tickets/.merge-ledger.json` — injected so tests never touch the real repo file. */
+export type LedgerReader = () => Promise<LedgerEntry[]>;
+
+/**
+ * `ticket-status-ledger.yml` (T-116) already records `{ticketId, prNumber}`
+ * for every ticket merged since it shipped (2026-08-03) — built for the
+ * same "find this ticket's PR without scanning GitHub's full history"
+ * problem this file has. Reading it is an O(1) lookup against a known-good
+ * mapping instead of a `gh pr list` search, so it's tried first. An absent
+ * file (fresh checkout before any post-T-116 merge) reads as "no entries",
+ * same as the ledger workflow's own empty-array start state — not an error.
+ */
+export const readLedger: LedgerReader = async () => {
+	const repoRoot = execFileSync("git", ["rev-parse", "--show-toplevel"], {
+		encoding: "utf-8",
+	}).trim();
+	try {
+		const raw = await readFile(
+			`${repoRoot}/Docs/tickets/.merge-ledger.json`,
+			"utf-8",
+		);
+		return JSON.parse(raw) as LedgerEntry[];
+	} catch (err) {
+		if ((err as NodeJS.ErrnoException).code === "ENOENT") return [];
+		throw err;
+	}
+};
+
+/**
+ * Resolves a ticket's merged PR number. Tries the ledger first (see
+ * `readLedger`); falls back to a branch-naming-convention search via `gh
+ * pr list` only for tickets the ledger doesn't cover — by design, every
+ * ticket merged before T-116 shipped (`Docs/IMPLEMENTATION_NOTES.md` § T-116
+ * documents no historical backfill). `--limit 1000`: `gh pr list` defaults
+ * to 30, which silently truncated this search against this repo's 280+ PRs
+ * before this fix — a ticket outside the default window read as "no PR
+ * found" indistinguishably from a genuinely unmerged one.
+ */
 async function findMergedPrForTicket(
 	ticketId: string,
 	gh: GhRunner,
-): Promise<GhPrListItem | undefined> {
+	ledger: LedgerReader,
+): Promise<number | undefined> {
+	const entries = await ledger();
+	const ledgerHit = entries.find((entry) => entry.ticketId === ticketId);
+	if (ledgerHit) return ledgerHit.prNumber;
+
 	const pattern = ticketBranchPattern(ticketId);
-	// `gh pr list` defaults to --limit 30, silently truncating; this repo
-	// already has 280+ PRs, so an unbounded ticket lookup would return "no
-	// PR found" (masked as legitimate) for anything outside the ~30 most
-	// recent. 1000 is comfortably above any foreseeable PR count.
 	const prs = (await gh([
 		"pr",
 		"list",
@@ -74,30 +122,32 @@ async function findMergedPrForTicket(
 		"--json",
 		"number,headRefName,mergedAt",
 	])) as GhPrListItem[];
-	return prs.find((pr) => pr.mergedAt !== null && pattern.test(pr.headRefName));
+	return prs.find((pr) => pr.mergedAt !== null && pattern.test(pr.headRefName))
+		?.number;
 }
 
 /**
- * Looks up a ticket's merged PR (by branch-naming convention, not title —
- * see `ticketBranchPattern`) and writes its diff stats into that ticket's
- * existing `ticket_runs` row (an `UPDATE`, not an insert-on-missing upsert
- * like `ingest.ts`'s `upsertTicketRun` — this only ever runs after ingestion
- * has already created the row). When no merged PR is found, the row is left
- * untouched (diff-stat fields stay null) — an unmerged/never-existing PR is
- * an expected outcome here, not an error.
+ * Looks up a ticket's merged PR (see `findMergedPrForTicket`) and writes
+ * its diff stats into that ticket's existing `ticket_runs` row (an
+ * `UPDATE`, not an insert-on-missing upsert like `ingest.ts`'s
+ * `upsertTicketRun` — this only ever runs after ingestion has already
+ * created the row). When no merged PR is found, the row is left untouched
+ * (diff-stat fields stay null) — an unmerged/never-existing PR is an
+ * expected outcome here, not an error.
  */
 export async function syncDiffStatsForTicket(
 	db: Database,
 	ticketId: string,
 	gh: GhRunner = runGh,
+	ledger: LedgerReader = readLedger,
 ): Promise<void> {
-	const pr = await findMergedPrForTicket(ticketId, gh);
-	if (!pr) return;
+	const prNumber = await findMergedPrForTicket(ticketId, gh, ledger);
+	if (!prNumber) return;
 
 	const view = (await gh([
 		"pr",
 		"view",
-		String(pr.number),
+		String(prNumber),
 		"--json",
 		"additions,deletions,changedFiles",
 	])) as GhPrViewResult;
@@ -118,6 +168,7 @@ export async function syncDiffStatsForTicket(
 export async function syncAllMissingDiffStats(
 	db: Database,
 	gh: GhRunner = runGh,
+	ledger: LedgerReader = readLedger,
 ): Promise<void> {
 	const rows = await db
 		.select({ ticketId: ticketRuns.ticketId })
@@ -126,7 +177,7 @@ export async function syncAllMissingDiffStats(
 
 	for (const row of rows) {
 		if (!row.ticketId) continue;
-		await syncDiffStatsForTicket(db, row.ticketId, gh);
+		await syncDiffStatsForTicket(db, row.ticketId, gh, ledger);
 	}
 }
 
@@ -139,6 +190,7 @@ export async function runDiffStatSyncCli(
 	argv: string[],
 	gh: GhRunner = runGh,
 	loadDb: () => Promise<{ db: Database }> = () => import("./db/index.js"),
+	ledger: LedgerReader = readLedger,
 ): Promise<void> {
 	const arg = argv[0];
 	if (!arg) {
@@ -150,9 +202,9 @@ export async function runDiffStatSyncCli(
 	const { db } = await loadDb();
 	try {
 		if (arg === "all") {
-			await syncAllMissingDiffStats(db, gh);
+			await syncAllMissingDiffStats(db, gh, ledger);
 		} else {
-			await syncDiffStatsForTicket(db, arg, gh);
+			await syncDiffStatsForTicket(db, arg, gh, ledger);
 		}
 		console.log(`Synced diff stats for ${arg}`);
 	} finally {
