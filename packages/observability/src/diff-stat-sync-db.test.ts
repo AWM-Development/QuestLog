@@ -161,6 +161,8 @@ describe("syncAllMissingDiffStats", () => {
 			"list",
 			"--state",
 			"all",
+			"--limit",
+			"1000",
 			"--json",
 			"number,headRefName,mergedAt",
 		]);

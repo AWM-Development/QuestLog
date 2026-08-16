@@ -60,11 +60,17 @@ async function findMergedPrForTicket(
 	gh: GhRunner,
 ): Promise<GhPrListItem | undefined> {
 	const pattern = ticketBranchPattern(ticketId);
+	// `gh pr list` defaults to --limit 30, silently truncating; this repo
+	// already has 280+ PRs, so an unbounded ticket lookup would return "no
+	// PR found" (masked as legitimate) for anything outside the ~30 most
+	// recent. 1000 is comfortably above any foreseeable PR count.
 	const prs = (await gh([
 		"pr",
 		"list",
 		"--state",
 		"all",
+		"--limit",
+		"1000",
 		"--json",
 		"number,headRefName,mergedAt",
 	])) as GhPrListItem[];
