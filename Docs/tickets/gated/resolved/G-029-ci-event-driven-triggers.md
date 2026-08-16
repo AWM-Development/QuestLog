@@ -35,3 +35,34 @@ Notes: Raised in `G-020` Q4 verbatim: "CI-event-driven triggers (merge into
   agent to unattended work on a signal — CI red — that could itself be
   flaky) — flag both explicitly during `/ungate` rather than assuming one
   answer covers both.
+
+## Resolution (2026-08-10)
+
+**No event-driven triggers — won't-fix, both sub-cases declined.**
+
+**(a) Immediate post-merge promotion-sweep re-run: no.** A backlog ticket
+whose `Blocked on:`/`Gated on:` clears sitting one night longer before the
+nightly cron's own promotion sweep picks it up costs nothing real for this
+pipeline's actual cadence — the low blast radius the gate's own Notes
+flagged didn't translate into a corresponding need once weighed against
+the added GitHub Actions workflow and remote-trigger wiring to build it.
+
+**(b) CI red on `develop` auto-opening a fix session: no.** This is the
+higher-risk sub-case the gate itself flagged going in — an unattended
+agent session committed to real token spend on a signal (CI red) that can
+itself be flaky, with no human in the loop to catch a false trigger before
+work starts. Alex reviews `develop` CI failures by hand instead of
+delegating that judgment call to an automatic trigger.
+
+Both declined for the same underlying reason: the nightly cron scheduler
+is already sufficient cadence for this pipeline's actual scale, and
+event-driven triggers add real infrastructure and (for case b) real risk
+without a demonstrated gap they'd close. Re-open a fresh gate if either
+sub-case's calculus changes later (e.g. backlog promotion lag becomes an
+actual observed pain point, or `develop` CI-red incidents become frequent
+enough that manual review is a genuine bottleneck) rather than reviving
+this one — the reasoning here is tied to the pipeline's current scale and
+cadence, not a permanent verdict.
+
+No tickets to draft or promote — `Blocks:` was "none yet" and stays that
+way; `M-ROBUST.4` is not being drafted as a result of this resolution.
