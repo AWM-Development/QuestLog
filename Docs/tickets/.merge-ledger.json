@@ -210,6 +210,12 @@
     "mergedAt": "2026-08-11T15:36:32Z"
   },
   {
+    "ticketId": "T-140",
+    "prNumber": 275,
+    "branch": "feat/m-polish/t-140-onboarding-instructions-drift-test",
+    "mergedAt": "2026-08-12T19:57:25Z"
+  },
+  {
     "ticketId": "T-141",
     "prNumber": 276,
     "branch": "feat/m-polish/t-141-mcp-stdio-startup-diagnostics",
