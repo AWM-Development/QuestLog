@@ -56,17 +56,25 @@ export const inventoryService = {
 
 	async transferItem(
 		db: Database,
-		input: { itemId: string; ownerEntityId: string | null },
+		input: { campaignId: string; itemId: string; ownerEntityId: string | null },
 	) {
+		// Scoped by campaignId, not itemId alone — itemId is an untrusted
+		// external id reachable from an MCP tool (.claude/rules/mcp.md
+		// "Campaign-scoped ID lookups", T-068).
 		const existingRows = await db
 			.select()
 			.from(inventoryItems)
-			.where(eq(inventoryItems.id, input.itemId));
+			.where(
+				and(
+					eq(inventoryItems.id, input.itemId),
+					eq(inventoryItems.campaignId, input.campaignId),
+				),
+			);
 		const existing = existingRows[0];
 		if (!existing) throw new NotFoundError("InventoryItem", input.itemId);
 
 		if (input.ownerEntityId) {
-			await assertOwnerExists(db, existing.campaignId, input.ownerEntityId);
+			await assertOwnerExists(db, input.campaignId, input.ownerEntityId);
 		}
 
 		const rows = await db

@@ -12,8 +12,13 @@ export type AddItemInput = z.infer<typeof AddItemInput>;
 
 // ownerEntityId is required (not optional) here, unlike AddItemInput's — a
 // transfer always states its target explicitly; null clears to the
-// unassigned/shared pool rather than being omitted.
+// unassigned/shared pool rather than being omitted. campaignId is mandatory
+// even though itemId alone identifies the row — the service scopes its
+// lookup by both, per .claude/rules/mcp.md "Campaign-scoped ID lookups"
+// (T-068): itemId is an untrusted external id reachable from an MCP tool,
+// so the lookup must never trust it alone.
 export const TransferItemInput = z.object({
+	campaignId: z.string().uuid(),
 	itemId: z.string().uuid(),
 	ownerEntityId: z.string().uuid().nullable(),
 });

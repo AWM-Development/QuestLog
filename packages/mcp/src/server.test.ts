@@ -1129,7 +1129,7 @@ describe("add_item / transfer_item / adjust_wealth / list_inventory tools", () =
 
 		const result = await client.callTool({
 			name: "transfer_item",
-			arguments: { itemId: item.id, ownerEntityId: owner.id },
+			arguments: { campaignId, itemId: item.id, ownerEntityId: owner.id },
 		});
 
 		expect(result.isError).toBeFalsy();
@@ -1142,6 +1142,35 @@ describe("add_item / transfer_item / adjust_wealth / list_inventory tools", () =
 			.from(writeRequests)
 			.where(eq(writeRequests.campaignId, campaignId));
 		expect(writeRequestRows).toHaveLength(0);
+	});
+
+	it("transfer_item returns a well-formed not-found error for an item in a different campaign (T-068 scoping)", async () => {
+		const otherCampaign = await campaignService.create(db, {
+			name: "Other Campaign",
+			theme: "sci-fi",
+		});
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const addResult = await client.callTool({
+			name: "add_item",
+			arguments: { campaignId: otherCampaign.id, name: "Ray Gun" },
+		});
+		const addContent = addResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const item = JSON.parse(addContent[0]?.text ?? "{}");
+
+		const result = await client.callTool({
+			name: "transfer_item",
+			arguments: { campaignId, itemId: item.id, ownerEntityId: null },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+
+		await deleteCampaignTree(db, otherCampaign.id);
 	});
 
 	it("adjust_wealth increases wealth and writes no write_requests row", async () => {

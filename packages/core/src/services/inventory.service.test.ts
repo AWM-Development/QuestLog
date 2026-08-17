@@ -93,6 +93,7 @@ describe("inventoryService", () => {
 			});
 
 			const updated = await inventoryService.transferItem(db, {
+				campaignId,
 				itemId: item.id,
 				ownerEntityId: to.id,
 			});
@@ -113,6 +114,7 @@ describe("inventoryService", () => {
 			});
 
 			const updated = await inventoryService.transferItem(db, {
+				campaignId,
 				itemId: item.id,
 				ownerEntityId: null,
 			});
@@ -125,10 +127,32 @@ describe("inventoryService", () => {
 
 			await expect(
 				inventoryService.transferItem(db, {
+					campaignId,
 					itemId: unknownItemId,
 					ownerEntityId: null,
 				}),
 			).rejects.toThrow(NotFoundError);
+		});
+
+		it("throws NotFoundError for an item that exists but belongs to a different campaign (T-068 scoping)", async () => {
+			const otherCampaign = await campaignService.create(db, {
+				name: "Other Campaign",
+				theme: "sci-fi",
+			});
+			const item = await inventoryService.addItem(db, {
+				campaignId: otherCampaign.id,
+				name: "Ray Gun",
+			});
+
+			await expect(
+				inventoryService.transferItem(db, {
+					campaignId,
+					itemId: item.id,
+					ownerEntityId: null,
+				}),
+			).rejects.toThrow(NotFoundError);
+
+			await deleteCampaignTree(db, otherCampaign.id);
 		});
 	});
 
