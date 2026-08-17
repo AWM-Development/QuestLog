@@ -234,6 +234,12 @@
     "mergedAt": "2026-08-12T14:13:41Z"
   },
   {
+    "ticketId": "T-142",
+    "prNumber": 279,
+    "branch": "feat/m-inventory/t-142-inventory-wealth-schema-pc-entity-type",
+    "mergedAt": "2026-08-17T17:59:19Z"
+  },
+  {
     "ticketId": "T-145",
     "prNumber": 225,
     "branch": "chore/m-audit/t-145-file-org-architecture-docs-audit",
