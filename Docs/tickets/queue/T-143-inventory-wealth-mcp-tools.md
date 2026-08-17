@@ -6,7 +6,7 @@ Complexity tier: M
 
 Strategy-gate flag: yes
 
-Priority: P1
+Priority: P0
 
 Branch: feat/m-inventory/t-143-inventory-wealth-mcp-tools
 
