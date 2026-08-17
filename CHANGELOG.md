@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-143
+
+- **Inventory & wealth MCP tools.** New `add_item`, `transfer_item`, `adjust_wealth`, and `list_inventory` tools, backed by a new `inventoryService` (`packages/core/src/services/inventory.service.ts`). All four are direct writes with no `write_requests` row of any kind — a new, deliberately named "quick-action tools" exception class documented in `.claude/rules/mcp.md`, distinct from `G-001`'s additive-vs-mutating rule: built for fast in-session DM bookkeeping, not lore-consistency tracking. `add_item` inserts a new item (optionally owned by an entity); `transfer_item` reassigns an item's owner or clears it to the unassigned/shared pool; `adjust_wealth` applies a signed delta to a campaign's wealth (or a named denomination), rejecting any adjustment that would go below 0; `list_inventory` reads back a campaign's items and wealth, optionally filtered to one entity's items. No `get_entity`/`prep_brief` integration yet (`T-144`).
+
 ### Added — T-142
 
 - **Inventory & wealth schema, `pc` entity type.** `ENTITY_TYPES` gains `"pc"` (playable-character entities are now creatable through the existing `create_entity` tool, no other changes needed beyond the constant). New journaled migration adds `inventory_items` (owner-nullable FK to `entities` — null means unassigned/shared party pool — plus name, description, quantity, value, metadata) and `campaign_wealth` (denomination + amount, unique per campaign+denomination, so a future multi-denomination system is just additional rows). Schema-only — no service layer or MCP tools yet (`T-143`).
