@@ -43,8 +43,9 @@ This milestone builds the actual instrumentation instead of continuing to guess:
   T-053 built the store and CLI (`ingestUsageArtifact`) but explicitly deferred live-pipeline wiring as a follow-up; no ticket for that follow-up existed until now, so `EXECUTOR_ROUTINE.md` has never actually called it — every ticket's usage/report data has only reached the store via a manual CLI invocation. Wires the CLI into Step 6/7's wrap-up, with the missing/unset-`OBSERVABILITY_DATABASE_URL` case made non-fatal (provisioning the real secret stays Alex's manual step).
   **Complete** (`Docs/tickets/done/T-095-wire-observability-ingestion-into-executor-routine.md`) — the Alex-only `OBSERVABILITY_DATABASE_URL` secret was provisioned and a real ingestion run confirmed post-merge-review (`CHANGELOG.md`'s T-095 entry); the store is live, not just wired.
 
-- [ ] **M-OBS.4 — API endpoint(s) serving usage/efficiency/report data** (T-054, T-055)
+- [X] **M-OBS.4 — API endpoint(s) serving usage/efficiency/report data** (T-054, T-055)
   Read path over M-OBS.3's store — per-ticket and aggregate views (tokens, cost, duration, diff-size correlation, efficiency notes), plus a log/feed endpoint serving report content for browsing (T-054), and syncing PR diff stats (files/lines changed) automatically by ticket id rather than requiring a manual `gh pr list` pull (T-055). Both blocked on T-053's schema landing first.
+  T-055's half (`packages/observability/src/diff-stat-sync.ts`) shipped — checkbox stays open pending T-054.
   **T-054 complete** (`Docs/tickets/done/T-054-observability-api-read-endpoints.md`) — `observability.getByTicketId`/`trends`/`feed` tRPC router shipped, registered but not yet UI-consumed (M-OBS.5). T-055 (PR diff-stat sync) still outstanding; this checkbox stays unchecked until both land.
 
 - [ ] **M-OBS.5 — Observability dashboard UI** (T-057, T-058, T-059)

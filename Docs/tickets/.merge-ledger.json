@@ -6,6 +6,12 @@
     "mergedAt": "2026-08-16T23:08:34Z"
   },
   {
+    "ticketId": "T-055",
+    "prNumber": 272,
+    "branch": "feat/m-obs/t-055-pr-diff-stat-sync",
+    "mergedAt": "2026-08-16T23:27:10Z"
+  },
+  {
     "ticketId": "T-083",
     "prNumber": 193,
     "branch": "feat/m-seed/t-083-create-entity-lore-seeding",

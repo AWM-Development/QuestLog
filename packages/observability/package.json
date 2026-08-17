@@ -15,7 +15,8 @@
 		"lint": "biome check .",
 		"db:generate": "drizzle-kit generate",
 		"db:migrate": "tsx src/db/migrate.ts",
-		"ingest": "tsx src/cli.ts"
+		"ingest": "tsx src/cli.ts",
+		"sync-diff-stats": "tsx src/diff-stat-sync.ts"
 	},
 	"dependencies": {
 		"@questlog/core": "workspace:*",
