@@ -7,11 +7,13 @@ import { TABLES_IN_DELETE_ORDER } from "./global-setup.js";
 import type { Database } from "./index.js";
 import * as schema from "./schema/index.js";
 import {
+	campaignWealth,
 	campaigns,
 	chunks,
 	conversations,
 	entities,
 	entityRelationships,
+	inventoryItems,
 	messages,
 	sessionEntities,
 	sessions,
@@ -163,6 +165,14 @@ export async function deleteCampaignTree(db: Database, campaignId: string) {
 			.delete(sessionEntities)
 			.where(inArray(sessionEntities.sessionId, sessionIds));
 	}
+	// inventory_items.ownerEntityId FKs to entities — must delete before entities
+	// (T-142 review follow-up).
+	await db
+		.delete(inventoryItems)
+		.where(eq(inventoryItems.campaignId, campaignId));
+	await db
+		.delete(campaignWealth)
+		.where(eq(campaignWealth.campaignId, campaignId));
 	// entities.sourceId now FKs to sources (T-080) — must delete before sources.
 	await db.delete(entities).where(eq(entities.campaignId, campaignId));
 	await db.delete(sources).where(eq(sources.campaignId, campaignId));

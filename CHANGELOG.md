@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-142
+
+- **Inventory & wealth schema, `pc` entity type.** `ENTITY_TYPES` gains `"pc"` (playable-character entities are now creatable through the existing `create_entity` tool, no other changes needed beyond the constant). New journaled migration adds `inventory_items` (owner-nullable FK to `entities` — null means unassigned/shared party pool — plus name, description, quantity, value, metadata) and `campaign_wealth` (denomination + amount, unique per campaign+denomination, so a future multi-denomination system is just additional rows). Schema-only — no service layer or MCP tools yet (`T-143`).
+
 ### Added — T-055
 
 - **PR diff-stat sync into the observability store.** `packages/observability/src/diff-stat-sync.ts` looks up a ticket's merged PR — via `Docs/tickets/.merge-ledger.json` (T-116) first, falling back to a `gh pr list` search by implementation-branch naming convention (`feat/<milestone-group>/t-###-<slug>`) for tickets the ledger doesn't cover — and writes files-changed/lines-added/lines-removed into that ticket's `ticket_runs` row, so diff-size correlation no longer needs a manual `gh pr list` pull per ticket. Runnable via `pnpm --filter @questlog/observability sync-diff-stats <T-###|all>`; the "all" mode syncs every row still missing diff stats. Not yet wired into `EXECUTOR_ROUTINE.md` or any scheduled job — that's a deliberate follow-up decision (M-OBS.4, T-054 still outstanding).
