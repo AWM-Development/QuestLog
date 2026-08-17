@@ -6,7 +6,7 @@ Complexity tier: D
 
 Strategy-gate flag: no
 
-Priority: P0
+Priority: P1
 
 Branch: feat/m-efficiency/t-146-lineup-milestone-progress-deployed-version
 
