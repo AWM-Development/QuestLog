@@ -240,6 +240,12 @@
     "mergedAt": "2026-08-17T17:59:19Z"
   },
   {
+    "ticketId": "T-143",
+    "prNumber": 284,
+    "branch": "feat/m-inventory/t-143-inventory-wealth-mcp-tools",
+    "mergedAt": "2026-08-18T19:16:15Z"
+  },
+  {
     "ticketId": "T-145",
     "prNumber": 225,
     "branch": "chore/m-audit/t-145-file-org-architecture-docs-audit",
