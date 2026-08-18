@@ -1,5 +1,5 @@
 import { and, eq } from "drizzle-orm";
-import type { Database } from "../db/index.js";
+import type { Database, Transaction } from "../db/index.js";
 import {
 	campaignWealth,
 	entities,
@@ -12,7 +12,7 @@ const DEFAULT_DENOMINATION = "wealth";
 
 /** Throws NotFoundError unless `ownerEntityId` names an existing entity in `campaignId` — shared by addItem/transferItem so an item can never point at a nonexistent or cross-campaign owner. */
 async function assertOwnerExists(
-	db: Database,
+	db: Database | Transaction,
 	campaignId: string,
 	ownerEntityId: string,
 ) {
@@ -54,35 +54,39 @@ export const inventoryService = {
 		return first(rows);
 	},
 
+	// Scoped by campaignId, not itemId alone — itemId is an untrusted
+	// external id reachable from an MCP tool (.claude/rules/mcp.md
+	// "Campaign-scoped ID lookups", T-068). Runs inside a transaction so the
+	// existence check can't be invalidated by a concurrent delete/transfer
+	// between the read and the write (same race class as adjustWealth's).
 	async transferItem(
 		db: Database,
 		input: { campaignId: string; itemId: string; ownerEntityId: string | null },
 	) {
-		// Scoped by campaignId, not itemId alone — itemId is an untrusted
-		// external id reachable from an MCP tool (.claude/rules/mcp.md
-		// "Campaign-scoped ID lookups", T-068).
-		const existingRows = await db
-			.select()
-			.from(inventoryItems)
-			.where(
-				and(
-					eq(inventoryItems.id, input.itemId),
-					eq(inventoryItems.campaignId, input.campaignId),
-				),
-			);
-		const existing = existingRows[0];
-		if (!existing) throw new NotFoundError("InventoryItem", input.itemId);
+		return db.transaction(async (tx) => {
+			const existingRows = await tx
+				.select()
+				.from(inventoryItems)
+				.where(
+					and(
+						eq(inventoryItems.id, input.itemId),
+						eq(inventoryItems.campaignId, input.campaignId),
+					),
+				);
+			const existing = existingRows[0];
+			if (!existing) throw new NotFoundError("InventoryItem", input.itemId);
 
-		if (input.ownerEntityId) {
-			await assertOwnerExists(db, input.campaignId, input.ownerEntityId);
-		}
+			if (input.ownerEntityId) {
+				await assertOwnerExists(tx, input.campaignId, input.ownerEntityId);
+			}
 
-		const rows = await db
-			.update(inventoryItems)
-			.set({ ownerEntityId: input.ownerEntityId })
-			.where(eq(inventoryItems.id, input.itemId))
-			.returning();
-		return first(rows);
+			const rows = await tx
+				.update(inventoryItems)
+				.set({ ownerEntityId: input.ownerEntityId })
+				.where(eq(inventoryItems.id, input.itemId))
+				.returning();
+			return first(rows);
+		});
 	},
 
 	/**

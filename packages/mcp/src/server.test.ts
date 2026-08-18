@@ -1061,10 +1061,10 @@ describe("append_entity_note tool", () => {
 });
 
 describe("add_item / transfer_item / adjust_wealth / list_inventory tools", () => {
-	// adjust_wealth opens its own db.transaction() (inventory.service.ts) —
-	// a nested raw BEGIN/ROLLBACK wrapper doesn't compose with that
-	// (.claude/rules/backend.md "Test DB pattern") — use explicit FK-safe
-	// cleanup instead, same as inventory.service.test.ts.
+	// transfer_item and adjust_wealth each open their own db.transaction()
+	// (inventory.service.ts) — a nested raw BEGIN/ROLLBACK wrapper doesn't
+	// compose with that (.claude/rules/backend.md "Test DB pattern") — use
+	// explicit FK-safe cleanup instead, same as inventory.service.test.ts.
 	let campaignId: string;
 
 	beforeEach(async () => {

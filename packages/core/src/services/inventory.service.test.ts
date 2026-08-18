@@ -11,9 +11,10 @@ afterAll(async () => {
 	await close();
 });
 
-// adjustWealth opens its own db.transaction() — a nested raw BEGIN/ROLLBACK
-// wrapper doesn't compose with that (.claude/rules/backend.md "Test DB
-// pattern"), so this suite uses explicit FK-safe cleanup instead.
+// transferItem and adjustWealth each open their own db.transaction() — a
+// nested raw BEGIN/ROLLBACK wrapper doesn't compose with that
+// (.claude/rules/backend.md "Test DB pattern"), so this suite uses explicit
+// FK-safe cleanup instead.
 describe("inventoryService", () => {
 	let campaignId: string;
 
