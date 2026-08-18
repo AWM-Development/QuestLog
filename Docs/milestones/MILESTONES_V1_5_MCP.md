@@ -64,7 +64,7 @@ M-POLISH.1–3 touch disjoint files and can ship in any order. M-POLISH.4 is ind
   Add `pc` to `ENTITY_TYPES`; add `inventory_items` (owner-nullable FK to `entities`, quantity, value, metadata) and `campaign_wealth` (denomination + amount, unique per campaign+denomination) tables with a journaled migration. No service/tool code yet.
   Exit: migration applies cleanly; `pc` validates through existing entity Zod schemas; both new tables round-trip inserts including a null-owner item.
 
-- [ ] **M-INVENTORY.2 — Inventory & wealth MCP tools (quick, no preview/confirm)** (T-143)
+- [x] **M-INVENTORY.2 — Inventory & wealth MCP tools (quick, no preview/confirm)** (T-143)
   `add_item`, `transfer_item`, `adjust_wealth`, `list_inventory` — service layer plus four direct-write MCP tools, no `write_requests` row of any kind. Documents the new "quick-action tools" exception class in `.claude/rules/mcp.md`.
   Exit: service + tool tests cover add/transfer/adjust/list including the below-zero-wealth rejection; tests assert no `write_requests` row is written by any of the four tools.
 

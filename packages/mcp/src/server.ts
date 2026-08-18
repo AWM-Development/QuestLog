@@ -1,5 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { ONBOARDING_INSTRUCTIONS } from "./content/onboarding-instructions.js";
+import { registerAddItem } from "./tools/add-item.js";
+import { registerAdjustWealth } from "./tools/adjust-wealth.js";
 import { registerAppendEntityNote } from "./tools/append-entity-note.js";
 import { registerArchiveEntity } from "./tools/archive-entity.js";
 import { registerConfirmArchiveEntity } from "./tools/confirm-archive-entity.js";
@@ -17,9 +19,11 @@ import { registerHelp } from "./tools/help.js";
 import { registerIngestText } from "./tools/ingest-text.js";
 import { registerListCampaigns } from "./tools/list-campaigns.js";
 import { registerListEntities } from "./tools/list-entities.js";
+import { registerListInventory } from "./tools/list-inventory.js";
 import { registerLogSession } from "./tools/log-session.js";
 import { registerPrepBrief } from "./tools/prep-brief.js";
 import { registerQueryLore } from "./tools/query-lore.js";
+import { registerTransferItem } from "./tools/transfer-item.js";
 import type { ToolDeps } from "./tools/types.js";
 import { registerUnarchiveEntity } from "./tools/unarchive-entity.js";
 import { registerUpdateEntity } from "./tools/update-entity.js";
@@ -53,6 +57,10 @@ export function createMcpServer(deps: CreateMcpServerOptions): McpServer {
 	registerGetSourceStatus(server, deps);
 	registerCorrectLore(server, deps);
 	registerConfirmCorrectLore(server, deps);
+	registerAddItem(server, deps);
+	registerTransferItem(server, deps);
+	registerAdjustWealth(server, deps);
+	registerListInventory(server, deps);
 	registerHelp(server);
 
 	return server;

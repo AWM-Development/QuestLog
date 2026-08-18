@@ -43,6 +43,12 @@ export {
 	QueryLoreInput,
 } from "./mcp.js";
 export {
+	AddItemInput,
+	AdjustWealthInput,
+	ListInventoryInput,
+	TransferItemInput,
+} from "./inventory.js";
+export {
 	GetTicketRunInput,
 	ListReportsInput,
 	ListTrendsInput,

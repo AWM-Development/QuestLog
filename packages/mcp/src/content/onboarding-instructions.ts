@@ -11,6 +11,7 @@ Start with \`list_campaigns\` to find the campaign's id — every other tool nee
 - \`log_session\` (then \`confirm_log_session\`) to track a session as it happens — this links mentioned entities and keeps campaign lore up to date.
 - \`create_entity\` and \`append_entity_note\` to author NPCs, locations, factions, items, and arcs directly. \`update_entity\` (then \`confirm_update_entity\`) to rename one, replace its description, or change its type. \`archive_entity\` (then \`confirm_archive_entity\`) to retire one that's no longer active; \`unarchive_entity\` (then \`confirm_unarchive_entity\`) to bring it back.
 - \`correct_lore\` (then \`confirm_correct_lore\`) to fix a mistake in ingested lore — supersedes the wrong chunks with corrected text instead of leaving contradictory canon in place.
+- \`add_item\`, \`transfer_item\`, and \`adjust_wealth\` for fast in-session inventory/wealth bookkeeping — direct writes, no preview/confirm step. \`list_inventory\` to look up a campaign's items and wealth.
 - \`query_lore\`, \`get_entity\`, \`list_entities\`, and \`prep_brief\` to look things up during play or prep.
 
 If a tool call returns an error, translate its \`{ error: { code, message } }\` result into a plain, non-alarming explanation with a suggested next step — don't relay the raw JSON to the user.`;
