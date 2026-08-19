@@ -9,7 +9,7 @@
 Every other milestone doc in `Docs/milestones/` tracks planned feature work for one version and closes when that version ships. Bugs found through normal use (prod testing, dogfooding) don't fit that shape — they're not scoped to a version, and they need a P0/P1/P2 triage lane separate from feature prioritization. This doc is that lane: one ongoing milestone, `M-BUG`, whose task list is just "bugs found, in report order." `ticket-writer` files each new bug directly here as a new `M-BUG.N` task instead of shoehorning it into whichever version happens to be in progress.
 
 **Resolved gates going into this milestone:** none.
-**Open gates:** none.
+**Open gates:** G-045 (`delete_source` tool design), G-046 (`ingest_text` idempotency-key strategy).
 
 ---
 
@@ -32,5 +32,15 @@ Every other milestone doc in `Docs/milestones/` tracks planned feature work for 
 - [ ] **M-BUG.3 — `ingest_text` can silently succeed while returning an error to the caller** (T-159)
   Found while retrying `ingest_text` calls to work around M-BUG.1's stale-model 404 (2026-08-19). At least 3 calls that returned an error to the client had actually succeeded server-side (`get_source_status`: `status: "done"`) — the source, its chunks, and its embeddings were written, but the caller had no way to know, since the response that would have surfaced the `sourceId` was never returned. Root cause: `packages/mcp/src/tools/ingest-text.ts` calls `entityService.detectCandidates` (a synchronous, awaited LLM call for entity-candidate extraction) *after* the source row already exists and its embed pipeline has already been fired off — if `detectCandidates` throws for any reason, the whole handler throws and the caller sees a generic tool-execution error, never learning the source was written. A client retrying on that error then creates a duplicate source with identical content, later surfacing as spurious extra `sourceId`s in `create_entity`'s `citations` array. `list_sources`/`delete_source` (both absent) and `ingest_text` idempotency keys were suggested in the report as follow-up hardening but are out of this ticket's scope.
   Exit: a failure in `detectCandidates`/its candidate-preview step no longer prevents `ingest_text`'s response from reporting `source.id`/`source.status` once the source has been written; `entityCandidates` degrades to `null` on that failure instead of the whole call throwing.
+
+- [ ] **M-BUG.4 — `list_sources` MCP tool** (T-160)
+  Follow-up to M-BUG.3: duplicate sources created by that bug were only discoverable incidentally, via unexpectedly numerous `sourceId`s in `create_entity`'s `citations` array — there was no way to list a campaign's sources at all. `sourceService.listByCampaign` and `ListSourcesInput` already existed, unused; this wires them into a new `list_sources` tool.
+  Exit: `list_sources` returns a campaign's sources (id/name/type/status/sizeBytes/createdAt/updatedAt, no raw `metadata`/`storageKey`), scoped to `campaignId`.
+
+- [ ] **M-BUG.5 — `delete_source` tool design** (Gated on: G-045)
+  Follow-up to M-BUG.3: no way exists to actually remove an orphaned/duplicate source once found (M-BUG.3's workaround was `correct_lore`-superseding its chunks, not deleting the row). Needs a design decision on chunk/citation handling and preview/confirm applicability before a ticket can be drafted — see `Docs/tickets/gated/G-045-delete-source-tool-design.md`.
+
+- [ ] **M-BUG.6 — `ingest_text` idempotency-key strategy** (Gated on: G-046)
+  Follow-up to M-BUG.3: defense in depth for the remaining case M-BUG.3's fix doesn't cover — a response genuinely lost in transit (not a server bug) still leaves a client unable to tell whether a retry will duplicate. Needs a design decision on key shape/scope before a ticket can be drafted — see `Docs/tickets/gated/G-046-ingest-text-idempotency-key-strategy.md`.
 
 **Noted but deferred — not a ticket yet:** none yet; this doc will grow as new bugs are reported.
