@@ -252,6 +252,12 @@
     "mergedAt": "2026-08-18T19:16:15Z"
   },
   {
+    "ticketId": "T-144",
+    "prNumber": 285,
+    "branch": "feat/m-inventory/t-144-surface-inventory-in-get-entity-prep-brief",
+    "mergedAt": "2026-08-19T19:26:46Z"
+  },
+  {
     "ticketId": "T-145",
     "prNumber": 225,
     "branch": "chore/m-audit/t-145-file-org-architecture-docs-audit",
