@@ -42,7 +42,7 @@ These two milestones are otherwise unconnected — they're bundled into one vers
   Refactor `main.ts` into an exported, testable `main()` that wraps storage init + `server.connect` in try/catch: a diagnosable stderr message + non-zero exit on failure, a one-line stderr "ready" message on success.
   Exit: unit tests cover both paths; manual proof (broken DB connection string → diagnosable stderr, not a raw stack trace) pasted in the ticket report.
 
-- [ ] **M-POLISH.4 — `get_chunk_history` MCP tool** (T-152)
+- [x] **M-POLISH.4 — `get_chunk_history` MCP tool** (T-152)
   New `chunk_corrections` table persisting each `confirm_correct_lore` event (superseded chunk ids, replacement text, new chunk ids, timestamp), plus a dedicated audit/on-demand read tool exposing it — resolves `G-025` (superseded-lore history was fully mechanized by M-CANON but never surfaced back to the user).
   Exit: migration applies cleanly; a correction's `chunk_corrections` row round-trips through `chunkHistoryService.listForChunk`; `get_chunk_history` returns the correction event for a superseded chunk and `[]` for one never superseded.
 

@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-152
+
+- **`get_chunk_history` MCP tool — superseded-lore audit trail.** `confirm_correct_lore` now persists a `chunk_corrections` row (the correction text, which chunks it superseded, which new chunks it created) atomically with the supersede, via a new `chunkHistoryService`. `get_chunk_history` is a new audit-only, on-demand read tool: given a `chunkId`, returns any correction event(s) that superseded it, or `[]` if it was never superseded. No change to `correct_lore`'s own preview narration and no UI surface (`G-025`'s resolution).
+
 ### Added — T-144
 
 - **Inventory/wealth surfaced in `get_entity` and `prep_brief`.** `get_entity` now includes an `items` field — that entity's assigned `inventory_items` rows (empty array, not an omitted field, when it owns none); applies to any entity type, not just `pc`. `prep_brief` now includes `wealth` (all `campaign_wealth` rows) and `unassignedItems` (unassigned/party-pool items, capped at 10) as prep context. Both reuse `inventoryService.listInventory` (`T-143`) — no new MCP tools, no changes to `list_inventory`'s own response shape.
