@@ -43,6 +43,11 @@ export {
 	QueryLoreInput,
 } from "./mcp.js";
 export {
+	AddCommentInput,
+	CommentSchema,
+	ListCommentsInput,
+} from "./comment.js";
+export {
 	AddItemInput,
 	AdjustWealthInput,
 	ListInventoryInput,

@@ -10,14 +10,21 @@ import postgres, { type Sql } from "postgres";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ingestUsageArtifact } from "./cli.js";
 import { truncateAllTables } from "./db/global-setup.js";
-import { ticketReports, ticketRuns } from "./schema/tables.js";
+import { ticketComments, ticketReports, ticketRuns } from "./schema/tables.js";
 
 // testDbUrl(), not process.env.DATABASE_URL directly — see ingest-db.test.ts's
 // own note (Docs/IMPLEMENTATION_NOTES.md § T-052).
 const client: Sql = postgres(testDbUrl("questlog_test_observability"), {
 	max: 1,
 });
-const db = drizzle(client, { schema: { ticketRuns, ticketReports } });
+// Full schema, not just the two tables this suite exercises — `Database`
+// (this file's `db` is later passed where that type is expected) is typed
+// from the package's complete schema (`db/index.ts`'s `import * as schema`),
+// so a narrower literal here fails to typecheck as of T-059's `ticketComments`
+// addition even though this suite never touches that table.
+const db = drizzle(client, {
+	schema: { ticketRuns, ticketReports, ticketComments },
+});
 
 beforeEach(async () => {
 	await truncateAllTables(client);

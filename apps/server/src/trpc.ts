@@ -1,6 +1,7 @@
 import type { Database } from "@questlog/core/db/index.js";
 import { mapDomainError } from "@questlog/core/lib/errors.js";
 import type { StorageProvider } from "@questlog/core/services/storage.service.js";
+import type { Database as ObservabilityDatabase } from "@questlog/observability/db/index.js";
 import { TRPCError, initTRPC } from "@trpc/server";
 import type { CreateFastifyContextOptions } from "@trpc/server/adapters/fastify";
 import superjson from "superjson";
@@ -8,13 +9,34 @@ import superjson from "superjson";
 export interface Context {
 	db: Database;
 	storage: StorageProvider;
+	// Optional: packages/observability is a separate store/connection pool
+	// from `db` above (G-003) — only the comment router (T-059) needs it, so
+	// most tests building a Context never have to provide one. `main.ts`
+	// always supplies the real one; use requireObservabilityDb below to fail
+	// loudly rather than silently NPE if a procedure that needs it is ever
+	// reached without one.
+	observabilityDb?: ObservabilityDatabase;
 }
 
 /** Factory used by the Fastify adapter at request time. */
-export function createContextFactory(db: Database, storage: StorageProvider) {
+export function createContextFactory(
+	db: Database,
+	storage: StorageProvider,
+	observabilityDb?: ObservabilityDatabase,
+) {
 	return (_opts: CreateFastifyContextOptions): Context => {
-		return { db, storage };
+		return { db, storage, observabilityDb };
 	};
+}
+
+/** Guard for procedures that need `ctx.observabilityDb` — see Context's own note on why it's optional. */
+export function requireObservabilityDb(ctx: Context): ObservabilityDatabase {
+	if (!ctx.observabilityDb) {
+		throw new Error(
+			"observabilityDb not configured on this server instance — see BuildAppOptions.observabilityDb",
+		);
+	}
+	return ctx.observabilityDb;
 }
 
 const t = initTRPC.context<Context>().create({

@@ -12,6 +12,10 @@
     "test": {
       "passThroughEnv": ["QUESTLOG_PG_PORT"]
     },
+    "@questlog/server#test": {
+      "passThroughEnv": ["QUESTLOG_PG_PORT"],
+      "dependsOn": ["@questlog/observability#test"]
+    },
     "test:e2e": {
       "cache": false,
       "passThroughEnv": ["ANTHROPIC_API_KEY", "VOYAGE_API_KEY", "QUESTLOG_PG_PORT"]

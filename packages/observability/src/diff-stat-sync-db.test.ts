@@ -20,7 +20,7 @@ import {
 	syncDiffStatsForTicket,
 } from "./diff-stat-sync.js";
 import { mapUsageArtifactToTicketRun, upsertTicketRun } from "./ingest.js";
-import { ticketReports, ticketRuns } from "./schema/tables.js";
+import { ticketComments, ticketReports, ticketRuns } from "./schema/tables.js";
 
 const fixturesDir = fileURLToPath(new URL("./__fixtures__", import.meta.url));
 
@@ -34,7 +34,9 @@ function readFixture(name: string): string {
 const client: Sql = postgres(testDbUrl("questlog_test_observability"), {
 	max: 1,
 });
-const db = drizzle(client, { schema: { ticketRuns, ticketReports } });
+const db = drizzle(client, {
+	schema: { ticketRuns, ticketReports, ticketComments },
+});
 
 async function seedTicketRun(ticketId: string) {
 	const artifact = JSON.parse(readFixture("T-999.usage.json")) as UsageArtifact;
@@ -251,7 +253,9 @@ describe("runDiffStatSyncCli", () => {
 		const cliClient = postgres(testDbUrl("questlog_test_observability"), {
 			max: 1,
 		});
-		const cliDb = drizzle(cliClient, { schema: { ticketRuns, ticketReports } });
+		const cliDb = drizzle(cliClient, {
+			schema: { ticketRuns, ticketReports, ticketComments },
+		});
 		const loadDb = () => Promise.resolve({ db: cliDb });
 
 		await runDiffStatSyncCli(["T-999"], gh, loadDb, emptyLedger);

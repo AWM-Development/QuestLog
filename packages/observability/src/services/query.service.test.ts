@@ -4,13 +4,17 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres, { type Sql } from "postgres";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { truncateAllTables } from "../db/global-setup.js";
-import { ticketReports, ticketRuns } from "../schema/tables.js";
+import { ticketComments, ticketReports, ticketRuns } from "../schema/tables.js";
 import { observabilityQueryService } from "./query.service.js";
 
 const client: Sql = postgres(testDbUrl("questlog_test_observability"), {
 	max: 1,
 });
-const db = drizzle(client, { schema: { ticketRuns, ticketReports } });
+// Full schema, not just the two tables this suite exercises — see
+// ingest-db.test.ts's identical note.
+const db = drizzle(client, {
+	schema: { ticketRuns, ticketReports, ticketComments },
+});
 
 beforeEach(async () => {
 	await truncateAllTables(client);
