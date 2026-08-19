@@ -12,6 +12,12 @@
     "mergedAt": "2026-08-16T23:27:10Z"
   },
   {
+    "ticketId": "T-059",
+    "prNumber": 277,
+    "branch": "feat/m-obs/t-059-observability-comment-schema-endpoint",
+    "mergedAt": "2026-08-19T18:35:54Z"
+  },
+  {
     "ticketId": "T-083",
     "prNumber": 193,
     "branch": "feat/m-seed/t-083-create-entity-lore-seeding",
