@@ -6,7 +6,7 @@ Complexity tier: S
 
 Strategy-gate flag: yes
 
-Priority: P2
+Priority: P0
 
 Branch: feat/m-inventory/t-144-surface-inventory-in-get-entity-prep-brief
 
