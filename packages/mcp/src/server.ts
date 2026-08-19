@@ -13,6 +13,7 @@ import { registerConfirmUpdateEntity } from "./tools/confirm-update-entity.js";
 import { registerCorrectLore } from "./tools/correct-lore.js";
 import { registerCreateCampaign } from "./tools/create-campaign.js";
 import { registerCreateEntity } from "./tools/create-entity.js";
+import { registerGetChunkHistory } from "./tools/get-chunk-history.js";
 import { registerGetEntity } from "./tools/get-entity.js";
 import { registerGetSourceStatus } from "./tools/get-source-status.js";
 import { registerHelp } from "./tools/help.js";
@@ -57,6 +58,7 @@ export function createMcpServer(deps: CreateMcpServerOptions): McpServer {
 	registerGetSourceStatus(server, deps);
 	registerCorrectLore(server, deps);
 	registerConfirmCorrectLore(server, deps);
+	registerGetChunkHistory(server, deps);
 	registerAddItem(server, deps);
 	registerTransferItem(server, deps);
 	registerAdjustWealth(server, deps);
