@@ -1,7 +1,7 @@
 # QuestLog — v1.7 Milestones (Feature Exploration: DM Continuity & Cross-Campaign Tools)
 
 **Location:** `Docs/milestones/MILESTONES_V1_7_MCP.md`
-**Status:** CANONICAL task source for v1.7 as of `G-024`'s resolution (2026-08-07) — `M-PARTYMODEL` has a real task list. `M-NPCVOICE`/`M-CONTINUITY`/`M-PARTYKNOW`/`M-CROSSCAMPAIGN` remain placeholders, each fully gated, no task list yet. Scoped to new product-feature ideas for the MCP tool surface itself (not pipeline, not UI) — the kind of "cool stuff we haven't tackled yet" that fits QuestLog's premise as an AI campaign co-manager.
+**Status:** CANONICAL task source for v1.7 as of `G-024`'s resolution (2026-08-07) — `M-PARTYMODEL` has a real task list. `M-PARTYKNOW` gained a real task list on `G-032`'s resolution (2026-08-19). `M-NPCVOICE` closed, not pursued. `M-CONTINUITY`/`M-CROSSCAMPAIGN` remain placeholders, each fully gated, no task list yet. Scoped to new product-feature ideas for the MCP tool surface itself (not pipeline, not UI) — the kind of "cool stuff we haven't tackled yet" that fits QuestLog's premise as an AI campaign co-manager.
 **Created:** 2026-08-03, opened by Alex from a feature-brainstorm session covering capabilities the MCP tool surface doesn't yet have. Takes the next free version slot after `v1.6` (pipeline-robustness, unrelated scope) rather than overloading `v1.5` (already MCP-app-polish + inventory) or `v1.6` (pipeline-only) with unrelated feature ideas.
 
 ## Why v1.7 exists
@@ -19,12 +19,12 @@ A fifth milestone, **`M-PARTYMODEL`**, was added 2026-08-07 — not one of the o
 
 **Open gates:**
 - `G-031` (`Docs/tickets/gated/G-031-continuity-inconsistency-detection.md`) — blocks M-CONTINUITY.
-- `G-032` (`Docs/tickets/gated/G-032-party-knowledge-epistemic-state.md`) — blocks M-PARTYKNOW.
 - `G-033` (`Docs/tickets/gated/G-033-cross-campaign-entity-borrowing.md`) — blocks M-CROSSCAMPAIGN.
 
 **Resolved gates going into this milestone:**
 - `G-024` (`Docs/tickets/gated/resolved/G-024-campaign-source-party-conceptual-model.md`) — resolved 2026-08-07 via `/ungate`, together with Alex. Party becomes a real parent of campaigns (nullable `partyId` FK on `campaigns`, not a tag on entities/sessions); every existing read stays `campaignId`-scoped by default. A `sourceId`-scoped search filter on `query_lore`/`get_entity` was approved as an independent, straightforward addition. Cross-campaign continuity itself (the actual read-time expansion) is explicitly deferred, future scope — this milestone is schema/plumbing only. See the resolved gate-stub for full rationale.
 - `G-030` (`Docs/tickets/gated/resolved/G-030-npc-voice-and-personality-recall.md`) — resolved 2026-08-10 via `/ungate`. Not worth building right now — no ticket drafted, `M-NPCVOICE` closed with no task list. Deferred to v2 consideration, not a rejected idea; see the resolved gate-stub for full rationale.
+- `G-032` (`Docs/tickets/gated/resolved/G-032-party-knowledge-epistemic-state.md`) — resolved 2026-08-19 via `/ungate`, together with Alex. Not a "revealed to party during play" tracking model — instead, reuses the existing (previously dead/unwired) `dmNotes` column on `entities` as a manually-authored DM-only field, wired into `create_entity`/`update_entity`/`append_entity_note` on the write side, and surfaced across `query_lore`/`prep_brief`/`get_entity` on the read side with an explicit `[PARTY]`/`[DM]` line-tagging convention so a DM narrating live from tool output can tell what's safe to read aloud. `M-PARTYKNOW` drafted two tickets (`T-161`, `T-162`). See the resolved gate-stub for full rationale.
 
 ---
 
@@ -54,13 +54,14 @@ _None yet — blocked on `G-031`. `/ungate` drafts this milestone's real task li
 
 ## Milestone M-PARTYKNOW: Party-Knowledge Epistemic State
 
-**Goal:** TBD — resolves from `G-032`. Placeholder section; see the gate-stub for the open question (data model for "revealed to party" vs. "DM-only," and which existing tools would need to respect the distinction).
+**Goal:** Give the DM a manually-authored, DM-only notes field per entity, distinct from the party-safe `description`/`summary`, and make every read tool that assembles narrative text for the DM mark which lines are safe to read aloud to players and which aren't. Resolved via `G-032` (2026-08-19) — not a "what's been revealed during play" inference model (the gate's original framing); a simpler, explicit DM-authored flag using the existing (previously unwired) `entities.dmNotes` column.
 
-**Context:** No PRD section covers this — new feature idea proposed 2026-08-03 (see `G-032`).
+**Context:** No PRD section covers this — new feature idea proposed 2026-08-03 (see `G-032`, resolved 2026-08-19).
 
 ### Tasks
 
-_None yet — blocked on `G-032`. `/ungate` drafts this milestone's real task list on resolution (or closes the gate with no tickets if the decision is not to pursue)._
+- [ ] Wire `dmNotes` into `create_entity`, `update_entity`, and `append_entity_note` (new `visibility` param) (T-161)
+- [ ] Surface `dmNotes` in `query_lore`, `prep_brief`, and `get_entity` with `[PARTY]`/`[DM]` line tagging (T-162)
 
 ---
 
