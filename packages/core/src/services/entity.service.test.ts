@@ -1,3 +1,4 @@
+import { EntityCreateInput } from "@questlog/shared";
 import { sql } from "drizzle-orm";
 import {
 	afterAll,
@@ -492,6 +493,24 @@ describe("entityService.create", () => {
 		});
 
 		expect(entity.attributes).toEqual({});
+	});
+
+	it("accepts the 'pc' entity type (T-142) — validator and creation path", async () => {
+		expect(() =>
+			EntityCreateInput.parse({
+				campaignId,
+				name: "Aria Stormwind",
+				type: "pc",
+			}),
+		).not.toThrow();
+
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Aria Stormwind",
+			type: "pc",
+		});
+
+		expect(entity.type).toBe("pc");
 	});
 });
 

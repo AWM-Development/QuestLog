@@ -6,9 +6,7 @@ Complexity tier: S
 
 Strategy-gate flag: yes
 
-Priority: P2
-
-Blocked on: T-142, T-143 — must be merged into develop first
+Priority: P0
 
 Branch: feat/m-inventory/t-144-surface-inventory-in-get-entity-prep-brief
 

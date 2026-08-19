@@ -1,5 +1,23 @@
 [
   {
+    "ticketId": "T-054",
+    "prNumber": 274,
+    "branch": "feat/m-obs/t-054-observability-api-read-endpoints",
+    "mergedAt": "2026-08-16T23:08:34Z"
+  },
+  {
+    "ticketId": "T-055",
+    "prNumber": 272,
+    "branch": "feat/m-obs/t-055-pr-diff-stat-sync",
+    "mergedAt": "2026-08-16T23:27:10Z"
+  },
+  {
+    "ticketId": "T-059",
+    "prNumber": 277,
+    "branch": "feat/m-obs/t-059-observability-comment-schema-endpoint",
+    "mergedAt": "2026-08-19T18:35:54Z"
+  },
+  {
     "ticketId": "T-083",
     "prNumber": 193,
     "branch": "feat/m-seed/t-083-create-entity-lore-seeding",
@@ -150,6 +168,12 @@
     "mergedAt": "2026-08-10T13:16:23Z"
   },
   {
+    "ticketId": "T-124",
+    "prNumber": 261,
+    "branch": "feat/m-efficiency/t-124-ci-small-sprawl-cleanups",
+    "mergedAt": "2026-08-10T20:08:33Z"
+  },
+  {
     "ticketId": "T-125",
     "prNumber": 191,
     "branch": "feat/m-efficiency/t-125-session-bootstrap-speed",
@@ -162,10 +186,22 @@
     "mergedAt": "2026-08-06T14:50:04Z"
   },
   {
+    "ticketId": "T-128",
+    "prNumber": 265,
+    "branch": "feat/m-efficiency/t-128-ci-actions-minutes-audit",
+    "mergedAt": "2026-08-11T02:08:39Z"
+  },
+  {
     "ticketId": "T-130",
     "prNumber": 207,
     "branch": "fix/m-efficiency/t-130-local-worktree-db-verification-gate",
     "mergedAt": "2026-08-06T17:58:28Z"
+  },
+  {
+    "ticketId": "T-131",
+    "prNumber": 266,
+    "branch": "feat/m-efficiency/t-131-worktree-secret-propagation",
+    "mergedAt": "2026-08-11T02:06:06Z"
   },
   {
     "ticketId": "T-132",
@@ -186,6 +222,42 @@
     "mergedAt": "2026-08-10T14:51:43Z"
   },
   {
+    "ticketId": "T-139",
+    "prNumber": 270,
+    "branch": "feat/m-polish/t-139-tool-description-consistency-pass",
+    "mergedAt": "2026-08-11T15:36:32Z"
+  },
+  {
+    "ticketId": "T-140",
+    "prNumber": 275,
+    "branch": "feat/m-polish/t-140-onboarding-instructions-drift-test",
+    "mergedAt": "2026-08-12T19:57:25Z"
+  },
+  {
+    "ticketId": "T-141",
+    "prNumber": 276,
+    "branch": "feat/m-polish/t-141-mcp-stdio-startup-diagnostics",
+    "mergedAt": "2026-08-12T14:13:41Z"
+  },
+  {
+    "ticketId": "T-142",
+    "prNumber": 279,
+    "branch": "feat/m-inventory/t-142-inventory-wealth-schema-pc-entity-type",
+    "mergedAt": "2026-08-17T17:59:19Z"
+  },
+  {
+    "ticketId": "T-143",
+    "prNumber": 284,
+    "branch": "feat/m-inventory/t-143-inventory-wealth-mcp-tools",
+    "mergedAt": "2026-08-18T19:16:15Z"
+  },
+  {
+    "ticketId": "T-144",
+    "prNumber": 285,
+    "branch": "feat/m-inventory/t-144-surface-inventory-in-get-entity-prep-brief",
+    "mergedAt": "2026-08-19T19:26:46Z"
+  },
+  {
     "ticketId": "T-145",
     "prNumber": 225,
     "branch": "chore/m-audit/t-145-file-org-architecture-docs-audit",
@@ -196,5 +268,23 @@
     "prNumber": 227,
     "branch": "chore/m-pipeline/t-147-session-worktree-default",
     "mergedAt": "2026-08-07T17:57:43Z"
+  },
+  {
+    "ticketId": "T-149",
+    "prNumber": 282,
+    "branch": "feat/m-efficiency/t-149-morning-review-milestone-context",
+    "mergedAt": "2026-08-16T23:15:53Z"
+  },
+  {
+    "ticketId": "T-155",
+    "prNumber": 264,
+    "branch": "feat/m-bug/t-155-fix-stale-llm-config-model-id",
+    "mergedAt": "2026-08-11T00:40:20Z"
+  },
+  {
+    "ticketId": "T-156",
+    "prNumber": 273,
+    "branch": "fix/m-bug/t-156-observability-migrate-database-url-leak",
+    "mergedAt": "2026-08-12T14:11:47Z"
   }
 ]

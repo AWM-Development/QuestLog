@@ -8,6 +8,7 @@ import {
 	pgTable,
 	text,
 	timestamp,
+	unique,
 	uuid,
 } from "drizzle-orm/pg-core";
 
@@ -167,6 +168,68 @@ export const entityRelationships = pgTable(
 			"btree",
 			table.campaignId,
 		),
+	],
+);
+
+export const inventoryItems = pgTable(
+	"inventory_items",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		campaignId: uuid("campaign_id")
+			.references(() => campaigns.id)
+			.notNull(),
+		// Null owner = unassigned/shared party pool; non-null can reference any
+		// entity type, most commonly "pc" (party-carried) or "npc"/"location"
+		// (loot not yet taken) — see T-142.
+		ownerEntityId: uuid("owner_entity_id").references(() => entities.id),
+		name: text("name").notNull(),
+		description: text("description"),
+		quantity: integer("quantity").notNull().default(1),
+		value: integer("value"),
+		metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.notNull()
+			.$onUpdate(() => new Date()),
+	},
+	(table) => [
+		index("inventory_items_campaign_id_idx").using("btree", table.campaignId),
+		index("inventory_items_owner_entity_id_idx").using(
+			"btree",
+			table.ownerEntityId,
+		),
+	],
+);
+
+// `denomination` is a column, not a fixed single row shape, so a future
+// multi-denomination system is just additional rows — no migration needed
+// then (T-142, G-023).
+export const campaignWealth = pgTable(
+	"campaign_wealth",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		campaignId: uuid("campaign_id")
+			.references(() => campaigns.id)
+			.notNull(),
+		denomination: text("denomination").notNull().default("wealth"),
+		amount: integer("amount").notNull().default(0),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.notNull()
+			.$onUpdate(() => new Date()),
+	},
+	(table) => [
+		unique("campaign_wealth_campaign_id_denomination_unique").on(
+			table.campaignId,
+			table.denomination,
+		),
+		index("campaign_wealth_campaign_id_idx").using("btree", table.campaignId),
 	],
 );
 

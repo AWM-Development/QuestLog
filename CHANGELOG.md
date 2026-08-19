@@ -10,6 +10,72 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+## [1.1.4] - 2026-08-19
+
+### Added — T-144
+
+- **Inventory/wealth surfaced in `get_entity` and `prep_brief`.** `get_entity` now includes an `items` field — that entity's assigned `inventory_items` rows (empty array, not an omitted field, when it owns none); applies to any entity type, not just `pc`. `prep_brief` now includes `wealth` (all `campaign_wealth` rows) and `unassignedItems` (unassigned/party-pool items, capped at 10) as prep context. Both reuse `inventoryService.listInventory` (`T-143`) — no new MCP tools, no changes to `list_inventory`'s own response shape.
+
+### Added — T-059
+
+- **Observability store: comment schema + write endpoint.** New `ticket_comments` table (`packages/observability`) and a `comment` tRPC router (`comment.list`, `comment.add`) exposing per-ticket comment threads for the observability dashboard's future Log view. `author` is hardcoded `"alex"` server-side for v1 — agent-authored comments are deferred. No UI consumes this yet (`T-058`); `OBSERVABILITY_DATABASE_URL` isn't yet a deployed Fly secret, so these endpoints won't work in production until Alex provisions it (see `IMPLEMENTATION_NOTES.md` § T-059).
+
+### Added — T-143
+
+- **Inventory & wealth MCP tools.** New `add_item`, `transfer_item`, `adjust_wealth`, and `list_inventory` tools, backed by a new `inventoryService` (`packages/core/src/services/inventory.service.ts`). All four are direct writes with no `write_requests` row of any kind — a new, deliberately named "quick-action tools" exception class documented in `.claude/rules/mcp.md`, distinct from `G-001`'s additive-vs-mutating rule: built for fast in-session DM bookkeeping, not lore-consistency tracking. `add_item` inserts a new item (optionally owned by an entity); `transfer_item` reassigns an item's owner or clears it to the unassigned/shared pool; `adjust_wealth` applies a signed delta to a campaign's wealth (or a named denomination), rejecting any adjustment that would go below 0; `list_inventory` reads back a campaign's items and wealth, optionally filtered to one entity's items. No `get_entity`/`prep_brief` integration yet (`T-144`).
+
+### Added — T-142
+
+- **Inventory & wealth schema, `pc` entity type.** `ENTITY_TYPES` gains `"pc"` (playable-character entities are now creatable through the existing `create_entity` tool, no other changes needed beyond the constant). New journaled migration adds `inventory_items` (owner-nullable FK to `entities` — null means unassigned/shared party pool — plus name, description, quantity, value, metadata) and `campaign_wealth` (denomination + amount, unique per campaign+denomination, so a future multi-denomination system is just additional rows). Schema-only — no service layer or MCP tools yet (`T-143`).
+
+### Added — T-055
+
+- **PR diff-stat sync into the observability store.** `packages/observability/src/diff-stat-sync.ts` looks up a ticket's merged PR — via `Docs/tickets/.merge-ledger.json` (T-116) first, falling back to a `gh pr list` search by implementation-branch naming convention (`feat/<milestone-group>/t-###-<slug>`) for tickets the ledger doesn't cover — and writes files-changed/lines-added/lines-removed into that ticket's `ticket_runs` row, so diff-size correlation no longer needs a manual `gh pr list` pull per ticket. Runnable via `pnpm --filter @questlog/observability sync-diff-stats <T-###|all>`; the "all" mode syncs every row still missing diff stats. Not yet wired into `EXECUTOR_ROUTINE.md` or any scheduled job — that's a deliberate follow-up decision (M-OBS.4, T-054 still outstanding).
+
+### Added — T-149
+
+- **`/morning-review`: milestone context + unblocked-ticket surfacing.** The report now includes a new "Milestone context" section — the milestone task the reviewed ticket closes (with a one-sentence stub), that milestone's remaining tasks resolved against their real ticket status (not just the `[ ]` checkbox), and any `backlog/` ticket newly unblocked by this merge. Non-ticket-shaped PRs get an explicit N/A fallback. The report is now five sections instead of four.
+
+### Added — T-054
+
+- **Observability API read endpoints.** New read-only tRPC router (`observability.getByTicketId`, `observability.trends`, `observability.feed`) exposing T-053's observability store: per-ticket run + report detail, an aggregate trends view (date-range and `empty_run` filtering), and a paginated newest-first report feed. Uses its own DB connection, separate from the campaign-data client (G-003). Not yet consumed by any UI (M-OBS.5).
+
+### Added — T-140
+
+- **`ONBOARDING_INSTRUCTIONS` drift test.** A new test derives the live list of registered MCP tool names straight from each `packages/mcp/src/tools/*.ts` file's own `registerTool()` call and asserts every one is mentioned in `ONBOARDING_INSTRUCTIONS` — so a future tool that ships without an onboarding-prose update now fails a test instead of silently going undocumented. Fixing this test also surfaced and closed 7 real, pre-existing gaps: `archive_entity`, `confirm_archive_entity`, `unarchive_entity`, `confirm_unarchive_entity`, `correct_lore`, `confirm_correct_lore`, and `confirm_ingest_entities` are now all mentioned in the onboarding prose surfaced at MCP connect time (and by the `help` tool).
+
+### Added — T-141
+
+- **`apps/mcp-stdio` startup diagnostics.** The stdio binary's entrypoint now catches failures from each of its three startup steps (storage init, database init, MCP transport connect) and logs a diagnosable one-line `console.error` naming which step failed and why, instead of letting a bad `DATABASE_URL`, an unwritable `UPLOAD_PATH`, or a connect failure surface as a raw unhandled stack trace with no log line at all. On success, logs `QuestLog MCP server ready (stdio)`. New coverage in `apps/mcp-stdio/src/main.test.ts`.
+
+### Changed — T-139
+
+- **Tool-description naming & format consistency pass.** Every MCP tool description now places its "Direct write — ..." label (for tools that only ever insert a new row) immediately after the description's first sentence, and every non-preview-only tool description ends with a "Returns ..." clause naming its returned shape — locked in by new tests covering the full exported set in `tool-descriptions.test.ts`, so a future tool addition that drifts from either convention fails a test instead of silently landing. No behavior change; description text only.
+
+### Added — T-128
+
+- **CI job-count / GitHub Actions minutes audit.** New report (`Docs/tickets/reports/T-128-ci-actions-minutes-audit.md`) quantifying real per-job Actions-minute consumption across all five workflow files, pulled from live `gh api` run/job data. Highest-leverage finding: `ci.yml`'s `gate-guard`/`scope-guard`/`report-guard` jobs were each under 15 seconds of real work but billed a minimum of 1 minute each.
+
+### Changed — T-128
+
+- **`ci.yml`'s Gate/Scope/Report guards consolidated into one `ticket-guards` job.** Implemented on the audit's own branch at Alex's direct request, immediately after the report above shipped (outside the ticket's original recommendations-only Scope, flagged once before proceeding). Mirrors `T-121`'s existing `guards`-job pattern for `doc-sync`/`migration-guard`/`mockup-guard`/`impl-notes-health`; saves an estimated ~2 billed minutes per PR run at no loss of check coverage.
+
+### Added — T-131
+
+- **Fresh ticket worktrees now inherit the primary checkout's local secrets.** `session-start.sh`'s local worktree-provisioning branch copies the primary checkout's gitignored `.env` into a new worktree whenever that worktree doesn't already have its own — `git worktree add` never carries gitignored files across, so any locally-scoped secret (e.g. `OBSERVABILITY_DATABASE_URL`) previously never reached a ticket's worktree at all. Non-clobbering: a worktree that already has its own `.env` is always left untouched.
+
+### Fixed — T-156
+
+- **`ensure_database_provisioned`'s migrate child process no longer inherits an ambient `OBSERVABILITY_DATABASE_URL`.** Since T-131 propagated the primary checkout's `.env` into fresh worktrees, `scripts/db-readiness.sh`'s `ensure_database_provisioned()` silently lost every local `questlog_test_observability` migration to a real remote-Neon `OBSERVABILITY_DATABASE_URL`, whenever one was set in the primary checkout's `.env` — `packages/observability/src/db/migrate.ts`'s own connection-string resolution puts that var first, and nothing upstream prevented it from reaching the child process. Fixed by pre-setting `OBSERVABILITY_DATABASE_URL` (not just `DATABASE_URL`) to the intended local URL for that one call, in a subshell that never touches the calling process's own environment — see `Docs/IMPLEMENTATION_NOTES.md` § T-156 for why the ticket's own originally-proposed `unset`-based fix didn't actually work.
+
+### Fixed — T-155
+
+- **`ingest_text` 404ing on prod — stale Claude model id.** `LLM_CONFIG.model` was pinned to `claude-sonnet-4-20250514`, a decommissioned model id, causing every `ingest_text` call to fail immediately with a `404 not_found_error` (entity-candidate extraction is the LLM call on that path). Updated to `claude-sonnet-5`. Fixes every caller of the shared LLM service (chat, entity extraction), not just `ingest_text`.
+
+### Changed — T-124
+
+- **Three small CI cleanups from T-117's audit.** `ci.yml`'s `pr` job now runs the "no `test.only`/`test.skip`" guard immediately after checkout, before install/Lint/Typecheck/Build, so a stray `.only`/`.skip` fails in seconds instead of after paying for the full setup and three quality gates first. `e2e-release-check.yml`'s documented no-op "Restore Turborepo cache" step is removed. `ci.yml`'s `actionlint` job no longer fetches its install script from `actionlint`'s `main` branch via `curl | bash`; it now pins both the script's own ref and the binary version to a specific release tag (`v1.7.12`).
+
 ## [1.1.3] - 2026-08-10
 
 ### Changed — T-034

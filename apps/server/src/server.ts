@@ -14,6 +14,7 @@ import {
 	type StorageProvider,
 	createLocalFilesystemStorage,
 } from "@questlog/core/services/storage.service.js";
+import type { Database as ObservabilityDatabase } from "@questlog/observability/db/index.js";
 import {
 	type FastifyTRPCPluginOptions,
 	fastifyTRPCPlugin,
@@ -57,6 +58,8 @@ function mimeToSourceType(mime: string): string {
 export interface BuildAppOptions {
 	db: Database;
 	storage?: StorageProvider;
+	/** Backs the comment router (T-059) only. Optional — see trpc.ts Context's own note. */
+	observabilityDb?: ObservabilityDatabase;
 	/**
 	 * Trigger `importService.processSource` after a successful upload (fire-
 	 * and-forget — the upload response returns immediately either way).
@@ -83,6 +86,7 @@ function pgErrorCode(err: unknown): string | undefined {
 export function buildApp({
 	db,
 	storage: storageOption,
+	observabilityDb,
 	autoProcessUploads = false,
 	autoProcessOptions,
 	accessPassphrase: accessPassphraseOption,
@@ -308,7 +312,7 @@ export function buildApp({
 		prefix: "/trpc",
 		trpcOptions: {
 			router: appRouter,
-			createContext: createContextFactory(db, storage),
+			createContext: createContextFactory(db, storage, observabilityDb),
 		} satisfies FastifyTRPCPluginOptions<AppRouter>["trpcOptions"],
 	});
 

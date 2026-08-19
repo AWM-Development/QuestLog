@@ -120,6 +120,13 @@
       "when": 1785710394923,
       "tag": "0016_normal_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1786552624680,
+      "tag": "0017_hard_jasper_sitwell",
+      "breakpoints": true
     }
   ]
 }

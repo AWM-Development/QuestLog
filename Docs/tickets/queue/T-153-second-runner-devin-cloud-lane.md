@@ -8,8 +8,6 @@ Strategy-gate flag: yes
 
 Priority: P2
 
-Blocked on: T-109 — must be merged into develop first
-
 Branch: feat/m-robust/t-153-second-runner-devin-cloud-lane
 
 Context files (load ONLY these):

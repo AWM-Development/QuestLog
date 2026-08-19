@@ -1,7 +1,23 @@
 import { db } from "@questlog/core/db/index.js";
 import { buildApp } from "./server.js";
 
-const app = buildApp({ db, autoProcessUploads: true });
+// Lazy + graceful, not a static import — see IMPLEMENTATION_NOTES.md § T-059
+// for the full rationale (deployed Fly secrets don't include
+// OBSERVABILITY_DATABASE_URL yet, so a static import would crash server boot).
+async function loadObservabilityDb() {
+	try {
+		const mod = await import("@questlog/observability/db/index.js");
+		return mod.db;
+	} catch (err) {
+		console.warn(
+			`[observability] comment endpoints disabled — ${err instanceof Error ? err.message : String(err)}`,
+		);
+		return undefined;
+	}
+}
+
+const observabilityDb = await loadObservabilityDb();
+const app = buildApp({ db, observabilityDb, autoProcessUploads: true });
 
 const start = async () => {
 	const port = Number(process.env.PORT) || 3000;

@@ -24,7 +24,7 @@ export type { ConversationMessage } from "@questlog/shared";
 
 export const LLM_CONFIG = {
 	/** Claude model identifier. */
-	model: "claude-sonnet-4-20250514",
+	model: "claude-sonnet-5",
 	/** Maximum tokens in the assistant response. */
 	maxTokens: 4096,
 	/** Maximum conversation history messages sent to the LLM (oldest trimmed first). */

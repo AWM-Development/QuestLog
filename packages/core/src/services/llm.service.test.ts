@@ -251,7 +251,7 @@ describe("llmService.callClaude", () => {
 		expect(callArgs.system).toContain("Curse of Strahd");
 	});
 
-	it("uses the correct model", async () => {
+	it("uses the current, non-decommissioned model", async () => {
 		mockCreate.mockResolvedValueOnce({
 			content: [{ type: "text", text: "Response" }],
 			usage: { input_tokens: 50, output_tokens: 20 },
@@ -261,7 +261,12 @@ describe("llmService.callClaude", () => {
 		await llmService.callClaude(makeInput());
 
 		const callArgs = mockCreate.mock.calls[0]?.[0];
-		expect(callArgs.model).toMatch(/claude/);
+		// Regression guard for T-155: a loose /claude/ match previously let a
+		// decommissioned model id slip through unnoticed until it 404'd in
+		// prod. Pin against the exact current model id (not LLM_CONFIG.model
+		// itself, which would trivially match any future regression) so a
+		// stale pin fails this test instead of surfacing live.
+		expect(callArgs.model).toBe("claude-sonnet-5");
 	});
 
 	it("wraps Anthropic API errors in LlmApiError", async () => {

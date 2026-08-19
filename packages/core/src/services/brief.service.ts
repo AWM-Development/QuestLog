@@ -1,10 +1,15 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import type { Database } from "../db/index.js";
+import type { campaignWealth, inventoryItems } from "../db/schema/index.js";
 import { entities, sessionEntities, sessions } from "../db/schema/index.js";
 import { campaignService } from "./campaign.service.js";
+import { inventoryService } from "./inventory.service.js";
 
 const RESOLVED_PREFIX = "resolved:";
 const CONTENT_EXCERPT_LENGTH = 500;
+// Consistent with prep_brief's existing brevity goal — a simple cap, not a
+// general pagination mechanism (T-144 scope).
+const UNASSIGNED_ITEMS_CAP = 10;
 
 export interface BriefInput {
 	campaignId: string;
@@ -49,6 +54,10 @@ export interface Brief {
 	looseEnds: UnimplementedSection;
 	suggestedFollowUps: UnimplementedSection;
 	quickLinks: QuickLink[];
+	/** All `campaign_wealth` rows for the campaign (T-144, M-INVENTORY.3). */
+	wealth: (typeof campaignWealth.$inferSelect)[];
+	/** Unassigned/party-pool items (`ownerEntityId IS NULL`), capped at `UNASSIGNED_ITEMS_CAP` (T-144). */
+	unassignedItems: (typeof inventoryItems.$inferSelect)[];
 }
 
 function excerpt(text: string, length = CONTENT_EXCERPT_LENGTH): string {
@@ -149,6 +158,13 @@ export const briefService = {
 		}
 		const likelyNpcs = Array.from(npcsBySessionRecency.values());
 
+		const { items, wealth } = await inventoryService.listInventory(db, {
+			campaignId,
+		});
+		const unassignedItems = items
+			.filter((item) => item.ownerEntityId === null)
+			.slice(0, UNASSIGNED_ITEMS_CAP);
+
 		return {
 			previouslyOn,
 			activeThreads,
@@ -165,6 +181,8 @@ export const briefService = {
 				entityId: npc.entityId,
 				name: npc.name,
 			})),
+			wealth,
+			unassignedItems,
 		};
 	},
 };

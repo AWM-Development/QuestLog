@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import {
+	campaignWealth,
 	campaigns,
 	chunks,
 	entities,
@@ -27,6 +28,7 @@ import {
 	entityService,
 	extractExcerpt,
 } from "@questlog/core/services/entity.service.js";
+import { inventoryService } from "@questlog/core/services/inventory.service.js";
 import type { LlmService } from "@questlog/core/services/llm.service.js";
 import { sessionService } from "@questlog/core/services/session.service.js";
 import { sourceService } from "@questlog/core/services/source.service.js";
@@ -342,6 +344,34 @@ describe("prep_brief tool", () => {
 		expect(result.isError).toBe(true);
 		const content = result.content as Array<{ type: string; text: string }>;
 		expect(content[0]?.text).toContain(unknownCampaignId);
+	});
+
+	it("surfaces campaign wealth and unassigned items (T-144)", async () => {
+		// adjustWealth opens its own db.transaction() (inventory.service.ts),
+		// which doesn't compose with this describe block's raw BEGIN/ROLLBACK
+		// wrapper (.claude/rules/backend.md "Test DB pattern") — insert the
+		// wealth row directly instead.
+		await db.insert(campaignWealth).values({ campaignId, amount: 75 });
+		await inventoryService.addItem(db, { campaignId, name: "Torch" });
+		await inventoryService.addItem(db, { campaignId, name: "Rope" });
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "prep_brief",
+			arguments: { campaignId },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const brief = JSON.parse(content[0]?.text ?? "{}");
+		expect(brief.wealth).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ denomination: "wealth", amount: 75 }),
+			]),
+		);
+		expect(
+			brief.unassignedItems.map((i: { name: string }) => i.name).sort(),
+		).toEqual(["Rope", "Torch"]);
 	});
 });
 
@@ -772,6 +802,58 @@ describe("get_entity tool", () => {
 		const content = result.content as Array<{ type: string; text: string }>;
 		expect(JSON.parse(content[0]?.text ?? "{}").id).toBe(entity.id);
 	});
+
+	it("includes an entity's assigned inventory items (T-144)", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "pc",
+		});
+		await inventoryService.addItem(db, {
+			campaignId,
+			name: "Longsword",
+			ownerEntityId: entity.id,
+		});
+		await inventoryService.addItem(db, {
+			campaignId,
+			name: "Torch",
+			ownerEntityId: entity.id,
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.items).toHaveLength(2);
+		expect(payload.items.map((i: { name: string }) => i.name).sort()).toEqual([
+			"Longsword",
+			"Torch",
+		]);
+	});
+
+	it("returns an empty items array for an entity with no inventory", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.items).toEqual([]);
+	});
 });
 
 describe("create_entity tool", () => {
@@ -1057,6 +1139,214 @@ describe("append_entity_note tool", () => {
 		const content = result.content as Array<{ type: string; text: string }>;
 		const payload = JSON.parse(content[0]?.text ?? "{}");
 		expect(payload.error.code).toBe("NOT_FOUND");
+	});
+});
+
+describe("add_item / transfer_item / adjust_wealth / list_inventory tools", () => {
+	// transfer_item and adjust_wealth each open their own db.transaction()
+	// (inventory.service.ts) — a nested raw BEGIN/ROLLBACK wrapper doesn't
+	// compose with that (.claude/rules/backend.md "Test DB pattern") — use
+	// explicit FK-safe cleanup instead, same as inventory.service.test.ts.
+	let campaignId: string;
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, campaignId);
+	});
+
+	it("add_item inserts an unassigned item", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "add_item",
+			arguments: { campaignId, name: "Torch" },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.name).toBe("Torch");
+		expect(payload.ownerEntityId).toBeNull();
+	});
+
+	it("add_item returns a well-formed not-found error for a bogus ownerEntityId", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const unknownEntityId = "00000000-0000-0000-0000-000000000000";
+
+		const result = await client.callTool({
+			name: "add_item",
+			arguments: { campaignId, name: "Torch", ownerEntityId: unknownEntityId },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+	});
+
+	it("transfer_item reassigns an item's owner and writes no write_requests row", async () => {
+		const owner = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "pc",
+		});
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const addResult = await client.callTool({
+			name: "add_item",
+			arguments: { campaignId, name: "Longsword" },
+		});
+		const addContent = addResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const item = JSON.parse(addContent[0]?.text ?? "{}");
+
+		const result = await client.callTool({
+			name: "transfer_item",
+			arguments: { campaignId, itemId: item.id, ownerEntityId: owner.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.ownerEntityId).toBe(owner.id);
+
+		const writeRequestRows = await db
+			.select()
+			.from(writeRequests)
+			.where(eq(writeRequests.campaignId, campaignId));
+		expect(writeRequestRows).toHaveLength(0);
+	});
+
+	it("transfer_item returns a well-formed not-found error for an item in a different campaign (T-068 scoping)", async () => {
+		const otherCampaign = await campaignService.create(db, {
+			name: "Other Campaign",
+			theme: "sci-fi",
+		});
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const addResult = await client.callTool({
+			name: "add_item",
+			arguments: { campaignId: otherCampaign.id, name: "Ray Gun" },
+		});
+		const addContent = addResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const item = JSON.parse(addContent[0]?.text ?? "{}");
+
+		const result = await client.callTool({
+			name: "transfer_item",
+			arguments: { campaignId, itemId: item.id, ownerEntityId: null },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+
+		await deleteCampaignTree(db, otherCampaign.id);
+	});
+
+	it("adjust_wealth increases wealth and writes no write_requests row", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "adjust_wealth",
+			arguments: { campaignId, delta: 50 },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.amount).toBe(50);
+
+		const writeRequestRows = await db
+			.select()
+			.from(writeRequests)
+			.where(eq(writeRequests.campaignId, campaignId));
+		expect(writeRequestRows).toHaveLength(0);
+	});
+
+	it("adjust_wealth returns a validation error rather than going below 0", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "adjust_wealth",
+			arguments: { campaignId, delta: -10 },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("VALIDATION_ERROR");
+	});
+
+	it("list_inventory returns items and wealth for the campaign", async () => {
+		const owner = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "pc",
+		});
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		await client.callTool({
+			name: "add_item",
+			arguments: { campaignId, name: "Longsword", ownerEntityId: owner.id },
+		});
+		await client.callTool({
+			name: "add_item",
+			arguments: { campaignId, name: "Torch" },
+		});
+		await client.callTool({
+			name: "adjust_wealth",
+			arguments: { campaignId, delta: 25 },
+		});
+
+		const result = await client.callTool({
+			name: "list_inventory",
+			arguments: { campaignId },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.items).toHaveLength(2);
+		expect(payload.wealth[0]?.amount).toBe(25);
+	});
+
+	it("list_inventory filters to one entity's items when ownerEntityId is given", async () => {
+		const owner = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "pc",
+		});
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		await client.callTool({
+			name: "add_item",
+			arguments: { campaignId, name: "Longsword", ownerEntityId: owner.id },
+		});
+		await client.callTool({
+			name: "add_item",
+			arguments: { campaignId, name: "Torch" },
+		});
+
+		const result = await client.callTool({
+			name: "list_inventory",
+			arguments: { campaignId, ownerEntityId: owner.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.items).toHaveLength(1);
+		expect(payload.items[0]?.name).toBe("Longsword");
 	});
 });
 

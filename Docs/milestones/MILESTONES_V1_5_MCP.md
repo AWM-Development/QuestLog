@@ -30,15 +30,15 @@ These two milestones are otherwise unconnected — they're bundled into one vers
 
 ### Tasks
 
-- [ ] **M-POLISH.1 — Tool-description naming & length/format consistency pass** (T-139)
+- [x] **M-POLISH.1 — Tool-description naming & length/format consistency pass** (T-139)
   Standardize the "Direct write — ..." label's placement across every direct-write tool description (`tool-descriptions.ts`) to immediately follow the first sentence, and standardize whether a trailing "Returns ..." clause is present. Lock both patterns in with new assertions in `tool-descriptions.test.ts`.
   Exit: every "Direct write" description places the label in the same position; every non-preview-only tool description ends with a "Returns ..." clause; new tests assert both across the full exported set.
 
-- [ ] **M-POLISH.2 — `ONBOARDING_INSTRUCTIONS` drift test** (T-140)
+- [x] **M-POLISH.2 — `ONBOARDING_INSTRUCTIONS` drift test** (T-140)
   Add a test asserting every tool name registered in `createMcpServer` (`packages/mcp/src/server.ts`) is mentioned somewhere in `ONBOARDING_INSTRUCTIONS`, derived from the registration call sites rather than a hand-duplicated literal list (which would just reintroduce the same drift).
   Exit: test green today; fails when a placeholder tool name is registered but not mentioned (proof pasted in the ticket report, then reverted).
 
-- [ ] **M-POLISH.3 — `apps/mcp-stdio` startup diagnostics** (T-141)
+- [x] **M-POLISH.3 — `apps/mcp-stdio` startup diagnostics** (T-141)
   Refactor `main.ts` into an exported, testable `main()` that wraps storage init + `server.connect` in try/catch: a diagnosable stderr message + non-zero exit on failure, a one-line stderr "ready" message on success.
   Exit: unit tests cover both paths; manual proof (broken DB connection string → diagnosable stderr, not a raw stack trace) pasted in the ticket report.
 
@@ -60,15 +60,15 @@ M-POLISH.1–3 touch disjoint files and can ship in any order. M-POLISH.4 is ind
 
 ### Tasks
 
-- [ ] **M-INVENTORY.1 — Inventory & wealth schema, `pc` entity type** (T-142)
+- [x] **M-INVENTORY.1 — Inventory & wealth schema, `pc` entity type** (T-142)
   Add `pc` to `ENTITY_TYPES`; add `inventory_items` (owner-nullable FK to `entities`, quantity, value, metadata) and `campaign_wealth` (denomination + amount, unique per campaign+denomination) tables with a journaled migration. No service/tool code yet.
   Exit: migration applies cleanly; `pc` validates through existing entity Zod schemas; both new tables round-trip inserts including a null-owner item.
 
-- [ ] **M-INVENTORY.2 — Inventory & wealth MCP tools (quick, no preview/confirm)** (T-143)
+- [x] **M-INVENTORY.2 — Inventory & wealth MCP tools (quick, no preview/confirm)** (T-143)
   `add_item`, `transfer_item`, `adjust_wealth`, `list_inventory` — service layer plus four direct-write MCP tools, no `write_requests` row of any kind. Documents the new "quick-action tools" exception class in `.claude/rules/mcp.md`.
   Exit: service + tool tests cover add/transfer/adjust/list including the below-zero-wealth rejection; tests assert no `write_requests` row is written by any of the four tools.
 
-- [ ] **M-INVENTORY.3 — Surface inventory/wealth in `get_entity` and `prep_brief`** (T-144)
+- [x] **M-INVENTORY.3 — Surface inventory/wealth in `get_entity` and `prep_brief`** (T-144)
   `get_entity` includes an entity's assigned items; `prep_brief` surfaces campaign wealth and unassigned/pool items as prep context.
   Exit: `get_entity` test with assigned items; `prep_brief` test against a fixture campaign with seeded wealth and unassigned items.
 

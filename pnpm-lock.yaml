@@ -87,6 +87,9 @@ importers:
       '@questlog/mcp':
         specifier: workspace:*
         version: link:../../packages/mcp
+      '@questlog/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@questlog/shared':
         specifier: workspace:*
         version: link:../../packages/shared

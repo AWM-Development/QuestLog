@@ -28,6 +28,7 @@
 		"@modelcontextprotocol/sdk": "^1.29.0",
 		"@questlog/core": "workspace:*",
 		"@questlog/mcp": "workspace:*",
+		"@questlog/observability": "workspace:*",
 		"@questlog/shared": "workspace:*",
 		"@trpc/server": "^11.0.0",
 		"dotenv": "^17.3.1",
