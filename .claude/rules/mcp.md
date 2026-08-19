@@ -40,6 +40,12 @@ The trigger for preview/confirm is **mutating a record that already exists** (up
 
 Never persist a mutating write from a single call. If a ticket's exit condition doesn't distinguish preview from confirm for a tool that mutates existing data, that's a spec gap — flag it rather than collapsing the two steps for convenience. A tool that's genuinely additive-only doesn't need this pattern at all; don't add a preview/confirm pair to a create-only tool just to match `log_session`'s shape.
 
+## Quick-action tools (no preview/confirm, no audit trail)
+
+A second, deliberately named exception class alongside "additive-only write" above — distinct from `G-001`'s additive-vs-mutating rule, not a special case of it. `G-001` decides whether a *mutation* needs preview/confirm; this class skips preview/confirm (and any `write_requests` row, even an auto-confirmed one) entirely, for both additive and mutating operations, because the tool is built for fast in-session DM utility rather than lore-consistency tracking (`G-023`'s resolution). The four inventory tools (`add_item`, `transfer_item`, `adjust_wealth`, `list_inventory`'s writes — T-143) are its first and, as of this writing, only members: `transfer_item` reassigns an existing item's `ownerEntityId` and `adjust_wealth` mutates an existing `campaign_wealth` row, both of which `G-001` alone would put through preview/confirm — this class is the explicit, named carve-out for that.
+
+Membership in this class is a deliberate per-tool decision, not a default for anything that "feels fast" — a future tool only belongs here if it shares inventory's rationale (in-session utility, not lore/canon tracking) and that call has actually been made (via `G-023`-style resolution or direct instruction), never inferred from a ticket's own convenience. Existing tools (`create_entity`, `append_entity_note`) are not retrofitted into this class by its introduction — they stay under the additive-only rule above on their own terms. A future tool that wants to join this class should point back to this section rather than re-litigating the "no audit trail" tradeoff from scratch.
+
 ## Agent-interaction philosophy (T-100, `G-012`)
 
 A tool description is instructions to the calling model, not just documentation of the tool's shape — these three rules govern what every write/async tool description must tell the model to do, not just what the tool does:

@@ -16,6 +16,7 @@ export const ENTITY_TYPES = [
 	"faction",
 	"item",
 	"arc",
+	"pc",
 ] as const;
 export type EntityType = (typeof ENTITY_TYPES)[number];
 

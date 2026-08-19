@@ -14,6 +14,30 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 - **Observability store: comment schema + write endpoint.** New `ticket_comments` table (`packages/observability`) and a `comment` tRPC router (`comment.list`, `comment.add`) exposing per-ticket comment threads for the observability dashboard's future Log view. `author` is hardcoded `"alex"` server-side for v1 — agent-authored comments are deferred. No UI consumes this yet (`T-058`); `OBSERVABILITY_DATABASE_URL` isn't yet a deployed Fly secret, so these endpoints won't work in production until Alex provisions it (see `IMPLEMENTATION_NOTES.md` § T-059).
 
+### Added — T-143
+
+- **Inventory & wealth MCP tools.** New `add_item`, `transfer_item`, `adjust_wealth`, and `list_inventory` tools, backed by a new `inventoryService` (`packages/core/src/services/inventory.service.ts`). All four are direct writes with no `write_requests` row of any kind — a new, deliberately named "quick-action tools" exception class documented in `.claude/rules/mcp.md`, distinct from `G-001`'s additive-vs-mutating rule: built for fast in-session DM bookkeeping, not lore-consistency tracking. `add_item` inserts a new item (optionally owned by an entity); `transfer_item` reassigns an item's owner or clears it to the unassigned/shared pool; `adjust_wealth` applies a signed delta to a campaign's wealth (or a named denomination), rejecting any adjustment that would go below 0; `list_inventory` reads back a campaign's items and wealth, optionally filtered to one entity's items. No `get_entity`/`prep_brief` integration yet (`T-144`).
+
+### Added — T-142
+
+- **Inventory & wealth schema, `pc` entity type.** `ENTITY_TYPES` gains `"pc"` (playable-character entities are now creatable through the existing `create_entity` tool, no other changes needed beyond the constant). New journaled migration adds `inventory_items` (owner-nullable FK to `entities` — null means unassigned/shared party pool — plus name, description, quantity, value, metadata) and `campaign_wealth` (denomination + amount, unique per campaign+denomination, so a future multi-denomination system is just additional rows). Schema-only — no service layer or MCP tools yet (`T-143`).
+
+### Added — T-055
+
+- **PR diff-stat sync into the observability store.** `packages/observability/src/diff-stat-sync.ts` looks up a ticket's merged PR — via `Docs/tickets/.merge-ledger.json` (T-116) first, falling back to a `gh pr list` search by implementation-branch naming convention (`feat/<milestone-group>/t-###-<slug>`) for tickets the ledger doesn't cover — and writes files-changed/lines-added/lines-removed into that ticket's `ticket_runs` row, so diff-size correlation no longer needs a manual `gh pr list` pull per ticket. Runnable via `pnpm --filter @questlog/observability sync-diff-stats <T-###|all>`; the "all" mode syncs every row still missing diff stats. Not yet wired into `EXECUTOR_ROUTINE.md` or any scheduled job — that's a deliberate follow-up decision (M-OBS.4, T-054 still outstanding).
+
+### Added — T-149
+
+- **`/morning-review`: milestone context + unblocked-ticket surfacing.** The report now includes a new "Milestone context" section — the milestone task the reviewed ticket closes (with a one-sentence stub), that milestone's remaining tasks resolved against their real ticket status (not just the `[ ]` checkbox), and any `backlog/` ticket newly unblocked by this merge. Non-ticket-shaped PRs get an explicit N/A fallback. The report is now five sections instead of four.
+
+### Added — T-054
+
+- **Observability API read endpoints.** New read-only tRPC router (`observability.getByTicketId`, `observability.trends`, `observability.feed`) exposing T-053's observability store: per-ticket run + report detail, an aggregate trends view (date-range and `empty_run` filtering), and a paginated newest-first report feed. Uses its own DB connection, separate from the campaign-data client (G-003). Not yet consumed by any UI (M-OBS.5).
+
+### Added — T-140
+
+- **`ONBOARDING_INSTRUCTIONS` drift test.** A new test derives the live list of registered MCP tool names straight from each `packages/mcp/src/tools/*.ts` file's own `registerTool()` call and asserts every one is mentioned in `ONBOARDING_INSTRUCTIONS` — so a future tool that ships without an onboarding-prose update now fails a test instead of silently going undocumented. Fixing this test also surfaced and closed 7 real, pre-existing gaps: `archive_entity`, `confirm_archive_entity`, `unarchive_entity`, `confirm_unarchive_entity`, `correct_lore`, `confirm_correct_lore`, and `confirm_ingest_entities` are now all mentioned in the onboarding prose surfaced at MCP connect time (and by the `help` tool).
+
 ### Added — T-141
 
 - **`apps/mcp-stdio` startup diagnostics.** The stdio binary's entrypoint now catches failures from each of its three startup steps (storage init, database init, MCP transport connect) and logs a diagnosable one-line `console.error` naming which step failed and why, instead of letting a bad `DATABASE_URL`, an unwritable `UPLOAD_PATH`, or a connect failure surface as a raw unhandled stack trace with no log line at all. On success, logs `QuestLog MCP server ready (stdio)`. New coverage in `apps/mcp-stdio/src/main.test.ts`.

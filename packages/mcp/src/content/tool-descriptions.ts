@@ -67,5 +67,17 @@ export const CORRECT_LORE_DESCRIPTION =
 export const CONFIRM_CORRECT_LORE_DESCRIPTION =
 	"Confirm a previously-previewed correct_lore change-set: chunks + embeds the correction as new authoritative content and marks every target chunk superseded, all inside a single transaction. Returns the ids of the newly created chunks and the ids of the chunks marked superseded.";
 
+export const ADD_ITEM_DESCRIPTION =
+	"Add a new inventory item to a campaign. Direct write — no audit trail; built for fast in-session use. Optionally assign it to an owning entity (pc, npc, location, etc) via ownerEntityId — omit it to place the item in the unassigned/shared party pool. Returns the created item.";
+
+export const TRANSFER_ITEM_DESCRIPTION =
+	"Reassign an existing inventory item to a different owning entity. Direct write — no audit trail; built for fast in-session use. Pass ownerEntityId: null instead to move it to the unassigned/shared party pool. Returns the updated item.";
+
+export const ADJUST_WEALTH_DESCRIPTION =
+	'Apply a positive or negative delta to a campaign\'s wealth. Direct write — no audit trail; built for fast in-session use. Optionally target a named denomination (defaults to "wealth") — rejects the adjustment if it would take the amount below 0. Returns the updated wealth row.';
+
+export const LIST_INVENTORY_DESCRIPTION =
+	"List a campaign's inventory items and current wealth. Optionally filter items to one entity's owned items with ownerEntityId — omit it for the whole campaign (all owners plus unassigned). Returns items and wealth.";
+
 export const HELP_DESCRIPTION =
 	"Call this if you're unsure where to start. Returns a summary of QuestLog's workflow: uploading campaign documents, tracking sessions, and querying lore.";

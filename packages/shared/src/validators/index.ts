@@ -47,3 +47,14 @@ export {
 	CommentSchema,
 	ListCommentsInput,
 } from "./comment.js";
+export {
+	AddItemInput,
+	AdjustWealthInput,
+	ListInventoryInput,
+	TransferItemInput,
+} from "./inventory.js";
+export {
+	GetTicketRunInput,
+	ListReportsInput,
+	ListTrendsInput,
+} from "./observability.js";

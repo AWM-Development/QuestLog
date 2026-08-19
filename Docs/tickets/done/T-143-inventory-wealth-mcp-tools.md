@@ -6,9 +6,7 @@ Complexity tier: M
 
 Strategy-gate flag: yes
 
-Priority: P1
-
-Blocked on: T-142 — must be merged into develop first
+Priority: P0
 
 Branch: feat/m-inventory/t-143-inventory-wealth-mcp-tools
 
