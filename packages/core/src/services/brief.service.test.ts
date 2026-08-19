@@ -1,10 +1,12 @@
 import { sql } from "drizzle-orm";
 import { afterAll, afterEach, beforeEach, describe, expect, it } from "vitest";
+import { campaignWealth } from "../db/schema/index.js";
 import { createTestDb } from "../db/test-helpers.js";
 import { NotFoundError } from "../lib/errors.js";
 import { briefService } from "./brief.service.js";
 import { campaignService } from "./campaign.service.js";
 import { entityService } from "./entity.service.js";
+import { inventoryService } from "./inventory.service.js";
 import { sessionService } from "./session.service.js";
 
 const { db, close } = createTestDb();
@@ -258,6 +260,47 @@ describe("briefService", () => {
 
 			expect(brief.likelyNpcs).toEqual([]);
 			expect(brief.quickLinks).toEqual([]);
+		});
+	});
+
+	describe("wealth & unassigned items (T-144)", () => {
+		it("surfaces campaign wealth and a cap of 10 unassigned items", async () => {
+			await db.insert(campaignWealth).values({ campaignId, amount: 120 });
+			for (let i = 0; i < 12; i++) {
+				await inventoryService.addItem(db, {
+					campaignId,
+					name: `Unassigned Item ${i}`,
+				});
+			}
+			const owner = await entityService.create(db, {
+				campaignId,
+				name: "Mira Duskwood",
+				type: "pc",
+			});
+			await inventoryService.addItem(db, {
+				campaignId,
+				name: "Mira's Longsword",
+				ownerEntityId: owner.id,
+			});
+
+			const brief = await briefService.assemble(db, { campaignId });
+
+			expect(brief.wealth).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({ denomination: "wealth", amount: 120 }),
+				]),
+			);
+			expect(brief.unassignedItems).toHaveLength(10);
+			expect(
+				brief.unassignedItems.every((item) => item.ownerEntityId === null),
+			).toBe(true);
+		});
+
+		it("returns empty wealth/unassignedItems for a campaign with neither", async () => {
+			const brief = await briefService.assemble(db, { campaignId });
+
+			expect(brief.wealth).toEqual([]);
+			expect(brief.unassignedItems).toEqual([]);
 		});
 	});
 
