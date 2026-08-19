@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import {
+	campaignWealth,
 	campaigns,
 	chunks,
 	entities,
@@ -27,6 +28,7 @@ import {
 	entityService,
 	extractExcerpt,
 } from "@questlog/core/services/entity.service.js";
+import { inventoryService } from "@questlog/core/services/inventory.service.js";
 import type { LlmService } from "@questlog/core/services/llm.service.js";
 import { sessionService } from "@questlog/core/services/session.service.js";
 import { sourceService } from "@questlog/core/services/source.service.js";
@@ -342,6 +344,34 @@ describe("prep_brief tool", () => {
 		expect(result.isError).toBe(true);
 		const content = result.content as Array<{ type: string; text: string }>;
 		expect(content[0]?.text).toContain(unknownCampaignId);
+	});
+
+	it("surfaces campaign wealth and unassigned items (T-144)", async () => {
+		// adjustWealth opens its own db.transaction() (inventory.service.ts),
+		// which doesn't compose with this describe block's raw BEGIN/ROLLBACK
+		// wrapper (.claude/rules/backend.md "Test DB pattern") — insert the
+		// wealth row directly instead.
+		await db.insert(campaignWealth).values({ campaignId, amount: 75 });
+		await inventoryService.addItem(db, { campaignId, name: "Torch" });
+		await inventoryService.addItem(db, { campaignId, name: "Rope" });
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "prep_brief",
+			arguments: { campaignId },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const brief = JSON.parse(content[0]?.text ?? "{}");
+		expect(brief.wealth).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ denomination: "wealth", amount: 75 }),
+			]),
+		);
+		expect(
+			brief.unassignedItems.map((i: { name: string }) => i.name).sort(),
+		).toEqual(["Rope", "Torch"]);
 	});
 });
 
@@ -771,6 +801,58 @@ describe("get_entity tool", () => {
 		expect(result.isError).toBeFalsy();
 		const content = result.content as Array<{ type: string; text: string }>;
 		expect(JSON.parse(content[0]?.text ?? "{}").id).toBe(entity.id);
+	});
+
+	it("includes an entity's assigned inventory items (T-144)", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "pc",
+		});
+		await inventoryService.addItem(db, {
+			campaignId,
+			name: "Longsword",
+			ownerEntityId: entity.id,
+		});
+		await inventoryService.addItem(db, {
+			campaignId,
+			name: "Torch",
+			ownerEntityId: entity.id,
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.items).toHaveLength(2);
+		expect(payload.items.map((i: { name: string }) => i.name).sort()).toEqual([
+			"Longsword",
+			"Torch",
+		]);
+	});
+
+	it("returns an empty items array for an entity with no inventory", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.items).toEqual([]);
 	});
 });
 

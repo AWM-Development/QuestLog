@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-144
+
+- **Inventory/wealth surfaced in `get_entity` and `prep_brief`.** `get_entity` now includes an `items` field — that entity's assigned `inventory_items` rows (empty array, not an omitted field, when it owns none); applies to any entity type, not just `pc`. `prep_brief` now includes `wealth` (all `campaign_wealth` rows) and `unassignedItems` (unassigned/party-pool items, capped at 10) as prep context. Both reuse `inventoryService.listInventory` (`T-143`) — no new MCP tools, no changes to `list_inventory`'s own response shape.
+
 ### Added — T-059
 
 - **Observability store: comment schema + write endpoint.** New `ticket_comments` table (`packages/observability`) and a `comment` tRPC router (`comment.list`, `comment.add`) exposing per-ticket comment threads for the observability dashboard's future Log view. `author` is hardcoded `"alex"` server-side for v1 — agent-authored comments are deferred. No UI consumes this yet (`T-058`); `OBSERVABILITY_DATABASE_URL` isn't yet a deployed Fly secret, so these endpoints won't work in production until Alex provisions it (see `IMPLEMENTATION_NOTES.md` § T-059).

@@ -68,7 +68,7 @@ M-POLISH.1–3 touch disjoint files and can ship in any order. M-POLISH.4 is ind
   `add_item`, `transfer_item`, `adjust_wealth`, `list_inventory` — service layer plus four direct-write MCP tools, no `write_requests` row of any kind. Documents the new "quick-action tools" exception class in `.claude/rules/mcp.md`.
   Exit: service + tool tests cover add/transfer/adjust/list including the below-zero-wealth rejection; tests assert no `write_requests` row is written by any of the four tools.
 
-- [ ] **M-INVENTORY.3 — Surface inventory/wealth in `get_entity` and `prep_brief`** (T-144)
+- [x] **M-INVENTORY.3 — Surface inventory/wealth in `get_entity` and `prep_brief`** (T-144)
   `get_entity` includes an entity's assigned items; `prep_brief` surfaces campaign wealth and unassigned/pool items as prep context.
   Exit: `get_entity` test with assigned items; `prep_brief` test against a fixture campaign with seeded wealth and unassigned items.
 
