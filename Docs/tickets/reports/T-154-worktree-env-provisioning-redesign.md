@@ -43,3 +43,7 @@ Both are documented in `Docs/IMPLEMENTATION_NOTES.md` § T-154 so neither has to
 ## Anything Alex must decide
 
 None. One follow-up noted for visibility, not a decision needed now: `T-138` (runner-neutral `CLAUDE_PROJECT_DIR` default for `session-start.sh` itself, for a hypothetical non-Claude-Code runner) closed won't-fix as a direct consequence of this ticket — see its own report if that gap ever becomes real.
+
+## Postscript (2026-08-20) — design revised before merging
+
+This PR sat closed-without-merging for 11 days, then was revived and reconsidered against how Alex actually works (3-4 concurrent worktree sessions routinely). The shared-instance mechanism described above (`docker-compose.yml` pinned to `name: questlog`, isolation via worktree-suffixed database names) was **replaced** before merging: a shared instance means a Postgres restart/crash takes down every concurrent worktree session at once, not just the one that caused it. What actually shipped keeps this ticket's real fix (deriving isolation from `process.cwd()`, no env var to lose) but goes back to one dedicated Postgres container per worktree, with the *port* — not the database name — derived the same cwd-based way, plus a collision safety check (`session-start.sh` fails loudly if two worktrees' derived ports ever collide, verified live). Everything above this postscript is the original 2026-08-09 session's own record, left as written; see `Docs/IMPLEMENTATION_NOTES.md` § T-154 for what actually shipped.
