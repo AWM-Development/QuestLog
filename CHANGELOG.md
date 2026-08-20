@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-157
+
+- **Observability API: ticket-board read endpoint.** New `board.list` tRPC procedure (`apps/server/src/routers/board.ts`), backed by a new `boardService` (`packages/core/src/services/board.service.ts`) that reads `Docs/tickets/**/*.md` live off GitHub's `develop` branch (via `gh api`), parses each ticket file's id/title/priority/complexity tier/`Blocked on:`/`Gated on:` fields, and derives its pipeline status from which top-level `Docs/tickets/` folder it lives in. Gate-stub files (no `T-###` header) are skipped rather than returned as malformed cards. Results are cached in-memory for ~60 seconds so repeated calls don't re-hit the GitHub API. Not surfaced in any UI yet — `T-158` (the `/board` frontend route) is the consumer, still blocked on `T-057` merging and gated on `G-043`'s visual design.
+
 ### Added — T-144
 
 - **Inventory/wealth surfaced in `get_entity` and `prep_brief`.** `get_entity` now includes an `items` field — that entity's assigned `inventory_items` rows (empty array, not an omitted field, when it owns none); applies to any entity type, not just `pc`. `prep_brief` now includes `wealth` (all `campaign_wealth` rows) and `unassignedItems` (unassigned/party-pool items, capped at 10) as prep context. Both reuse `inventoryService.listInventory` (`T-143`) — no new MCP tools, no changes to `list_inventory`'s own response shape.
