@@ -8,24 +8,19 @@ const PASSWORD = "questlog";
 let repoRootDotenvLoaded = false;
 
 /**
- * Loads repo-root `.env` once per process, so a Vitest config file's
- * top-level `testDbUrl(...)` call (every `vitest.config.ts` in this repo
- * computes its `DATABASE_URL` this way, at config-eval time, before any
- * test or hook runs) can resolve `QUESTLOG_PG_PORT` without depending on
- * the invoking shell having it exported. It never does: the SessionStart
- * hook that derives a worktree's port (`scripts/worktree-postgres-env.sh`)
- * runs in its own subprocess, and that `export` is gone the moment the
- * hook exits — session-start.sh now pins the resolved value into the
- * worktree's own `.env` on disk instead (T-152 follow-up), which this
- * function reads. Opt-in, not a module-load side effect: call it explicitly
- * from a vitest config, before `testDbUrl()` — `test-db-url.ts` is also
- * imported by production code (`apps/server/src/observability-db.ts`) that
- * must not have its env-loading order perturbed by importing this module.
+ * Loads repo-root `.env` once per process, so a Vitest config's top-level
+ * `testDbUrl(...)` call can resolve `QUESTLOG_PG_PORT` without depending on
+ * the invoking shell having it exported. Why that's needed: `IMPLEMENTATION_NOTES.md`
+ * § "Worktree Postgres port pinned into .env, not just exported".
+ *
+ * Opt-in, not a module-load side effect — call it explicitly from a vitest
+ * config, before `testDbUrl()`. `test-db-url.ts` is also imported by
+ * production code (`apps/server/src/observability-db.ts`), which must not
+ * have its own env-loading order perturbed by importing this module.
  * Resolves relative to `process.cwd()`, matching `migrate.ts`'s own
- * `dotenv.config({ path: "../../.env" })` pattern — every vitest config in
- * this repo runs with its own package/app directory as cwd, exactly two
- * levels below the repo root, so the relative path is the same everywhere.
- * No-op if `.env` is absent (CI) or already loaded this process.
+ * `dotenv.config({ path: "../../.env" })` — every vitest config here runs
+ * two directory levels below the repo root, so the path is the same
+ * everywhere. No-op if `.env` is absent (CI) or already loaded.
  */
 export function loadRepoRootDotenvForVitestConfig(): void {
 	if (repoRootDotenvLoaded) return;

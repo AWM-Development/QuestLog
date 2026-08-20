@@ -71,15 +71,8 @@ describe("packages/shared/src/validators/index.ts barrel drift (T-152 follow-up)
 			}
 		}
 
-		// A validator module's `export const` that never reaches
-		// `validators/index.ts` (a named-export barrel, not a wildcard
-		// re-export — unlike `packages/shared/src/index.ts` one level up)
-		// silently resolves to `undefined` at every import site outside this
-		// directory: no typecheck error, no import error, just a falsy
-		// runtime value. For an MCP tool's `inputSchema`, that reads as "this
-		// tool takes no arguments" — every caller-supplied argument is
-		// silently dropped before the handler ever sees it. Full incident
-		// (T-152) and this guard's own rationale: Docs/IMPLEMENTATION_NOTES.md
+		// A missing re-export here resolves to `undefined` at every call
+		// site with no typecheck/import error (T-152). Why: IMPLEMENTATION_NOTES.md
 		// § "`validators/index.ts` barrel-export drift guard".
 		expect(missing).toEqual([]);
 	});

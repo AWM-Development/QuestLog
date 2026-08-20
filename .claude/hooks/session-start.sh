@@ -107,21 +107,11 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   # --- .env propagation: end ---
 
   # --- .env DB pin: begin (T-152 follow-up) ---
-  # A copied-or-preexisting .env's DATABASE_URL/QUESTLOG_PG_PORT reflect
-  # whatever wrote them last (the primary checkout's own values, or an
-  # earlier worktree derivation) — never this worktree's own derived port
-  # from worktree-postgres-env.sh above. QUESTLOG_PG_PORT's own `export`
-  # only lives inside this hook's subprocess and is gone the moment it
-  # exits, so any later command (an ad-hoc `db:migrate`, a plain shell
-  # `psql`) that doesn't re-derive it falls through to .env's stale value
-  # instead — silently targeting the wrong worktree's database. Pinning
-  # both keys into .env on disk, every session start, means every later
-  # process that loads .env (dotenv-based tooling — migrate.ts and its
-  # packages/observability counterpart) gets this worktree's real port with
-  # no shell-export dependency at all. Idempotent and self-healing by
-  # design — safe to re-run every session start, not a one-time fix. Why:
-  # Docs/IMPLEMENTATION_NOTES.md § "Worktree Postgres port pinned into
-  # .env, not just exported".
+  # QUESTLOG_PG_PORT's `export` above only lives inside this hook's own
+  # subprocess and is gone once it exits — a copied/preexisting .env never
+  # reflects it otherwise. Pinned on disk instead, every session start
+  # (idempotent). Why: Docs/IMPLEMENTATION_NOTES.md § "Worktree Postgres
+  # port pinned into .env, not just exported".
   touch "$CLAUDE_PROJECT_DIR/.env"
   worktree_database_url="postgresql://questlog:questlog@localhost:${QUESTLOG_PG_PORT}/questlog"
   for pair in "QUESTLOG_PG_PORT=${QUESTLOG_PG_PORT}" "DATABASE_URL=${worktree_database_url}"; do
