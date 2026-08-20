@@ -512,6 +512,85 @@ describe("entityService.create", () => {
 
 		expect(entity.type).toBe("pc");
 	});
+
+	it("stores dmNotes when provided (T-161), separate from description", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Vespera Nightveil",
+			type: "npc",
+			description: "A hooded merchant.",
+			dmNotes: "Secretly a Voss agent.",
+		});
+
+		expect(entity.description).toBe("A hooded merchant.");
+		expect(entity.dmNotes).toBe("Secretly a Voss agent.");
+	});
+
+	it("defaults dmNotes to null when omitted", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Ismark",
+			type: "npc",
+		});
+
+		expect(entity.dmNotes).toBeNull();
+	});
+});
+
+describe("entityService.update", () => {
+	let campaignId: string;
+
+	beforeEach(async () => {
+		await db.execute(sql`BEGIN`);
+		const campaign = await campaignService.create(db, {
+			name: "Test Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await db.execute(sql`ROLLBACK`);
+	});
+
+	it("updates dmNotes independently of description (T-161)", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Vespera Nightveil",
+			type: "npc",
+			description: "A hooded merchant.",
+			dmNotes: "Secretly a Voss agent.",
+		});
+
+		const updated = await entityService.update(db, {
+			id: entity.id,
+			campaignId,
+			dmNotes: "Secretly a Voss agent, now turned double agent.",
+		});
+
+		expect(updated.description).toBe("A hooded merchant.");
+		expect(updated.dmNotes).toBe(
+			"Secretly a Voss agent, now turned double agent.",
+		);
+	});
+
+	it("leaves dmNotes untouched when not in the update payload", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Vespera Nightveil",
+			type: "npc",
+			dmNotes: "Secretly a Voss agent.",
+		});
+
+		const updated = await entityService.update(db, {
+			id: entity.id,
+			campaignId,
+			name: "Vespera Nightveil-Voss",
+		});
+
+		expect(updated.name).toBe("Vespera Nightveil-Voss");
+		expect(updated.dmNotes).toBe("Secretly a Voss agent.");
+	});
 });
 
 describe("entityService.createSeeded", () => {
@@ -772,6 +851,84 @@ describe("entityService.appendToDescription", () => {
 		await expect(
 			entityService.appendToDescription(db, unknownId, "note"),
 		).rejects.toThrow(NotFoundError);
+	});
+});
+
+describe("entityService.appendToDmNotes", () => {
+	let campaignId: string;
+
+	beforeEach(async () => {
+		await db.execute(sql`BEGIN`);
+		const campaign = await campaignService.create(db, {
+			name: "Test Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await db.execute(sql`ROLLBACK`);
+	});
+
+	it("appends to existing dmNotes with a separator, leaving description untouched", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Strahd",
+			type: "npc",
+			description: "The vampire lord of Barovia.",
+			dmNotes: "Secretly seeks a new consort.",
+		});
+
+		const updated = await entityService.appendToDmNotes(
+			db,
+			entity.id,
+			"Will target Ireena first.",
+		);
+
+		expect(updated.dmNotes).toBe(
+			"Secretly seeks a new consort.\n\nWill target Ireena first.",
+		);
+		expect(updated.description).toBe("The vampire lord of Barovia.");
+	});
+
+	it("sets dmNotes when none exists yet", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Ismark",
+			type: "npc",
+		});
+
+		const updated = await entityService.appendToDmNotes(
+			db,
+			entity.id,
+			"Plans to betray the party for gold.",
+		);
+
+		expect(updated.dmNotes).toBe("Plans to betray the party for gold.");
+	});
+
+	it("throws NotFoundError for a nonexistent entity", async () => {
+		const unknownId = "00000000-0000-0000-0000-000000000000";
+		await expect(
+			entityService.appendToDmNotes(db, unknownId, "note"),
+		).rejects.toThrow(NotFoundError);
+	});
+
+	it("appends two dm notes across separate calls, concatenated with a blank line (T-161 exit condition)", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Strahd",
+			type: "npc",
+		});
+
+		await entityService.appendToDmNotes(db, entity.id, "First note.");
+		const updated = await entityService.appendToDmNotes(
+			db,
+			entity.id,
+			"Second note.",
+		);
+
+		expect(updated.dmNotes).toBe("First note.\n\nSecond note.");
 	});
 });
 
