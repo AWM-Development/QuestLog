@@ -61,6 +61,9 @@ export const CONFIRM_INGEST_ENTITIES_DESCRIPTION =
 export const GET_SOURCE_STATUS_DESCRIPTION =
 	"Check the processing status of a source created via ingest_text (or file upload). Returns the source's id, status (pending, extracting, chunking, embedding, done, or error), and errorReason if status is error.";
 
+export const LIST_SOURCES_DESCRIPTION =
+	"List a campaign's ingested sources (from ingest_text or file upload). Direct call-through, no preview/confirm needed. Returns each source's id, name, type, status, sizeBytes, createdAt, and updatedAt — not its raw content or storage key.";
+
 export const CORRECT_LORE_DESCRIPTION =
 	"Preview a lore correction: given correction text plus exactly one of sourceId (all that source's non-superseded chunks), chunkIds (explicit targets), or entityId (attribution only — empty target set, a pure addition). Returns a token and preview payload without marking anything superseded. Summarize the proposed correction and what it would supersede to the user in plain language before calling confirm_correct_lore (separate tool) with the token to apply.";
 
