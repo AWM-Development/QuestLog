@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-160
+
+- **`list_sources` MCP tool.** Returns a campaign's ingested sources (id, name, type, status, sizeBytes, createdAt, updatedAt — no raw `metadata`/`storageKey`), wiring the already-existing `sourceService.listByCampaign`/`ListSourcesInput` into a real tool. Follow-up to `T-159`: duplicate sources from that bug were previously only discoverable incidentally via `create_entity`'s `citations` array.
+
 ### Changed — T-154
 
 - **Worktree Postgres port is now derived from the working directory, not exported by a separate script.** `packages/core/src/db/test-db-url.ts`'s new `resolveWorktreePort()` (mirrored in bash by `scripts/test-db-names.sh`'s `worktree_port()`) computes a worktree's Postgres port from `process.cwd()` itself — no `QUESTLOG_PG_PORT` env var to forget to export, and no separate `worktree-postgres-env.sh` sourcing step required. A `vitest run` or `psql` invoked directly, with no setup script sourced at all, now still resolves the correct worktree's Postgres. Each worktree still gets its own dedicated container (unchanged from before) — the local-DB hook now also fails loudly with an actionable message if two worktrees' derived ports ever collide, instead of silently sharing one. See `IMPLEMENTATION_NOTES.md` § T-154.
