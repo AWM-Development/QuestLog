@@ -7,8 +7,8 @@ services:
       POSTGRES_DB: questlog
     ports:
       # Per-worktree port override, defaults to 5433 (T-072). Every
-      # worktree's session-start.sh passes its own cwd-derived port for just
-      # this one invocation — see packages/core/src/db/test-db-url.ts's
+      # worktree's session-db-local.sh passes its own cwd-derived port for
+      # just this one invocation — see packages/core/src/db/test-db-url.ts's
       # resolveWorktreePort().
       - "${QUESTLOG_PG_PORT:-5433}:5432"
     volumes:

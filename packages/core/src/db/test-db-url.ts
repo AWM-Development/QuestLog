@@ -44,11 +44,11 @@ function worktreeNameFromCwd(cwd: string): string | null {
 /**
  * Derives a worktree's Postgres port straight from its working directory —
  * never from an env var a session might forget to export. A `vitest run`
- * invoked directly, with no `session-start.sh`/env-export script ever
+ * invoked directly, with no `session-db-local.sh`/env-export script ever
  * sourced, still resolves the right port (this replaced the
  * checksum-derived-port design a silently-unset `QUESTLOG_PG_PORT` kept
  * defaulting past, most recently `T-109`). Not collision-proof (a hash into
- * a 1000-wide range) — `session-start.sh`'s own provisioning loop checks for
+ * a 1000-wide range) — `session-db-local.sh`'s own provisioning loop checks for
  * a real collision against another running worktree's Postgres and fails
  * loudly rather than silently sharing a port.
  *
@@ -56,7 +56,7 @@ function worktreeNameFromCwd(cwd: string): string | null {
  * falls back to `DEFAULT_PORT` in that case, same as before this existed.
  *
  * `scripts/test-db-names.sh`'s `worktree_port()` mirrors this exact
- * derivation for the bash-side provisioning loop in `session-start.sh` —
+ * derivation for the bash-side provisioning loop in `session-db-local.sh` —
  * keep both in sync if this logic ever changes.
  */
 export function resolveWorktreePort(

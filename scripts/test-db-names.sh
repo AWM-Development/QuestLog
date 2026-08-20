@@ -1,6 +1,6 @@
 #!/bin/bash
 # Canonical list of local Postgres test-database names. Sourced by
-# ci.yml, e2e-release-check.yml, and .claude/hooks/session-start.sh so
+# ci.yml, e2e-release-check.yml, and .claude/hooks/session-db-local.sh/session-db-remote.sh so
 # the names exist in exactly one place. Every DB-touching package gets its
 # own physical database — no shared `dependsOn` ordering stands in for
 # isolation. Why: Docs/IMPLEMENTATION_NOTES.md § T-027, § G-008.
@@ -12,7 +12,7 @@
 # defaulting past (most recently T-109). Can't literally share code across
 # bash/TS, so kept in sync by hand — verified bit-identical against five
 # sample worktree names before relying on it; if you change one, change
-# both. $1 = a project dir (session-start.sh always passes
+# both. $1 = a project dir (session-db-local.sh always passes
 # $CLAUDE_PROJECT_DIR, which it already requires). Prints nothing (not even
 # a trailing newline) when $1 isn't under tmp/worktrees/ — callers must
 # check for that, same as the TS side returning null.
@@ -48,9 +48,9 @@ TEST_DB_NAMES_CI=("$TEST_DB_NAME_CORE" "$TEST_DB_NAME_SERVER" "$TEST_DB_NAME_MCP
 # Most packages share packages/core's migrations via @questlog/server's
 # db:migrate; packages/observability's schema is independent (G-003) and
 # migrates via its own package script instead. Consumed by ci.yml and
-# session-start.sh so neither hardcodes a single migrate command for every
+# session-db-local.sh/session-db-remote.sh so neither hardcodes a single migrate command for every
 # dbname. A function, not an associative array (`declare -A`) — macOS ships
-# bash 3.2 by default (no associative-array support), and session-start.sh
+# bash 3.2 by default (no associative-array support), and these hook scripts
 # must run under that. Why: Docs/IMPLEMENTATION_NOTES.md § T-053.
 test_db_migrate_cmd() {
 	case "$1" in

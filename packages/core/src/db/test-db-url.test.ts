@@ -29,7 +29,7 @@ describe("resolveWorktreePort", () => {
 
 	it("finds the worktree name regardless of how deep under it cwd is — no setup step required", () => {
 		// This is the actual bug this design fixes: a `vitest run` invoked
-		// directly from a package subdirectory, with no session-start.sh/
+		// directly from a package subdirectory, with no session-db-local.sh/
 		// env-export script ever sourced, must still resolve the right port.
 		expect(resolveWorktreePort(NESTED_WORKTREE_CWD)).toBe(
 			resolveWorktreePort(WORKTREE_CWD),
