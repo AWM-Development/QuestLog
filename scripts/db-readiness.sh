@@ -1,11 +1,12 @@
 #!/bin/bash
-# Shared "is this database actually ready" check, used by both branches of
-# .claude/hooks/session-start.sh's verification gate (and the remote
-# branch's T-125 fast-path pre-check) so "ready" is defined in exactly one
-# place instead of two independently-drifting copies. Why this file exists
-# separately from session-start.sh itself: Docs/IMPLEMENTATION_NOTES.md § T-130
-# — it also makes the check independently sourceable for live verification
-# without paying the full hook's pnpm-install/docker-compose/migrate cost.
+# Shared "is this database actually ready" check, used by both
+# .claude/hooks/session-db-local.sh's and session-db-remote.sh's
+# verification gates (and the remote script's T-125 fast-path pre-check)
+# so "ready" is defined in exactly one place instead of two
+# independently-drifting copies. Why this file exists separately from those
+# hook scripts: Docs/IMPLEMENTATION_NOTES.md § T-130 — it also makes the
+# check independently sourceable for live verification without paying the
+# full hook's pnpm-install/docker-compose/migrate cost.
 #
 # Requires scripts/test-db-names.sh already sourced (TEST_DB_NAME_DEV,
 # TEST_DB_NAME_OBSERVABILITY) and $CLAUDE_PROJECT_DIR set.
@@ -38,7 +39,7 @@ db_readiness_issue() {
 	# works to look it up. $TEST_DB_NAME_DEV itself is guaranteed to exist by
 	# the time either caller runs this, for two different reasons per branch:
 	# locally, docker-compose.yml's POSTGRES_DB creates it at container start,
-	# before session-start.sh ever runs; remotely, it's TEST_DB_NAMES's own
+	# before session-db-local.sh ever runs; remotely, it's TEST_DB_NAMES's own
 	# first entry (test-db-names.sh) and the remote branch's loops check
 	# databases in that array's order, so it's already created/migrated
 	# before any later database's readiness is ever checked.
@@ -47,7 +48,9 @@ db_readiness_issue() {
 		echo "database ${dbname} does not exist"
 		return
 	fi
-	if [ "$dbname" != "$TEST_DB_NAME_OBSERVABILITY" ]; then
+	case "$dbname" in
+	"$TEST_DB_NAME_OBSERVABILITY") ;;
+	*)
 		local ext ext_ok
 		for ext in $QUESTLOG_DB_REQUIRED_EXTENSIONS; do
 			ext_ok=$("$run_query" "$dbname" "SELECT 1 FROM pg_extension WHERE extname='${ext}'")
@@ -56,7 +59,8 @@ db_readiness_issue() {
 				return
 			fi
 		done
-	fi
+		;;
+	esac
 	local migration_count
 	migration_count=$("$run_query" "$dbname" "SELECT count(*) FROM drizzle.__drizzle_migrations")
 	if ! [[ "$migration_count" =~ ^[0-9]+$ ]]; then
@@ -88,8 +92,8 @@ ensure_database_provisioned() {
 	if [ "$db_exists" != "1" ]; then
 		"$create_fn" "$dbname"
 	fi
-	# Subshell so this never touches the calling session-start.sh process's
-	# own OBSERVABILITY_DATABASE_URL. Deliberately pre-SETS it (rather than
+	# Subshell so this never touches the calling hook script's own
+	# OBSERVABILITY_DATABASE_URL. Deliberately pre-SETS it (rather than
 	# unsetting it, as T-156's own ticket text originally proposed) to the
 	# same value as DATABASE_URL — unset doesn't work here, since dotenv
 	# fills in an absent key from .env, but never overwrites an already-set

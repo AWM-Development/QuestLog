@@ -1,4 +1,4 @@
-# T-138 — Runner-neutral `CLAUDE_PROJECT_DIR` default
+# T-138 — Runner-neutral `CLAUDE_PROJECT_DIR` default — WON'T FIX
 
 Renumbered 2026-08-06 from `T-104`: that id collided with a separate,
 legitimate ticket (`T-104-cite-not-restate-implementation-notes-rationale.md`,
@@ -72,3 +72,25 @@ Iteration cap: 3 distinct approaches on any single failure, then Blocked Protoco
 Definition of done includes: checkbox flipped in Docs/milestones/MILESTONES_V1_1_MCP.md,
   IMPLEMENTATION_NOTES.md updated if any non-obvious decision was made,
   a CHANGELOG.md entry under [Unreleased], morning report written.
+
+## Resolution — WON'T FIX (2026-08-09)
+
+`T-154` (interactive session, same day) deleted `scripts/worktree-postgres-env.sh`
+entirely — the file this ticket's whole Scope was about patching. Its
+underlying rationale is gone too, not just its target file: T-154 replaced
+the checksum-derived-port-per-worktree design with a single shared Postgres
+instance and worktree-suffixed database names derived from
+`packages/core/src/db/test-db-url.ts`'s `resolveWorktreeDbSuffix()`, which
+reads `process.cwd()` directly rather than `CLAUDE_PROJECT_DIR` — there is no
+longer a `WORKTREE_NAME` → `QUESTLOG_PG_PORT` derivation for an unset
+`CLAUDE_PROJECT_DIR` to silently corrupt, because there's no more
+per-worktree port at all. `.claude/hooks/session-start.sh` still requires
+`CLAUDE_PROJECT_DIR` at its own top (`cd "$CLAUDE_PROJECT_DIR"`), but that's
+now `session-start.sh`'s own concern under `set -euo pipefail` — an unset
+var there fails loud (unbound-variable error) rather than the silent
+cross-worktree collision this ticket was written to prevent. Genuinely
+runner-neutral session bootstrap (a non-Claude-Code runner invoking
+`session-start.sh` without `CLAUDE_PROJECT_DIR` set) is real but out of
+scope for what this ticket was actually protecting against — worth its own
+ticket if a second runner ever needs it, not a reason to keep this one open
+against a file that no longer exists.
