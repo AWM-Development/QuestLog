@@ -2,8 +2,8 @@
 # SessionStart hook — local worktree Postgres provisioning only. Split out
 # of session-start.sh alongside session-git-hygiene.sh/session-db-remote.sh
 # — see that file's header comment for why. No-ops immediately outside a
-# tmp/worktrees/* directory or when CLAUDE_CODE_REMOTE=true (session-db-remote.sh
-# owns that case instead).
+# recognized worktree directory or when CLAUDE_CODE_REMOTE=true
+# (session-db-remote.sh owns that case instead).
 set -euo pipefail
 
 # Runner-neutral default — see Docs/IMPLEMENTATION_NOTES.md § T-138.
@@ -15,8 +15,9 @@ if [ "${CLAUDE_CODE_REMOTE:-}" = "true" ]; then
   exit 0
 fi
 
+# Both tmp/worktrees/<name> and the desktop app's own .claude/worktrees/<name>.
 case "$CLAUDE_PROJECT_DIR" in
-  */tmp/worktrees/*) ;;
+  */tmp/worktrees/* | */.claude/worktrees/*) ;;
   *) exit 0 ;;
 esac
 

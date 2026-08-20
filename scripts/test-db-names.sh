@@ -14,17 +14,21 @@
 # sample worktree names before relying on it; if you change one, change
 # both. $1 = a project dir (session-db-local.sh always passes
 # $CLAUDE_PROJECT_DIR, which it already requires). Prints nothing (not even
-# a trailing newline) when $1 isn't under tmp/worktrees/ — callers must
-# check for that, same as the TS side returning null.
+# a trailing newline) when $1 isn't under either recognized worktree layout
+# — callers must check for that, same as the TS side returning null.
 worktree_port() {
 	local project_dir="$1"
 	node -e '
-		const marker = "/tmp/worktrees/";
+		const markers = ["/tmp/worktrees/", "/.claude/worktrees/"];
 		const dir = process.argv[1];
-		const idx = dir.indexOf(marker);
-		if (idx === -1) process.exit(0);
-		const rest = dir.slice(idx + marker.length);
-		const name = rest.split("/")[0];
+		let name = null;
+		for (const marker of markers) {
+			const idx = dir.indexOf(marker);
+			if (idx === -1) continue;
+			const rest = dir.slice(idx + marker.length);
+			const candidate = rest.split("/")[0];
+			if (candidate) { name = candidate; break; }
+		}
 		if (!name) process.exit(0);
 		let hash = 0;
 		for (let i = 0; i < name.length; i++) {

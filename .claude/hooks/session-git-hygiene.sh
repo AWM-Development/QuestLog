@@ -25,7 +25,7 @@ cd "$CLAUDE_PROJECT_DIR"
 # in the shared primary checkout the same day this was added).
 if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   case "$CLAUDE_PROJECT_DIR" in
-    */tmp/worktrees/*) ;;
+    */tmp/worktrees/* | */.claude/worktrees/*) ;;
     *)
       echo "⚠️  session-git-hygiene.sh: this session is in the SHARED PRIMARY checkout, not an isolated worktree."
       echo "⚠️  Per AGENTS.md 'Session isolation': before editing anything, run —"

@@ -4,7 +4,12 @@ const HOST = "localhost";
 const DEFAULT_PORT = 5433;
 const USER = "questlog";
 const PASSWORD = "questlog";
-const WORKTREES_MARKER = `${sep}tmp${sep}worktrees${sep}`;
+// Both this repo's tmp/worktrees/<name> and the desktop app's own
+// .claude/worktrees/<name> are real worktree layouts in use.
+const WORKTREES_MARKERS = [
+	`${sep}tmp${sep}worktrees${sep}`,
+	`${sep}.claude${sep}worktrees${sep}`,
+];
 // Mirrors the old checksum-derived-port design's own range (T-072), widened
 // from 500 for cheap extra collision margin — see resolveWorktreePort.
 const PORT_RANGE = 1000;
@@ -26,19 +31,16 @@ function rollingHash32(input: string): number {
 	return hash;
 }
 
-/**
- * Extracts the worktree name from a `tmp/worktrees/<name>/...` path (this
- * repo's whole worktree convention, `AGENTS.md` § "Session isolation").
- * Shared by `resolveWorktreePort` and (indirectly, via its own mirror in
- * `scripts/test-db-names.sh`) the bash-side provisioning loop — returns
- * null outside a worktree (primary checkout, CI).
- */
+// Extracts the worktree name from either recognized layout; null outside one.
 function worktreeNameFromCwd(cwd: string): string | null {
-	const idx = cwd.indexOf(WORKTREES_MARKER);
-	if (idx === -1) return null;
-	const rest = cwd.slice(idx + WORKTREES_MARKER.length);
-	const name = rest.split(sep)[0];
-	return name || null;
+	for (const marker of WORKTREES_MARKERS) {
+		const idx = cwd.indexOf(marker);
+		if (idx === -1) continue;
+		const rest = cwd.slice(idx + marker.length);
+		const name = rest.split(sep)[0];
+		if (name) return name;
+	}
+	return null;
 }
 
 /**
