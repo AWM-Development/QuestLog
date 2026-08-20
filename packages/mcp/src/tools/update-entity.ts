@@ -14,13 +14,14 @@ export function registerUpdateEntity(server: McpServer, { db }: ToolDeps) {
 			inputSchema: EntityUpdateInput,
 		},
 		withToolErrors(
-			async ({ campaignId, entityId, name, type, description }) => {
+			async ({ campaignId, entityId, name, type, description, dmNotes }) => {
 				const existing = await entityService.getById(db, campaignId, entityId);
 
 				const fields: Record<string, unknown> = {};
 				if (name !== undefined) fields.name = name;
 				if (type !== undefined) fields.type = type;
 				if (description !== undefined) fields.description = description;
+				if (dmNotes !== undefined) fields.dmNotes = dmNotes;
 
 				const payload = {
 					campaignId,
@@ -30,6 +31,7 @@ export function registerUpdateEntity(server: McpServer, { db }: ToolDeps) {
 						name: existing.name,
 						type: existing.type,
 						description: existing.description,
+						dmNotes: existing.dmNotes,
 					},
 					after: {
 						name: "name" in fields ? fields.name : existing.name,
@@ -38,6 +40,7 @@ export function registerUpdateEntity(server: McpServer, { db }: ToolDeps) {
 							"description" in fields
 								? fields.description
 								: existing.description,
+						dmNotes: "dmNotes" in fields ? fields.dmNotes : existing.dmNotes,
 					},
 				};
 
