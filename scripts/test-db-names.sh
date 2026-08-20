@@ -5,14 +5,18 @@
 # own physical database — no shared `dependsOn` ordering stands in for
 # isolation. Why: Docs/IMPLEMENTATION_NOTES.md § T-027, § G-008.
 
-# Mirrors packages/core/src/db/test-db-url.ts's resolveWorktreeDbSuffix()
-# exactly (same marker, same slice, same sanitize regex, same truncation) —
-# the bash-side half of T-154's single-shared-Postgres-instance redesign.
-# Can't literally share code across bash/TS, so kept in sync by hand; if you
-# change one, change both. $1 = a project dir (session-start.sh always
-# passes $CLAUDE_PROJECT_DIR, which it already requires). Prints nothing
-# (not even a trailing newline) when $1 isn't under tmp/worktrees/.
-worktree_db_suffix() {
+# Mirrors packages/core/src/db/test-db-url.ts's resolveWorktreePort() exactly
+# (same marker/name-extraction, same rolling hash, same range/offset) — the
+# bash-side half of the port-from-cwd redesign that replaced the
+# checksum-derived-port design a silently-unset QUESTLOG_PG_PORT kept
+# defaulting past (most recently T-109). Can't literally share code across
+# bash/TS, so kept in sync by hand — verified bit-identical against five
+# sample worktree names before relying on it; if you change one, change
+# both. $1 = a project dir (session-start.sh always passes
+# $CLAUDE_PROJECT_DIR, which it already requires). Prints nothing (not even
+# a trailing newline) when $1 isn't under tmp/worktrees/ — callers must
+# check for that, same as the TS side returning null.
+worktree_port() {
 	local project_dir="$1"
 	node -e '
 		const marker = "/tmp/worktrees/";
@@ -22,9 +26,11 @@ worktree_db_suffix() {
 		const rest = dir.slice(idx + marker.length);
 		const name = rest.split("/")[0];
 		if (!name) process.exit(0);
-		process.stdout.write(
-			name.toLowerCase().replace(/[^a-z0-9_]/g, "_").slice(0, 24),
-		);
+		let hash = 0;
+		for (let i = 0; i < name.length; i++) {
+			hash = (Math.imul(hash, 31) + name.charCodeAt(i)) >>> 0;
+		}
+		process.stdout.write(String(5433 + (hash % 1000) + 1));
 	' "$project_dir"
 }
 
@@ -47,11 +53,8 @@ TEST_DB_NAMES_CI=("$TEST_DB_NAME_CORE" "$TEST_DB_NAME_SERVER" "$TEST_DB_NAME_MCP
 # bash 3.2 by default (no associative-array support), and session-start.sh
 # must run under that. Why: Docs/IMPLEMENTATION_NOTES.md § T-053.
 test_db_migrate_cmd() {
-	# Glob-matched, not exact — T-154 suffixes physical dbnames with a
-	# worktree tag (questlog_test_observability__t_109), so an exact match
-	# against the bare base name would always miss inside a worktree.
 	case "$1" in
-		"$TEST_DB_NAME_OBSERVABILITY" | "$TEST_DB_NAME_OBSERVABILITY"__*)
+		"$TEST_DB_NAME_OBSERVABILITY")
 			echo "pnpm --filter @questlog/observability db:migrate"
 			;;
 		*)
@@ -75,7 +78,7 @@ TEST_DB_TEMPLATES=("$TEST_DB_TEMPLATE_CORE" "$TEST_DB_TEMPLATE_OBSERVABILITY")
 # than duplicating that logic with a second, independently-maintained switch.
 test_db_template_name() {
 	case "$1" in
-		"$TEST_DB_NAME_OBSERVABILITY" | "$TEST_DB_NAME_OBSERVABILITY"__*)
+		"$TEST_DB_NAME_OBSERVABILITY")
 			echo "$TEST_DB_TEMPLATE_OBSERVABILITY"
 			;;
 		*)

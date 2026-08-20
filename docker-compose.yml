@@ -1,11 +1,3 @@
-# Explicit `name:` pins the Compose project regardless of which directory
-# `docker compose up` runs from — every worktree's session-start.sh and a
-# human's interactive `docker compose up -d` (README's setup step 3) all
-# converge on this one instance instead of each worktree spinning up its own
-# container on a checksum-derived port. One shared, long-lived Postgres;
-# isolation moves to the database-name layer instead (T-154, superseding the
-# per-worktree-container design — see Docs/IMPLEMENTATION_NOTES.md § T-154).
-name: questlog
 services:
   postgres:
     image: pgvector/pgvector:0.8.5-pg16
@@ -14,7 +6,11 @@ services:
       POSTGRES_PASSWORD: questlog
       POSTGRES_DB: questlog
     ports:
-      - "5433:5432"
+      # Per-worktree port override, defaults to 5433 (T-072). Every
+      # worktree's session-start.sh passes its own cwd-derived port for just
+      # this one invocation — see packages/core/src/db/test-db-url.ts's
+      # resolveWorktreePort().
+      - "${QUESTLOG_PG_PORT:-5433}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 

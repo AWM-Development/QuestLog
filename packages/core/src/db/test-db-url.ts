@@ -5,75 +5,93 @@ const DEFAULT_PORT = 5433;
 const USER = "questlog";
 const PASSWORD = "questlog";
 const WORKTREES_MARKER = `${sep}tmp${sep}worktrees${sep}`;
-// Postgres's own unquoted-identifier limit is 63 bytes total; this leaves
-// headroom for the longest base name this repo has (`questlog_test_observability`,
-// 28 chars) plus the `__` separator.
-const MAX_SUFFIX_LENGTH = 24;
+// Mirrors the old checksum-derived-port design's own range (T-072), widened
+// from 500 for cheap extra collision margin — see resolveWorktreePort.
+const PORT_RANGE = 1000;
 
-// Resolved per call, not cached — so vi.stubEnv and late overrides both work (T-072).
-function resolvePort(): number {
-	const raw = process.env.QUESTLOG_PG_PORT;
-	if (!raw) return DEFAULT_PORT;
-	const parsed = Number(raw);
-	return Number.isFinite(parsed) ? parsed : DEFAULT_PORT;
-}
-
-// Postgres unquoted identifiers are lowercase letters/digits/underscores
-// only — a worktree directory name like "T-109" or "env-redesign" isn't
-// valid as-is.
-function sanitizeForPgIdentifier(raw: string): string {
-	return raw
-		.toLowerCase()
-		.replace(/[^a-z0-9_]/g, "_")
-		.slice(0, MAX_SUFFIX_LENGTH);
+/**
+ * Deterministic rolling hash (`hash = hash*31 + charCode`, wrapped to 32
+ * bits every step) — chosen over `cksum`/`crc32` because it has to produce
+ * the exact same output in this file *and* in `scripts/test-db-names.sh`'s
+ * bash mirror, and a hand-written polynomial hash is trivial to keep
+ * bit-identical across both, unlike reimplementing a real CRC. Verified
+ * live before relying on it: both sides hashed five sample worktree names
+ * to identical results.
+ */
+function rollingHash32(input: string): number {
+	let hash = 0;
+	for (let i = 0; i < input.length; i++) {
+		hash = (Math.imul(hash, 31) + input.charCodeAt(i)) >>> 0;
+	}
+	return hash;
 }
 
 /**
- * Derives the per-worktree database-name suffix straight from a working
- * directory — never from an env var a session might forget to export. Every
- * `tmp/worktrees/<name>/...` path (this repo's whole worktree convention,
- * `AGENTS.md` § "Session isolation") carries its own worktree name as an
- * ancestor path segment, so this needs no setup step at all: a `vitest run`
- * invoked directly, with no `session-start.sh`/env-export script ever
- * sourced, still resolves the right database (T-154 — this replaced the
- * checksum-derived-port design a silently-unset `QUESTLOG_PG_PORT` kept
- * defaulting past, most recently T-109).
- *
- * Returns null outside a worktree (primary checkout, CI) — same un-suffixed
- * database names as before T-154.
- *
- * `scripts/test-db-names.sh`'s `worktree_db_suffix()` mirrors this exact
- * derivation for the bash-side provisioning loop in `session-start.sh` —
- * keep both in sync if this logic ever changes.
+ * Extracts the worktree name from a `tmp/worktrees/<name>/...` path (this
+ * repo's whole worktree convention, `AGENTS.md` § "Session isolation").
+ * Shared by `resolveWorktreePort` and (indirectly, via its own mirror in
+ * `scripts/test-db-names.sh`) the bash-side provisioning loop — returns
+ * null outside a worktree (primary checkout, CI).
  */
-export function resolveWorktreeDbSuffix(
-	cwd: string = process.cwd(),
-): string | null {
+function worktreeNameFromCwd(cwd: string): string | null {
 	const idx = cwd.indexOf(WORKTREES_MARKER);
 	if (idx === -1) return null;
 	const rest = cwd.slice(idx + WORKTREES_MARKER.length);
 	const name = rest.split(sep)[0];
-	return name ? sanitizeForPgIdentifier(name) : null;
+	return name || null;
 }
 
 /**
- * Builds the local Postgres connection string for a given database name,
- * suffixed with the current worktree's name when run from inside one
- * (`resolveWorktreeDbSuffix`, T-154) — so concurrent worktrees never share a
- * physical test database, and no shell has to remember to export anything
- * for that isolation to hold. Single source of truth for the
+ * Derives a worktree's Postgres port straight from its working directory —
+ * never from an env var a session might forget to export. A `vitest run`
+ * invoked directly, with no `session-start.sh`/env-export script ever
+ * sourced, still resolves the right port (this replaced the
+ * checksum-derived-port design a silently-unset `QUESTLOG_PG_PORT` kept
+ * defaulting past, most recently `T-109`). Not collision-proof (a hash into
+ * a 1000-wide range) — `session-start.sh`'s own provisioning loop checks for
+ * a real collision against another running worktree's Postgres and fails
+ * loudly rather than silently sharing a port.
+ *
+ * Returns null outside a worktree (primary checkout, CI) — `resolvePort`
+ * falls back to `DEFAULT_PORT` in that case, same as before this existed.
+ *
+ * `scripts/test-db-names.sh`'s `worktree_port()` mirrors this exact
+ * derivation for the bash-side provisioning loop in `session-start.sh` —
+ * keep both in sync if this logic ever changes.
+ */
+export function resolveWorktreePort(
+	cwd: string = process.cwd(),
+): number | null {
+	const name = worktreeNameFromCwd(cwd);
+	if (!name) return null;
+	return DEFAULT_PORT + (rollingHash32(name) % PORT_RANGE) + 1;
+}
+
+// Resolved per call, not cached — so vi.stubEnv and late overrides both work
+// (T-072). `QUESTLOG_PG_PORT` stays as a manual override for the rare case
+// that needs one; the worktree-derived port is what makes it unnecessary in
+// the common case.
+function resolvePort(cwd?: string): number {
+	const raw = process.env.QUESTLOG_PG_PORT;
+	if (raw) {
+		const parsed = Number(raw);
+		if (Number.isFinite(parsed)) return parsed;
+	}
+	return resolveWorktreePort(cwd) ?? DEFAULT_PORT;
+}
+
+/**
+ * Builds the local Postgres connection string for a given database name.
+ * Single source of truth for the
  * `postgresql://questlog:questlog@localhost:5433/<dbname>` literal that used
  * to be hand-typed across both packages' vitest configs, test-helpers.ts's
  * fallback, and migrate.ts's fallback — collapsed here so all of them stay
- * in sync if the local stack's host/port/credentials ever change. Reads
- * `QUESTLOG_PG_PORT` as a manual port override if set (defaults to 5433,
- * the one shared instance every worktree now targets — T-154 removed the
- * per-worktree port derivation this var used to carry).
+ * in sync if the local stack's host/port/credentials ever change. Resolves
+ * the port from the worktree's own working directory (`resolveWorktreePort`)
+ * — no call-site changes needed, and no env var to lose.
  */
 export function testDbUrl(dbname: string, cwd?: string): string {
-	const suffix = resolveWorktreeDbSuffix(cwd);
-	const effectiveName = suffix ? `${dbname}__${suffix}` : dbname;
-	return `postgresql://${USER}:${PASSWORD}@${HOST}:${resolvePort()}/${effectiveName}`;
+	return `postgresql://${USER}:${PASSWORD}@${HOST}:${resolvePort(cwd)}/${dbname}`;
 }
 
 const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1"]);

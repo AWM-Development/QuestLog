@@ -47,11 +47,8 @@ db_readiness_issue() {
 		echo "database ${dbname} does not exist"
 		return
 	fi
-	# Glob-matched, not exact — T-154 suffixes physical dbnames with a
-	# worktree tag, so an exact match against the bare base name would
-	# always miss inside a worktree.
 	case "$dbname" in
-	"$TEST_DB_NAME_OBSERVABILITY" | "$TEST_DB_NAME_OBSERVABILITY"__*) ;;
+	"$TEST_DB_NAME_OBSERVABILITY") ;;
 	*)
 		local ext ext_ok
 		for ext in $QUESTLOG_DB_REQUIRED_EXTENSIONS; do

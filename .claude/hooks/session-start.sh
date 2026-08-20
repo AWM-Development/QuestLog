@@ -107,44 +107,39 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   fi
   # --- .env propagation (T-131): end ---
 
-  # --- worktree-scoped Postgres provisioning (T-154): begin ---
-  # One shared, long-lived Postgres instance (docker-compose.yml pins
-  # `name: questlog` so every worktree's `docker compose up -d` converges on
-  # the same container instead of each spinning up its own on a
-  # checksum-derived port) — isolation moves to the database-name layer
-  # instead (scripts/test-db-names.sh's worktree_db_suffix(), mirroring
-  # packages/core/src/db/test-db-url.ts's resolveWorktreeDbSuffix()). This
-  # superseded the per-worktree-container design (previously T-072): a
-  # session that skipped sourcing the old per-worktree port-export script
-  # would silently talk to a different worktree's (possibly stale-schema)
-  # Postgres instead of failing — confirmed live, most recently T-109. Since
-  # the worktree-scoped suffix is now derived from cwd, not an env var, that
-  # failure mode no longer exists — nothing to forget to source.
-  # See Docs/IMPLEMENTATION_NOTES.md § T-154.
-  db_suffix="$(worktree_db_suffix "$CLAUDE_PROJECT_DIR")"
-  echo "session-start.sh: worktree '$(basename "$CLAUDE_PROJECT_DIR")' -> shared Postgres :5433 (db suffix '${db_suffix}')"
+  # --- worktree-scoped Postgres provisioning: begin ---
+  # Per-worktree container again, but the port is derived fresh from cwd
+  # every time (worktree_port(), mirroring packages/core/src/db/test-db-url.ts's
+  # resolveWorktreePort()) instead of exported by a separate script and read
+  # back later — nothing to forget to source. A session that skipped that
+  # sourcing step used to silently talk to a different worktree's
+  # (possibly stale-schema) Postgres instead of failing — confirmed live,
+  # most recently T-109. `port`/`compose_project` below are plain local shell
+  # variables, scoped only to this invocation — no export, because nothing
+  # later needs to read them; every later consumer (a raw `vitest`, a raw
+  # `psql`, a re-run of this hook) independently recomputes the identical
+  # value from cwd instead.
+  port="$(worktree_port "$CLAUDE_PROJECT_DIR")"
+  compose_project="questlog-$(basename "$CLAUDE_PROJECT_DIR" | tr '[:upper:]' '[:lower:]')"
+  echo "session-start.sh: worktree '$(basename "$CLAUDE_PROJECT_DIR")' -> Postgres :${port} (project ${compose_project})"
 
-  # --- .env propagation: begin (T-131) ---
-  # `git worktree add` never carries gitignored files into a new worktree
-  # (confirmed: `.env`/`.env.local`/`.env.*.local` in .gitignore), so any
-  # locally-scoped secret the primary checkout's `.env` holds (e.g.
-  # OBSERVABILITY_DATABASE_URL) never reaches a ticket's worktree otherwise.
-  # Copy, not symlink — a symlink would dangle once the source worktree is
-  # reaped (scripts/reap-worktree.sh), and `.env` is small enough that
-  # copying costs nothing. Why: Docs/IMPLEMENTATION_NOTES.md § T-131.
-  primary_checkout="$(git worktree list --porcelain | awk '/^worktree /{print $2; exit}')"
-  if [ -f "$primary_checkout/.env" ] && [ ! -f "$CLAUDE_PROJECT_DIR/.env" ]; then
-    cp "$primary_checkout/.env" "$CLAUDE_PROJECT_DIR/.env"
-    echo "session-start.sh: propagated primary checkout's .env into worktree '${WORKTREE_NAME}'"
-  else
-    echo "session-start.sh: worktree '${WORKTREE_NAME}' already has its own .env, leaving untouched"
+  # Collision safety check — the port is a hash into a 1000-wide range, not
+  # collision-proof. Fails loudly and immediately if another worktree's
+  # Postgres already owns this port, rather than silently sharing it (which
+  # would corrupt both worktrees' isolation) or silently picking a different
+  # port (which would reintroduce exactly the cross-process propagation
+  # problem this design exists to eliminate — a picked-around port has to be
+  # communicated somehow, and that "somehow" is the original bug).
+  existing_owner=$(docker ps --filter "publish=${port}" --format '{{.Label "com.docker.compose.project"}}' 2>/dev/null | head -1)
+  if [ -n "$existing_owner" ] && [ "$existing_owner" != "$compose_project" ]; then
+    echo "session-start.sh: PORT COLLISION — worktree '$(basename "$CLAUDE_PROJECT_DIR")' derived port ${port}, already bound by a different worktree's Postgres ('${existing_owner}'). Rename one of the colliding worktree directories to resolve." >&2
+    exit 1
   fi
-  # --- .env propagation: end ---
 
-  docker compose up -d
+  QUESTLOG_PG_PORT="$port" COMPOSE_PROJECT_NAME="$compose_project" docker compose up -d
 
   for _ in $(seq 1 30); do
-    pg_isready -h localhost -p 5433 -q && break
+    pg_isready -h localhost -p "$port" -q && break
     sleep 1
   done
 
@@ -158,7 +153,7 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   # shellcheck disable=SC2329
   local_psql_query() {
     local conn_db="$1" query="$2"
-    PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d "$conn_db" -tAc "$query" 2>/dev/null || echo none
+    PGPASSWORD=questlog psql -h localhost -p "$port" -U questlog -d "$conn_db" -tAc "$query" 2>/dev/null || echo none
   }
 
   # docker-compose.yml's POSTGRES_DB only creates `questlog` itself; every
@@ -166,7 +161,7 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   # provisioning step. Why this wasn't always here: Docs/IMPLEMENTATION_NOTES.md § T-098.
   # shellcheck disable=SC2329
   local_create_database() {
-    PGPASSWORD=questlog psql -h localhost -p 5433 -U questlog -d questlog -c "CREATE DATABASE $1"
+    PGPASSWORD=questlog psql -h localhost -p "$port" -U questlog -d questlog -c "CREATE DATABASE $1"
   }
 
   # Fast-path (mirrors T-125's remote-branch pre-check, ported here per the
@@ -175,8 +170,7 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   # criteria — a warm worktree re-running this hook shouldn't pay N
   # `db:migrate` invocations just to no-op every time. Why: Docs/IMPLEMENTATION_NOTES.md § T-130.
   all_databases_ready=true
-  for base_dbname in "${TEST_DB_NAMES_CI[@]}"; do
-    dbname="${base_dbname}${db_suffix:+__$db_suffix}"
+  for dbname in "${TEST_DB_NAMES_CI[@]}"; do
     if [ -n "$(db_readiness_issue local_psql_query "$dbname")" ]; then
       all_databases_ready=false
       break
@@ -186,14 +180,10 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   if [ "$all_databases_ready" = true ]; then
     echo "session-start.sh: fast-path — all ${#TEST_DB_NAMES_CI[@]} database(s) already satisfy the verification gate's criteria, skipping create/migrate loop"
   else
-    # Test-tier only (TEST_DB_NAMES_CI excludes the dev DB, which stays
-    # unsuffixed — it's docker-compose.yml's POSTGRES_DB anchor, not a
-    # per-worktree resource; interactive `pnpm dev` targets its own
-    # separately-managed instance and was never part of this isolation).
-    for base_dbname in "${TEST_DB_NAMES_CI[@]}"; do
-      dbname="${base_dbname}${db_suffix:+__$db_suffix}"
+    # Test-tier only (TEST_DB_NAMES_CI excludes the dev DB) — see § T-072.
+    for dbname in "${TEST_DB_NAMES_CI[@]}"; do
       ensure_database_provisioned local_psql_query local_create_database \
-        "postgresql://questlog:questlog@localhost:5433/${dbname}" "$dbname"
+        "postgresql://questlog:questlog@localhost:${port}/${dbname}" "$dbname"
     done
   fi
 
@@ -204,15 +194,14 @@ if [ "${CLAUDE_CODE_REMOTE:-}" != "true" ]; then
   # unmigrated questlog_test_observability mid-session instead of at
   # hook-exit). Why: Docs/IMPLEMENTATION_NOTES.md § T-130.
   failed=""
-  for base_dbname in "${TEST_DB_NAMES_CI[@]}"; do
-    dbname="${base_dbname}${db_suffix:+__$db_suffix}"
+  for dbname in "${TEST_DB_NAMES_CI[@]}"; do
     issue="$(db_readiness_issue local_psql_query "$dbname")"
     if [ -n "$issue" ]; then
       failed="$issue"
       break
     fi
   done
-  # --- worktree-scoped Postgres provisioning (T-154): end ---
+  # --- worktree-scoped Postgres provisioning: end ---
 
   if [ -n "$failed" ]; then
     echo "session-start.sh: PROVISIONING FAILED — ${failed}" >&2

@@ -3,7 +3,7 @@ import {
 	FAKE_HOSTED_DB_URL,
 	assertLocalDatabaseUrl,
 	resolveLocalTestDbUrl,
-	resolveWorktreeDbSuffix,
+	resolveWorktreePort,
 	testDbUrl,
 } from "./test-db-url.js";
 
@@ -12,46 +12,42 @@ const PRIMARY_CWD = "/Users/alex/Documents/Code/QuestLog";
 const WORKTREE_CWD = "/Users/alex/Documents/Code/QuestLog/tmp/worktrees/T-109";
 const NESTED_WORKTREE_CWD =
 	"/Users/alex/Documents/Code/QuestLog/tmp/worktrees/T-109/packages/core";
+const ENV_REDESIGN_CWD =
+	"/Users/alex/Documents/Code/QuestLog/tmp/worktrees/env-redesign";
 
-describe("resolveWorktreeDbSuffix", () => {
+describe("resolveWorktreePort", () => {
 	it("returns null for a cwd outside tmp/worktrees/ (primary checkout, CI)", () => {
-		expect(resolveWorktreeDbSuffix(PRIMARY_CWD)).toBeNull();
+		expect(resolveWorktreePort(PRIMARY_CWD)).toBeNull();
 	});
 
-	it("returns the sanitized worktree name for a cwd directly at tmp/worktrees/<name>", () => {
-		expect(resolveWorktreeDbSuffix(WORKTREE_CWD)).toBe("t_109");
+	it("returns a deterministic port for a cwd directly at tmp/worktrees/<name>", () => {
+		// Independently verified against the bash mirror (scripts/test-db-names.sh's
+		// worktree_port()) before relying on this — both sides must agree bit
+		// for bit, since neither reads the other's output.
+		expect(resolveWorktreePort(WORKTREE_CWD)).toBe(6427);
 	});
 
 	it("finds the worktree name regardless of how deep under it cwd is — no setup step required", () => {
-		// This is the actual bug T-154 fixes: a `vitest run` invoked directly
-		// from a package subdirectory, with no session-start.sh/env-export
-		// script ever sourced, must still resolve the right worktree.
-		expect(resolveWorktreeDbSuffix(NESTED_WORKTREE_CWD)).toBe("t_109");
-	});
-
-	it("sanitizes a hyphenated worktree name into a valid unquoted Postgres identifier", () => {
-		expect(
-			resolveWorktreeDbSuffix(
-				"/Users/alex/Documents/Code/QuestLog/tmp/worktrees/env-redesign",
-			),
-		).toBe("env_redesign");
-	});
-
-	it("lowercases and strips any other non-identifier characters", () => {
-		expect(
-			resolveWorktreeDbSuffix(
-				"/Users/alex/Documents/Code/QuestLog/tmp/worktrees/Weird.Name!",
-			),
-		).toBe("weird_name_");
-	});
-
-	it("truncates a very long worktree name so the suffixed db name stays under Postgres's 63-byte identifier limit", () => {
-		const longName = "a".repeat(80);
-		const suffix = resolveWorktreeDbSuffix(
-			`/Users/alex/Documents/Code/QuestLog/tmp/worktrees/${longName}`,
+		// This is the actual bug this design fixes: a `vitest run` invoked
+		// directly from a package subdirectory, with no session-start.sh/
+		// env-export script ever sourced, must still resolve the right port.
+		expect(resolveWorktreePort(NESTED_WORKTREE_CWD)).toBe(
+			resolveWorktreePort(WORKTREE_CWD),
 		);
-		expect(suffix).not.toBeNull();
-		expect(suffix?.length).toBeLessThanOrEqual(24);
+	});
+
+	it("derives a different port for a different worktree name", () => {
+		expect(resolveWorktreePort(ENV_REDESIGN_CWD)).toBe(6003);
+		expect(resolveWorktreePort(ENV_REDESIGN_CWD)).not.toBe(
+			resolveWorktreePort(WORKTREE_CWD),
+		);
+	});
+
+	it("always resolves within the documented port range above the default", () => {
+		const port = resolveWorktreePort(WORKTREE_CWD);
+		expect(port).not.toBeNull();
+		expect(port as number).toBeGreaterThan(5433);
+		expect(port as number).toBeLessThanOrEqual(5433 + 1000);
 	});
 });
 
@@ -60,7 +56,7 @@ describe("testDbUrl", () => {
 		vi.unstubAllEnvs();
 	});
 
-	it("builds a local Postgres connection string on the fixed port when QUESTLOG_PG_PORT is unset", () => {
+	it("builds a local Postgres connection string on the default port outside a worktree", () => {
 		vi.stubEnv("QUESTLOG_PG_PORT", undefined);
 
 		expect(testDbUrl("questlog_test", PRIMARY_CWD)).toBe(
@@ -76,27 +72,27 @@ describe("testDbUrl", () => {
 		);
 	});
 
-	it("uses QUESTLOG_PG_PORT when set — still a valid manual override, just no longer worktree-derived", () => {
+	it("resolves the worktree-derived port when cwd is inside tmp/worktrees/ — no env var required", () => {
+		vi.stubEnv("QUESTLOG_PG_PORT", undefined);
+
+		expect(testDbUrl("questlog_test_core", WORKTREE_CWD)).toBe(
+			"postgresql://questlog:questlog@localhost:6427/questlog_test_core",
+		);
+	});
+
+	it("QUESTLOG_PG_PORT, when set, overrides the worktree-derived port — a manual escape hatch, not the primary mechanism", () => {
 		vi.stubEnv("QUESTLOG_PG_PORT", "5501");
 
-		expect(testDbUrl("questlog_test", PRIMARY_CWD)).toBe(
+		expect(testDbUrl("questlog_test", WORKTREE_CWD)).toBe(
 			"postgresql://questlog:questlog@localhost:5501/questlog_test",
 		);
 	});
 
-	it("falls back to 5433 when QUESTLOG_PG_PORT is not a valid number", () => {
+	it("falls back to the worktree-derived (or default) port when QUESTLOG_PG_PORT is not a valid number", () => {
 		vi.stubEnv("QUESTLOG_PG_PORT", "not-a-port");
 
 		expect(testDbUrl("questlog_test", PRIMARY_CWD)).toBe(
 			"postgresql://questlog:questlog@localhost:5433/questlog_test",
-		);
-	});
-
-	it("suffixes the database name with the worktree name when cwd is inside tmp/worktrees/ — no env var required (T-154)", () => {
-		vi.stubEnv("QUESTLOG_PG_PORT", undefined);
-
-		expect(testDbUrl("questlog_test_core", WORKTREE_CWD)).toBe(
-			"postgresql://questlog:questlog@localhost:5433/questlog_test_core__t_109",
 		);
 	});
 
