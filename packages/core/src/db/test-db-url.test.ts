@@ -1,3 +1,4 @@
+import dotenv from "dotenv";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	FAKE_HOSTED_DB_URL,
@@ -5,6 +6,8 @@ import {
 	resolveLocalTestDbUrl,
 	testDbUrl,
 } from "./test-db-url.js";
+
+vi.mock("dotenv", () => ({ default: { config: vi.fn() } }));
 
 describe("testDbUrl", () => {
 	afterEach(() => {
@@ -106,5 +109,35 @@ describe("resolveLocalTestDbUrl", () => {
 		expect(() => resolveLocalTestDbUrl(FAKE_HOSTED_DB_URL)).toThrow(
 			/non-local database host/,
 		);
+	});
+});
+
+describe("loadRepoRootDotenvForVitestConfig", () => {
+	afterEach(() => {
+		vi.clearAllMocks();
+	});
+
+	it("loads repo-root .env using the same cwd-relative path migrate.ts's own dotenv.config() uses", async () => {
+		vi.resetModules();
+		const { loadRepoRootDotenvForVitestConfig } = await import(
+			"./test-db-url.js"
+		);
+
+		loadRepoRootDotenvForVitestConfig();
+
+		expect(dotenv.config).toHaveBeenCalledWith({ path: "../../.env" });
+	});
+
+	it("only loads once per process — a Vitest config calling it more than once must not re-parse .env repeatedly", async () => {
+		vi.resetModules();
+		const { loadRepoRootDotenvForVitestConfig } = await import(
+			"./test-db-url.js"
+		);
+
+		loadRepoRootDotenvForVitestConfig();
+		loadRepoRootDotenvForVitestConfig();
+		loadRepoRootDotenvForVitestConfig();
+
+		expect(dotenv.config).toHaveBeenCalledTimes(1);
 	});
 });

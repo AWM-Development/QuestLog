@@ -10,6 +10,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Fixed
+
+- **Worktree Postgres port no longer silently falls back to the shared default.** `session-start.sh` now pins a worktree's derived `QUESTLOG_PG_PORT`/`DATABASE_URL` into its own `.env` on disk (idempotent, every session start) instead of only `export`-ing them inside the hook's own subprocess, where they died on exit. Every `vitest.config.ts` (8 files, across `packages/core`/`mcp`/`observability`, `apps/server`/`mcp-stdio`) now loads that `.env` before resolving its test database URL, via a new opt-in `loadRepoRootDotenvForVitestConfig()` (`packages/core/src/db/test-db-url.ts`). Closes a recurring class of session friction where an ad-hoc `db:migrate` or `pnpm test` silently targeted the wrong database unless the port was re-exported by hand. Full rationale: `Docs/IMPLEMENTATION_NOTES.md` § "Worktree Postgres port pinned into `.env`, not just exported".
+- **New drift guard on `packages/shared/src/validators/index.ts`'s barrel export.** `packages/mcp/src/content/validators-barrel-drift.test.ts` fails if a validator module's `export const` is ever added without a matching re-export in the barrel — the exact silent-failure class documented in `T-152`'s report (a missing re-export makes an MCP tool's `inputSchema` resolve to `undefined`, which the MCP SDK treats as "no arguments," silently dropping every caller-supplied argument). Full rationale: `Docs/IMPLEMENTATION_NOTES.md` § "`validators/index.ts` barrel-export drift guard".
+
 ### Added — T-144
 
 - **Inventory/wealth surfaced in `get_entity` and `prep_brief`.** `get_entity` now includes an `items` field — that entity's assigned `inventory_items` rows (empty array, not an omitted field, when it owns none); applies to any entity type, not just `pc`. `prep_brief` now includes `wealth` (all `campaign_wealth` rows) and `unassignedItems` (unassigned/party-pool items, capped at 10) as prep context. Both reuse `inventoryService.listInventory` (`T-143`) — no new MCP tools, no changes to `list_inventory`'s own response shape.

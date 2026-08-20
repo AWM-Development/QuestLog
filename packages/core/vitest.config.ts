@@ -1,5 +1,12 @@
 import { configDefaults, defineConfig } from "vitest/config";
-import { testDbUrl } from "./src/db/test-db-url.js";
+import {
+	loadRepoRootDotenvForVitestConfig,
+	testDbUrl,
+} from "./src/db/test-db-url.js";
+
+// Must run before testDbUrl() below resolves QUESTLOG_PG_PORT — see the
+// function's own doc comment (T-152 follow-up).
+loadRepoRootDotenvForVitestConfig();
 
 /**
  * Default test tier: unit + integration (real DB, mocked external APIs).

@@ -1,5 +1,12 @@
 import { defineConfig } from "vitest/config";
-import { testDbUrl } from "../core/src/db/test-db-url.js";
+import {
+	loadRepoRootDotenvForVitestConfig,
+	testDbUrl,
+} from "../core/src/db/test-db-url.js";
+
+// Must run before testDbUrl() below resolves QUESTLOG_PG_PORT — see the
+// function's own doc comment (T-152 follow-up).
+loadRepoRootDotenvForVitestConfig();
 
 /**
  * packages/mcp's only default-tier suite is server.test.ts (relocated here
