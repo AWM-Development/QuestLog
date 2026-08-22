@@ -1,7 +1,7 @@
 # QuestLog — v1.7 Milestones (Feature Exploration: DM Continuity & Cross-Campaign Tools)
 
 **Location:** `Docs/milestones/MILESTONES_V1_7_MCP.md`
-**Status:** CANONICAL task source for v1.7 as of `G-024`'s resolution (2026-08-07) — `M-PARTYMODEL` has a real task list. `M-PARTYKNOW` gained a real task list on `G-032`'s resolution (2026-08-19). `M-NPCVOICE` closed, not pursued. `M-CONTINUITY`/`M-CROSSCAMPAIGN` remain placeholders, each fully gated, no task list yet. Scoped to new product-feature ideas for the MCP tool surface itself (not pipeline, not UI) — the kind of "cool stuff we haven't tackled yet" that fits QuestLog's premise as an AI campaign co-manager.
+**Status:** CANONICAL task source for v1.7 as of `G-024`'s resolution (2026-08-07) — `M-PARTYMODEL` has a real task list. `M-PARTYKNOW` gained a real task list on `G-032`'s resolution (2026-08-19). `M-CONTINUITY` gained a real task list on `G-031`'s resolution (2026-08-20). `M-NPCVOICE` closed, not pursued. `M-CROSSCAMPAIGN` remains a placeholder, fully gated, no task list yet. Scoped to new product-feature ideas for the MCP tool surface itself (not pipeline, not UI) — the kind of "cool stuff we haven't tackled yet" that fits QuestLog's premise as an AI campaign co-manager.
 **Created:** 2026-08-03, opened by Alex from a feature-brainstorm session covering capabilities the MCP tool surface doesn't yet have. Takes the next free version slot after `v1.6` (pipeline-robustness, unrelated scope) rather than overloading `v1.5` (already MCP-app-polish + inventory) or `v1.6` (pipeline-only) with unrelated feature ideas.
 
 ## Why v1.7 exists
@@ -18,10 +18,10 @@ Each is genuinely independent — different data model, different tool surface, 
 A fifth milestone, **`M-PARTYMODEL`**, was added 2026-08-07 — not one of the original four brainstormed feature ideas above, but the resolution of a separate, earlier-filed gate (`G-024`, opened 2026-08-02, before this doc existed) whose scope is the schema/model foundation the rest of this version's cross-campaign ambitions (especially `M-CROSSCAMPAIGN`) will eventually build on. It lands here rather than a new version slot because it's the same "campaign scoping" theme, and per `/ungate`'s decision to land it wherever fits rather than open a dedicated version for two small tasks.
 
 **Open gates:**
-- `G-031` (`Docs/tickets/gated/G-031-continuity-inconsistency-detection.md`) — blocks M-CONTINUITY.
 - `G-033` (`Docs/tickets/gated/G-033-cross-campaign-entity-borrowing.md`) — blocks M-CROSSCAMPAIGN.
 
 **Resolved gates going into this milestone:**
+- `G-031` (`Docs/tickets/gated/resolved/G-031-continuity-inconsistency-detection.md`) — resolved 2026-08-20 via `/ungate`, together with Alex. Pursue proactive detection: an LLM pass (matching `G-021`'s precedent) over recent entities/sessions, confidence-gated (moderate threshold, not "surface everything"), running both on-ingest and on-demand via a new tool. Detected candidates route through the existing `correct_lore`/`confirm_correct_lore` flow unchanged — no new preview/confirm mechanism. See the resolved gate-stub for full rationale.
 - `G-024` (`Docs/tickets/gated/resolved/G-024-campaign-source-party-conceptual-model.md`) — resolved 2026-08-07 via `/ungate`, together with Alex. Party becomes a real parent of campaigns (nullable `partyId` FK on `campaigns`, not a tag on entities/sessions); every existing read stays `campaignId`-scoped by default. A `sourceId`-scoped search filter on `query_lore`/`get_entity` was approved as an independent, straightforward addition. Cross-campaign continuity itself (the actual read-time expansion) is explicitly deferred, future scope — this milestone is schema/plumbing only. See the resolved gate-stub for full rationale.
 - `G-030` (`Docs/tickets/gated/resolved/G-030-npc-voice-and-personality-recall.md`) — resolved 2026-08-10 via `/ungate`. Not worth building right now — no ticket drafted, `M-NPCVOICE` closed with no task list. Deferred to v2 consideration, not a rejected idea; see the resolved gate-stub for full rationale.
 - `G-032` (`Docs/tickets/gated/resolved/G-032-party-knowledge-epistemic-state.md`) — resolved 2026-08-19 via `/ungate`, together with Alex. Not a "revealed to party during play" tracking model — instead, reuses the existing (previously dead/unwired) `dmNotes` column on `entities` as a manually-authored DM-only field, wired into `create_entity`/`update_entity`/`append_entity_note` on the write side, and surfaced across `query_lore`/`prep_brief`/`get_entity` on the read side with an explicit `[PARTY]`/`[DM]` line-tagging convention so a DM narrating live from tool output can tell what's safe to read aloud. `M-PARTYKNOW` drafted two tickets (`T-161`, `T-162`). See the resolved gate-stub for full rationale.
@@ -42,13 +42,14 @@ None — closed with no tickets drafted.
 
 ## Milestone M-CONTINUITY: Continuity & Inconsistency Detection
 
-**Goal:** TBD — resolves from `G-031`. Placeholder section; see the gate-stub for the open question (detection approach, false-positive tolerance, and how flagged candidates surface into the existing `correct_lore`/`confirm_correct_lore` flow).
+**Goal:** Proactively surface likely lore contradictions (e.g. an NPC described as dead in one session log but referenced as alive in a later prep brief) as candidates for the DM to triage, via a confidence-gated LLM pass running both on-ingest and on-demand. Resolved via `G-031` (2026-08-20) — reuses the existing `correct_lore`/`confirm_correct_lore` flow unchanged for any candidate the DM confirms.
 
-**Context:** No PRD section covers this — new feature idea proposed 2026-08-03 (see `G-031`). Adjacent to v1.3's `M-CANON` (`Docs/milestones/MILESTONES_V1_3_MCP.md`) but proactive detection, not reactive correction.
+**Context:** No PRD section covers this — new feature idea proposed 2026-08-03 (see `G-031`, resolved 2026-08-20). Adjacent to v1.3's `M-CANON` (`Docs/milestones/MILESTONES_V1_3_MCP.md`) but proactive detection, not reactive correction.
 
 ### Tasks
 
-_None yet — blocked on `G-031`. `/ungate` drafts this milestone's real task list on resolution (or closes the gate with no tickets if the decision is not to pursue)._
+- [ ] Continuity contradiction-detection service — LLM pass over recent entities/sessions, confidence-gated (T-163)
+- [ ] Continuity detection tool surface — ingest wiring + on-demand `detect_contradictions` tool (T-164)
 
 ---
 
@@ -61,7 +62,7 @@ _None yet — blocked on `G-031`. `/ungate` drafts this milestone's real task li
 ### Tasks
 
 - [x] Wire `dmNotes` into `create_entity`, `update_entity`, and `append_entity_note` (new `visibility` param) (T-161)
-- [ ] Surface `dmNotes` in `query_lore`, `prep_brief`, and `get_entity` with `[PARTY]`/`[DM]` line tagging (T-162)
+- [x] Surface `dmNotes` in `query_lore`, `prep_brief`, and `get_entity` with `[PARTY]`/`[DM]` line tagging (T-162)
 
 ---
 

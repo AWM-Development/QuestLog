@@ -1,8 +1,12 @@
 export const QUERY_LORE_DESCRIPTION =
-	"Query campaign lore via hybrid vector + keyword search. Returns assembled context with source citations and a confidence score.";
+	"Query campaign lore via hybrid vector + keyword search. " +
+	'The Campaign Entities section in the assembled text tags each line "[PARTY] ..." (party-safe, safe to read aloud or paraphrase) or "[DM] ..." (that entity\'s DM-only dmNotes — never read aloud or paraphrased to players). ' +
+	"Returns assembled context with source citations and a confidence score.";
 
 export const PREP_BRIEF_DESCRIPTION =
-	"Assemble a session prep brief for a campaign. Returns a recap of recent sessions, active plot threads, likely NPCs, quick links, current campaign wealth, and a short list of notable unassigned/party-pool items.";
+	"Assemble a session prep brief for a campaign. " +
+	"Each likely NPC includes a dmNotes field (null if none set) — for the DM's own prep reading only, never to be read aloud or paraphrased to players. " +
+	"Returns a recap of recent sessions, active plot threads, likely NPCs, quick links, current campaign wealth, and a short list of notable unassigned/party-pool items.";
 
 export const LIST_CAMPAIGNS_DESCRIPTION =
 	"List all campaigns. Call this first when the user hasn't supplied a campaignId, so you can identify theirs and use its id in subsequent tool calls. Returns each campaign's id, name, description, theme, gameSystem, and status.";
@@ -14,7 +18,9 @@ export const LIST_ENTITIES_DESCRIPTION =
 	"List entities in a campaign, optionally filtered by type (npc, location, faction, item, arc). Returns the matching entities.";
 
 export const GET_ENTITY_DESCRIPTION =
-	"Look up a single entity by id or by fuzzy name match. Exactly one of entityId or name must be provided. Returns the matching entity, including any inventory items it owns.";
+	"Look up a single entity by id or by fuzzy name match. Exactly one of entityId or name must be provided. " +
+	"dmNotes is DM-only background information — never read aloud or paraphrased to players — while description/summary are party-safe. " +
+	"Returns the matching entity, including any inventory items it owns.";
 
 export const CREATE_ENTITY_DESCRIPTION =
 	"Create a new entity (npc, location, faction, item, or arc) in a campaign. Direct write — only ever inserts a new row, no preview/confirm needed. Searches ingested lore for a matching description first: a high-confidence match seeds the description and is cited in the response, a caller-supplied description is never overwritten (a seeded draft is appended alongside it instead), and lower-confidence matches still come back as citations to review. Optionally accepts dmNotes — a manually-authored, DM-only field for the DM's own eyes, never meant to be read aloud to players or otherwise shared with the party; never lore-seeded, unlike description. Returns the created entity along with any lore citations, a confidence score, and whether the description was seeded from ingested lore.";
