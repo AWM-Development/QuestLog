@@ -1010,6 +1010,30 @@ describe("create_entity tool", () => {
 			expect.arrayContaining([expect.objectContaining({ chunkId: chunk?.id })]),
 		);
 	});
+
+	it("persists a supplied dmNotes value and returns it in the response (T-161)", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const createResult = await client.callTool({
+			name: "create_entity",
+			arguments: {
+				campaignId,
+				name: "Mira Duskwood",
+				type: "npc",
+				description: "A road warden.",
+				dmNotes: "Secretly reports to Baron Voss.",
+			},
+		});
+
+		expect(createResult.isError).toBeFalsy();
+		const content = createResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const created = JSON.parse(content[0]?.text ?? "{}");
+		expect(created.description).toBe("A road warden.");
+		expect(created.dmNotes).toBe("Secretly reports to Baron Voss.");
+	});
 });
 
 describe("create_campaign tool", () => {
@@ -1124,6 +1148,89 @@ describe("append_entity_note tool", () => {
 		expect(payload.description).toBe(
 			"A road warden.\n\nShe used to serve under Baron Voss.",
 		);
+	});
+
+	it("appends to description when visibility is explicitly 'party' (T-161 regression check)", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+			description: "A road warden.",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "append_entity_note",
+			arguments: {
+				entityId: entity.id,
+				note: "She used to serve under Baron Voss.",
+				visibility: "party",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.description).toBe(
+			"A road warden.\n\nShe used to serve under Baron Voss.",
+		);
+		expect(payload.dmNotes).toBeNull();
+	});
+
+	it("appends to dmNotes when visibility is 'dm', leaving description unchanged (T-161)", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+			description: "A road warden.",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "append_entity_note",
+			arguments: {
+				entityId: entity.id,
+				note: "Secretly reports to Baron Voss.",
+				visibility: "dm",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.dmNotes).toBe("Secretly reports to Baron Voss.");
+		expect(payload.description).toBe("A road warden.");
+	});
+
+	it("concatenates two 'dm' visibility notes with a blank line across calls (T-161)", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		await client.callTool({
+			name: "append_entity_note",
+			arguments: {
+				entityId: entity.id,
+				note: "First dm note.",
+				visibility: "dm",
+			},
+		});
+		const result = await client.callTool({
+			name: "append_entity_note",
+			arguments: {
+				entityId: entity.id,
+				note: "Second dm note.",
+				visibility: "dm",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.dmNotes).toBe("First dm note.\n\nSecond dm note.");
 	});
 
 	it("returns a well-formed not-found error for a bogus entityId", async () => {
@@ -1454,6 +1561,50 @@ describe("update_entity + confirm_update_entity tools", () => {
 			.where(eq(entities.id, entity.id));
 		expect(updated?.name).toBe("Mira Duskwood");
 		expect(updated?.description).toBe("A road warden turned mercenary.");
+	});
+
+	it("previews dmNotes in both before and after, and confirm persists it (T-161)", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+			dmNotes: "Secretly reports to Baron Voss.",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "update_entity",
+			arguments: {
+				campaignId,
+				entityId: entity.id,
+				dmNotes: "Secretly reports to Baron Voss, now defected.",
+			},
+		});
+
+		expect(previewResult.isError).toBeFalsy();
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token, preview } = JSON.parse(previewContent[0]?.text ?? "{}");
+		expect(preview.before.dmNotes).toBe("Secretly reports to Baron Voss.");
+		expect(preview.after.dmNotes).toBe(
+			"Secretly reports to Baron Voss, now defected.",
+		);
+
+		const confirmResult = await client.callTool({
+			name: "confirm_update_entity",
+			arguments: { token },
+		});
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const confirmed = JSON.parse(confirmContent[0]?.text ?? "{}");
+		expect(confirmed.dmNotes).toBe(
+			"Secretly reports to Baron Voss, now defected.",
+		);
 	});
 
 	it("rejects an invalid type before it reaches the service", async () => {

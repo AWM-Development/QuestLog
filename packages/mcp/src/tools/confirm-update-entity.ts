@@ -9,7 +9,12 @@ import type { ToolDeps } from "./types.js";
 interface UpdateEntityPayload {
 	campaignId: string;
 	entityId: string;
-	fields: { name?: string; type?: string; description?: string };
+	fields: {
+		name?: string;
+		type?: string;
+		description?: string;
+		dmNotes?: string;
+	};
 }
 
 export function registerConfirmUpdateEntity(

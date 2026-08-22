@@ -292,5 +292,11 @@
     "prNumber": 273,
     "branch": "fix/m-bug/t-156-observability-migrate-database-url-leak",
     "mergedAt": "2026-08-12T14:11:47Z"
+  },
+  {
+    "ticketId": "T-161",
+    "prNumber": 294,
+    "branch": "feat/m-partyknow/t-161-dm-only-notes-write-path",
+    "mergedAt": "2026-08-22T14:13:38Z"
   }
 ]
