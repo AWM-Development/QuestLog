@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-160
+
+- **`list_sources` MCP tool.** Returns a campaign's ingested sources (id, name, type, status, sizeBytes, createdAt, updatedAt — no raw `metadata`/`storageKey`), wiring the already-existing `sourceService.listByCampaign`/`ListSourcesInput` into a real tool. Follow-up to `T-159`: duplicate sources from that bug were previously only discoverable incidentally via `create_entity`'s `citations` array.
+
 ### Added — T-161
 
 - **DM-only notes, write path.** `create_entity` and `update_entity` now accept an optional `dmNotes` field — a manually-authored, DM-only note per entity, separate from the party-safe `description`. `append_entity_note` gains a `visibility: "party" | "dm"` param (defaults to `"party"`, preserving existing behavior) so a DM can append a note to either field. Reuses the existing `entities.dmNotes` column (live in the DB since migration `0000`, previously unwired) — no migration needed. Resolves the write side of `G-032`; read-side surfacing (`query_lore`/`prep_brief`/`get_entity`) is `T-162`.
