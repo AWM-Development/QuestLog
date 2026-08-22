@@ -1,7 +1,7 @@
 # QuestLog — v1.8 Milestones (Encounter Tracking & Stat Blocks)
 
 **Location:** `Docs/milestones/MILESTONES_V1_8_MCP.md`
-**Status:** Placeholder — `M-STATBLOCK` gained a partial task list on `G-036`'s resolution (2026-08-22; `T-171` only, the rest still waits on `G-039`), `M-ENCOUNTER` gained a full task list on `G-037`'s resolution (2026-08-22; `T-172`), `M-GENERATE` remains fully gated with no task list yet. Not yet a task source `CLAUDE.md` points to; gets added there once at least one milestone below has real shippable tasks (mirrors `MILESTONES_V1_5/6/7_MCP.md`'s own Status line). Takes the next free version slot after `v1.7` (feature exploration, unrelated scope).
+**Status:** Placeholder — `M-STATBLOCK` gained a partial task list on `G-036`'s resolution (2026-08-22; `T-171` only, the rest still waits on `G-039`), `M-ENCOUNTER` gained a full task list on `G-037`'s resolution (2026-08-22; `T-172`), `M-GENERATE` gained a full task list on `G-038`'s resolution (2026-08-22; `T-173`, `T-174`) — its balancing sub-question split into its own gate, `G-049`, still open. Not yet a task source `CLAUDE.md` points to; gets added there once at least one milestone below has real shippable tasks (mirrors `MILESTONES_V1_5/6/7_MCP.md`'s own Status line). Takes the next free version slot after `v1.7` (feature exploration, unrelated scope).
 **Created:** 2026-08-06, opened by Alex from a planning conversation proposing MCP-native encounter tracking — a new feature domain, not a continuation of `MILESTONES_V2.md` §7.2's web-UI combat tracker, which stays out of scope until v2 planning opens per `CLAUDE.md`.
 
 ## Why v1.8 exists
@@ -10,7 +10,7 @@ Alex proposed a significant new capability: the MCP surface returning stat block
 
 1. **Stat block template system** (`G-036`, resolved 2026-08-22) — a user-supplied, ruleset-agnostic template that any stat-block-bearing entity renders through; a new `monster` entity type to carry the data. Built to support `G-039`'s image rendering from the start, not just markdown output — see the resolved gate-stub for the template format/schema decisions.
 2. **Live encounter mode** (`G-037`, resolved 2026-08-22) — bringing up initiative and HP during play, confirmed memory-only (no persisted table) — see the resolved gate-stub for the tool-shape decision.
-3. **NL encounter generation & save** (`G-038`) — generating an encounter from natural language and persisting it for reuse — a new table, distinct from live-mode tracking of a specific session's fight.
+3. **NL encounter generation & save** (`G-038`, resolved 2026-08-22) — generating an encounter from natural language and persisting it for reuse — a new table, distinct from live-mode tracking of a specific session's fight. CR/party-size balancing split into its own gate, `G-049`.
 4. **Stat block image rendering** (`G-039`) — split out from `G-036` at Alex's explicit call: rendering a styled image (closer to a traditional parchment-style stat block, see the attached reference) is core v1.8 scope, not a deferred maybe-later. Depends on `G-036` resolving first, since the template format decided there is what gets rendered.
 
 One decision already came out of the kickoff conversation and is recorded here rather than left as an open question in the gates below:
@@ -20,12 +20,13 @@ One decision already came out of the kickoff conversation and is recorded here r
 Output format was initially decided as "markdown first, image later" but Alex overrode that on 2026-08-06: image rendering is explicit, first-class v1.8 scope with its own gate (`G-039`), and `G-036`'s template design must accommodate it from the outset rather than bolting it on afterward.
 
 **Open gates:**
-- `G-038` (`Docs/tickets/gated/G-038-encounter-generation-and-save.md`) — NL encounter generation & saved-encounter persistence. Blocks Milestone M-GENERATE below. Its own open question #4 (does live mode require a saved encounter to instantiate from) is now answerable — `G-037` confirmed live mode starts ad hoc, no saved encounter required.
 - `G-039` (`Docs/tickets/gated/G-039-stat-block-image-rendering.md`) — stat block image rendering pipeline. Blocks Milestone M-STATBLOCK below (image-rendering phase). `G-036` (its own prerequisite — the template-format decision this gate depends on) is now resolved.
+- `G-049` (`Docs/tickets/gated/G-049-encounter-cr-balancing.md`) — encounter CR/party-size balancing, split from `G-038` at Alex's request. Hard-blocked on the monster CR/XP columns themselves, which don't exist yet (`G-039` → `G-036`'s deferred stat-block work).
 
 **Resolved gates going into this milestone:**
 - `G-036` (`Docs/tickets/gated/resolved/G-036-stat-block-template-system.md`) — resolved 2026-08-22 via `/ungate`, together with Alex. Template: a library of named templates in a dedicated `stat_block_templates` table, campaign picks one, authored in constrained HTML/CSS with placeholder tokens (one format drives both markdown-text and `G-039`'s eventual image render). Monster schema: hybrid — discrete typed columns for fixed fields (AC/HP/speed/six ability scores/CR/XP), JSONB for irregular list data (traits/actions). Creation flow: deferred — `create_entity` for `monster` works like any other type, stat-block fields filled in later via `update_entity`. Stat data stays strictly `monster`-only, but a real gap Alex raised mid-resolution (a recurring NPC who's also a combatant) is answered by a new `entities.linkedEntityId` symmetric FK pairing an `npc` (lore) with a `monster` (combat stats) — drafted as `T-171`, ahead of the rest of this milestone's task list since it's schema/plumbing groundwork orthogonal to the still-open image-rendering decision. See the resolved gate-stub for full rationale.
 - `G-037` (`Docs/tickets/gated/resolved/G-037-live-encounter-mode.md`) — resolved 2026-08-22 via `/ungate`, together with Alex. Confirmed memory-only — no persisted table, most tracking stays in the conversation itself. Mid-resolution reframing on tool shape: not a state machine round-tripped every turn, but a small set of genuinely stateless utility actions (initiative sorting, HP-delta arithmetic with status-band derivation) for the fiddly bits worth getting deterministically right — the first tool in this codebase with no `db` dependency at all. A shared `Combatant` Zod shape doubles as the standard reference format Alex asked for. Gate-boundary note: Alex's initial answer described saved/reusable encounter presets ("run encounter X") — that's `G-038`'s territory, not this gate's; kept the original filing boundary intact rather than folding it in here. `M-ENCOUNTER` drafted one ticket (`T-172`). See the resolved gate-stub for full rationale.
+- `G-038` (`Docs/tickets/gated/resolved/G-038-encounter-generation-and-save.md`) — resolved 2026-08-22 via `/ungate`, together with Alex. Persistence: campaign-scoped `encounters` + `encounter_members` tables, `(entityId, count)` pairs, mirroring `inventoryItems`'s shape. Generation can invent new `monster` entities via the existing preview/confirm pattern (`log_session`/`confirm_ingest_entities`'s precedent), not a new write mechanism. Balancing split out into its own gate, `G-049`, at Alex's request rather than closed outright. No hard sequencing dependency on `G-037` — already settled by that gate's own resolution (live mode starts ad hoc). `M-GENERATE` drafted two tickets, split along the persistence/generation seam (`T-173` in `queue/`, `T-174` in `backlog/` blocked on it). See the resolved gate-stub for full rationale.
 
 ---
 
@@ -53,4 +54,14 @@ _The rest of this milestone's tasks (stat-block columns, `stat_block_templates` 
 
 ## Milestone M-GENERATE — NL encounter generation & saved encounters
 
-*Blocked on `G-038`. Task list written here once the gate resolves.*
+**Goal:** A campaign-scoped `encounters` table (name + freeform notes + `(entityId, count)` members) with a manual save path, plus a `generate_encounter` tool that parses freeform text into a structured creature list, matches it against the campaign's monster roster, and proposes new `monster` entities for anything unmatched — DM confirms, both the new entities and the saved encounter land together. Resolved via `G-038` (2026-08-22). CR/party-size balancing is explicitly out of scope, split into `G-049`.
+
+**Context:** No PRD section covers this — new feature idea proposed 2026-08-06 (see `G-038`, resolved 2026-08-22). Distinct from `G-037`'s live-mode tracking of one specific fight — this is planning/reuse, not the in-progress-combat surface.
+
+### Tasks
+
+- [ ] **M-GENERATE.1 — `encounters`/`encounter_members` schema + manual `save_encounter` path** (T-173)
+  New tables, `encounter.service.ts`, and `save_encounter`/`list_encounters`/`get_encounter` tools — no LLM/NL parsing, a direct-write persistence layer usable standalone. See `T-173` for full scope.
+
+- [ ] **M-GENERATE.2 — `generate_encounter`: NL parsing + roster matching + preview/confirm** (T-174, Blocked on T-173)
+  Structured-LLM extraction of a creature list from freeform text, fuzzy-matched against the campaign's monster roster, proposing new `monster` entities for the rest — preview/confirm, same pattern `log_session`/`confirm_ingest_entities` already establish. See `T-174` for full scope.
