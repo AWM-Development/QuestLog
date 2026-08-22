@@ -1,6 +1,7 @@
 export {
 	campaigns,
 	campaignWealth,
+	chunkCorrections,
 	chunks,
 	conversations,
 	entities,

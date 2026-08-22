@@ -37,6 +37,7 @@ export {
 	ConfirmCorrectLoreInput,
 	ConfirmIngestEntitiesInput,
 	CorrectLoreInput,
+	GetChunkHistoryInput,
 	GetSourceStatusInput,
 	IngestTextInput,
 	PrepBriefInput,

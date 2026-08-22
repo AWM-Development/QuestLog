@@ -292,6 +292,34 @@ export const chunks = pgTable(
 	],
 );
 
+// One row per confirm_correct_lore transaction — the audit trail T-152 adds
+// so a superseded chunk's replacement is discoverable via get_chunk_history
+// instead of evaporating once the transaction commits (G-025).
+export const chunkCorrections = pgTable(
+	"chunk_corrections",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		campaignId: uuid("campaign_id")
+			.references(() => campaigns.id)
+			.notNull(),
+		correctionText: text("correction_text").notNull(),
+		supersededChunkIds: jsonb("superseded_chunk_ids")
+			.$type<string[]>()
+			.notNull()
+			.default([]),
+		createdChunkIds: jsonb("created_chunk_ids")
+			.$type<string[]>()
+			.notNull()
+			.default([]),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+	},
+	(table) => [
+		index("chunk_corrections_campaign_id_idx").using("btree", table.campaignId),
+	],
+);
+
 export const conversations = pgTable(
 	"conversations",
 	{

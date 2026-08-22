@@ -71,3 +71,9 @@ export const ConfirmCorrectLoreInput = z.object({
 	token: z.string().uuid(),
 });
 export type ConfirmCorrectLoreInput = z.infer<typeof ConfirmCorrectLoreInput>;
+
+export const GetChunkHistoryInput = z.object({
+	campaignId: z.string().uuid(),
+	chunkId: z.string().uuid(),
+});
+export type GetChunkHistoryInput = z.infer<typeof GetChunkHistoryInput>;
