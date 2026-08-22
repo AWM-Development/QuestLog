@@ -3,12 +3,9 @@ export function first<T>(rows: T[]): T {
 	return rows[0] as T;
 }
 
-// Shared [PARTY]/[DM] line-tagging convention (T-162, G-032): lets a DM
-// narrating live at the table tell instantly which lines of an assembled
-// narrative block (e.g. query_lore's entities section) are party-safe vs.
-// DM-only background. Used by context.service.ts's formatEntity; kept here
-// rather than duplicated so both current and future call sites share one
-// definition.
+// [PARTY]/[DM] line-tagging convention — see IMPLEMENTATION_NOTES.md § G-032.
+// Lives here (not context.service.ts) so a future narrative-block call site
+// besides formatEntity can share the same constants.
 export const PARTY_TAG = "[PARTY]";
 export const DM_TAG = "[DM]";
 
