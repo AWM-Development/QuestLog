@@ -61,6 +61,7 @@ const EXPECTED_TOOLS = [
 	"transfer_item",
 	"adjust_wealth",
 	"list_inventory",
+	"list_sources",
 	"help",
 ];
 
@@ -136,7 +137,7 @@ describe("mcp-http routes", () => {
 	});
 
 	describe("POST /mcp — with a valid bearer token", () => {
-		it("completes the initialize handshake and tools/list returns all 25 tools", async () => {
+		it("completes the initialize handshake and tools/list returns all 27 tools", async () => {
 			const accessToken = await createAccessToken(db);
 
 			const initResponse = await app.inject({
