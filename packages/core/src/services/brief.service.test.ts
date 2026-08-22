@@ -187,6 +187,64 @@ describe("briefService", () => {
 			);
 		});
 
+		// T-162, G-032: likelyNpcs surfaces dmNotes as a plain structured field
+		// (no [PARTY]/[DM] bracket-tagging — prep_brief already returns
+		// structured JSON, unlike query_lore's one narrative text blob).
+		it("includes dmNotes for an NPC that has one set, and null for one that doesn't", async () => {
+			const withNotes = await entityService.create(db, {
+				campaignId,
+				name: "Izek Strazni",
+				type: "npc",
+				description: "Obsessed with Ireena.",
+				dmNotes: "Secretly working for Strahd.",
+			});
+			const withoutNotes = await entityService.create(db, {
+				campaignId,
+				name: "Ismark Kolyanovich",
+				type: "npc",
+				description: "Ireena's half-brother.",
+			});
+			const session = await sessionService.create(db, {
+				campaignId,
+				content: "Izek Strazni and Ismark Kolyanovich met at the square.",
+			});
+			await sessionService.linkEntities(db, session.id, [
+				{
+					entityId: withNotes.id,
+					entityName: "Izek Strazni",
+					entityType: "npc",
+					startIndex: 0,
+					endIndex: 12,
+					matchType: "confirmed",
+					candidates: [],
+				},
+				{
+					entityId: withoutNotes.id,
+					entityName: "Ismark Kolyanovich",
+					entityType: "npc",
+					startIndex: 17,
+					endIndex: 36,
+					matchType: "confirmed",
+					candidates: [],
+				},
+			]);
+
+			const brief = await briefService.assemble(db, { campaignId });
+
+			expect(brief.likelyNpcs).toEqual(
+				expect.arrayContaining([
+					expect.objectContaining({
+						entityId: withNotes.id,
+						dmNotes: "Secretly working for Strahd.",
+					}),
+					expect.objectContaining({
+						entityId: withoutNotes.id,
+						dmNotes: null,
+					}),
+				]),
+			);
+		});
+
 		it("excludes a mentioned entity that is not an NPC", async () => {
 			const location = await entityService.create(db, {
 				campaignId,

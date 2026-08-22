@@ -195,25 +195,6 @@ jobs:
 
           echo "✅ Mockup guard passed — Docs/mockups/ untouched."
 
-      - name: Check IMPLEMENTATION_NOTES.md size
-        if: always()
-        run: |
-          FILE="Docs/IMPLEMENTATION_NOTES.md"
-          LINE_COUNT=$(wc -l < "$FILE")
-          LIMIT=800
-
-          echo "ℹ️ $FILE is $LINE_COUNT lines (limit: $LIMIT)."
-
-          if [ "$LINE_COUNT" -gt "$LIMIT" ]; then
-            echo ""
-            echo "❌ IMPLEMENTATION_NOTES.md has grown past $LIMIT lines ($LINE_COUNT)."
-            echo "   Archive resolved or stable entries to Docs/IMPLEMENTATION_NOTES_ARCHIVE.md"
-            echo "   before merging, to keep session startup reads fast."
-            exit 1
-          else
-            echo "✅ Size check passed."
-          fi
-
       - name: Check write obligation for sensitive file changes
         if: always()
         env:

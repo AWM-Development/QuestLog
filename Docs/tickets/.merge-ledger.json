@@ -292,5 +292,29 @@
     "prNumber": 273,
     "branch": "fix/m-bug/t-156-observability-migrate-database-url-leak",
     "mergedAt": "2026-08-12T14:11:47Z"
+  },
+  {
+    "ticketId": "T-157",
+    "prNumber": 290,
+    "branch": "feat/m-obs/t-157-observability-ticket-board-endpoint",
+    "mergedAt": "2026-08-22T14:29:32Z"
+  },
+  {
+    "ticketId": "T-160",
+    "prNumber": 293,
+    "branch": "feat/m-bug/t-160-list-sources-mcp-tool",
+    "mergedAt": "2026-08-22T14:27:09Z"
+  },
+  {
+    "ticketId": "T-161",
+    "prNumber": 294,
+    "branch": "feat/m-partyknow/t-161-dm-only-notes-write-path",
+    "mergedAt": "2026-08-22T14:13:38Z"
+  },
+  {
+    "ticketId": "T-162",
+    "prNumber": 295,
+    "branch": "feat/m-partyknow/t-162-dm-only-notes-read-path-tagging",
+    "mergedAt": "2026-08-22T14:47:00Z"
   }
 ]

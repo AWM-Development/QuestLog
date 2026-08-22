@@ -12,12 +12,11 @@ export function registerAppendEntityNote(server: McpServer, { db }: ToolDeps) {
 			description: APPEND_ENTITY_NOTE_DESCRIPTION,
 			inputSchema: AppendEntityNoteInput,
 		},
-		withToolErrors(async ({ entityId, note }) => {
-			const entity = await entityService.appendToDescription(
-				db,
-				entityId,
-				note,
-			);
+		withToolErrors(async ({ entityId, note, visibility }) => {
+			const entity =
+				visibility === "dm"
+					? await entityService.appendToDmNotes(db, entityId, note)
+					: await entityService.appendToDescription(db, entityId, note);
 			return {
 				content: [{ type: "text", text: JSON.stringify(entity) }],
 			};

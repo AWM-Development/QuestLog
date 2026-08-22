@@ -8,7 +8,7 @@ Strategy-gate flag: yes
 
 Priority: P1
 
-Blocked on: T-057, T-157 — must both be merged into develop first (T-057 stands up the `apps/observability-dashboard` app shell/nav/routing this ticket extends; T-157 provides the `board.list` endpoint this ticket's UI calls)
+Blocked on: T-057, T-165 — must both be merged into develop first (T-057 stands up the `apps/observability-dashboard` app shell/nav/routing this ticket extends; T-165 adds the `branch`/scope-excerpt fields this ticket's details modal needs to `board.list`, which T-157 — already shipped — doesn't return)
 
 Branch: feat/m-obs/t-158-observability-dashboard-board-view
 
@@ -18,7 +18,8 @@ Context files (load ONLY these):
   - Docs/mockups/observability-dashboard/shared.css (the token/chrome stylesheet this route draws from, same as Trends/Log)
   - Docs/mockups/observability-dashboard/index.html, log.html (existing route structure/nav pattern to extend, not restyle)
   - Docs/DESIGN_SYSTEM.md (§2 Visual Depth System, §3 Color Tokens, §4 Typography, §5 Spacing & Layout, §7.7 Buttons, §7.8 Tags & Pills — tokens only)
-  - Docs/tickets/queue/T-157-observability-ticket-board-endpoint.md (the `board.list` output shape this UI renders)
+  - Docs/tickets/done/T-157-observability-ticket-board-endpoint.md (the `board.list` output shape this UI renders, as actually shipped)
+  - Docs/tickets/queue/T-165-board-list-branch-scope-excerpt-fields.md (the two additional fields this ticket's modal needs, on top of T-157's shipped shape)
 
 Mockup: Docs/mockups/board/
 
@@ -28,7 +29,7 @@ Model: sonnet
 
 Scope: Add a `/board` route to the `apps/observability-dashboard` app shell T-057 creates, sharing its nav/`shared.css` chrome (consistent with how `/log` sits alongside `/` per T-058):
   - Six columns, left to right: Gated, Backlog, Queue, In-progress, Blocked, Done — populated from T-157's `board.list` query, grouped by each ticket's derived status.
-  - One card per ticket: id, title, a scope-excerpt preview (from `board.list`'s scope-excerpt field — see `T-157`), complexity tier badge, priority tag, `Blocked on:` chips and `Gated on: G-###` chips where present (capped at 2 visible + a `+N` overflow chip).
+  - One card per ticket: id, title, a scope-excerpt preview (from `board.list`'s scope-excerpt field — see `T-165`), complexity tier badge, priority tag, `Blocked on:` chips and `Gated on: G-###` chips where present (capped at 2 visible + a `+N` overflow chip).
   - Clicking a card (not its ⋮ button) opens a details modal: id, tier, priority, milestone ref, current column, branch, the full untruncated dependency chip list, and the full scope excerpt. Per `Docs/mockups/board/` — reuse its layout, don't restyle.
   - Empty-column state (e.g. an empty "Blocked" column) follows `Docs/DESIGN_SYSTEM.md` §8.2/8.3 patterns in spirit — a plain "nothing here" message, no mascot (same precedent as the observability dashboard's other empty states per `G-004`'s resolution).
   - Loading and error states for the `board.list` query (e.g. GitHub API unreachable) — a plain message, not a blank screen.
