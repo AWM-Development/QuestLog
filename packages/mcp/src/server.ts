@@ -20,6 +20,7 @@ import { registerIngestText } from "./tools/ingest-text.js";
 import { registerListCampaigns } from "./tools/list-campaigns.js";
 import { registerListEntities } from "./tools/list-entities.js";
 import { registerListInventory } from "./tools/list-inventory.js";
+import { registerListSources } from "./tools/list-sources.js";
 import { registerLogSession } from "./tools/log-session.js";
 import { registerPrepBrief } from "./tools/prep-brief.js";
 import { registerQueryLore } from "./tools/query-lore.js";
@@ -55,6 +56,7 @@ export function createMcpServer(deps: CreateMcpServerOptions): McpServer {
 	registerIngestText(server, deps);
 	registerConfirmIngestEntities(server, deps);
 	registerGetSourceStatus(server, deps);
+	registerListSources(server, deps);
 	registerCorrectLore(server, deps);
 	registerConfirmCorrectLore(server, deps);
 	registerAddItem(server, deps);

@@ -3,20 +3,63 @@ import {
 	FAKE_HOSTED_DB_URL,
 	assertLocalDatabaseUrl,
 	resolveLocalTestDbUrl,
+	resolveWorktreePort,
 	testDbUrl,
 } from "./test-db-url.js";
+
+// A cwd outside any worktree — same shape CI/the primary checkout resolve to.
+const PRIMARY_CWD = "/Users/alex/Documents/Code/QuestLog";
+const WORKTREE_CWD = "/Users/alex/Documents/Code/QuestLog/tmp/worktrees/T-109";
+const NESTED_WORKTREE_CWD =
+	"/Users/alex/Documents/Code/QuestLog/tmp/worktrees/T-109/packages/core";
+const ENV_REDESIGN_CWD =
+	"/Users/alex/Documents/Code/QuestLog/tmp/worktrees/env-redesign";
+
+describe("resolveWorktreePort", () => {
+	it("returns null for a cwd outside tmp/worktrees/ (primary checkout, CI)", () => {
+		expect(resolveWorktreePort(PRIMARY_CWD)).toBeNull();
+	});
+
+	it("returns a deterministic port for a cwd directly at tmp/worktrees/<name>", () => {
+		// Independently verified against the bash mirror (scripts/test-db-names.sh's
+		// worktree_port()) before relying on this — both sides must agree bit
+		// for bit, since neither reads the other's output.
+		expect(resolveWorktreePort(WORKTREE_CWD)).toBe(6427);
+	});
+
+	it("finds the worktree name regardless of how deep under it cwd is — no setup step required", () => {
+		// This is the actual bug this design fixes: a `vitest run` invoked
+		// directly from a package subdirectory, with no session-db-local.sh/
+		// env-export script ever sourced, must still resolve the right port.
+		expect(resolveWorktreePort(NESTED_WORKTREE_CWD)).toBe(
+			resolveWorktreePort(WORKTREE_CWD),
+		);
+	});
+
+	it("derives a different port for a different worktree name", () => {
+		expect(resolveWorktreePort(ENV_REDESIGN_CWD)).toBe(6003);
+		expect(resolveWorktreePort(ENV_REDESIGN_CWD)).not.toBe(
+			resolveWorktreePort(WORKTREE_CWD),
+		);
+	});
+
+	it("always resolves within the documented port range above the default", () => {
+		const port = resolveWorktreePort(WORKTREE_CWD);
+		expect(port).not.toBeNull();
+		expect(port as number).toBeGreaterThan(5433);
+		expect(port as number).toBeLessThanOrEqual(5433 + 1000);
+	});
+});
 
 describe("testDbUrl", () => {
 	afterEach(() => {
 		vi.unstubAllEnvs();
 	});
 
-	it("builds a local Postgres connection string defaulting to 5433 when QUESTLOG_PG_PORT is unset", () => {
-		// Stub unset so a worktree QUESTLOG_PG_PORT export cannot break this
-		// assertion — Docs/IMPLEMENTATION_NOTES.md § T-099.
+	it("builds a local Postgres connection string on the default port outside a worktree", () => {
 		vi.stubEnv("QUESTLOG_PG_PORT", undefined);
 
-		expect(testDbUrl("questlog_test")).toBe(
+		expect(testDbUrl("questlog_test", PRIMARY_CWD)).toBe(
 			"postgresql://questlog:questlog@localhost:5433/questlog_test",
 		);
 	});
@@ -24,24 +67,41 @@ describe("testDbUrl", () => {
 	it("swaps in a different database name without changing host/port/credentials", () => {
 		vi.stubEnv("QUESTLOG_PG_PORT", undefined);
 
-		expect(testDbUrl("questlog_test_mcp")).toBe(
+		expect(testDbUrl("questlog_test_mcp", PRIMARY_CWD)).toBe(
 			"postgresql://questlog:questlog@localhost:5433/questlog_test_mcp",
 		);
 	});
 
-	it("uses QUESTLOG_PG_PORT when set, so a per-worktree override needs no call-site changes", () => {
+	it("resolves the worktree-derived port when cwd is inside tmp/worktrees/ — no env var required", () => {
+		vi.stubEnv("QUESTLOG_PG_PORT", undefined);
+
+		expect(testDbUrl("questlog_test_core", WORKTREE_CWD)).toBe(
+			"postgresql://questlog:questlog@localhost:6427/questlog_test_core",
+		);
+	});
+
+	it("QUESTLOG_PG_PORT, when set, overrides the worktree-derived port — a manual escape hatch, not the primary mechanism", () => {
 		vi.stubEnv("QUESTLOG_PG_PORT", "5501");
 
-		expect(testDbUrl("questlog_test")).toBe(
+		expect(testDbUrl("questlog_test", WORKTREE_CWD)).toBe(
 			"postgresql://questlog:questlog@localhost:5501/questlog_test",
 		);
 	});
 
-	it("falls back to 5433 when QUESTLOG_PG_PORT is not a valid number", () => {
+	it("falls back to the worktree-derived (or default) port when QUESTLOG_PG_PORT is not a valid number", () => {
 		vi.stubEnv("QUESTLOG_PG_PORT", "not-a-port");
 
-		expect(testDbUrl("questlog_test")).toBe(
+		expect(testDbUrl("questlog_test", PRIMARY_CWD)).toBe(
 			"postgresql://questlog:questlog@localhost:5433/questlog_test",
+		);
+	});
+
+	it("defaults cwd to process.cwd() when not given explicitly", () => {
+		// This test file itself normally runs from inside a worktree in this
+		// repo's real pipeline — assert only that the two call shapes agree,
+		// not a hardcoded expectation about where *this* test happens to run.
+		expect(testDbUrl("questlog_test")).toBe(
+			testDbUrl("questlog_test", process.cwd()),
 		);
 	});
 });
@@ -49,7 +109,7 @@ describe("testDbUrl", () => {
 describe("assertLocalDatabaseUrl", () => {
 	it("passes a dev-shaped connection string (localhost)", () => {
 		expect(() =>
-			assertLocalDatabaseUrl(testDbUrl("questlog_test")),
+			assertLocalDatabaseUrl(testDbUrl("questlog_test", PRIMARY_CWD)),
 		).not.toThrow();
 	});
 
@@ -83,17 +143,19 @@ describe("resolveLocalTestDbUrl", () => {
 	});
 
 	it("prefers an explicit URL over process.env.DATABASE_URL", () => {
-		vi.stubEnv("DATABASE_URL", testDbUrl("questlog_test"));
+		vi.stubEnv("DATABASE_URL", testDbUrl("questlog_test", PRIMARY_CWD));
 
-		expect(resolveLocalTestDbUrl(testDbUrl("questlog_test_mcp"))).toBe(
-			testDbUrl("questlog_test_mcp"),
-		);
+		expect(
+			resolveLocalTestDbUrl(testDbUrl("questlog_test_mcp", PRIMARY_CWD)),
+		).toBe(testDbUrl("questlog_test_mcp", PRIMARY_CWD));
 	});
 
 	it("falls back to process.env.DATABASE_URL when no explicit URL is given", () => {
-		vi.stubEnv("DATABASE_URL", testDbUrl("questlog_test_mcp"));
+		vi.stubEnv("DATABASE_URL", testDbUrl("questlog_test_mcp", PRIMARY_CWD));
 
-		expect(resolveLocalTestDbUrl()).toBe(testDbUrl("questlog_test_mcp"));
+		expect(resolveLocalTestDbUrl()).toBe(
+			testDbUrl("questlog_test_mcp", PRIMARY_CWD),
+		);
 	});
 
 	it("falls back to questlog_test when neither an explicit URL nor process.env.DATABASE_URL is set", () => {
