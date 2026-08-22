@@ -13,6 +13,7 @@ export const EntityCreateInput = z.object({
 	name: z.string().min(1).max(200),
 	type: z.enum(ENTITY_TYPES),
 	description: z.string().max(2000).optional(),
+	dmNotes: z.string().max(2000).optional(),
 });
 export type EntityCreateInput = z.infer<typeof EntityCreateInput>;
 
@@ -26,6 +27,9 @@ export type ListEntitiesInput = z.infer<typeof ListEntitiesInput>;
 export const AppendEntityNoteInput = z.object({
 	entityId: z.string().uuid(),
 	note: z.string().min(1).max(2000),
+	// Omitted or "party" preserves today's exact behavior (appends to
+	// description); "dm" appends to dmNotes instead (T-161, G-032).
+	visibility: z.enum(["party", "dm"]).optional(),
 });
 export type AppendEntityNoteInput = z.infer<typeof AppendEntityNoteInput>;
 
@@ -36,13 +40,18 @@ export const EntityUpdateInput = z
 		name: z.string().min(1).max(200).optional(),
 		type: z.enum(ENTITY_TYPES).optional(),
 		description: z.string().max(2000).optional(),
+		dmNotes: z.string().max(2000).optional(),
 	})
 	.refine(
 		(input) =>
 			input.name !== undefined ||
 			input.type !== undefined ||
-			input.description !== undefined,
-		{ message: "At least one of name, type, or description must be provided" },
+			input.description !== undefined ||
+			input.dmNotes !== undefined,
+		{
+			message:
+				"At least one of name, type, description, or dmNotes must be provided",
+		},
 	);
 export type EntityUpdateInput = z.infer<typeof EntityUpdateInput>;
 
