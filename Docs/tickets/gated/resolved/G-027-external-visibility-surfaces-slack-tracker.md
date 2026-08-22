@@ -39,3 +39,29 @@ Notes: Raised in `G-020` Q4 verbatim: "Slack (delivery of `/lineup`,
   canonical, which would be a reversal of the pipeline's central design
   choice)." Both are lower-priority "visibility" surfaces with a shared
   "push vs. mirror, and how much" shape, hence the grouping.
+
+## Resolution (2026-08-22)
+
+Declined building either surface, at least for now. Alex confirmed directly,
+  no split needed between the two candidates — both are out for the same
+  underlying reason (added surface/sync cost with no clear gap over what
+  already exists), not two independently-reasoned decisions:
+
+- **(a) Slack** — not installed anywhere in this pipeline today, and
+  provisioning a Slack app/bot token purely to deliver `/lineup`/blocked-run/
+  `/ungate` events wasn't judged worth doing yet. `/lineup` and the morning
+  report already surface this state interactively; a push channel is a
+  "nice to have," not a gap blocking anything.
+- **(b) External ticket tracker mirror** — declined outright, not just
+  deferred on tooling choice. `TICKET_SPEC.md`'s Lifecycle section already
+  commits `Docs/tickets/` as the pipeline's sole canonical source; even a
+  strictly one-way (repo → tracker, read-only externally) mirror adds a
+  second surface that can drift or need reconciling, for a benefit
+  (external visibility) nothing currently needs — nobody but Alex reads
+  this pipeline's state, and Alex already has the repo.
+
+`M-ROBUST.2` (`Docs/milestones/MILESTONES_V1_6_MCP.md`) closed WON'T FIX,
+  no ticket drafted — same disposition `G-028`/`G-029` used for their own
+  declined candidates. Revisit only if a real second consumer of pipeline
+  state shows up (e.g. a collaborator who isn't reading the repo directly),
+  not on a schedule.
