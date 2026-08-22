@@ -669,6 +669,26 @@ describe("get_entity tool", () => {
 		});
 	});
 
+	it("includes the entity's dmNotes field, matching the seeded value (T-162)", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni",
+			type: "npc",
+			dmNotes: "Secretly working for Strahd.",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.dmNotes).toBe("Secretly working for Strahd.");
+	});
+
 	it("returns the correct entity by name with a deliberate typo via fuzzy match", async () => {
 		const entity = await entityService.create(db, {
 			campaignId,

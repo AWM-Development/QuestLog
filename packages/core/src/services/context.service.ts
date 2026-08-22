@@ -37,7 +37,7 @@ import {
 	sources,
 } from "../db/schema/index.js";
 import { NotFoundError } from "../lib/errors.js";
-import { estimateTokens } from "../lib/utils.js";
+import { DM_TAG, PARTY_TAG, estimateTokens } from "../lib/utils.js";
 import type { SearchResult } from "./search.service.js";
 import { searchService } from "./search.service.js";
 import type { FetchFn } from "./voyage.client.js";
@@ -288,9 +288,12 @@ function formatEntity(entity: {
 	name: string;
 	type: string;
 	summary: string | null;
+	dmNotes: string | null;
 }): string {
 	const desc = entity.summary ? `: ${entity.summary}` : "";
-	return `${entity.name} (${entity.type})${desc}`;
+	const line = `${PARTY_TAG} ${entity.name} (${entity.type})${desc}`;
+	// No dmNotes — no second line at all, never an empty [DM] tag (G-032).
+	return entity.dmNotes ? `${line}\n${DM_TAG} ${entity.dmNotes}` : line;
 }
 
 // ---------------------------------------------------------------------------

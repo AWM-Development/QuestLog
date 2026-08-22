@@ -34,6 +34,8 @@ export interface LikelyNpc {
 	entityId: string;
 	name: string;
 	summary: string | null;
+	/** DM-only prep note, not for reading aloud to the party (T-162, G-032). */
+	dmNotes: string | null;
 	lastSessionNumber: number;
 }
 
@@ -124,6 +126,7 @@ export const briefService = {
 							entityId: entities.id,
 							name: entities.name,
 							summary: entities.summary,
+							dmNotes: entities.dmNotes,
 						})
 						.from(sessionEntities)
 						.innerJoin(entities, eq(sessionEntities.entityId, entities.id))
@@ -152,6 +155,7 @@ export const briefService = {
 					entityId: mention.entityId,
 					name: mention.name,
 					summary: mention.summary,
+					dmNotes: mention.dmNotes,
 					lastSessionNumber: session.sessionNumber,
 				});
 			}
