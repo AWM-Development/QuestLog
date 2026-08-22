@@ -294,6 +294,12 @@
     "mergedAt": "2026-08-12T14:11:47Z"
   },
   {
+    "ticketId": "T-160",
+    "prNumber": 293,
+    "branch": "feat/m-bug/t-160-list-sources-mcp-tool",
+    "mergedAt": "2026-08-22T14:27:09Z"
+  },
+  {
     "ticketId": "T-161",
     "prNumber": 294,
     "branch": "feat/m-partyknow/t-161-dm-only-notes-write-path",
