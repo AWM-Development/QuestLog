@@ -19,6 +19,8 @@ export const TicketCardSchema = z.object({
 	complexityTier: z.string().nullable(),
 	blockedOn: z.string().nullable(),
 	gatedOn: z.string().nullable(),
+	branch: z.string().nullable(),
+	scopeExcerpt: z.string().nullable(),
 	status: TicketStatusSchema,
 	path: z.string().min(1),
 });
