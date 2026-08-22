@@ -58,3 +58,9 @@ export {
 	ListReportsInput,
 	ListTrendsInput,
 } from "./observability.js";
+export {
+	BoardListOutput,
+	TicketCardSchema,
+	TicketStatusSchema,
+} from "./board.js";
+export type { TicketCard, TicketStatus } from "./board.js";

@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-157
+
+- **Observability API: ticket-board read endpoint.** New `board.list` tRPC procedure (`apps/server/src/routers/board.ts`), backed by a new `boardService` (`packages/core/src/services/board.service.ts`) that reads `Docs/tickets/**/*.md` live off GitHub's `develop` branch (via `gh api`), parses each ticket file's id/title/priority/complexity tier/`Blocked on:`/`Gated on:` fields, and derives its pipeline status from which top-level `Docs/tickets/` folder it lives in. Gate-stub files (no `T-###` header) are skipped rather than returned as malformed cards. Results are cached in-memory for ~60 seconds so repeated calls don't re-hit the GitHub API. Not surfaced in any UI yet — `T-158` (the `/board` frontend route) is the consumer, still blocked on `T-057` merging and gated on `G-043`'s visual design.
+
 ### Added — T-160
 
 - **`list_sources` MCP tool.** Returns a campaign's ingested sources (id, name, type, status, sizeBytes, createdAt, updatedAt — no raw `metadata`/`storageKey`), wiring the already-existing `sourceService.listByCampaign`/`ListSourcesInput` into a real tool. Follow-up to `T-159`: duplicate sources from that bug were previously only discoverable incidentally via `create_entity`'s `citations` array.
