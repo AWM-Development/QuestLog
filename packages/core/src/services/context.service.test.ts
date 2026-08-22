@@ -163,6 +163,48 @@ describe("contextService", () => {
 	});
 
 	// -----------------------------------------------------------------------
+	// Test 1b: [PARTY]/[DM] tagging (T-162, G-032) — entities section tags
+	// party-safe summary lines and appends a DM-only line only when dmNotes
+	// is set, never an empty [DM] tag for entities without one.
+	// -----------------------------------------------------------------------
+	it("tags entity lines [PARTY]/[DM], omitting the [DM] line when dmNotes is null", async () => {
+		await db.insert(entities).values([
+			{
+				campaignId,
+				name: "Izek Strazni",
+				type: "npc",
+				summary: "A guard obsessed with Ireena.",
+				dmNotes: "Secretly working for Strahd — reveal at session 5.",
+			},
+			{
+				campaignId,
+				name: "Ismark Kolyanovich",
+				type: "npc",
+				summary: "Ireena's half-brother.",
+			},
+		]);
+
+		const mockFetch = createMockFetch(basisVector(0));
+		const result = await contextService.assemble(db, {
+			query: "Tell me about Izek",
+			campaignId,
+			fetchFn: mockFetch,
+		});
+
+		expect(result.text).toContain(
+			"[PARTY] Izek Strazni (npc): A guard obsessed with Ireena.",
+		);
+		expect(result.text).toContain(
+			"[DM] Secretly working for Strahd — reveal at session 5.",
+		);
+		expect(result.text).toContain(
+			"[PARTY] Ismark Kolyanovich (npc): Ireena's half-brother.",
+		);
+		// No dmNotes on Ismark — no [DM] line for him at all.
+		expect(result.text).not.toMatch(/Ismark[\s\S]*\[DM\]/);
+	});
+
+	// -----------------------------------------------------------------------
 	// Test 2: token budget — each section stays within its allocation
 	// -----------------------------------------------------------------------
 	it("respects token budget: assembled text fits within total budget", async () => {
