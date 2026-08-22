@@ -2,7 +2,7 @@
 
 Milestone ref: M-OBS.5
 
-Priority: P2
+Priority: P0
 
 Branch: feat/m-obs/t-057-observability-dashboard-trends-view
 
