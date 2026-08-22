@@ -276,6 +276,12 @@
     "mergedAt": "2026-08-16T23:15:53Z"
   },
   {
+    "ticketId": "T-154",
+    "prNumber": 292,
+    "branch": "chore/m-pipeline/t-154-worktree-env-provisioning-redesign",
+    "mergedAt": "2026-08-20T19:02:06Z"
+  },
+  {
     "ticketId": "T-155",
     "prNumber": 264,
     "branch": "feat/m-bug/t-155-fix-stale-llm-config-model-id",
@@ -286,5 +292,23 @@
     "prNumber": 273,
     "branch": "fix/m-bug/t-156-observability-migrate-database-url-leak",
     "mergedAt": "2026-08-12T14:11:47Z"
+  },
+  {
+    "ticketId": "T-157",
+    "prNumber": 290,
+    "branch": "feat/m-obs/t-157-observability-ticket-board-endpoint",
+    "mergedAt": "2026-08-22T14:29:32Z"
+  },
+  {
+    "ticketId": "T-160",
+    "prNumber": 293,
+    "branch": "feat/m-bug/t-160-list-sources-mcp-tool",
+    "mergedAt": "2026-08-22T14:27:09Z"
+  },
+  {
+    "ticketId": "T-161",
+    "prNumber": 294,
+    "branch": "feat/m-partyknow/t-161-dm-only-notes-write-path",
+    "mergedAt": "2026-08-22T14:13:38Z"
   }
 ]

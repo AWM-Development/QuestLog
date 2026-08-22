@@ -1,9 +1,43 @@
 #!/bin/bash
 # Canonical list of local Postgres test-database names. Sourced by
-# ci.yml, e2e-release-check.yml, and .claude/hooks/session-start.sh so
+# ci.yml, e2e-release-check.yml, and .claude/hooks/session-db-local.sh/session-db-remote.sh so
 # the names exist in exactly one place. Every DB-touching package gets its
 # own physical database — no shared `dependsOn` ordering stands in for
 # isolation. Why: Docs/IMPLEMENTATION_NOTES.md § T-027, § G-008.
+
+# Mirrors packages/core/src/db/test-db-url.ts's resolveWorktreePort() exactly
+# (same marker/name-extraction, same rolling hash, same range/offset) — the
+# bash-side half of the port-from-cwd redesign that replaced the
+# checksum-derived-port design a silently-unset QUESTLOG_PG_PORT kept
+# defaulting past (most recently T-109). Can't literally share code across
+# bash/TS, so kept in sync by hand — verified bit-identical against five
+# sample worktree names before relying on it; if you change one, change
+# both. $1 = a project dir (session-db-local.sh always passes
+# $CLAUDE_PROJECT_DIR, which it already requires). Prints nothing (not even
+# a trailing newline) when $1 isn't under either recognized worktree layout
+# — callers must check for that, same as the TS side returning null.
+worktree_port() {
+	local project_dir="$1"
+	node -e '
+		const markers = ["/tmp/worktrees/", "/.claude/worktrees/"];
+		const dir = process.argv[1];
+		let name = null;
+		for (const marker of markers) {
+			const idx = dir.indexOf(marker);
+			if (idx === -1) continue;
+			const rest = dir.slice(idx + marker.length);
+			const candidate = rest.split("/")[0];
+			if (candidate) { name = candidate; break; }
+		}
+		if (!name) process.exit(0);
+		let hash = 0;
+		for (let i = 0; i < name.length; i++) {
+			hash = (Math.imul(hash, 31) + name.charCodeAt(i)) >>> 0;
+		}
+		process.stdout.write(String(5433 + (hash % 1000) + 1));
+	' "$project_dir"
+}
+
 TEST_DB_NAME_DEV=questlog
 TEST_DB_NAME_CORE=questlog_test_core
 TEST_DB_NAME_SERVER=questlog_test_server
@@ -18,9 +52,9 @@ TEST_DB_NAMES_CI=("$TEST_DB_NAME_CORE" "$TEST_DB_NAME_SERVER" "$TEST_DB_NAME_MCP
 # Most packages share packages/core's migrations via @questlog/server's
 # db:migrate; packages/observability's schema is independent (G-003) and
 # migrates via its own package script instead. Consumed by ci.yml and
-# session-start.sh so neither hardcodes a single migrate command for every
+# session-db-local.sh/session-db-remote.sh so neither hardcodes a single migrate command for every
 # dbname. A function, not an associative array (`declare -A`) — macOS ships
-# bash 3.2 by default (no associative-array support), and session-start.sh
+# bash 3.2 by default (no associative-array support), and these hook scripts
 # must run under that. Why: Docs/IMPLEMENTATION_NOTES.md § T-053.
 test_db_migrate_cmd() {
 	case "$1" in

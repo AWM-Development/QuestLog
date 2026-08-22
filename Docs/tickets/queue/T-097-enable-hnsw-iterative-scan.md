@@ -78,7 +78,7 @@ Out of scope:
     documented defaults for `iterative_scan` — real tuning against actual
     production data volume is future work, not this ticket.
   - Upgrading pgvector itself, or touching `docker-compose.yml`/CI's
-    image pin, or `.claude/hooks/session-start.sh` — that's T-098's scope
+    image pin, or `.claude/hooks/session-db-remote.sh` — that's T-098's scope
     (or already-done T-023/T-024 infra work), not this ticket's. This
     ticket only proceeds once >= 0.8.0 is already available; it doesn't
     make it available.
