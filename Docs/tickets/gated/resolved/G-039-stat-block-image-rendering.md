@@ -20,3 +20,51 @@ Open question: MCP tool results can carry an `image` content block (base64-encod
 Blocks: `Docs/milestones/MILESTONES_V1_8_MCP.md` Milestone M-STATBLOCK (image-rendering phase)
 
 Notes: Split out from `G-036` on 2026-08-06 at Alex's explicit call — this is core v1.8 scope, not a deferred "maybe later," and `G-036`'s template design must be built to support it from the start (see `G-036`'s Open question #1, updated). Depends on `G-036` resolving first since the template format decision there constrains what's renderable here; `G-036` should be ungated before this one.
+
+## Resolution (2026-08-22)
+
+Resolved with Alex via `/ungate`. Answers to the four open questions:
+
+1. **Rendering approach — narrowed by `G-036`'s own resolution.** `G-036`
+   already committed to HTML/CSS templates specifically so the image
+   render consumes the same source as the markdown output, which leaves
+   the actual open decision as *which rendering engine*, not whether to
+   render HTML/CSS at all. Resolved: a **lightweight SVG-based renderer**
+   (Satori-style — no browser binary, renders a constrained CSS subset,
+   mainly flexbox-based layout, directly to SVG/PNG), not a full headless
+   browser (Playwright/Chromium). No `playwright`/`puppeteer` dependency
+   exists in this codebase today — this is genuinely new infrastructure
+   either way, but the lightweight path avoids shipping a full browser
+   binary in the deploy image, which is a real cost for a small single-user
+   app on Fly.io's small instances (deploy size, memory, cold-start
+   latency). The real tradeoff, made explicit rather than silently
+   accepted: Satori's CSS subset (flexbox layout, no absolute positioning,
+   limited property support) constrains how elaborate a template's layout
+   can get compared to full CSS — accepted as the right tradeoff for this
+   app's actual scale.
+2. **Where rendering happens — pre-rendered and cached, using existing
+   infrastructure.** Resolved the gate's own flagged sub-decision ("QuestLog
+   doesn't have a blob-storage story yet") by finding it already does:
+   `StorageProvider` (`packages/core/src/services/storage.service.ts`,
+   pluggable — local filesystem now, S3/GCS-ready later) already backs
+   uploaded import files. A monster's stat-block image renders once when
+   the entity or its campaign's template is created/edited, saved through
+   that same abstraction; the tool call just reads the cached file. No new
+   storage mechanism, and no per-call render latency on what should be a
+   fast lookup during a live encounter.
+3. **Template format implications for `G-036` — already resolved.** `G-036`
+   picked HTML/CSS with placeholder tokens specifically to serve as this
+   gate's rendering source, per that gate's own resolution. Not
+   re-litigated here.
+4. **Fallback behavior: transparent degrade to markdown text.** If image
+   rendering fails or is slow, the tool silently falls back to the
+   markdown-text stat block (`M-STATBLOCK`'s core, non-image scope) rather
+   than surfacing an error — a DM referencing a stat block mid-combat needs
+   something usable immediately, not a failed tool call to debug at the
+   table.
+
+Both `G-036` and `G-039` are now resolved, which per
+`MILESTONES_V1_8_MCP.md`'s own stated policy is the trigger to draft
+`M-STATBLOCK`'s full task list (previously only `T-171`'s schema/plumbing
+groundwork had shipped ahead of this moment). See the milestone doc for
+the resulting ticket set.
