@@ -2898,6 +2898,42 @@ describe("ingest_text + get_source_status tools", () => {
 		// deleteCampaignTree runs, or the source delete can race chunk inserts.
 		await waitForStatus(payload.source.id, "done");
 	});
+
+	it("still returns the source id when entity-candidate detection throws (T-159)", async () => {
+		const failingLlmService: Pick<LlmService, "callClaudeStructured"> = {
+			callClaudeStructured: vi
+				.fn()
+				.mockRejectedValue(new Error("simulated LLM failure")),
+		};
+		const client = await connectedClient(
+			createMockFetch(basisVector(0)),
+			failingLlmService,
+		);
+
+		const result = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Ashfall Primer",
+				content: "The party met Vespera Nightveil at the gates.",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.source.id).toBeDefined();
+		expect(payload.source.status).toBeDefined();
+		expect(payload.entityCandidates).toBeNull();
+
+		const persisted = await sourceService.getByIdUnscoped(
+			db,
+			payload.source.id,
+		);
+		expect(persisted).toBeDefined();
+
+		await waitForStatus(payload.source.id, "done");
+	});
 });
 
 describe("list_sources tool", () => {

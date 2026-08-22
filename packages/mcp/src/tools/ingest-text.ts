@@ -67,27 +67,44 @@ export function registerIngestText(
 						});
 				}
 
-				const candidates = await entityService.detectCandidates(db, {
-					campaignId: resolvedCampaignId,
-					text: content,
-					llmService,
-				});
-				const entityCandidates = candidates.length
-					? {
-							token: (
-								await writeRequestService.createPreview(db, {
-									campaignId: resolvedCampaignId,
-									toolName: "ingest_entities",
-									payload: {
+				let entityCandidates: {
+					token: string;
+					candidates: Awaited<
+						ReturnType<typeof entityService.detectCandidates>
+					>;
+				} | null = null;
+				try {
+					const candidates = await entityService.detectCandidates(db, {
+						campaignId: resolvedCampaignId,
+						text: content,
+						llmService,
+					});
+					entityCandidates = candidates.length
+						? {
+								token: (
+									await writeRequestService.createPreview(db, {
 										campaignId: resolvedCampaignId,
-										sourceId: source.id,
-										candidates,
-									},
-								})
-							).token,
-							candidates,
-						}
-					: null;
+										toolName: "ingest_entities",
+										payload: {
+											campaignId: resolvedCampaignId,
+											sourceId: source.id,
+											candidates,
+										},
+									})
+								).token,
+								candidates,
+							}
+						: null;
+				} catch (err: unknown) {
+					// detectCandidates/createPreview is a best-effort enrichment
+					// step (T-159) — the source row already exists by this point,
+					// so a failure here must not hide source.id from the caller,
+					// which would otherwise leave the source orphaned on retry.
+					console.error(
+						`[ingest_text] Error detecting entity candidates for source ${source.id}:`,
+						err,
+					);
+				}
 
 				return {
 					content: [
