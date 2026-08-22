@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-163
+
+- **Continuity contradiction-detection service.** New `continuityService.detectContradictions` (`packages/core/src/services/continuity.service.ts`) checks new document text against the existing lore of any entity it names, and returns confidence-gated `ContradictionCandidate`s for real factual contradictions (e.g. an NPC described as dead in existing lore but referenced as alive in the new text). Mirrors `entityService.detectCandidates`'s shape: reuses `detectSpans`'s existing-entity matching, one `callClaudeStructured` call per document (not per entity), threshold `CONTRADICTION_CONFIDENCE_THRESHOLD = 0.6` (moderate tolerance per `G-031`'s resolution). Service-layer only — no MCP tool surface yet, no wiring into `ingest_text` or `correct_lore`; that's `T-164`.
+
 ### Fixed — T-159
 
 - **`ingest_text` no longer hides a written source's id on an entity-detection failure.** If the synchronous entity-candidate-detection step (`entityService.detectCandidates`) throws — a transient LLM error, a rate limit, etc. — after the source row already exists, the tool now logs the error and returns `entityCandidates: null` instead of letting the error propagate and hide `source.id`/`source.status` from the caller. Previously a caller retrying on that error created a duplicate source with identical content, since the original had already been written but never reported back.
