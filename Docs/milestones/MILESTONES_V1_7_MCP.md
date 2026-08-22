@@ -61,7 +61,7 @@ _None yet — blocked on `G-031`. `/ungate` drafts this milestone's real task li
 ### Tasks
 
 - [x] Wire `dmNotes` into `create_entity`, `update_entity`, and `append_entity_note` (new `visibility` param) (T-161)
-- [ ] Surface `dmNotes` in `query_lore`, `prep_brief`, and `get_entity` with `[PARTY]`/`[DM]` line tagging (T-162)
+- [x] Surface `dmNotes` in `query_lore`, `prep_brief`, and `get_entity` with `[PARTY]`/`[DM]` line tagging (T-162)
 
 ---
 
