@@ -4,8 +4,6 @@ Milestone ref: M-OBS.5
 
 Priority: P2
 
-**Manual deploy prerequisite (Alex-only, not pipeline-tracked):** `OBSERVABILITY_DATABASE_URL` isn't set as a Fly secret on `questlog-dev`/`questlog-prod` — `Docs/DEPLOY_SETUP_CHECKLIST.md` §2's `fly secrets set` list predates T-053/T-054's observability work and only covers `DATABASE_URL`/`ANTHROPIC_API_KEY`/`VOYAGE_API_KEY`/`CORS_ORIGIN`. Without it, `apps/server/src/observability-db.ts` (T-054) falls back to a `localhost:5433` connection string that doesn't resolve on the deployed VM, so this dashboard's queries against M-OBS.4's endpoints will fail in both dev and prod once it's wired up. Alex needs to run `fly secrets set -c fly.dev.toml OBSERVABILITY_DATABASE_URL=<dev Neon observability branch connection string>` (and the `fly.prod.toml` equivalent) before this ticket's build is actually usable in either deployed environment — not before it merges into `develop`, and not something this ticket's own execution can do or verify itself.
-
 Branch: feat/m-obs/t-057-observability-dashboard-trends-view
 
 Context files (load ONLY these):

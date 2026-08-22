@@ -441,6 +441,7 @@ export const entityService = {
 			name: string;
 			type: string;
 			description?: string;
+			dmNotes?: string;
 			sourceId?: string;
 			attributes?: Record<string, unknown>;
 		},
@@ -452,6 +453,9 @@ export const entityService = {
 				name: input.name,
 				type: input.type,
 				description: input.description ?? null,
+				// Never lore-seeded or auto-populated, unlike description — a plain
+				// passthrough (T-161, G-032).
+				dmNotes: input.dmNotes ?? null,
 				sourceId: input.sourceId ?? null,
 				attributes: input.attributes ?? {},
 			})
@@ -477,6 +481,7 @@ export const entityService = {
 			name: string;
 			type: string;
 			description?: string;
+			dmNotes?: string;
 			fetchFn?: FetchFn;
 		},
 	): Promise<{
@@ -529,6 +534,7 @@ export const entityService = {
 			name: input.name,
 			type: input.type,
 			description,
+			dmNotes: input.dmNotes,
 			attributes,
 		});
 
@@ -543,6 +549,7 @@ export const entityService = {
 			name?: string;
 			type?: string;
 			description?: string;
+			dmNotes?: string;
 		},
 	) {
 		const { id, campaignId, ...fields } = input;
@@ -551,6 +558,7 @@ export const entityService = {
 		if ("name" in fields) updateData.name = fields.name;
 		if ("type" in fields) updateData.type = fields.type;
 		if ("description" in fields) updateData.description = fields.description;
+		if ("dmNotes" in fields) updateData.dmNotes = fields.dmNotes;
 
 		if (Object.keys(updateData).length === 0) {
 			const rows = await db
@@ -692,6 +700,36 @@ export const entityService = {
 		const updatedRows = await db
 			.update(entities)
 			.set({ description: updated })
+			.where(eq(entities.id, entityId))
+			.returning();
+		return first(updatedRows);
+	},
+
+	/**
+	 * Append a deterministic note to an entity's DM-only `dmNotes` field
+	 * (append, never overwrite) — exact structural mirror of
+	 * `appendToDescription`, but reading/writing `dmNotes` instead of
+	 * `description` (T-161, G-032).
+	 */
+	async appendToDmNotes(
+		db: Database | Transaction,
+		entityId: string,
+		note: string,
+	) {
+		const rows = await db
+			.select({ dmNotes: entities.dmNotes })
+			.from(entities)
+			.where(eq(entities.id, entityId));
+		const row = rows[0];
+		if (!row) throw new NotFoundError("Entity", entityId);
+
+		const updated = row.dmNotes?.trim()
+			? `${row.dmNotes.trim()}\n\n${note}`
+			: note;
+
+		const updatedRows = await db
+			.update(entities)
+			.set({ dmNotes: updated })
 			.where(eq(entities.id, entityId))
 			.returning();
 		return first(updatedRows);

@@ -1,4 +1,5 @@
 import { router } from "../trpc.js";
+import { boardRouter } from "./board.js";
 import { campaignRouter } from "./campaign.js";
 import { commentRouter } from "./comment.js";
 import { conversationRouter } from "./conversation.js";
@@ -10,6 +11,7 @@ import { sessionRouter } from "./session.js";
 import { sourceRouter } from "./source.js";
 
 export const appRouter = router({
+	board: boardRouter,
 	campaign: campaignRouter,
 	comment: commentRouter,
 	conversation: conversationRouter,

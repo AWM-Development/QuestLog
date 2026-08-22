@@ -17,13 +17,13 @@ export const GET_ENTITY_DESCRIPTION =
 	"Look up a single entity by id or by fuzzy name match. Exactly one of entityId or name must be provided. Returns the matching entity, including any inventory items it owns.";
 
 export const CREATE_ENTITY_DESCRIPTION =
-	"Create a new entity (npc, location, faction, item, or arc) in a campaign. Direct write — only ever inserts a new row, no preview/confirm needed. Searches ingested lore for a matching description first: a high-confidence match seeds the description and is cited in the response, a caller-supplied description is never overwritten (a seeded draft is appended alongside it instead), and lower-confidence matches still come back as citations to review. Returns the created entity along with any lore citations, a confidence score, and whether the description was seeded from ingested lore.";
+	"Create a new entity (npc, location, faction, item, or arc) in a campaign. Direct write — only ever inserts a new row, no preview/confirm needed. Searches ingested lore for a matching description first: a high-confidence match seeds the description and is cited in the response, a caller-supplied description is never overwritten (a seeded draft is appended alongside it instead), and lower-confidence matches still come back as citations to review. Optionally accepts dmNotes — a manually-authored, DM-only field for the DM's own eyes, never meant to be read aloud to players or otherwise shared with the party; never lore-seeded, unlike description. Returns the created entity along with any lore citations, a confidence score, and whether the description was seeded from ingested lore.";
 
 export const APPEND_ENTITY_NOTE_DESCRIPTION =
-	"Append a note to an existing entity's description, without overwriting its prior content. Direct write — additive only, no preview/confirm needed. Returns the updated entity.";
+	'Append a note to an existing entity\'s description, without overwriting its prior content. Direct write — additive only, no preview/confirm needed. Pass visibility: "dm" to append to the entity\'s DM-only dmNotes field instead — for the DM\'s own eyes, never meant to be read aloud to players or otherwise shared with the party. Omitted or "party" appends to description exactly as before. Returns the updated entity.';
 
 export const UPDATE_ENTITY_DESCRIPTION =
-	"Preview a change to an existing entity's name, type, or description: returns the proposed before/after field values without persisting anything. Summarize the proposed change to the user in plain language before calling confirm_update_entity with the returned token to save it.";
+	"Preview a change to an existing entity's name, type, description, or dmNotes: returns the proposed before/after field values without persisting anything. dmNotes is a manually-authored, DM-only field — for the DM's own eyes, never meant to be read aloud to players or otherwise shared with the party. Summarize the proposed change to the user in plain language before calling confirm_update_entity with the returned token to save it.";
 
 export const CONFIRM_UPDATE_ENTITY_DESCRIPTION =
 	"Confirm a previously-previewed update_entity change-set: applies the proposed field changes to the entity. Returns the updated entity.";
@@ -60,6 +60,9 @@ export const CONFIRM_INGEST_ENTITIES_DESCRIPTION =
 
 export const GET_SOURCE_STATUS_DESCRIPTION =
 	"Check the processing status of a source created via ingest_text (or file upload). Returns the source's id, status (pending, extracting, chunking, embedding, done, or error), and errorReason if status is error.";
+
+export const LIST_SOURCES_DESCRIPTION =
+	"List a campaign's ingested sources (from ingest_text or file upload). Direct call-through, no preview/confirm needed. Returns each source's id, name, type, status, sizeBytes, createdAt, and updatedAt — not its raw content or storage key.";
 
 export const CORRECT_LORE_DESCRIPTION =
 	"Preview a lore correction: given correction text plus exactly one of sourceId (all that source's non-superseded chunks), chunkIds (explicit targets), or entityId (attribution only — empty target set, a pure addition). Returns a token and preview payload without marking anything superseded. Summarize the proposed correction and what it would supersede to the user in plain language before calling confirm_correct_lore (separate tool) with the token to apply.";

@@ -1,7 +1,7 @@
 # QuestLog — Implementation Notes Archive
 
 **Purpose:** Retired entries from `Docs/IMPLEMENTATION_NOTES.md` — historical record, not required reading. An entry lands here once its governing milestone has shipped and the entry no longer describes a live gotcha, or the surface it describes is v2-deferred. Entries are moved verbatim, never rewritten.
-**Last Updated:** 2026-08-10
+**Last Updated:** 2026-08-22
 
 ## Session notes (Milestone 4.1) — Main-area editor + dock model (revised)
 
@@ -688,3 +688,112 @@ Full findings in `Docs/tickets/reports/T-038-security-review-remote-mcp-surface.
 **Shared `createAccessToken(db)` test helper added to `packages/core/src/db/test-helpers.ts`**, replacing `mcp-http.routes.test.ts`'s own private `getAccessToken`/`makePkcePair`/`resourceUrl` (the only prior caller) now that three more test files need the same PKCE-flow token issuance to exercise the newly-gated routes. `validateAccessToken` never checks the `resource` a token was issued against, so the helper's own fixed `resource` string only has to match itself across the two-call exchange, not the route actually being tested.
 
 **Known consequence, accepted by G-017, not fixed here:** `apps/web`'s `SourcesPage` (the one kept v1 web surface per `CLAUDE.md`) calls the upload/conversation-stream routes with a plain `fetch`, no bearer token, and has no session/token-issuance story to attach one — G-017's Resolution explicitly scoped that out ("No broader web-app auth/session story is in scope — that stays v2"). Flagged during T-092's review as worth a human glance before this reaches `questlog-prod.fly.dev`; no follow-up ticket filed yet.
+
+## Frontend
+
+### Design system — entity-driven token system
+The canonical reference is `Docs/DESIGN_SYSTEM.md`. Key structural facts:
+- **No single `--accent` color.** Each entity type has its own hue. `--accent` aliases `--ent-npc` (#60b8ff) for primary actions.
+- **Four depth planes:** `--bg-void` → `--bg-surface` → `--bg-elevated` → `--bg-focal`. Don't add new background colors outside this system.
+- **CSS custom properties, not Tailwind utilities**, for all layout and component styling. This is the foundation for per-campaign theming in Milestone 8. Components use inline `style` objects so token references are auditable.
+- **Shared style presets** live in `apps/web/src/components/styles.ts` as `CSSProperties` objects. Spread into `style` prop and override as needed. Add new presets here, don't create one-off inline objects.
+
+---
+
+## Embedding
+
+### Voyage AI — current model and key gotcha
+Current model: `voyage-4-lite`. Env var: `VOYAGE_API_KEY`. Vector dimension: 1024 (`chunks.embedding vector(1024)`).
+
+**`input_type` is required and matters:** always pass `input_type: "document"` when embedding source chunks, and `input_type: "query"` when embedding a search query. These produce asymmetric embeddings optimised for each role — omitting `input_type` degrades retrieval quality.
+
+`voyage.client.ts` owns the HTTP client, model name, auth header, and batch size. Both `embedding.service.ts` and `search.service.ts` call `callVoyageEmbeddings()` from this module — do not add a second Voyage HTTP client elsewhere.
+
+### ⚠️ Dev Voyage account is on the free tier — 3 RPM without a payment method
+Discovered during T-000 (`search.e2e.test.ts`, the real-API end-to-end retrieval test): the Voyage account behind the current `VOYAGE_API_KEY` returns `429` with `"You have not yet added your payment method..."` when more than 3 requests hit the embeddings endpoint within a minute. `search.e2e.test.ts` alone issues 3 real requests (1 batched document-embed call for the fixture's chunks + 2 query-embed calls), so it sits right at the limit — re-running it (or anything else that calls Voyage for real) twice within ~60s will 429 on the second run. This is not a code defect; the test is provably correct (passes cleanly once the per-minute window resets).
+**Action for Alex:** add a payment method at the [Voyage dashboard](https://dashboard.voyageai.com/) to unlock standard rate limits (free tokens still apply per their pricing page). Until then, expect occasional `search.e2e.test.ts` flakiness if CI or local runs stack up within the same minute — don't "fix" this in code (no retry/backoff was added; that would be solving an account-tier problem with test complexity).
+
+**Compounded as of T-001 (2026-07):** `apps/mcp`'s `query-lore.e2e.test.ts` mirrors the same real-API pattern, and `pnpm turbo test` runs both packages' test suites in the same CI job. Combined, the two files issue ~5 real Voyage requests (3 from `search.e2e.test.ts` + 2 from `query-lore.e2e.test.ts`) well within the same 60s window — over the 3 RPM cap essentially every run, confirmed directly via a `429` in CI (`Docs/tickets/reports/T-001-mcp-scaffold-query-lore.md`'s PR #24). Every future M-MCP ticket that adds its own real-API e2e test would have compounded this further.
+
+**Resolved (2026-07): the e2e tier no longer gates PRs at all.** Rather than working around a vendor rate limit with retry/backoff (which would only mask the real problem), the `.e2e.test.ts` tier was pulled out of the default test run entirely. Each package now has two vitest configs — `vitest.config.ts` (default, excludes `**/*.e2e.test.ts` via `configDefaults.exclude`) and `vitest.e2e.config.ts` (`include: ["**/*.e2e.test.ts"]` only) — with a `test:e2e` script/turbo task alongside the default `test`. `ci.yml`'s `pr` job (the actual PR merge gate) no longer references `VOYAGE_API_KEY`/`ANTHROPIC_API_KEY` at all — it only ever ran mocked tests to begin with, once the real-API files are excluded. A new workflow, `.github/workflows/e2e-release-check.yml`, runs `pnpm test:e2e` independent of any individual PR. Trigger: `push` to `main` — i.e. exactly when `develop` gets promoted to `main` as a deliberate release (this repo's branch model: `main` is deploy-only, releases are rare and manual, "months out" per Alex). That's the meaningful moment to confirm the real integration still works, not an arbitrary nightly cadence disconnected from whether anything actually shipped — and given how rare releases are expected to be here, this also all but eliminates the rate-limit exhaustion problem rather than merely de-risking it. `workflow_dispatch` (default ref `develop`) is also available for an on-demand check whenever you want confidence before deciding to release. The underlying reasoning: a mocked test answers "is this PR's code correct," which is what a merge gate should check; a real-API test answers "does the vendor/account integration still work," which is a fact that doesn't change per-PR and shouldn't hold merges hostage to a shared, compounding rate limit. See `.claude/skills/tdd-loop/SKILL.md` and `.claude/rules/backend.md` for the same priority ordering (mocks are the default; live-API `.e2e.test.ts` is the occasional, deliberate exception — not something to add per ticket as a matter of course).
+
+The payment-method action item above still stands — it makes the nightly/manual e2e check reliable rather than merely making it not block merges — but it's no longer a blocker for shipping tickets.
+
+---
+
+## Context Assembly
+
+### Token budget and configuration
+All magic numbers (budget ratios, recency weight, search limit, hybrid search constants) live in the exported `CONTEXT_CONFIG` object in `context.service.ts`. Edit there, not inline.
+
+Default budget split (100 000 token total):
+
+| Section  | Ratio | Tokens |
+|----------|-------|--------|
+| Chunks   | 60%   | 60 000 |
+| History  | 25%   | 25 000 |
+| Entities | 10%   | 10 000 |
+| Metadata |  5%   |  5 000 |
+
+### Hybrid search constants
+`KEYWORD_SEARCH_THRESHOLD = 0.1`, `DUAL_MATCH_BOOST = 0.1`, `DEFAULT_SEARCH_LIMIT = 40`. Vector and keyword searches run in parallel; results merged via `mergeSearchResults()` before recency re-ranking. `mergeSearchResults` is exported for direct unit testing.
+
+### `createdAt` is required on `SearchResult`
+`search.service.ts` returns `createdAt: Date` on each result — needed for recency ranking. Tests that mock `searchService.search` must include this field or recency ranking will break.
+
+### Test isolation via `fetchFn`
+`ContextInput.fetchFn` is forwarded to the Voyage AI HTTP call. Inject a mock `fetch` in tests to avoid network calls — no env var patching needed.
+
+---
+
+## LLM & Conversation
+
+### Dependency injection: `createLlmService(client?)`
+Production code uses the default export `llmService`. Tests pass a mock Anthropic client via the factory. There is no module-level singleton or `resetClient()` helper.
+
+### Configuration: `LLM_CONFIG`
+Model (`claude-sonnet-4-20250514`), `maxTokens` (4096), `maxHistoryMessages` (40). Same pattern as `CONTEXT_CONFIG` — edit there, not inline.
+
+### Non-streaming `chat()` uses a transaction; streaming `chatStream()` does not
+`chat()` wraps user message insert → context assembly → LLM call → assistant message insert in a single DB transaction. Guarantees no orphaned messages if the LLM call fails, but holds the transaction open for the duration of the call (5–30 s). Acceptable at single-user concurrency.
+
+`chatStream()` saves the user message optimistically, streams, then saves the assistant message. Deletes the user message if the LLM fails mid-stream. Avoids the long-held transaction at the cost of a small window where a user message exists without a response.
+
+### SSE endpoint — not tRPC — for streaming
+`POST /api/conversation/:conversationId/stream` is a plain Fastify route. tRPC v11 subscriptions require WebSocket transport, which this stack doesn't have. Event types: `delta`, `done`, `error`.
+
+### Error mapping
+`LlmApiError` → tRPC error codes: 429/529 → `TOO_MANY_REQUESTS`; all others → `INTERNAL_SERVER_ERROR`.
+
+### `ConversationMessage` and `MessageSource` are shared types
+`ConversationMessage` lives in `packages/shared/src/types/conversation.ts` — used by both server and frontend. `MessageSource` (`{ chunkId, sourceName, sourceId }`) is defined in `db/schema/tables.ts` and exported from the schema barrel. The `messages.sources` column is typed as `MessageSource[]`, not `Record<string, unknown>[]`.
+
+---
+
+## T-072 — Per-worktree Postgres instance (2026-07-29)
+
+**Step 0 resolved: local-only, confirmed.** Concurrently-running remote/sandboxed sessions never share one Postgres process — `EXECUTOR_ROUTINE.md` Step 0 documents the sandbox as "a fresh, disposable workspace," and `session-start.sh`'s remote branch provisions Postgres *natively* per session (not via `docker compose`), with no code path that lets two remote sessions address the same native instance. The collision this ticket fixes is real only when Alex runs multiple local sessions (worktrees) against his own machine's checkout — the design below is Docker-only by design, not by omission.
+
+**Port derivation is a checksum offset, not a free-port scan.** `scripts/worktree-postgres-env.sh` hashes the worktree's directory name (`cksum`) into an offset from base port 5433, per `G-008`'s resolution and this ticket's own suggested mechanism ("a hash or index of the worktree path/ticket id, offset from a base port"). This is not collision-proof — two worktree names could theoretically hash into the same 1-of-500 slot — but a dynamic free-port scan would need cross-worktree coordination (a shared lock/registry file) to avoid two concurrently-starting sessions racing onto the same port, which is more machinery than this ticket's actual failure mode (a handful of short-lived local worktrees) justifies. Verified empirically with two real worktrees (`T-072`, a throwaway `T-999-verify`) resolving to distinct ports (5693, 5727) and distinct `docker compose` project names, each isolated from the other's seeded fixture row.
+
+**`docker compose`'s project name, not just the port, has to differ per worktree.** Port-only parameterization would still collide on container/volume/network names (`docker-compose.yml` has no explicit `container_name`, so Compose derives them from the project name). `COMPOSE_PROJECT_NAME` is exported alongside `QUESTLOG_PG_PORT` by the same helper script — Compose reads it automatically, no `-p` flag needed at any call site.
+
+**`session-start.sh`'s new branch only fires inside `tmp/worktrees/*`.** Detected via a path-prefix match on `$CLAUDE_PROJECT_DIR` rather than `git worktree list` introspection — cheaper, and sufficient since T-069 already guarantees every ticket-execution worktree lives at exactly that path. The primary working directory (no worktree) still falls through to the pre-existing `exit 0` for local sessions — unchanged, per this ticket's own out-of-scope list.
+
+**Reaping: a real command, not yet wired to anything.** A finished worktree's stack is torn down with `docker compose -p <project-name> down -v` (verified empirically as part of this ticket's own concurrency proof) — but `Docs/IMPLEMENTATION_NOTES.md` § T-069 already documents that worktrees themselves are "not reaped automatically... unticketed," and this ticket doesn't change that. So the Postgres teardown has the same gap as the worktree it belongs to: a manual step today, not an automated one. Whoever eventually tickets worktree reaping should tie this `docker compose down -v` to it rather than reinventing it — done by `T-087` below.
+
+## T-096 — `manually_inspected` false-positive fix (2026-07-31)
+`summarizeUsage` (`packages/core/src/observability/usage-summary.ts`) classified any `user`-role transcript turn as human-authored unless it was a `tool_result` block, so `manually_inspected` fired on nearly every run — including fully autonomous ones. Root cause: the Claude Code harness itself injects non-human `user`-role turns as array content with a bare `type: "text"` block (no `tool_result`), at minimum for skill/slash-command load expansions (text starting `Base directory for this skill:`) and interrupt notices (`[Request interrupted by user...]`). Both were falling into the same "must be a human typed this" bucket as a real follow-up message. Fixed by pattern-matching those two confirmed shapes and excluding them from `humanMessageCount`. If a future run reveals a third injected shape causing a new false positive, extend `isInjectedTextBlock`'s pattern set rather than re-deriving the root cause from scratch.
+
+## T-113 — Exit-condition guard checks the *report's* citations, not the ticket's own bullets (2026-08-08)
+
+`exit-condition-guard.ts` reads both the ticket's `Exit condition:` field and the report's `## Exit condition check` section (per the ticket's own Scope), but only the report's bullets are ever checked for a file/test-name citation — a ticket's own exit-condition bullets are written at ticket-drafting time, before any test exists, so they never name a real file/line (confirmed empirically: no ticket file in `done/`/`queue/` cites one). The ticket's bullet count is used only for a non-blocking `warnings` signal (report has fewer bullets than the ticket lists) — cheap, and lets a human notice a folded-together or dropped exit condition, without asserting something this job can't actually know (a report is free to address two ticket bullets in one prose bullet).
+
+**Citation matching is `path.endsWith(citedPath)`, deliberately weak.** A bullet citing a bare filename (`example.test.ts`) matches any diff file with that basename, not necessarily the one intended — accepted per the ticket's own framing ("a real-existence check, grep-shaped, not a semantic... judgment"); tightening this to a full-path match would also break the common case of a report bullet citing just the basename for readability (every real example in `T-111`/`T-112`'s own reports does this).
+
+## T-139 — T-131 regression: propagated `OBSERVABILITY_DATABASE_URL` now shadows local test-DB provisioning (2026-08-10)
+
+**This session's own worktree bootstrap (`.claude/hooks/session-start.sh`) failed its verification gate on first run** — `PROVISIONING FAILED — database questlog_test_observability has no applied migrations` — despite the `db:migrate` step for that database printing "Migrations complete." with no error. Root cause: `packages/observability/src/db/migrate.ts`'s `main()` resolves its connection string as `process.env.OBSERVABILITY_DATABASE_URL ?? process.env.DATABASE_URL ?? testDbUrl(...)`, and its own `dotenv.config({ path: "../../.env" })` call loads `OBSERVABILITY_DATABASE_URL` from the worktree's `.env` unconditionally (dotenv only skips a key already present in `process.env`, and nothing in this call chain sets it there). Since **T-131** made every fresh worktree inherit the primary checkout's `.env` — including its real `OBSERVABILITY_DATABASE_URL`, pointed at the remote Neon `questlog_observability` branch — `ensure_database_provisioned`'s `DATABASE_URL="$database_url" eval "$(test_db_migrate_cmd "$dbname")"` (`db-readiness.sh`) sets `DATABASE_URL` for the child process, but `migrate.ts` prefers the now-always-present `OBSERVABILITY_DATABASE_URL` over it — so the migration silently ran against the remote Neon database instead of the intended local `questlog_test_observability`, leaving the local one permanently unmigrated on every fresh worktree from here on.
+
+**Worked around locally for this ticket** by invoking `packages/observability`'s migrate script by hand with `OBSERVABILITY_DATABASE_URL` explicitly overridden to the local test-DB URL (`postgresql://questlog:questlog@localhost:<port>/questlog_test_observability`), then re-running `session-start.sh`, which passed on the next attempt (its own fast-path readiness check no longer needed to touch this database). Not fixed in `migrate.ts`/`session-start.sh` itself — out of this ticket's Context files and Scope (`tool-descriptions.ts`/`.test.ts`, `.claude/rules/mcp.md` only). Left as a real, live gap for a follow-up ticket: either `migrate.ts` needs an explicit "local test-DB provisioning" call path that doesn't fall through to `OBSERVABILITY_DATABASE_URL` at all, or `session-start.sh`'s `ensure_database_provisioned` needs to invoke it with that variable unset (not just `DATABASE_URL` set) for every worktree from now on — every ticket picked up after T-131 merged is silently exposed to this until one of those lands.
+
