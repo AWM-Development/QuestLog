@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-057
+
+- **Observability dashboard: Trends view.** New standalone `apps/observability-dashboard` app (Vite + React + react-router, mirroring `apps/web`'s tooling shape) with a real-data Trends route: 30/90-day/all-time range filter and an exclude-empty-runs toggle, both wired to the `observability.trends` endpoint (`T-054`); four aggregate stat tiles (avg/median cost, avg turns-to-green, total system cost); a per-tier (S/M/L) granularity row; `recharts` tokens-per-run stacked bar and cost-vs-diff-size scatter (with a fit line) charts; and a per-ticket drill-down that expands on click, with header/rows sharing one CSS grid column template so columns can't drift out of alignment as the window resizes. Shares its top-nav chrome with `T-058`'s upcoming Log view. Design per `Docs/mockups/observability-dashboard/`, resolved via `G-004`.
+
 ### Added — T-152
 
 - **`get_chunk_history` MCP tool — superseded-lore audit trail.** `confirm_correct_lore` now persists a `chunk_corrections` row (the correction text, which chunks it superseded, which new chunks it created) atomically with the supersede, via a new `chunkHistoryService`. `get_chunk_history` is a new audit-only, on-demand read tool: given a `chunkId`, returns any correction event(s) that superseded it, or `[]` if it was never superseded. No change to `correct_lore`'s own preview narration and no UI surface (`G-025`'s resolution).
