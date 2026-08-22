@@ -294,6 +294,12 @@
     "mergedAt": "2026-08-12T14:11:47Z"
   },
   {
+    "ticketId": "T-157",
+    "prNumber": 290,
+    "branch": "feat/m-obs/t-157-observability-ticket-board-endpoint",
+    "mergedAt": "2026-08-22T14:29:32Z"
+  },
+  {
     "ticketId": "T-160",
     "prNumber": 293,
     "branch": "feat/m-bug/t-160-list-sources-mcp-tool",
