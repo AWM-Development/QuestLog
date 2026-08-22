@@ -43,9 +43,10 @@ Context files (load ONLY these):
 Scope: does another thing.
 `;
 
-// Scope's prose runs to exactly 172 characters (well past the 160-char cap),
-// with a space at position 160 so the word-boundary truncation is
-// unambiguous — this is the ticket's own long-scope fixture, not a repurposed one.
+// Scope's prose runs well past the 160-char cap — the assertions below check
+// the truncation boundary generically (length/ellipsis/prefix) rather than
+// against this string's exact length, so they don't depend on precisely
+// where the cut lands.
 const LONG_SCOPE_PROSE =
 	"Extend the board service to additionally parse a Branch field and a truncated Scope excerpt from each ticket file, reusing matchField exactly the way every other field already does its own parsing here.";
 
