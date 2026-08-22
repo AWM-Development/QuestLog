@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>QuestLog Pipeline Observatory — Board</title>
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;500;600;700&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-void:          #090d12;
+  --bg-surface:       #0e1820;
+  --bg-elevated:      #111c26;
+  --bg-focal:         #152636;
+  --bg-focal-hover:   #1a2e40;
+  --text-primary:     #d0e4f0;
+  --text-secondary:   #8aa4b4;
+  --text-muted:       #4a6a7a;
+  --text-dim:         #2e4856;
+  --border:           #1a2838;
+  --border-hover:     #1e3448;
+  --border-subtle:    #14222e;
+  --status-success:   #40d8a0;
+  --status-error:     #dc6060;
+  --status-warning:   #e8b040;
+  --status-info:      #60b8ff;
+  --accent:           #60b8ff;
+  --accent-hover:     #78c8ff;
+  --accent-muted:     rgba(96, 184, 255, 0.1);
+  --font-display: 'Crimson Pro', Georgia, serif;
+  --font-body:    'DM Sans', system-ui, sans-serif;
+  --font-mono:    'JetBrains Mono', 'Fira Code', monospace;
+  --space-1: 4px; --space-1-5: 6px; --space-2: 8px; --space-2-5: 10px;
+  --space-3: 12px; --space-3-5: 14px; --space-4: 16px; --space-5: 20px;
+  --space-6: 24px; --space-8: 32px;
+  --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-pill: 20px;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg-void); color: var(--text-primary); font-family: var(--font-body); font-size: 14px; line-height: 1.6; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-hover); }
+
+.chrome-header { background: var(--bg-surface); border-bottom: 0.5px solid var(--border); padding: var(--space-4) var(--space-6); display: flex; align-items: center; justify-content: space-between; }
+.chrome-title { font-family: var(--font-display); font-weight: 600; font-size: 20px; color: var(--text-primary); }
+.chrome-title .sub { font-family: var(--font-body); font-size: 11px; color: var(--text-muted); font-weight: 400; display: block; margin-top: 2px; }
+.chrome-nav { display: flex; gap: var(--space-1); background: var(--bg-elevated); border: 0.5px solid var(--border); border-radius: var(--r-md); padding: 3px; }
+.chrome-nav a { padding: var(--space-1-5) var(--space-3-5); border-radius: var(--r-sm); font-size: 13px; font-weight: 500; color: var(--text-muted); }
+.chrome-nav a:hover { color: var(--text-secondary); }
+.chrome-nav a.active { background: var(--accent-muted); color: var(--accent); }
+
+.page-body { max-width: 1440px; margin: 0 auto; padding: var(--space-6); }
+
+.board-toolbar { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: var(--space-5); gap: var(--space-4); flex-wrap: wrap; }
+.board-toolbar .section-title { font-family: var(--font-display); font-size: 17px; font-weight: 600; margin: 0 0 var(--space-1) 0; }
+.board-toolbar .section-sub { color: var(--text-muted); font-size: 12px; margin: 0; max-width: 640px; }
+.board-refresh { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-muted); font-family: var(--font-mono); white-space: nowrap; }
+.board-refresh .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--status-success); }
+
+/* ---- Demo-only controls (not part of the real UI — see NOTES.md) ---- */
+.demo-controls { display: flex; align-items: center; gap: var(--space-3); background: var(--bg-surface); border: 0.5px dashed var(--border-hover); border-radius: var(--r-md); padding: 6px 10px; font-size: 11px; color: var(--text-muted); }
+.demo-controls .grp { display: flex; align-items: center; gap: 6px; }
+.demo-controls label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+.demo-controls select { background: var(--bg-focal); color: var(--text-secondary); border: 0.5px solid var(--border); border-radius: 4px; font-size: 11px; padding: 2px 5px; font-family: var(--font-body); }
+
+/* ---- Board ---- */
+.board { display: flex; gap: var(--space-3); align-items: flex-start; overflow-x: auto; padding-bottom: var(--space-2); }
+.column { flex: 0 0 240px; width: 240px; display: flex; flex-direction: column; background: var(--bg-surface); border: 0.5px solid var(--border-subtle); border-radius: var(--r-lg); overflow: hidden; transition: border-color .12s, background .12s; }
+.column.drop-target { border-color: var(--accent); background: rgba(96,184,255,0.04); }
+.column-head { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-3-5); border-bottom: 0.5px solid var(--border-subtle); flex: 0 0 auto; }
+.column-head .name { font-family: var(--font-mono); font-size: 10px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text-secondary); }
+.column-head .count { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); background: var(--bg-elevated); border-radius: var(--r-pill); padding: 1px 7px; }
+.column-body { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-2-5); max-height: 560px; overflow-y: auto; min-height: 60px; }
+.column-footer { padding: var(--space-2) var(--space-3-5); border-top: 0.5px solid var(--border-subtle); font-size: 10px; color: var(--text-dim); font-family: var(--font-mono); flex: 0 0 auto; }
+.column-footer.clickable { cursor: pointer; }
+.column-footer.clickable:hover { color: var(--accent); }
+.column[data-col="blocked"] .column-head .name, .column[data-col="blocked"] .column-head .count { color: var(--status-error); }
+.column[data-col="gated"] .column-head .name, .column[data-col="gated"] .column-head .count { color: var(--status-warning); }
+
+/* ---- Card ---- */
+.card { background: var(--bg-elevated); border: 0.5px solid var(--border); border-radius: var(--r-md); padding: var(--space-3); display: flex; flex-direction: column; gap: 7px; cursor: pointer; }
+.card:hover { border-color: var(--border-hover); background: var(--bg-focal); }
+.card.dense { padding: var(--space-2) var(--space-2-5); gap: 4px; }
+.card.dragging { opacity: .4; }
+.card-top { display: flex; align-items: center; gap: 6px; }
+.card-id { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+.grip { color: var(--text-dim); flex: 0 0 auto; cursor: grab; }
+.grip:active { cursor: grabbing; }
+.card-top-spacer { flex: 1; }
+.card-top .tag { flex: 0 0 auto; }
+.menu-btn { background: transparent; border: none; padding: 2px; color: var(--text-dim); border-radius: 4px; cursor: pointer; display: flex; flex: 0 0 auto; }
+.menu-btn:hover { color: var(--text-secondary); background: var(--bg-focal-hover); }
+.card-title { font-size: 12.5px; font-weight: 500; color: var(--text-primary); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card.dense .card-title { -webkit-line-clamp: 1; }
+.card-scope { font-size: 11px; color: var(--text-muted); line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card.dense .card-scope { display: none; }
+
+.tag { display: inline-block; border-radius: 3px; padding: 1px 6px; font-size: 9px; font-family: var(--font-mono); font-weight: 600; letter-spacing: .02em; text-transform: uppercase; }
+.tag-tier-s { background: rgba(96,184,255,0.1); color: var(--status-info); }
+.tag-tier-m { background: rgba(232,176,64,0.1); color: var(--status-warning); }
+.tag-tier-l { background: rgba(220,96,96,0.1); color: var(--status-error); }
+
+.card-meta { display: flex; align-items: center; gap: 6px; }
+.priority { font-family: var(--font-mono); font-size: 9px; font-weight: 600; letter-spacing: .02em; padding: 1px 6px; border-radius: 3px; }
+.priority-p0 { color: var(--status-error); background: rgba(220,96,96,0.1); }
+.priority-p1 { color: var(--status-warning); background: rgba(232,176,64,0.1); }
+.priority-p2 { color: var(--text-muted); background: rgba(74,106,122,0.15); }
+
+.progress-wrap { display: flex; align-items: center; gap: 6px; cursor: default; }
+.progress-bar { flex: 1; height: 3px; border-radius: 2px; background: var(--border); overflow: hidden; display: flex; }
+.progress-fill { height: 100%; background: var(--accent); border-radius: 2px 0 0 2px; }
+.progress-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); flex: 0 0 auto; }
+.card.dense .progress-wrap { display: none; }
+
+.chip-row { display: flex; flex-wrap: wrap; gap: 4px; }
+.chip { display: inline-flex; align-items: center; gap: 3px; border-radius: var(--r-pill); padding: 2px 7px 2px 6px; font-size: 9px; font-family: var(--font-mono); font-weight: 500; }
+.chip svg { flex: 0 0 auto; }
+.chip-blocked { color: var(--status-error); background: rgba(220,96,96,0.1); }
+.chip-gated { color: var(--status-warning); background: rgba(232,176,64,0.1); }
+.chip-more { color: var(--text-dim); background: var(--bg-focal); }
+
+.move-row { border-top: 0.5px solid var(--border-subtle); margin-top: 2px; padding-top: 6px; display: flex; flex-direction: column; gap: 5px; }
+.move-row .label { font-size: 9px; color: var(--text-dim); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .04em; }
+.move-row .targets { display: flex; flex-wrap: wrap; gap: 4px; }
+.move-target { font-size: 10px; font-family: var(--font-body); color: var(--text-secondary); background: var(--bg-focal); border: 0.5px solid var(--border); border-radius: var(--r-sm); padding: 3px 8px; cursor: pointer; }
+.move-target:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-muted); }
+
+.col-empty { text-align: center; padding: var(--space-5) var(--space-2); color: var(--text-dim); }
+.col-empty .headline { font-size: 11px; color: var(--text-muted); font-weight: 500; margin-bottom: 2px; }
+.col-empty .sub { font-size: 10px; color: var(--text-dim); line-height: 1.5; }
+
+@keyframes pulse { 0%, 100% { opacity: .4; } 50% { opacity: 1; } }
+.skeleton-card { background: var(--bg-elevated); border-radius: var(--r-md); height: 64px; animation: pulse 1s ease-in-out infinite; }
+.skeleton-card:nth-child(2) { animation-delay: .12s; }
+.skeleton-card:nth-child(3) { animation-delay: .24s; }
+
+.board-error { display: flex; flex-direction: column; align-items: center; text-align: center; gap: var(--space-2); background: var(--bg-focal); border: 0.5px solid var(--border); border-left: 3px solid var(--status-error); border-radius: var(--r-lg); padding: var(--space-8) var(--space-6); max-width: 420px; margin: var(--space-8) auto; }
+.board-error .icon { color: var(--status-error); }
+.board-error .headline { font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--text-primary); }
+.board-error .sub { font-size: 12px; color: var(--text-muted); max-width: 320px; }
+.btn-secondary { background: transparent; color: var(--text-muted); border: 0.5px solid var(--border); border-radius: var(--r-sm); padding: 6px 12px; font-size: 12px; font-family: var(--font-body); cursor: pointer; margin-top: var(--space-1); }
+.btn-secondary:hover { color: var(--text-secondary); border-color: var(--border-hover); background: rgba(208,228,240,0.02); }
+
+.modal-backdrop { position: fixed; inset: 0; background: rgba(5,8,11,0.6); display: flex; align-items: center; justify-content: center; z-index: 50; padding: var(--space-6); }
+.modal { background: var(--bg-elevated); border: 0.5px solid var(--border-hover); border-radius: var(--r-lg); width: 100%; max-width: 460px; max-height: 84vh; overflow-y: auto; padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-3-5); }
+.modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-3); }
+.modal-head .id-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.modal-head .card-id { font-size: 11px; }
+.modal-head h2 { font-family: var(--font-display); font-size: 18px; font-weight: 600; margin: 0; color: var(--text-primary); line-height: 1.35; }
+.modal-close { background: transparent; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; border-radius: 4px; flex: 0 0 auto; }
+.modal-close:hover { color: var(--text-secondary); background: var(--bg-focal-hover); }
+.modal-row { display: flex; gap: var(--space-4); font-size: 12px; }
+.modal-row .field { flex: 1; min-width: 0; }
+.modal-row .field .k { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
+.modal-row .field .v { color: var(--text-secondary); }
+.modal-section { border-top: 0.5px solid var(--border-subtle); padding-top: var(--space-3); }
+.modal-section .k { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 5px; }
+.modal-section .v { font-size: 12.5px; color: var(--text-secondary); line-height: 1.55; }
+.modal-section .mono-v { font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); }
+.modal-chip-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 5px; }
+.milestone-track { display: flex; flex-direction: column; gap: 0; }
+.m-task { display: flex; align-items: flex-start; gap: 8px; padding: 3px 0; }
+.m-task .dot-col { display: flex; flex-direction: column; align-items: center; flex: 0 0 auto; align-self: stretch; }
+.m-task .dot { width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto; margin-top: 3px; }
+.m-task .line { width: 1px; flex: 1; background: var(--border); margin-top: 2px; min-height: 10px; }
+.m-task.done .dot { background: var(--status-success); }
+.m-task.current .dot { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-muted); }
+.m-task.upcoming .dot { background: var(--border-hover); }
+.m-task .t-label { font-size: 11.5px; color: var(--text-secondary); }
+.m-task.done .t-label { color: var(--text-muted); text-decoration: line-through; text-decoration-color: var(--border-hover); }
+.m-task.current .t-label { color: var(--text-primary); font-weight: 600; }
+.m-task .t-id { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); margin-right: 5px; }
+
+.milestone-tooltip { position: fixed; z-index: 60; width: 220px; background: var(--bg-focal); border: 0.5px solid var(--border-hover); border-radius: var(--r-md); padding: var(--space-3); box-shadow: 0 8px 24px rgba(0,0,0,0.4); pointer-events: none; }
+.milestone-tooltip .m-name { font-family: var(--font-display); font-size: 12.5px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; }
+
+.search-input { width: 100%; background: var(--bg-focal); border: 0.5px solid var(--border); border-radius: var(--r-sm); padding: 8px 10px; font-family: var(--font-body); font-size: 12.5px; color: var(--text-primary); }
+.search-input::placeholder { color: var(--text-dim); }
+.search-input:focus { outline: none; border-color: var(--border-hover); box-shadow: 0 0 0 3px rgba(96,184,255,0.06); }
+.search-section-label { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .05em; margin: var(--space-2) 0 4px; }
+.milestone-list { display: flex; flex-direction: column; }
+.milestone-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--r-sm); cursor: pointer; }
+.milestone-row:hover { background: var(--bg-focal); }
+.milestone-row .m-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1; }
+.milestone-row .m-ref { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+.milestone-row .m-title { font-size: 12.5px; color: var(--text-primary); }
+.m-status-pill { font-family: var(--font-mono); font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: .03em; padding: 2px 7px; border-radius: var(--r-pill); flex: 0 0 auto; }
+.m-status-in-progress { color: var(--accent); background: var(--accent-muted); }
+.m-status-completed { color: var(--status-success); background: rgba(64,216,160,0.1); }
+.m-status-unstarted { color: var(--text-muted); background: rgba(74,106,122,0.15); }
+.milestone-row .m-progress { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); flex: 0 0 auto; }
+.ticket-hit-row { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: var(--r-sm); cursor: pointer; font-size: 11.5px; color: var(--text-secondary); }
+.ticket-hit-row:hover { background: var(--bg-focal); }
+.ticket-hit-row .t-id2 { font-family: var(--font-mono); font-size: 10px; color: var(--text-muted); }
+.ticket-hit-row .t-status-dot { width: 6px; height: 6px; border-radius: 50%; flex: 0 0 auto; }
+.ticket-hit-row .t-status-dot.done { background: var(--status-success); }
+.ticket-hit-row .t-status-dot.upcoming { background: var(--border-hover); }
+.back-btn { display: flex; align-items: center; gap: 6px; background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 12px; padding: 2px 0; }
+.back-btn:hover { color: var(--text-secondary); }
+.no-results { font-size: 11.5px; color: var(--text-dim); padding: var(--space-2) 10px; }
+</style>
+</head>
+<body>
+
+<header class="chrome-header">
+  <div class="chrome-title">QuestLog Pipeline Observatory<span class="sub">Nightly executor observability</span></div>
+  <nav class="chrome-nav">
+    <a href="index.html">Trends</a>
+    <a href="log.html">Log</a>
+    <a href="board.html" class="active">Board</a>
+  </nav>
+</header>
+
+<div class="page-body">
+  <div class="board-toolbar">
+    <div>
+      <p class="section-title">Ticket board</p>
+      <p class="section-sub">Live view of Docs/tickets/ — drag or use the ⋮ menu to move a card (prototype interaction only, not wired to a write path — see G-047). Done only shows tickets from in-progress milestones (see G-048).</p>
+    </div>
+    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+      <div class="board-refresh" id="refresh-indicator"><span class="dot"></span>Updated 41s ago</div>
+      <div class="demo-controls">
+        <div class="grp">
+          <label>Board state
+            <select id="demo-state">
+              <option value="loaded">Loaded</option>
+              <option value="loading">Loading</option>
+              <option value="error">Error</option>
+            </select>
+          </label>
+        </div>
+        <div class="grp">
+          <label><input type="checkbox" id="demo-dense"> Dense cards</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="board-root"></div>
+</div>
+
+<div id="overlay-root"></div>
+
+<script>
+// ============================================================
+// Demo data — this is a static mockup, not wired to board.list.
+// See NOTES.md for what's real, what's illustrative, and open questions.
+// ============================================================
+const MILESTONES = {
+  "M-OBS.9": { name: "Ticket-board visual design + build", tasks: [
+    { id: "G-043", label: "Visual design gate", done: true },
+    { id: "T-157", label: "board.list endpoint", done: false },
+    { id: "T-158", label: "Board frontend route", done: false },
+  ]},
+  "M-OBS.5": { name: "Observability dashboard: Trends + Log", tasks: [
+    { id: "T-053", label: "Store schema + ingestion", done: true },
+    { id: "T-054", label: "API read endpoints", done: true },
+    { id: "T-059", label: "Comment schema + endpoint", done: true },
+    { id: "T-055", label: "PR diff-stat sync", done: true },
+    { id: "T-057", label: "Trends view", done: false },
+    { id: "T-058", label: "Log view + comments", done: false },
+  ]},
+  "M-BUG.5": { name: "Duplicate-source cleanup", tasks: [
+    { id: "T-159", label: "ingest_text error-response fix", done: true },
+    { id: "T-160", label: "list_sources MCP tool", done: false },
+    { id: "G-045", label: "delete_source tool design gate", done: false },
+  ]},
+  "M-NOTES.1": { name: "DM-only session notes", tasks: [
+    { id: "T-161", label: "Write path", done: false },
+    { id: "T-162", label: "Read path + tagging", done: false },
+  ]},
+  "M-V2.1": { name: "v2 scalability review", tasks: [
+    { id: "T-039", label: "Architecture scaling audit", done: false },
+  ]},
+  "M-INFRA.3": { name: "Per-worktree environment hardening", tasks: [
+    { id: "T-072", label: "Per-worktree Postgres instance", done: true },
+    { id: "T-154", label: "Port derived from cwd", done: true },
+  ]},
+  "M-INVENTORY.4": { name: "Inventory surfaced in agent tools", tasks: [
+    { id: "T-142", label: "Schema + pc entity type", done: true },
+    { id: "T-143", label: "MCP tools", done: true },
+    { id: "T-144", label: "Surface in get_entity/prep_brief", done: true },
+  ]},
+  "M-OBS.8": { name: "Observability hardening", tasks: [
+    { id: "T-156", label: "Fix DATABASE_URL leak", done: true },
+  ]},
+  "M-BUG.4": { name: "Config drift fixes", tasks: [
+    { id: "T-155", label: "Fix stale LLM model id", done: true },
+  ]},
+  "M-PIPE.6": { name: "Pipeline reporting polish", tasks: [
+    { id: "T-146", label: "/lineup progress + version", done: true },
+    { id: "T-147", label: "Session worktree default", done: true },
+    { id: "T-149", label: "/morning-review milestone context", done: true },
+  ]},
+  "M-PIPE.5": { name: "Docs/architecture audits", tasks: [
+    { id: "T-145", label: "File-org / architecture audit", done: true },
+  ]},
+};
+
+function getInitialData() {
+  return [
+    { id: "gated", name: "Gated", emptyHeadline: "Nothing gated", emptySub: "No ticket is waiting on an open G-### decision.", overflowCount: 0, tickets: [
+      { id: "T-158", title: "Observability dashboard: Board view (frontend route)", tier: "M", priority: "P1", milestoneRef: "M-OBS.9", branch: "feat/m-obs/t-158-observability-dashboard-board-view", scopeSummary: "Add a /board route to apps/observability-dashboard sharing its nav/shared.css chrome; six columns from board.list, read-only, no drag-and-drop.", chips: [{ label: "G-043", kind: "gated" }, { label: "T-057", kind: "blocked" }, { label: "T-157", kind: "blocked" }] },
+      { id: "M-BUG.5", title: "delete_source tool — no ticket until G-045 resolves", tier: "M", priority: "P2", milestoneRef: "M-BUG.5", branch: "—", scopeSummary: "Blocked entirely on G-045 (delete_source tool design) — no Scope can be honestly written until that gate resolves.", chips: [{ label: "G-045", kind: "gated" }] },
+    ]},
+    { id: "backlog", name: "Backlog", emptyHeadline: "Backlog is empty", emptySub: "Nothing staged behind the queue right now.", overflowCount: 0, tickets: [
+      { id: "T-057", title: "Observability dashboard: Trends view", tier: "M", priority: "P2", milestoneRef: "M-OBS.5", branch: "feat/m-obs/t-057-observability-dashboard-trends-view", scopeSummary: "Stand up apps/observability-dashboard app shell + Trends route: stat tiles, tier breakdown, cost-vs-diff-size chart, drill-down table.", chips: [{ label: "T-054", kind: "blocked" }, { label: "T-055", kind: "blocked" }] },
+      { id: "T-058", title: "Observability dashboard: Log view + comments", tier: "M", priority: "P2", milestoneRef: "M-OBS.5", branch: "feat/m-obs/t-058-observability-dashboard-log-view-comments", scopeSummary: "Add /log route: one entry per ticket run, newest first, with a comment thread per entry backed by T-059's schema.", chips: [] },
+    ]},
+    { id: "queue", name: "Queue", emptyHeadline: "Queue is empty", emptySub: "No tickets are up next for the executor.", overflowCount: 0, tickets: [
+      { id: "T-157", title: "Observability ticket-board endpoint (board.list)", tier: "M", priority: "P1", milestoneRef: "M-OBS.9", branch: "feat/m-obs/t-157-observability-ticket-board-endpoint", scopeSummary: "A pure parsing function + tRPC endpoint that derives each ticket's status from its folder and returns board.list's fixture shape, ~60s cached.", chips: [] },
+      { id: "T-160", title: "list_sources MCP tool", tier: "S", priority: "P1", milestoneRef: "M-BUG.5", branch: "feat/m-bug/t-160-list-sources-mcp-tool", scopeSummary: "A read-only MCP tool listing a campaign's ingested sources, so duplicates are discoverable ahead of delete_source.", chips: [] },
+      { id: "T-161", title: "DM-only notes write path", tier: "M", priority: "P1", milestoneRef: "M-NOTES.1", branch: "feat/m-notes/t-161-dm-only-notes-write-path", scopeSummary: "Write path for DM-only session notes via the existing dmNotes column, gated from player-facing reads.", chips: [] },
+      { id: "T-162", title: "DM-only notes read path + tagging", tier: "S", priority: "P1", milestoneRef: "M-NOTES.1", branch: "feat/m-notes/t-162-dm-only-notes-read-path-tagging", scopeSummary: "Read path + tagging so DM-only notes surface distinctly from player-visible notes in query results.", chips: [{ label: "T-161", kind: "blocked" }] },
+      { id: "T-039", title: "Scalability into v2 — review", tier: "L", priority: "P1", milestoneRef: "M-V2.1", branch: "feat/m-v2/t-039-scalability-into-v2-review", scopeSummary: "Audit current architecture's scaling assumptions ahead of multi-user v2 planning; produce findings, not code changes.", chips: [] },
+    ]},
+    { id: "inprogress", name: "In-progress", emptyHeadline: "Nothing running", emptySub: "The executor is idle — next pickup is the earliest queued ticket.", overflowCount: 0, tickets: [] },
+    { id: "blocked", name: "Blocked", emptyHeadline: "Nothing blocked", emptySub: "No ticket is stalled on a dependency or the iteration cap.", overflowCount: 0, tickets: [] },
+    { id: "done", name: "Done", emptyHeadline: "Nothing shipped yet", emptySub: "Completed tickets land here once merged — only for milestones still in-progress. A milestone's shipped tickets drop out of Done once that milestone itself completes.", overflowCount: 2, tickets: [
+      { id: "T-053", title: "Observability store schema + ingestion", tier: "M", priority: "P1", milestoneRef: "M-OBS.5", branch: "feat/m-obs/t-053-observability-store-schema-ingestion", scopeSummary: "Schema + ingestion pipeline for the observability store — the foundation Trends and Log both read from.", chips: [] },
+      { id: "T-159", title: "ingest_text error response after partial success", tier: "M", priority: "P0", milestoneRef: "M-BUG.5", branch: "feat/m-bug/t-159-ingest-text-error-response-after-partial-success", scopeSummary: "Fix ingest_text returning an error response after a partially successful write, which caused duplicate-source retries.", chips: [] },
+      { id: "T-054", title: "Observability API read endpoints", tier: "S", priority: "P1", milestoneRef: "M-OBS.5", branch: "feat/m-obs/t-054-observability-api-read-endpoints", scopeSummary: "Read endpoints exposing the observability store's data for Trends' stat tiles and drill-down table.", chips: [] },
+    ]},
+  ];
+}
+
+// ============================================================
+// State
+// ============================================================
+const state = {
+  data: getInitialData(),
+  openMenuId: null,
+  draggedId: null,
+  dropTargetId: null,
+  selectedId: null,
+  hoveredId: null,
+  hoverPos: null,
+  milestoneSearchOpen: false,
+  milestoneQuery: "",
+  selectedMilestoneRef: null,
+  boardState: "loaded",
+  dense: false,
+};
+
+function tierClass(t) { return t === "S" ? "tag-tier-s" : t === "L" ? "tag-tier-l" : "tag-tier-m"; }
+function priorityClass(p) { return p === "P0" ? "priority-p0" : p === "P1" ? "priority-p1" : "priority-p2"; }
+function columnName(id) { const c = state.data.find(c => c.id === id); return c ? c.name : id; }
+function esc(s) { return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+function statusOf(m) {
+  const completed = m.tasks.filter(t => t.done).length;
+  const total = m.tasks.length;
+  const status = completed === 0 ? "unstarted" : completed === total ? "completed" : "in-progress";
+  const statusLabel = status === "in-progress" ? "In-progress" : status === "completed" ? "Completed" : "Unstarted";
+  return { completed, total, status, statusLabel, statusClass: "m-status-" + status, progressLabel: completed + "/" + total };
+}
+
+function buildMilestone(raw) {
+  const m = MILESTONES[raw.milestoneRef];
+  if (!m) return { hasProgress: false, tasks: [] };
+  const tasks = m.tasks.map(t => ({ id: t.id, label: t.label, statusClass: t.id === raw.id ? "current" : (t.done ? "done" : "upcoming") }));
+  const completed = m.tasks.filter(t => t.done).length;
+  const total = m.tasks.length;
+  const pct = total > 0 ? Math.round((completed / total) * 100) : 0;
+  return { hasProgress: true, milestoneName: m.name, progressLabel: completed + "/" + total, pct, tasks };
+}
+
+function moveTicket(ticketId, targetColId) {
+  let moved = null;
+  state.data.forEach(col => {
+    const idx = col.tickets.findIndex(t => t.id === ticketId);
+    if (idx >= 0) { moved = col.tickets.splice(idx, 1)[0]; }
+  });
+  if (moved) {
+    const target = state.data.find(c => c.id === targetColId);
+    if (target) target.tickets.push(moved);
+  }
+  state.openMenuId = null;
+  state.draggedId = null;
+  state.dropTargetId = null;
+  render();
+}
+
+function chipHtml(chip) {
+  const icon = chip.kind === "gated"
+    ? '<svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2"/></svg>'
+    : '<svg width="9" height="9" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="5.5"/><path d="M4.5 4.5l7 7"/></svg>';
+  const cls = chip.kind === "gated" ? "chip-gated" : "chip-blocked";
+  return `<span class="chip ${cls}">${icon}${esc(chip.label)}</span>`;
+}
+
+function milestoneTrackHtml(tasks) {
+  return tasks.map(mt => `
+    <div class="m-task ${mt.statusClass}">
+      <div class="dot-col"><div class="dot"></div><div class="line"></div></div>
+      <div class="t-label"><span class="t-id">${esc(mt.id)}</span>${esc(mt.label)}</div>
+    </div>`).join("");
+}
+
+function cardHtml(raw, colId) {
+  const chips = raw.chips;
+  const visible = chips.slice(0, 2);
+  const more = chips.length - visible.length;
+  const menuOpen = state.openMenuId === raw.id;
+  const milestone = buildMilestone(raw);
+  const denseCls = state.dense ? "dense" : "";
+  const dragCls = state.draggedId === raw.id ? "dragging" : "";
+
+  const progressHtml = milestone.hasProgress ? `
+    <div class="progress-wrap" data-progress-hover="${raw.id}">
+      <div class="progress-bar"><div class="progress-fill" style="width:${milestone.pct}%"></div></div>
+      <span class="progress-label">${milestone.progressLabel}</span>
+    </div>` : "";
+
+  const chipsHtml = chips.length ? `
+    <div class="chip-row">
+      ${visible.map(chipHtml).join("")}
+      ${more > 0 ? `<span class="chip chip-more">+${more}</span>` : ""}
+    </div>` : "";
+
+  const moveTargets = state.data.filter(c => c.id !== colId)
+    .map(c => `<span class="move-target" data-move-target="${raw.id}|${c.id}">${esc(c.name)}</span>`).join("");
+  const menuHtml = menuOpen ? `
+    <div class="move-row">
+      <div class="label">Move to</div>
+      <div class="targets">${moveTargets}</div>
+    </div>` : "";
+
+  return `
+    <div class="card ${denseCls} ${dragCls}" draggable="true" data-card-id="${raw.id}" data-open-ticket="${raw.id}">
+      <div class="card-top">
+        <svg class="grip" width="10" height="14" viewBox="0 0 10 14" fill="currentColor"><circle cx="2.5" cy="2.5" r="1.2"/><circle cx="7.5" cy="2.5" r="1.2"/><circle cx="2.5" cy="7" r="1.2"/><circle cx="7.5" cy="7" r="1.2"/><circle cx="2.5" cy="11.5" r="1.2"/><circle cx="7.5" cy="11.5" r="1.2"/></svg>
+        <span class="card-id">${esc(raw.id)}</span>
+        <span class="card-top-spacer"></span>
+        <span class="tag ${tierClass(raw.tier)}">${esc(raw.tier)}</span>
+        <button class="menu-btn" data-toggle-menu="${raw.id}">
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="3" r="1.3"/><circle cx="8" cy="8" r="1.3"/><circle cx="8" cy="13" r="1.3"/></svg>
+        </button>
+      </div>
+      <div class="card-title">${esc(raw.title)}</div>
+      <div class="card-scope">${esc(raw.scopeSummary)}</div>
+      <div class="card-meta"><span class="priority ${priorityClass(raw.priority)}">${esc(raw.priority)}</span></div>
+      ${progressHtml}
+      ${chipsHtml}
+      ${menuHtml}
+    </div>`;
+}
+
+function columnHtml(col) {
+  const count = col.overflowCount > 0 ? col.tickets.length + col.overflowCount : col.tickets.length;
+  const isEmpty = col.tickets.length === 0;
+  const dropCls = state.dropTargetId === col.id ? "drop-target" : "";
+  const body = isEmpty
+    ? `<div class="col-empty"><div class="headline">${esc(col.emptyHeadline)}</div><div class="sub">${esc(col.emptySub)}</div></div>`
+    : col.tickets.map(t => cardHtml(t, col.id)).join("");
+  const footer = col.overflowCount > 0
+    ? `<div class="column-footer clickable" data-open-search="1">+${col.overflowCount} earlier — view milestones</div>` : "";
+  return `
+    <div class="column ${dropCls}" data-col="${col.id}" data-drop-col="${col.id}">
+      <div class="column-head"><span class="name">${esc(col.name)}</span><span class="count">${count}</span></div>
+      <div class="column-body">${body}</div>
+      ${footer}
+    </div>`;
+}
+
+function boardHtml() {
+  if (state.boardState === "error") {
+    return `
+      <div class="board-error">
+        <svg class="icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9.5"/><path d="M12 7.5v5.5"/><circle cx="12" cy="16.5" r="0.75" fill="currentColor" stroke="none"/></svg>
+        <div class="headline">Couldn't load the board</div>
+        <div class="sub">The GitHub API read behind board.list didn't respond. Trends and Log are unaffected.</div>
+        <button class="btn-secondary">Retry</button>
+      </div>`;
+  }
+  if (state.boardState === "loading") {
+    return `<div class="board">${state.data.map(col => `
+      <div class="column">
+        <div class="column-head"><span class="name">${esc(col.name)}</span></div>
+        <div class="column-body">
+          <div class="skeleton-card"></div><div class="skeleton-card"></div><div class="skeleton-card"></div>
+        </div>
+      </div>`).join("")}</div>`;
+  }
+  return `<div class="board">${state.data.map(columnHtml).join("")}</div>`;
+}
+
+function tooltipHtml() {
+  if (!state.hoveredId || !state.hoverPos) return "";
+  let raw = null, colId = null;
+  state.data.forEach(c => { const f = c.tickets.find(t => t.id === state.hoveredId); if (f) { raw = f; colId = c.id; } });
+  if (!raw) return "";
+  const milestone = buildMilestone(raw);
+  const style = `top:${state.hoverPos.top - 8}px; left:${state.hoverPos.left}px; transform: translateY(-100%);`;
+  return `
+    <div class="milestone-tooltip" style="${style}">
+      <div class="m-name">${esc(milestone.milestoneName)}</div>
+      <div class="milestone-track">${milestoneTrackHtml(milestone.tasks)}</div>
+    </div>`;
+}
+
+function modalHtml() {
+  if (!state.selectedId) return "";
+  let raw = null, colId = null;
+  state.data.forEach(c => { const f = c.tickets.find(t => t.id === state.selectedId); if (f) { raw = f; colId = c.id; } });
+  if (!raw) return "";
+  const milestone = buildMilestone(raw);
+  const progressSection = milestone.hasProgress ? `
+    <div class="modal-section">
+      <div class="k">${esc(milestone.milestoneName)} — ${milestone.progressLabel}</div>
+      <div class="milestone-track">${milestoneTrackHtml(milestone.tasks)}</div>
+    </div>` : "";
+  const depsSection = raw.chips.length ? `
+    <div class="modal-section">
+      <div class="k">Dependencies</div>
+      <div class="modal-chip-row">${raw.chips.map(chipHtml).join("")}</div>
+    </div>` : "";
+  return `
+    <div class="modal-backdrop" data-close-modal="1">
+      <div class="modal" data-stop="1">
+        <div class="modal-head">
+          <div>
+            <div class="id-row">
+              <span class="card-id">${esc(raw.id)}</span>
+              <span class="tag ${tierClass(raw.tier)}">${esc(raw.tier)}</span>
+              <span class="priority ${priorityClass(raw.priority)}">${esc(raw.priority)}</span>
+            </div>
+            <h2>${esc(raw.title)}</h2>
+          </div>
+          <button class="modal-close" data-close-modal="1">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg>
+          </button>
+        </div>
+        <div class="modal-row">
+          <div class="field"><div class="k">Milestone ref</div><div class="v mono-v">${esc(raw.milestoneRef)}</div></div>
+          <div class="field"><div class="k">Column</div><div class="v">${esc(columnName(colId))}</div></div>
+        </div>
+        <div class="modal-row"><div class="field"><div class="k">Branch</div><div class="v mono-v">${esc(raw.branch)}</div></div></div>
+        ${progressSection}
+        ${depsSection}
+        <div class="modal-section"><div class="k">Scope</div><div class="v">${esc(raw.scopeSummary)}</div></div>
+      </div>
+    </div>`;
+}
+
+function searchOverlayHtml() {
+  if (!state.milestoneSearchOpen) return "";
+  if (state.selectedMilestoneRef) {
+    const m = MILESTONES[state.selectedMilestoneRef];
+    if (!m) return "";
+    const s = statusOf(m);
+    const tasks = m.tasks.map(t => ({ id: t.id, label: t.label, statusClass: t.done ? "done" : "upcoming" }));
+    return `
+      <div class="modal-backdrop" data-close-search="1">
+        <div class="modal" data-stop="1">
+          <div class="modal-head">
+            <button class="back-btn" data-back-to-list="1">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3L5 8l5 5"/></svg>
+              All milestones
+            </button>
+            <button class="modal-close" data-close-search="1">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg>
+            </button>
+          </div>
+          <div class="modal-row">
+            <div class="field"><div class="k">Milestone</div><div class="v mono-v">${esc(state.selectedMilestoneRef)}</div></div>
+            <div class="field"><div class="k">Status</div><div class="v"><span class="m-status-pill ${s.statusClass}">${s.statusLabel}</span></div></div>
+          </div>
+          <h2 style="font-family:var(--font-display); font-size:16px; font-weight:600; margin:0; color:var(--text-primary);">${esc(m.name)}</h2>
+          <div class="modal-section">
+            <div class="k">Tickets — ${s.progressLabel}</div>
+            <div class="milestone-track">${milestoneTrackHtml(tasks)}</div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  const q = (state.milestoneQuery || "").toLowerCase().trim();
+  const milestoneList = Object.keys(MILESTONES).map(ref => {
+    const m = MILESTONES[ref];
+    const s = statusOf(m);
+    return { ref, name: m.name, ...s, rawTasks: m.tasks };
+  });
+  const filtered = q ? milestoneList.filter(m => m.ref.toLowerCase().includes(q) || m.name.toLowerCase().includes(q)) : milestoneList;
+  const ticketHits = [];
+  if (q) {
+    milestoneList.forEach(m => m.rawTasks.forEach(t => {
+      if (t.id.toLowerCase().includes(q) || t.label.toLowerCase().includes(q)) {
+        ticketHits.push({ id: t.id, label: t.label, done: t.done, ref: m.ref });
+      }
+    }));
+  }
+
+  const milestoneRows = filtered.map(m => `
+    <div class="milestone-row" data-select-milestone="${m.ref}">
+      <div class="m-info"><span class="m-ref">${esc(m.ref)}</span><span class="m-title">${esc(m.name)}</span></div>
+      <span class="m-progress">${m.progressLabel}</span>
+      <span class="m-status-pill ${m.statusClass}">${m.statusLabel}</span>
+    </div>`).join("") || `<div class="no-results">No milestones match "${esc(state.milestoneQuery)}".</div>`;
+
+  const ticketRows = ticketHits.length ? `
+    <div>
+      <div class="search-section-label">Tickets</div>
+      ${ticketHits.map(h => `
+        <div class="ticket-hit-row" data-select-milestone="${h.ref}">
+          <span class="t-status-dot ${h.done ? 'done' : 'upcoming'}"></span>
+          <span class="t-id2">${esc(h.id)}</span><span>${esc(h.label)}</span>
+        </div>`).join("")}
+    </div>` : "";
+
+  return `
+    <div class="modal-backdrop" data-close-search="1">
+      <div class="modal" data-stop="1">
+        <div class="modal-head">
+          <h2 style="font-family:var(--font-display); font-size:16px; font-weight:600; margin:0; color:var(--text-primary);">Milestones</h2>
+          <button class="modal-close" data-close-search="1">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M3 3l10 10M13 3L3 13"/></svg>
+          </button>
+        </div>
+        <input class="search-input" id="milestone-search-input" type="text" placeholder="Search milestones or tickets…" value="${esc(state.milestoneQuery)}">
+        <div><div class="search-section-label">Milestones</div><div class="milestone-list">${milestoneRows}</div></div>
+        ${ticketRows}
+      </div>
+    </div>`;
+}
+
+// ============================================================
+// Render + event delegation
+// ============================================================
+function render() {
+  document.getElementById("board-root").innerHTML = boardHtml();
+  const wasFocused = document.activeElement && document.activeElement.id === "milestone-search-input";
+  const cursorPos = wasFocused ? document.activeElement.selectionStart : null;
+  document.getElementById("overlay-root").innerHTML = tooltipHtml() + modalHtml() + searchOverlayHtml();
+  if (wasFocused) {
+    const input = document.getElementById("milestone-search-input");
+    if (input) { input.focus(); input.setSelectionRange(cursorPos, cursorPos); }
+  }
+}
+
+document.addEventListener("click", (e) => {
+  const openTicket = e.target.closest("[data-open-ticket]");
+  const toggleMenu = e.target.closest("[data-toggle-menu]");
+  const moveTarget = e.target.closest("[data-move-target]");
+  const openSearch = e.target.closest("[data-open-search]");
+  const closeModal = e.target.closest("[data-close-modal]");
+  const closeSearch = e.target.closest("[data-close-search]");
+  const backToList = e.target.closest("[data-back-to-list]");
+  const selectMilestone = e.target.closest("[data-select-milestone]");
+  const stop = e.target.closest("[data-stop]");
+
+  if (toggleMenu) {
+    e.stopPropagation();
+    const id = toggleMenu.getAttribute("data-toggle-menu");
+    state.openMenuId = state.openMenuId === id ? null : id;
+    render();
+    return;
+  }
+  if (moveTarget) {
+    e.stopPropagation();
+    const [ticketId, targetCol] = moveTarget.getAttribute("data-move-target").split("|");
+    moveTicket(ticketId, targetCol);
+    return;
+  }
+  if (openSearch) {
+    e.stopPropagation();
+    state.milestoneSearchOpen = true;
+    render();
+    return;
+  }
+  if (closeModal) { state.selectedId = null; render(); return; }
+  if (closeSearch) { state.milestoneSearchOpen = false; state.selectedMilestoneRef = null; state.milestoneQuery = ""; render(); return; }
+  if (backToList) { state.selectedMilestoneRef = null; render(); return; }
+  if (selectMilestone) { state.selectedMilestoneRef = selectMilestone.getAttribute("data-select-milestone"); render(); return; }
+  if (stop) return; // clicked inside a modal panel, not its backdrop
+  if (openTicket) { state.selectedId = openTicket.getAttribute("data-open-ticket"); state.openMenuId = null; render(); return; }
+});
+
+document.addEventListener("input", (e) => {
+  if (e.target && e.target.id === "milestone-search-input") {
+    state.milestoneQuery = e.target.value;
+    render();
+  }
+});
+
+document.addEventListener("mouseover", (e) => {
+  const wrap = e.target.closest("[data-progress-hover]");
+  if (wrap && state.hoveredId !== wrap.getAttribute("data-progress-hover")) {
+    const r = wrap.getBoundingClientRect();
+    state.hoveredId = wrap.getAttribute("data-progress-hover");
+    state.hoverPos = { top: r.top, left: r.left };
+    render();
+  }
+});
+document.addEventListener("mouseout", (e) => {
+  const wrap = e.target.closest("[data-progress-hover]");
+  if (wrap) { state.hoveredId = null; state.hoverPos = null; render(); }
+});
+
+// Drag and drop
+document.addEventListener("dragstart", (e) => {
+  const card = e.target.closest("[data-card-id]");
+  if (card) { state.draggedId = card.getAttribute("data-card-id"); render(); }
+});
+document.addEventListener("dragend", () => { state.draggedId = null; state.dropTargetId = null; render(); });
+document.addEventListener("dragover", (e) => {
+  const col = e.target.closest("[data-drop-col]");
+  if (col) {
+    e.preventDefault();
+    const id = col.getAttribute("data-drop-col");
+    if (state.dropTargetId !== id) { state.dropTargetId = id; render(); }
+  }
+});
+document.addEventListener("dragleave", (e) => {
+  const col = e.target.closest("[data-drop-col]");
+  if (col && col.getAttribute("data-drop-col") === state.dropTargetId) { state.dropTargetId = null; render(); }
+});
+document.addEventListener("drop", (e) => {
+  const col = e.target.closest("[data-drop-col]");
+  if (col) { e.preventDefault(); if (state.draggedId) moveTicket(state.draggedId, col.getAttribute("data-drop-col")); }
+});
+
+// Demo-only controls
+document.getElementById("demo-state").addEventListener("change", (e) => { state.boardState = e.target.value; render(); });
+document.getElementById("demo-dense").addEventListener("change", (e) => { state.dense = e.target.checked; render(); });
+
+render();
+</script>
+</body>
+</html>

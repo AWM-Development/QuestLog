@@ -14,6 +14,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 - **`get_chunk_history` MCP tool — superseded-lore audit trail.** `confirm_correct_lore` now persists a `chunk_corrections` row (the correction text, which chunks it superseded, which new chunks it created) atomically with the supersede, via a new `chunkHistoryService`. `get_chunk_history` is a new audit-only, on-demand read tool: given a `chunkId`, returns any correction event(s) that superseded it, or `[]` if it was never superseded. No change to `correct_lore`'s own preview narration and no UI surface (`G-025`'s resolution).
 
+### Fixed — T-159
+
+- **`ingest_text` no longer hides a written source's id on an entity-detection failure.** If the synchronous entity-candidate-detection step (`entityService.detectCandidates`) throws — a transient LLM error, a rate limit, etc. — after the source row already exists, the tool now logs the error and returns `entityCandidates: null` instead of letting the error propagate and hide `source.id`/`source.status` from the caller. Previously a caller retrying on that error created a duplicate source with identical content, since the original had already been written but never reported back.
+
 ### Added — T-162
 
 - **DM-only notes, read path.** `query_lore`, `prep_brief`, and `get_entity` now surface `entities.dmNotes`. `query_lore`'s assembled Campaign Entities section tags each entity line `[PARTY] ...` (party-safe) and, only when `dmNotes` is set, a following `[DM] ...` line — no empty `[DM]` line is ever emitted for an entity without one. `prep_brief`'s `likelyNpcs` entries gain a plain `dmNotes` field (`null` when unset) since that tool already returns structured JSON, not one narrative blob. `get_entity` required no code change — it already selects the full entity row — just an updated tool description. Completes the read side of `G-032`; write side (`create_entity`/`update_entity`/`append_entity_note`) was `T-161`.
