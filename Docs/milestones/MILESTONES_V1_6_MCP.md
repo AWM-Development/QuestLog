@@ -12,7 +12,7 @@ This doc exists so those four gates' eventual resolutions have a milestone to la
 
 **Open gates:**
 - `G-026` — resolved (`Docs/tickets/gated/resolved/G-026-second-runner-parallel-execution-lane.md`); drafted `T-153`.
-- `G-027` (`Docs/tickets/gated/G-027-external-visibility-surfaces-slack-tracker.md`) — blocks M-ROBUST.2.
+- `G-027` — resolved (`Docs/tickets/gated/resolved/G-027-external-visibility-surfaces-slack-tracker.md`); neither surface built, M-ROBUST.2 closed WON'T FIX.
 - `G-029` — resolved (`Docs/tickets/gated/resolved/G-029-ci-event-driven-triggers.md`); no event-driven triggers, M-ROBUST.4 closed WON'T FIX.
 - `G-028` — resolved (`Docs/tickets/gated/resolved/G-028-automated-review-bots-second-opinion.md`); no second reviewer, M-ROBUST.3 closed WON'T FIX.
 
@@ -29,8 +29,8 @@ This doc exists so those four gates' eventual resolutions have a milestone to la
 - [ ] **M-ROBUST.1 — Second runner as a parallel execution lane** (T-153)
   Devin cloud fan-out, one ticket at a time, alongside the nightly Claude Code executor. `T-069`'s claim-push mutex is trusted as-is for cross-lane ticket collision safety (no additional lane-assignment rule). Sequenced after `T-109`'s cost adapter lands — see `T-153`'s `Blocked on:` — per `G-026`'s resolution.
 
-- [ ] **M-ROBUST.2 — External visibility surfaces: Slack delivery + ticket-tracker mirror** (Gated on: G-027)
-  `/lineup`/blocked-run/`/ungate` delivery to Slack, and whether an external tracker (Linear/Jira) mirrors `Docs/tickets/` without displacing it as canonical. Two candidates under one gate — see `G-027`.
+- [x] **M-ROBUST.2 — External visibility surfaces: Slack delivery + ticket-tracker mirror — WON'T FIX** (resolved via `G-027`)
+  Resolved 2026-08-22: neither surface built. (a) Slack delivery of `/lineup`/blocked-run/`/ungate` — declined; no Slack app/bot token installed anywhere and Alex judged the provisioning cost not worth it for a solo-dev pipeline. (b) External tracker mirror (Linear/Jira) — declined; would add a second surface to keep in sync for no clear gap over `Docs/tickets/` as sole canonical source. See `Docs/tickets/gated/resolved/G-027-external-visibility-surfaces-slack-tracker.md` § Resolution.
 
 - [x] **M-ROBUST.3 — Automated review bots as a second opinion — WON'T FIX** (resolved via `G-028`)
   Resolved 2026-08-10: no second reviewer. `T-114`'s red-check CI job now covers the mechanical invariant a second opinion would otherwise have caught; a second reviewer (hosted bot or subagent, advisory or gating) was judged added cost without a clear remaining gap for a solo-dev pipeline. See `Docs/tickets/gated/resolved/G-028-automated-review-bots-second-opinion.md` § Resolution.

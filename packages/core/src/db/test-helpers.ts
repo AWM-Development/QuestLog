@@ -9,6 +9,7 @@ import * as schema from "./schema/index.js";
 import {
 	campaignWealth,
 	campaigns,
+	chunkCorrections,
 	chunks,
 	conversations,
 	entities,
@@ -177,5 +178,9 @@ export async function deleteCampaignTree(db: Database, campaignId: string) {
 	await db.delete(entities).where(eq(entities.campaignId, campaignId));
 	await db.delete(sources).where(eq(sources.campaignId, campaignId));
 	await db.delete(sessions).where(eq(sessions.campaignId, campaignId));
+	// chunk_corrections FKs to campaigns (T-152) — must clear before it too.
+	await db
+		.delete(chunkCorrections)
+		.where(eq(chunkCorrections.campaignId, campaignId));
 	await db.delete(campaigns).where(eq(campaigns.id, campaignId));
 }

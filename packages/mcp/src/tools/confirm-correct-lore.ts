@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { chunks } from "@questlog/core/db/schema/index.js";
+import { chunkHistoryService } from "@questlog/core/services/chunk-history.service.js";
 import {
 	chunkMetaFor,
 	chunkText,
@@ -58,6 +59,16 @@ export function registerConfirmCorrectLore(
 								),
 							);
 					}
+
+					// Persist the correction event now, in the same transaction as the
+					// supersede above, so it's never possible for one to commit without
+					// the other (T-152, G-025).
+					await chunkHistoryService.record(tx, {
+						campaignId,
+						correctionText,
+						supersededChunkIds: targetChunkIds,
+						createdChunkIds,
+					});
 
 					return { createdChunkIds, supersededChunkIds: targetChunkIds };
 				},

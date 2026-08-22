@@ -76,6 +76,9 @@ export const CORRECT_LORE_DESCRIPTION =
 export const CONFIRM_CORRECT_LORE_DESCRIPTION =
 	"Confirm a previously-previewed correct_lore change-set: chunks + embeds the correction as new authoritative content and marks every target chunk superseded, all inside a single transaction. Returns the ids of the newly created chunks and the ids of the chunks marked superseded.";
 
+export const GET_CHUNK_HISTORY_DESCRIPTION =
+	"Look up what a chunk of lore used to say before a correction superseded it, given a chunkId from a prior query_lore/correct_lore call. Audit-only — call this when the user explicitly asks what changed or what used to be true, not proactively. Returns any correction event(s) that superseded this chunk (the replacement text, the new chunk ids it produced, and when), or an empty list if this chunk has never been superseded.";
+
 export const ADD_ITEM_DESCRIPTION =
 	"Add a new inventory item to a campaign. Direct write — no audit trail; built for fast in-session use. Optionally assign it to an owning entity (pc, npc, location, etc) via ownerEntityId — omit it to place the item in the unassigned/shared party pool. Returns the created item.";
 
