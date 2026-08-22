@@ -300,6 +300,12 @@
     "mergedAt": "2026-08-22T14:29:32Z"
   },
   {
+    "ticketId": "T-159",
+    "prNumber": 300,
+    "branch": "feat/m-bug/t-159-ingest-text-error-response-after-partial-success",
+    "mergedAt": "2026-08-22T15:59:59Z"
+  },
+  {
     "ticketId": "T-160",
     "prNumber": 293,
     "branch": "feat/m-bug/t-160-list-sources-mcp-tool",
