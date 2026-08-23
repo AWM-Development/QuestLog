@@ -70,9 +70,7 @@ export const encounterService = {
 				notes: encounters.notes,
 				createdAt: encounters.createdAt,
 				updatedAt: encounters.updatedAt,
-				memberCount: sql<number>`count(${encounterMembers.id})`.mapWith(
-					Number,
-				),
+				memberCount: sql<number>`count(${encounterMembers.id})`.mapWith(Number),
 			})
 			.from(encounters)
 			.leftJoin(
