@@ -1,15 +1,8 @@
 import { useState } from "react";
 import { DrillDownGridRow } from "./DrillDownGridRow.js";
-import { fmtCost, fmtTokens, fmtTurns } from "./format.js";
+import { fmtCost, fmtDuration, fmtTokens, fmtTurns } from "./format.js";
 import { runCost, totalTokens } from "./stats.js";
 import type { TrendRun } from "./types.js";
-
-function fmtDuration(ms: number): string {
-	const totalSeconds = Math.round(ms / 1000);
-	const minutes = Math.floor(totalSeconds / 60);
-	const seconds = totalSeconds % 60;
-	return `${minutes}m ${seconds.toString().padStart(2, "0")}s`;
-}
 
 function DrillDownRow({ run }: { run: TrendRun }) {
 	const [expanded, setExpanded] = useState(false);
@@ -120,10 +113,7 @@ export function DrillDown({ runs }: DrillDownProps) {
 				{runs.map((run) =>
 					run.emptyRun ? (
 						<div
-							// Keyed by createdAt rather than a shared literal — more than
-							// one empty run can fall in the selected date range, and a
-							// literal key here would collapse them to a single React
-							// element, silently dropping every empty-run row but the last.
+							// createdAt, not a shared literal — multiple empty runs in one range would otherwise collapse to a single React element.
 							key={`empty-${String(run.createdAt)}`}
 							className="empty-row"
 							style={{

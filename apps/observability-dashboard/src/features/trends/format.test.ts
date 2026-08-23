@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fmtCost, fmtTokens, fmtTurns } from "./format.js";
+import { fmtCost, fmtDuration, fmtTokens, fmtTurns } from "./format.js";
 
 describe("fmtCost", () => {
 	it("formats a dollar amount to two decimal places", () => {
@@ -18,5 +18,12 @@ describe("fmtTokens", () => {
 describe("fmtTurns", () => {
 	it("formats to one decimal place", () => {
 		expect(fmtTurns(5.2345)).toBe("5.2");
+	});
+});
+
+describe("fmtDuration", () => {
+	it("formats milliseconds as minutes and zero-padded seconds", () => {
+		expect(fmtDuration(65000)).toBe("1m 05s");
+		expect(fmtDuration(0)).toBe("0m 00s");
 	});
 });
