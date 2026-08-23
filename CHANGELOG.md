@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-170
+
+- **`borrow_entity` MCP tool — copy-once cross-campaign entity fork.** New direct-write tool that reads one entity from a source campaign and writes an independent copy into a destination campaign: `name`/`type`/`description` copy verbatim, `dmNotes` carries over with a provenance line appended (`Borrowed from campaign "<source>" (entity "<name>"), forked <date>.`), and `attributes` is replaced with a structured `borrowedFrom` record (`{ campaignId, entityId, name, forkedAt }`) rather than copying the source's own lore-seeding attributes, which would otherwise reference chunks scoped to the wrong campaign. No lore chunks, inventory, or session links copy over — the entity row alone, no ongoing sync with the original (`G-033`'s resolution).
+
 ### Added — T-164
 
 - **Continuity contradiction detection surfaced on ingest and on-demand.** `ingest_text` now runs `continuityService.detectContradictions` (`T-163`) against the freshly-ingested text alongside its existing entity-candidate detection, returning a new `contradictionCandidates` array in its response (empty when nothing conflicts, same non-blocking/best-effort shape as `entityCandidates`). A new `detect_contradictions` MCP tool checks recent content on demand — pass `sourceId` or `sessionId` to scope the check, or omit both to check the campaign's most recent source and session content. No preview/confirm plumbing; the DM triages candidates via plain conversation with the calling model and applies real fixes through the existing `correct_lore`/`confirm_correct_lore` flow, unchanged (`G-031`'s resolution). Completes `M-CONTINUITY`.

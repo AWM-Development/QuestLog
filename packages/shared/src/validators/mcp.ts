@@ -78,6 +78,13 @@ export const GetChunkHistoryInput = z.object({
 });
 export type GetChunkHistoryInput = z.infer<typeof GetChunkHistoryInput>;
 
+export const BorrowEntityInput = z.object({
+	sourceCampaignId: z.string().uuid(),
+	entityId: z.string().uuid(),
+	destCampaignId: z.string().uuid(),
+});
+export type BorrowEntityInput = z.infer<typeof BorrowEntityInput>;
+
 export const DetectContradictionsInput = z.object({
 	campaignId: z.string().uuid(),
 	// At most one of these narrows the scope to one source/session's text;

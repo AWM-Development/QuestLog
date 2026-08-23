@@ -4,6 +4,7 @@ import { registerAddItem } from "./tools/add-item.js";
 import { registerAdjustWealth } from "./tools/adjust-wealth.js";
 import { registerAppendEntityNote } from "./tools/append-entity-note.js";
 import { registerArchiveEntity } from "./tools/archive-entity.js";
+import { registerBorrowEntity } from "./tools/borrow-entity.js";
 import { registerConfirmArchiveEntity } from "./tools/confirm-archive-entity.js";
 import { registerConfirmCorrectLore } from "./tools/confirm-correct-lore.js";
 import { registerConfirmIngestEntities } from "./tools/confirm-ingest-entities.js";
@@ -67,6 +68,7 @@ export function createMcpServer(deps: CreateMcpServerOptions): McpServer {
 	registerTransferItem(server, deps);
 	registerAdjustWealth(server, deps);
 	registerListInventory(server, deps);
+	registerBorrowEntity(server, deps);
 	registerHelp(server);
 
 	return server;

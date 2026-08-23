@@ -342,6 +342,12 @@
     "mergedAt": "2026-08-23T13:56:52Z"
   },
   {
+    "ticketId": "T-170",
+    "prNumber": 313,
+    "branch": "feat/m-crosscampaign/t-170-borrow-entity-cross-campaign-fork",
+    "mergedAt": "2026-08-23T19:30:46Z"
+  },
+  {
     "ticketId": "T-179",
     "prNumber": 316,
     "branch": "feat/m-obs/t-179-unify-ticket-field-parsing",
