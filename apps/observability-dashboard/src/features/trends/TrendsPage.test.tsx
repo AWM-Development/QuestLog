@@ -95,7 +95,7 @@ describe("TrendsPage", () => {
 		mockTrends.mockReturnValue({ data: [RUNS[0]], isLoading: false });
 		render(<TrendsPage />);
 
-		fireEvent.click(screen.getByRole("button", { name: /last 90 runs/i }));
+		fireEvent.click(screen.getByRole("button", { name: /last 90 days/i }));
 		expect(lastQueryInput().from).toBeInstanceOf(Date);
 
 		fireEvent.click(screen.getByRole("button", { name: /all time/i }));

@@ -8,8 +8,8 @@ interface FilterBarProps {
 }
 
 const RANGE_OPTIONS: { value: TrendsRange; label: string }[] = [
-	{ value: "30", label: "Last 30 Runs" },
-	{ value: "90", label: "Last 90 Runs" },
+	{ value: "30", label: "Last 30 Days" },
+	{ value: "90", label: "Last 90 Days" },
 	{ value: "all", label: "All Time" },
 ];
 

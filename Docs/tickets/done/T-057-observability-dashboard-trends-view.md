@@ -53,8 +53,16 @@ Scope: Stand up a new `apps/observability-dashboard` package (Vite + React
     row's layout was computed independently rather than sharing one
     template. Verify column alignment holds at a few different desktop
     window widths, not just one fixed viewport size (see Out of scope re:
-    mobile). Rows expand on click to show full token/cost/duration/
-    reviewer-verdict/retry-log detail.
+    mobile). Rows expand on click to show duration/cost/token detail.
+    **Correction (2026-08-23, /morning-review):** this line originally also
+    said "reviewer-verdict/retry-log detail," but the `observability.trends`
+    endpoint this route consumes only returns `ticket_runs` fields —
+    `reviewerVerdict` lives on `ticket_reports` (reachable via the separate
+    `getByTicketId` endpoint, not fetched here), and no structured
+    retry-log field exists anywhere in the schema (only as free text inside
+    a report's `content`). Reflecting what actually shipped; surfacing
+    those two fields is deferred to a follow-up ticket, not a gap in this
+    one.
   Data comes from M-OBS.4's endpoint(s) (T-054/T-055) once merged.
 
 Out of scope:

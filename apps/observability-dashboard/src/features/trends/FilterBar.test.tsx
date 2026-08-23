@@ -14,7 +14,7 @@ describe("FilterBar", () => {
 			/>,
 		);
 
-		fireEvent.click(screen.getByRole("button", { name: /last 90 runs/i }));
+		fireEvent.click(screen.getByRole("button", { name: /last 90 days/i }));
 		expect(onRangeChange).toHaveBeenCalledWith("90");
 
 		fireEvent.click(screen.getByRole("button", { name: /all time/i }));
@@ -31,11 +31,11 @@ describe("FilterBar", () => {
 			/>,
 		);
 
-		expect(screen.getByRole("button", { name: /last 90 runs/i })).toHaveClass(
+		expect(screen.getByRole("button", { name: /last 90 days/i })).toHaveClass(
 			"on",
 		);
 		expect(
-			screen.getByRole("button", { name: /last 30 runs/i }),
+			screen.getByRole("button", { name: /last 30 days/i }),
 		).not.toHaveClass("on");
 	});
 
