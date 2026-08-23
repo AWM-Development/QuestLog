@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Fixed — T-179
+
+- **Ticket-board `Scope:` excerpt no longer truncates on a hard-wrapped false-positive line.** `parseTicketFile`'s field parsing is unified into one `parseAllFields` pass over an explicit allowlist of `TICKET_SPEC.md`'s actual top-level field names, replacing the old shape-based boundary heuristic (`/^[A-Z][\w /-]*:/`) that could mistake a hard-wrapped `Scope:` prose line like "Note: fall back to null." for the start of the next field and silently cut the excerpt short. No behavior change for any existing field — same output for `Priority`/`Complexity tier`/`Blocked on`/`Gated on`/`Branch`/`Scope` on every well-formed ticket file, verified by the full existing fixture suite.
+
 ### Added — T-163
 
 - **Continuity contradiction-detection service.** New `continuityService.detectContradictions` (`packages/core/src/services/continuity.service.ts`) checks new document text against the existing lore of any entity it names, and returns confidence-gated `ContradictionCandidate`s for real factual contradictions (e.g. an NPC described as dead in existing lore but referenced as alive in the new text). Mirrors `entityService.detectCandidates`'s shape: reuses `detectSpans`'s existing-entity matching, one `callClaudeStructured` call per document (not per entity), threshold `CONTRADICTION_CONFIDENCE_THRESHOLD = 0.6` (moderate tolerance per `G-031`'s resolution). Service-layer only — no MCP tool surface yet, no wiring into `ingest_text` or `correct_lore`; that's `T-164`.
