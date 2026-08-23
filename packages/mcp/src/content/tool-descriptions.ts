@@ -91,5 +91,8 @@ export const ADJUST_WEALTH_DESCRIPTION =
 export const LIST_INVENTORY_DESCRIPTION =
 	"List a campaign's inventory items and current wealth. Optionally filter items to one entity's owned items with ownerEntityId — omit it for the whole campaign (all owners plus unassigned). Returns items and wealth.";
 
+export const ENCOUNTER_DESCRIPTION =
+	'Stateless combat utility actions — no persisted encounter state, no dice rolling. Two actions: "roll_initiative" takes a list of combatants (each with an already-decided initiative value) and returns them sorted descending by initiative, ties broken by input order. "apply_hp_delta" takes a current/max hp pair and a delta (negative for damage, positive for healing) and returns the clamped newHp (never below 0 or above max) plus a status of "healthy", "bloodied" (at or below 50% of max), or "down" (at 0).';
+
 export const HELP_DESCRIPTION =
 	"Call this if you're unsure where to start. Returns a summary of QuestLog's workflow: uploading campaign documents, tracking sessions, and querying lore.";
