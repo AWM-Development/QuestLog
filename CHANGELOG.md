@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-172
+
+- **`encounter` MCP tool — initiative sort + HP-delta, stateless.** New `encounter` tool with two actions: `roll_initiative` takes a list of combatants (each with an already-decided initiative value) and returns them sorted descending by initiative, ties broken by input order; `apply_hp_delta` takes a current/max hp pair plus a delta (negative for damage, positive for healing) and returns the clamped `newHp` (never below 0 or above max) and a `"healthy"`/`"bloodied"`/`"down"` status band. No persisted encounter state — the actual turn-by-turn tracking stays in the conversation itself, per `G-037`'s resolution. First tool in this codebase with no `db`/`storage`/`llmService` dependency at all. New shared `Combatant` Zod shape (`packages/shared/src/validators/mcp.ts`) doubles as the standard reference format for a combatant.
+
 ### Fixed — T-179
 
 - **Ticket-board `Scope:` excerpt no longer truncates on a hard-wrapped false-positive line.** `parseTicketFile`'s field parsing is unified into one `parseAllFields` pass over an explicit allowlist of `TICKET_SPEC.md`'s actual top-level field names, replacing the old shape-based boundary heuristic (`/^[A-Z][\w /-]*:/`) that could mistake a hard-wrapped `Scope:` prose line like "Note: fall back to null." for the start of the next field and silently cut the excerpt short. No behavior change for any existing field — same output for `Priority`/`Complexity tier`/`Blocked on`/`Gated on`/`Branch`/`Scope` on every well-formed ticket file, verified by the full existing fixture suite.
