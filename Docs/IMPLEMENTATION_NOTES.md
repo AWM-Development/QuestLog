@@ -1,8 +1,12 @@
 # QuestLog — Implementation Notes
 
-**Purpose:** Non-obvious decisions and gotchas that aren't derivable from reading the code. Read at the start of every session. Add an entry when you make a non-obvious decision. Retired entries: `Docs/IMPLEMENTATION_NOTES_ARCHIVE.md`.
+**Purpose:** Non-obvious decisions and gotchas that aren't derivable from reading the code. Excerpted into ticket bodies as needed (`ticket-writer`'s `## Relevant background` step, T-085) — not read wholesale by the ticket-execution pipeline. Read in full only for audit/maintenance sessions (`/archive-implementation-notes`, `/drift-audit`, `/ungate`). Add an entry when you make a non-obvious decision. Retired entries: `Docs/IMPLEMENTATION_NOTES_ARCHIVE.md`. **Pending restructure:** `G-040` resolved to split this file into `Docs/implementation-notes/` topic files — tracked as `T-180`; this note and file layout are transitional until that ticket merges.
 
 **Last Updated:** 2026-08-22
+
+## G-040 — Documentation-corpus restructure: topic split, header correction (2026-08-23)
+
+Resolved via `/ungate`: split this file into five topic files under `Docs/implementation-notes/` (by area — Database, Pipeline & Executor, Backend services, Frontend, Tooling & Infra), ticketed as `T-180` (the move + a corrected `README.md` index) and `T-181` (repointing the ~90 live `IMPLEMENTATION_NOTES.md § T-###`-style citations elsewhere in the repo, blocked on `T-180`). `CHANGELOG.md` explicitly stays out of scope — its prose overlap with this file is acceptable given the differing audience. Full rationale: `Docs/tickets/gated/resolved/G-040-implementation-notes-doc-restructure.md` § Resolution.
 
 ## T-055 — PR diff-stat sync into the observability store (2026-08-11, amended 2026-08-16)
 
