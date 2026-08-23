@@ -13,11 +13,19 @@ interface TokensChartProps {
 	runs: TrendRun[];
 }
 
+// cache-read has no equivalent in design-tokens.css — a documented one-off,
+// not a token, since nothing else in this app needs a 4th chart-only hue.
+const CACHE_READ_COLOR = "#c0a0ff";
+
 const SEGMENTS = [
-	{ key: "inputTokens", label: "input", color: "#2e4856" },
+	{ key: "inputTokens", label: "input", color: "var(--text-dim)" },
 	{ key: "outputTokens", label: "output", color: "var(--accent)" },
-	{ key: "cacheCreationInputTokens", label: "cache-write", color: "#40d8a0" },
-	{ key: "cacheReadInputTokens", label: "cache-read", color: "#c0a0ff" },
+	{
+		key: "cacheCreationInputTokens",
+		label: "cache-write",
+		color: "var(--status-success)",
+	},
+	{ key: "cacheReadInputTokens", label: "cache-read", color: CACHE_READ_COLOR },
 ] as const;
 
 /** Tokens-per-run stacked bar chart (input/output/cache-write/cache-read). */
