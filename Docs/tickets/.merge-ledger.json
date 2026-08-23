@@ -328,5 +328,23 @@
     "prNumber": 295,
     "branch": "feat/m-partyknow/t-162-dm-only-notes-read-path-tagging",
     "mergedAt": "2026-08-22T14:47:00Z"
+  },
+  {
+    "ticketId": "T-163",
+    "prNumber": 305,
+    "branch": "feat/m-continuity/t-163-continuity-contradiction-detection-service",
+    "mergedAt": "2026-08-23T14:38:41Z"
+  },
+  {
+    "ticketId": "T-165",
+    "prNumber": 311,
+    "branch": "feat/m-obs/t-165-board-list-branch-scope-excerpt-fields",
+    "mergedAt": "2026-08-23T13:56:52Z"
+  },
+  {
+    "ticketId": "T-179",
+    "prNumber": 316,
+    "branch": "feat/m-obs/t-179-unify-ticket-field-parsing",
+    "mergedAt": "2026-08-23T14:41:08Z"
   }
 ]

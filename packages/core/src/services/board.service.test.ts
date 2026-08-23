@@ -43,6 +43,89 @@ Context files (load ONLY these):
 Scope: does another thing.
 `;
 
+// Scope's prose runs well past the 160-char cap — the assertions below check
+// the truncation boundary generically (length/ellipsis/prefix) rather than
+// against this string's exact length, so they don't depend on precisely
+// where the cut lands.
+const LONG_SCOPE_PROSE =
+	"Extend the board service to additionally parse a Branch field and a truncated Scope excerpt from each ticket file, reusing matchField exactly the way every other field already does its own parsing here.";
+
+const TICKET_WITH_LONG_SCOPE = `# T-102 — Long scope ticket
+
+Milestone ref: M-TEST.1
+
+Complexity tier: S
+
+Priority: P1
+
+Branch: feat/m-test/t-102-long-scope-ticket
+
+Context files (load ONLY these):
+  - qux.ts
+
+Scope: ${LONG_SCOPE_PROSE}
+
+Out of scope:
+  - Nothing relevant to this fixture.
+`;
+
+const SHORT_SCOPE_PROSE = "A short scope under the truncation cap.";
+
+const TICKET_WITH_SHORT_SCOPE = `# T-103 — Short scope ticket
+
+Milestone ref: M-TEST.1
+
+Complexity tier: S
+
+Priority: P1
+
+Branch: feat/m-test/t-103-short-scope-ticket
+
+Context files (load ONLY these):
+  - quux.ts
+
+Scope: ${SHORT_SCOPE_PROSE}
+
+Iteration cap: 3 distinct approaches on any single failure, then Blocked Protocol
+`;
+
+// Mimics a gate-stub-adjacent card: has a valid T-### header (so it still
+// parses as a card) but predates the Branch:/Scope: fields entirely — the
+// case parseTicketFile must fall back to null for, per T-165's Scope.
+const TICKET_WITHOUT_BRANCH_OR_SCOPE = `# T-104 — Legacy ticket with no Branch or Scope field
+
+Milestone ref: M-TEST.1
+
+Complexity tier: XS
+
+Priority: P2
+
+Context files (load ONLY these):
+  - legacy.ts
+`;
+
+// The old heuristic mistook this hard-wrapped "Note:" line for the next
+// field and truncated the excerpt before it — see the test below.
+const TICKET_WITH_SCOPE_FALSE_POSITIVE_LINE = `# T-105 — Scope with a false-positive-shaped hard-wrap ticket
+
+Milestone ref: M-TEST.1
+
+Complexity tier: S
+
+Priority: P1
+
+Branch: feat/m-test/t-105-scope-false-positive-line
+
+Context files (load ONLY these):
+  - corge.ts
+
+Scope: Handle this case correctly and completely.
+Note: fall back to null if the value is missing entirely.
+
+Out of scope:
+  - Nothing relevant to this fixture.
+`;
+
 const GATE_STUB = `# G-050 — Some open design question
 
 Gate type: 🎨 design
@@ -72,6 +155,8 @@ describe("parseTicketFile", () => {
 			complexityTier: "M",
 			blockedOn: "T-099 — must be merged into develop first",
 			gatedOn: "G-050 — must be resolved via /ungate first",
+			branch: "feat/m-test/t-101-both-fields-ticket",
+			scopeExcerpt: "does another thing.",
 			status: "backlog",
 			path: "Docs/tickets/backlog/T-101-both-fields-ticket.md",
 		});
@@ -89,9 +174,41 @@ describe("parseTicketFile", () => {
 			complexityTier: "S",
 			blockedOn: null,
 			gatedOn: null,
+			branch: "feat/m-test/t-100-neither-field-ticket",
+			scopeExcerpt: "does a thing.",
 			status: "queue",
 			path: "Docs/tickets/queue/T-100-neither-field-ticket.md",
 		});
+	});
+
+	it("truncates a Scope over 160 characters at the nearest preceding word boundary with a trailing …", () => {
+		const card = parseTicketFile(
+			TICKET_WITH_LONG_SCOPE,
+			"Docs/tickets/queue/T-102-long-scope-ticket.md",
+		);
+		expect(card?.branch).toBe("feat/m-test/t-102-long-scope-ticket");
+		expect(card?.scopeExcerpt?.length).toBeLessThanOrEqual(161); // 160 + the trailing "…"
+		expect(card?.scopeExcerpt?.endsWith("…")).toBe(true);
+		expect(
+			LONG_SCOPE_PROSE.startsWith(card?.scopeExcerpt?.slice(0, -1) ?? ""),
+		).toBe(true);
+	});
+
+	it("returns the full Scope text with no trailing … when it's under 160 characters", () => {
+		const card = parseTicketFile(
+			TICKET_WITH_SHORT_SCOPE,
+			"Docs/tickets/queue/T-103-short-scope-ticket.md",
+		);
+		expect(card?.scopeExcerpt).toBe(SHORT_SCOPE_PROSE);
+	});
+
+	it("returns branch: null and scopeExcerpt: null for a ticket file with neither field (legacy/gate-stub-adjacent)", () => {
+		const card = parseTicketFile(
+			TICKET_WITHOUT_BRANCH_OR_SCOPE,
+			"Docs/tickets/queue/T-104-legacy-ticket-with-no-branch-or-scope-field.md",
+		);
+		expect(card?.branch).toBeNull();
+		expect(card?.scopeExcerpt).toBeNull();
 	});
 
 	it.each([
@@ -135,6 +252,14 @@ describe("parseTicketFile", () => {
 			"Docs/tickets/gated/G-050-some-open-design-question.md",
 		);
 		expect(card).toBeNull();
+	});
+
+	it("does not truncate a Scope excerpt at a hard-wrapped line that merely looks like a field header (e.g. 'Note:'), the T-165 regression this ticket fixes", () => {
+		const card = parseTicketFile(
+			TICKET_WITH_SCOPE_FALSE_POSITIVE_LINE,
+			"Docs/tickets/queue/T-105-scope-false-positive-line.md",
+		);
+		expect(card?.scopeExcerpt).toContain("Note: fall back to null");
 	});
 
 	it("returns null for a file outside any recognized pipeline folder", () => {
