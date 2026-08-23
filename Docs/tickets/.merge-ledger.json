@@ -328,5 +328,11 @@
     "prNumber": 295,
     "branch": "feat/m-partyknow/t-162-dm-only-notes-read-path-tagging",
     "mergedAt": "2026-08-22T14:47:00Z"
+  },
+  {
+    "ticketId": "T-165",
+    "prNumber": 311,
+    "branch": "feat/m-obs/t-165-board-list-branch-scope-excerpt-fields",
+    "mergedAt": "2026-08-23T13:56:52Z"
   }
 ]
