@@ -30,8 +30,42 @@ export interface TicketCard {
 	complexityTier: string | null;
 	blockedOn: string | null;
 	gatedOn: string | null;
+	branch: string | null;
+	scopeExcerpt: string | null;
 	status: TicketStatus;
 	path: string;
+}
+
+const SCOPE_EXCERPT_MAX_LENGTH = 160;
+
+/**
+ * `Scope:`'s value runs until the next top-level field/section (e.g. `Out of
+ * scope:`, `Iteration cap:`), not to end-of-line — unlike every other field
+ * `matchField` handles, so it needs its own extraction instead of reusing
+ * that single-line regex.
+ */
+function extractScopeExcerpt(content: string): string | null {
+	const startMatch = content.match(/^Scope:[ \t]*/m);
+	if (!startMatch || startMatch.index === undefined) return null;
+
+	const afterStart = content.slice(startMatch.index + startMatch[0].length);
+	// A top-level field/section starts at column 0 with a capitalized word
+	// followed by a colon (bullets under Scope are indented, so they never
+	// match this and stay part of the excerpt).
+	const nextFieldMatch = afterStart.match(/\n[A-Z][\w /-]*(?:\s*\([^)]*\))?:/);
+	const rawScope = (
+		nextFieldMatch ? afterStart.slice(0, nextFieldMatch.index) : afterStart
+	)
+		.trim()
+		.replace(/\s+/g, " ");
+
+	if (!rawScope) return null;
+	if (rawScope.length <= SCOPE_EXCERPT_MAX_LENGTH) return rawScope;
+
+	const cut = rawScope.slice(0, SCOPE_EXCERPT_MAX_LENGTH);
+	const lastSpace = cut.lastIndexOf(" ");
+	const truncated = lastSpace > 0 ? cut.slice(0, lastSpace) : cut;
+	return `${truncated}…`;
 }
 
 /**
@@ -80,6 +114,8 @@ export function parseTicketFile(
 		complexityTier: matchField(content, "Complexity tier"),
 		blockedOn: matchField(content, "Blocked on"),
 		gatedOn: matchField(content, "Gated on"),
+		branch: matchField(content, "Branch"),
+		scopeExcerpt: extractScopeExcerpt(content),
 		status,
 		path,
 	};

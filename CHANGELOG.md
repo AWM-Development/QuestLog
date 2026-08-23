@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-165
+
+- **`board.list` gains `branch` and `scopeExcerpt` fields.** `parseTicketFile` now also extracts each ticket file's `Branch:` field (same `matchField` pattern as `Priority`/`Complexity tier`) and a `scopeExcerpt` — the `Scope:` field's value, truncated to 160 characters at the nearest word boundary with a trailing `…`, `null` for a ticket file with no `Scope:` (gate-stubs, or a ticket predating the field). No router or caching changes — this is the data `T-158`'s (still-blocked) `/board` ticket-details modal needs, which `T-157` didn't return.
+
 ### Added — T-152
 
 - **`get_chunk_history` MCP tool — superseded-lore audit trail.** `confirm_correct_lore` now persists a `chunk_corrections` row (the correction text, which chunks it superseded, which new chunks it created) atomically with the supersede, via a new `chunkHistoryService`. `get_chunk_history` is a new audit-only, on-demand read tool: given a `chunkId`, returns any correction event(s) that superseded it, or `[]` if it was never superseded. No change to `correct_lore`'s own preview narration and no UI surface (`G-025`'s resolution).
