@@ -12,6 +12,12 @@
     "mergedAt": "2026-08-16T23:27:10Z"
   },
   {
+    "ticketId": "T-057",
+    "prNumber": 310,
+    "branch": "feat/m-obs/t-057-observability-dashboard-trends-view",
+    "mergedAt": "2026-08-23T20:28:47Z"
+  },
+  {
     "ticketId": "T-059",
     "prNumber": 277,
     "branch": "feat/m-obs/t-059-observability-comment-schema-endpoint",
