@@ -1,8 +1,8 @@
 import { useState } from "react";
+import { fmtCost, fmtDuration, fmtTokens, fmtTurns } from "../lib/format.js";
+import { runCost, totalTokens } from "../lib/stats.js";
+import type { TrendRun } from "../lib/types.js";
 import { DrillDownGridRow } from "./DrillDownGridRow.js";
-import { fmtCost, fmtDuration, fmtTokens, fmtTurns } from "./format.js";
-import { runCost, totalTokens } from "./stats.js";
-import type { TrendRun } from "./types.js";
 
 function DrillDownRow({ run }: { run: TrendRun }) {
 	const [expanded, setExpanded] = useState(false);

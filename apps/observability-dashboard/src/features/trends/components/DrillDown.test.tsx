@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import type { TrendRun } from "../lib/types.js";
 import { DrillDown } from "./DrillDown.js";
-import type { TrendRun } from "./types.js";
 
 function makeRun(overrides: Partial<TrendRun>): TrendRun {
 	return {

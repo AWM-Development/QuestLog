@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { trpc } from "../../lib/trpc.js";
+import { trpc } from "../../../lib/trpc.js";
+import { type TrendsRange, rangeToDateFilter } from "../lib/range.js";
+import { aggregateStats, perTierStats } from "../lib/stats.js";
+import type { TrendRun } from "../lib/types.js";
 import { CostScatterChart } from "./CostScatterChart.js";
 import { DrillDown } from "./DrillDown.js";
 import { FilterBar } from "./FilterBar.js";
 import { StatTiles } from "./StatTiles.js";
 import { TierRow } from "./TierRow.js";
 import { TokensChart } from "./TokensChart.js";
-import { type TrendsRange, rangeToDateFilter } from "./range.js";
-import { aggregateStats, perTierStats } from "./stats.js";
-import type { TrendRun } from "./types.js";
 
 export function TrendsPage() {
 	const [range, setRange] = useState<TrendsRange>("30");

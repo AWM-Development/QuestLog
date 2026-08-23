@@ -1,5 +1,5 @@
-import { fmtCost, fmtTurns } from "./format.js";
-import type { AggregateStats } from "./stats.js";
+import { fmtCost, fmtTurns } from "../lib/format.js";
+import type { AggregateStats } from "../lib/stats.js";
 
 interface StatTilesProps {
 	stats: AggregateStats;
