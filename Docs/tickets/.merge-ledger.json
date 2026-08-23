@@ -340,5 +340,11 @@
     "prNumber": 311,
     "branch": "feat/m-obs/t-165-board-list-branch-scope-excerpt-fields",
     "mergedAt": "2026-08-23T13:56:52Z"
+  },
+  {
+    "ticketId": "T-179",
+    "prNumber": 316,
+    "branch": "feat/m-obs/t-179-unify-ticket-field-parsing",
+    "mergedAt": "2026-08-23T14:41:08Z"
   }
 ]
