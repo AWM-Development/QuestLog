@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-170
+
+- **`borrow_entity` MCP tool — copy-once cross-campaign entity fork.** New direct-write tool that reads one entity from a source campaign and writes an independent copy into a destination campaign: `name`/`type`/`description` copy verbatim, `dmNotes` carries over with a provenance line appended (`Borrowed from campaign "<source>" (entity "<name>"), forked <date>.`), and `attributes` is replaced with a structured `borrowedFrom` record (`{ campaignId, entityId, name, forkedAt }`) rather than copying the source's own lore-seeding attributes, which would otherwise reference chunks scoped to the wrong campaign. No lore chunks, inventory, or session links copy over — the entity row alone, no ongoing sync with the original (`G-033`'s resolution).
+
 ### Added — T-152
 
 - **`get_chunk_history` MCP tool — superseded-lore audit trail.** `confirm_correct_lore` now persists a `chunk_corrections` row (the correction text, which chunks it superseded, which new chunks it created) atomically with the supersede, via a new `chunkHistoryService`. `get_chunk_history` is a new audit-only, on-demand read tool: given a `chunkId`, returns any correction event(s) that superseded it, or `[]` if it was never superseded. No change to `correct_lore`'s own preview narration and no UI surface (`G-025`'s resolution).
