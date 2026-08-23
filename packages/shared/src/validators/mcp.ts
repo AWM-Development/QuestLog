@@ -77,3 +77,10 @@ export const GetChunkHistoryInput = z.object({
 	chunkId: z.string().uuid(),
 });
 export type GetChunkHistoryInput = z.infer<typeof GetChunkHistoryInput>;
+
+export const BorrowEntityInput = z.object({
+	sourceCampaignId: z.string().uuid(),
+	entityId: z.string().uuid(),
+	destCampaignId: z.string().uuid(),
+});
+export type BorrowEntityInput = z.infer<typeof BorrowEntityInput>;

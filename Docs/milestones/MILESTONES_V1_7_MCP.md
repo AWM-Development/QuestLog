@@ -74,7 +74,7 @@ None — closed with no tickets drafted.
 
 ### Tasks
 
-- [ ] **M-CROSSCAMPAIGN.1 — `borrow_entity` copy-once cross-campaign fork tool** (T-170)
+- [x] **M-CROSSCAMPAIGN.1 — `borrow_entity` copy-once cross-campaign fork tool** (T-170)
   New MCP tool: read one entity from a source campaign, write an independent copy into a destination campaign with a provenance record attached. See `T-170` for the full scope.
 
 ### Ordering constraint

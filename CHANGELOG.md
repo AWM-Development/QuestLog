@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-170
+
+- **`borrow_entity` MCP tool — copy-once cross-campaign entity fork.** New direct-write tool that reads one entity from a source campaign and writes an independent copy into a destination campaign: `name`/`type`/`description` copy verbatim, `dmNotes` carries over with a provenance line appended (`Borrowed from campaign "<source>" (entity "<name>"), forked <date>.`), and `attributes` is replaced with a structured `borrowedFrom` record (`{ campaignId, entityId, name, forkedAt }`) rather than copying the source's own lore-seeding attributes, which would otherwise reference chunks scoped to the wrong campaign. No lore chunks, inventory, or session links copy over — the entity row alone, no ongoing sync with the original (`G-033`'s resolution).
+
 ### Fixed — T-179
 
 - **Ticket-board `Scope:` excerpt no longer truncates on a hard-wrapped false-positive line.** `parseTicketFile`'s field parsing is unified into one `parseAllFields` pass over an explicit allowlist of `TICKET_SPEC.md`'s actual top-level field names, replacing the old shape-based boundary heuristic (`/^[A-Z][\w /-]*:/`) that could mistake a hard-wrapped `Scope:` prose line like "Note: fall back to null." for the start of the next field and silently cut the excerpt short. No behavior change for any existing field — same output for `Priority`/`Complexity tier`/`Blocked on`/`Gated on`/`Branch`/`Scope` on every well-formed ticket file, verified by the full existing fixture suite.
