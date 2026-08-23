@@ -5,16 +5,7 @@ export interface DateFilter {
 	to?: Date;
 }
 
-/**
- * Translates the filter bar's range selection into `from`/`to` bounds for
- * the `observability.trends` endpoint. "all" omits both bounds. There's no
- * "last N runs" concept on the endpoint itself (it filters by date, not
- * row count) — a day-window is the closest real equivalent, and unlike the
- * mockup's fixture (one fixed run set multiplied by a range factor), a real
- * date window naturally returns a genuinely different set of runs per range
- * (see Docs/mockups/observability-dashboard/NOTES.md's "Filter buttons"
- * section).
- */
+/** Range -> `from`/`to` bounds; "all" omits both. See IMPLEMENTATION_NOTES.md § T-057 for why this is a day-window, not a run count. */
 export function rangeToDateFilter(
 	range: TrendsRange,
 	now: Date = new Date(),

@@ -11,6 +11,10 @@
    product (see mockup NOTES.md). */
 @import "@questlog/shared/styles/design-tokens.css";
 
+:root {
+	--hover-overlay: rgba(208, 228, 240, 0.02);
+}
+
 * {
 	box-sizing: border-box;
 }
@@ -95,7 +99,7 @@ a {
 .btn-secondary:hover {
 	color: var(--text-secondary);
 	border-color: var(--border-hover);
-	background: rgba(208, 228, 240, 0.02);
+	background: var(--hover-overlay);
 }
 .btn-secondary.on {
 	color: var(--accent);
@@ -119,7 +123,7 @@ a {
 	color: var(--status-success);
 }
 .tag-tier-s {
-	background: rgba(96, 184, 255, 0.1);
+	background: var(--accent-muted);
 	color: var(--status-info);
 }
 .tag-tier-m {
@@ -300,7 +304,7 @@ a {
 	border-bottom: 0.5px solid var(--border-subtle);
 }
 .dd-row-summary:hover {
-	background: rgba(208, 228, 240, 0.02);
+	background: var(--hover-overlay);
 }
 .num {
 	font-family: var(--font-mono);

@@ -27,17 +27,7 @@ function makeRun(overrides: Partial<TrendRun>): TrendRun {
 	};
 }
 
-/**
- * jsdom has no layout engine (`offsetWidth`/`getBoundingClientRect` are
- * always 0 in it), so pixel-alignment can't literally be measured at
- * 1000px/1800px in this test stack — see IMPLEMENTATION_NOTES.md § T-057
- * for why this asserts the *shared column-template string* the header and
- * every row resolve to instead. Because `DrillDownGridRow` (the one place
- * that string is defined) is used for both, this catches the actual bug
- * class the exit condition cares about — a row computing its own column
- * widths independently of the header — deterministically, at any width,
- * rather than by sampling two arbitrary viewport sizes.
- */
+/** Asserts the shared column-template string instead of pixel measurement — see IMPLEMENTATION_NOTES.md § T-057 for why. */
 describe("DrillDown", () => {
 	it("gives the header and every row the identical grid column template", () => {
 		render(
