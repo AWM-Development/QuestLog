@@ -5,11 +5,6 @@ export interface DateFilter {
 	to?: Date;
 }
 
-const RANGE_DAYS: Record<Exclude<TrendsRange, "all">, number> = {
-	"30": 30,
-	"90": 90,
-};
-
 /**
  * Translates the filter bar's range selection into `from`/`to` bounds for
  * the `observability.trends` endpoint. "all" omits both bounds. There's no
@@ -25,7 +20,7 @@ export function rangeToDateFilter(
 	now: Date = new Date(),
 ): DateFilter {
 	if (range === "all") return {};
-	const days = RANGE_DAYS[range];
+	const days = range === "30" ? 30 : 90;
 	const from = new Date(now);
 	from.setDate(from.getDate() - days);
 	return { from };
