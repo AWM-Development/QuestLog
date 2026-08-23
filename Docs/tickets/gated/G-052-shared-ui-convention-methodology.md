@@ -16,6 +16,15 @@ Context files (load ONLY these):
     `.btn-secondary`, `.tag`/`.tag-tier-*`, `.panel` — same visual concepts
     as `Chip`/`Card`/`buttonSecondary` above, implemented as plain CSS
     classes with `:hover`/`.on` pseudo-state instead)
+  - `apps/web/src/components/utilities/PlaceholderPage.tsx` vs.
+    `apps/observability-dashboard/src/features/log/LogPage.tsx` — a third,
+    concrete instance of the same split: `apps/web` already has a reusable
+    "coming soon" stub-page component (title + fixed copy, on
+    `PageContainer`/`PageHeader`); `LogPage.tsx` reinvents the identical
+    concept from scratch (`.empty-state`/`.headline`/`.sub` CSS classes)
+    rather than reusing it — not because anyone chose to duplicate it, but
+    because nothing made reuse possible (flagged by Alex during
+    `/morning-review`'s file-by-file walkthrough, 2026-08-23)
   - `packages/shared/src/styles/design-tokens.css` (already shipped on
     T-057's branch — the base token layer both apps now share; this gate
     is about the layer *above* tokens, not tokens themselves)
@@ -63,7 +72,11 @@ Blocks: M-OBS.11 (`Docs/milestones/MILESTONES_V1_2_MCP.md`) — no ticket has
 Notes: Raised directly by Alex while reviewing T-057's new components,
   alongside the token-duplication finding that `G-051`'s sibling PR already
   fixed directly on T-057's branch (mechanical, no decision required —
-  `packages/shared/src/styles/design-tokens.css`). This gate is
+  `packages/shared/src/styles/design-tokens.css`). A second concrete
+  instance (`PlaceholderPage.tsx` vs. `LogPage.tsx`, above) surfaced during
+  a follow-up file-by-file review pass — same root cause, not a new
+  question, so folded in here rather than opening a separate gate. This
+  gate is
   specifically the leftover, harder half: whether the *component* layer
   should also converge, which is a real design/methodology call, not a
   mechanical extraction. Related to but independent of `G-051` (that gate
