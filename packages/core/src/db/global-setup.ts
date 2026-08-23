@@ -25,6 +25,8 @@ export const TABLES_IN_DELETE_ORDER = [
 	"entities",
 	"sources",
 	"sessions",
+	// chunk_corrections FKs to campaigns (T-152) — must clear before it too.
+	"chunk_corrections",
 	"campaigns",
 ];
 

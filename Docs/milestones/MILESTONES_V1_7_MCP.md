@@ -1,7 +1,7 @@
 # QuestLog — v1.7 Milestones (Feature Exploration: DM Continuity & Cross-Campaign Tools)
 
 **Location:** `Docs/milestones/MILESTONES_V1_7_MCP.md`
-**Status:** CANONICAL task source for v1.7 as of `G-024`'s resolution (2026-08-07) — `M-PARTYMODEL` has a real task list. `M-PARTYKNOW` gained a real task list on `G-032`'s resolution (2026-08-19). `M-CONTINUITY` gained a real task list on `G-031`'s resolution (2026-08-20). `M-NPCVOICE` closed, not pursued. `M-CROSSCAMPAIGN` remains a placeholder, fully gated, no task list yet. Scoped to new product-feature ideas for the MCP tool surface itself (not pipeline, not UI) — the kind of "cool stuff we haven't tackled yet" that fits QuestLog's premise as an AI campaign co-manager.
+**Status:** CANONICAL task source for v1.7 as of `G-024`'s resolution (2026-08-07) — `M-PARTYMODEL` has a real task list. `M-PARTYKNOW` gained a real task list on `G-032`'s resolution (2026-08-19). `M-CONTINUITY` gained a real task list on `G-031`'s resolution (2026-08-20). `M-CROSSCAMPAIGN` gained a real task list on `G-033`'s resolution (2026-08-22). `M-NPCVOICE` closed, not pursued. All four original brainstorm gates now resolved. Scoped to new product-feature ideas for the MCP tool surface itself (not pipeline, not UI) — the kind of "cool stuff we haven't tackled yet" that fits QuestLog's premise as an AI campaign co-manager.
 **Created:** 2026-08-03, opened by Alex from a feature-brainstorm session covering capabilities the MCP tool surface doesn't yet have. Takes the next free version slot after `v1.6` (pipeline-robustness, unrelated scope) rather than overloading `v1.5` (already MCP-app-polish + inventory) or `v1.6` (pipeline-only) with unrelated feature ideas.
 
 ## Why v1.7 exists
@@ -17,10 +17,10 @@ Each is genuinely independent — different data model, different tool surface, 
 
 A fifth milestone, **`M-PARTYMODEL`**, was added 2026-08-07 — not one of the original four brainstormed feature ideas above, but the resolution of a separate, earlier-filed gate (`G-024`, opened 2026-08-02, before this doc existed) whose scope is the schema/model foundation the rest of this version's cross-campaign ambitions (especially `M-CROSSCAMPAIGN`) will eventually build on. It lands here rather than a new version slot because it's the same "campaign scoping" theme, and per `/ungate`'s decision to land it wherever fits rather than open a dedicated version for two small tasks.
 
-**Open gates:**
-- `G-033` (`Docs/tickets/gated/G-033-cross-campaign-entity-borrowing.md`) — blocks M-CROSSCAMPAIGN.
+**Open gates:** none — all four original brainstorm gates resolved.
 
 **Resolved gates going into this milestone:**
+- `G-033` (`Docs/tickets/gated/resolved/G-033-cross-campaign-entity-borrowing.md`) — resolved 2026-08-22 via `/ungate`, together with Alex. Pursue it: a copy-once fork (not a live-linked reference), via a new dedicated `borrow_entity` tool rather than a `create_entity` input variant. No change needed to `campaign-scoping.test.ts`'s guard — the tool takes both campaign ids explicitly and only calls already-scoped service methods. The forked copy records its provenance (source campaign/entity, fork date) in the new entity's `dmNotes` plus a structured `attributes.borrowedFrom` field. `M-CROSSCAMPAIGN` drafted one ticket (`T-170`). See the resolved gate-stub for full rationale.
 - `G-031` (`Docs/tickets/gated/resolved/G-031-continuity-inconsistency-detection.md`) — resolved 2026-08-20 via `/ungate`, together with Alex. Pursue proactive detection: an LLM pass (matching `G-021`'s precedent) over recent entities/sessions, confidence-gated (moderate threshold, not "surface everything"), running both on-ingest and on-demand via a new tool. Detected candidates route through the existing `correct_lore`/`confirm_correct_lore` flow unchanged — no new preview/confirm mechanism. See the resolved gate-stub for full rationale.
 - `G-024` (`Docs/tickets/gated/resolved/G-024-campaign-source-party-conceptual-model.md`) — resolved 2026-08-07 via `/ungate`, together with Alex. Party becomes a real parent of campaigns (nullable `partyId` FK on `campaigns`, not a tag on entities/sessions); every existing read stays `campaignId`-scoped by default. A `sourceId`-scoped search filter on `query_lore`/`get_entity` was approved as an independent, straightforward addition. Cross-campaign continuity itself (the actual read-time expansion) is explicitly deferred, future scope — this milestone is schema/plumbing only. See the resolved gate-stub for full rationale.
 - `G-030` (`Docs/tickets/gated/resolved/G-030-npc-voice-and-personality-recall.md`) — resolved 2026-08-10 via `/ungate`. Not worth building right now — no ticket drafted, `M-NPCVOICE` closed with no task list. Deferred to v2 consideration, not a rejected idea; see the resolved gate-stub for full rationale.
@@ -68,13 +68,14 @@ None — closed with no tickets drafted.
 
 ## Milestone M-CROSSCAMPAIGN: Cross-Campaign Entity Borrowing
 
-**Goal:** TBD — resolves from `G-033`. Placeholder section; see the gate-stub for the open question (whether to allow borrowing/forking at all given the existing single-campaign-scoping invariant, and if so, copy-once vs. linked-reference semantics).
+**Goal:** A new `borrow_entity` MCP tool that copy-once forks a single entity from one campaign into another — name/type/description carried verbatim, a provenance record (source campaign/entity, fork date) attached via `dmNotes` and a structured `attributes.borrowedFrom` field, no ongoing link back to the original. Resolved via `G-033` (2026-08-22) — no change to `campaign-scoping.test.ts`'s guard, since the tool only ever calls already-scoped service methods.
 
-**Context:** No PRD section covers this — new feature idea proposed 2026-08-03 (see `G-033`). Directly touches the campaign-isolation invariant `packages/mcp/src/tools/campaign-scoping.test.ts` (T-068) guards today.
+**Context:** No PRD section covers this — new feature idea proposed 2026-08-03 (see `G-033`, resolved 2026-08-22). Directly touches the campaign-isolation invariant `packages/mcp/src/tools/campaign-scoping.test.ts` (T-068) guards today, though the resolved design ends up not needing any change to it.
 
 ### Tasks
 
-_None yet — blocked on `G-033`. `/ungate` drafts this milestone's real task list on resolution (or closes the gate with no tickets if the decision is not to pursue)._
+- [ ] **M-CROSSCAMPAIGN.1 — `borrow_entity` copy-once cross-campaign fork tool** (T-170)
+  New MCP tool: read one entity from a source campaign, write an independent copy into a destination campaign with a provenance record attached. See `T-170` for the full scope.
 
 ### Ordering constraint
 

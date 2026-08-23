@@ -276,6 +276,12 @@
     "mergedAt": "2026-08-16T23:15:53Z"
   },
   {
+    "ticketId": "T-152",
+    "prNumber": 288,
+    "branch": "feat/m-polish/t-152-superseded-lore-history-tool",
+    "mergedAt": "2026-08-22T16:13:02Z"
+  },
+  {
     "ticketId": "T-154",
     "prNumber": 292,
     "branch": "chore/m-pipeline/t-154-worktree-env-provisioning-redesign",

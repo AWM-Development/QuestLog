@@ -14,6 +14,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 - **Continuity contradiction-detection service.** New `continuityService.detectContradictions` (`packages/core/src/services/continuity.service.ts`) checks new document text against the existing lore of any entity it names, and returns confidence-gated `ContradictionCandidate`s for real factual contradictions (e.g. an NPC described as dead in existing lore but referenced as alive in the new text). Mirrors `entityService.detectCandidates`'s shape: reuses `detectSpans`'s existing-entity matching, one `callClaudeStructured` call per document (not per entity), threshold `CONTRADICTION_CONFIDENCE_THRESHOLD = 0.6` (moderate tolerance per `G-031`'s resolution). Service-layer only — no MCP tool surface yet, no wiring into `ingest_text` or `correct_lore`; that's `T-164`.
 
+### Added — T-152
+
+- **`get_chunk_history` MCP tool — superseded-lore audit trail.** `confirm_correct_lore` now persists a `chunk_corrections` row (the correction text, which chunks it superseded, which new chunks it created) atomically with the supersede, via a new `chunkHistoryService`. `get_chunk_history` is a new audit-only, on-demand read tool: given a `chunkId`, returns any correction event(s) that superseded it, or `[]` if it was never superseded. No change to `correct_lore`'s own preview narration and no UI surface (`G-025`'s resolution).
+
 ### Fixed — T-159
 
 - **`ingest_text` no longer hides a written source's id on an entity-detection failure.** If the synchronous entity-candidate-detection step (`entityService.detectCandidates`) throws — a transient LLM error, a rate limit, etc. — after the source row already exists, the tool now logs the error and returns `entityCandidates: null` instead of letting the error propagate and hide `source.id`/`source.status` from the caller. Previously a caller retrying on that error created a duplicate source with identical content, since the original had already been written but never reported back.
