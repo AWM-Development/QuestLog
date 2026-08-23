@@ -467,10 +467,8 @@ export const entityService = {
 			return row;
 		}
 
-		// Symmetric npc<->monster (or any pair) link (T-171, G-036): validate the
-		// target is in the same campaign, then set both sides' linkedEntityId
-		// inside one transaction so a reader fetching either entity independently
-		// always sees the pairing.
+		// Links are symmetric (T-171) — both sides set in one transaction so
+		// no reader ever sees a one-directional pointer.
 		const linkedEntityId = input.linkedEntityId;
 		return db.transaction(async (tx) => {
 			const target = await entityService.getById(
@@ -495,10 +493,8 @@ export const entityService = {
 			const row = rows[0];
 			if (!row) throw new Error("Entity creation failed");
 
-			// The target may already be linked to a third entity — that old
-			// partner's back-pointer would otherwise go stale and
-			// one-directional the moment the target gets re-pointed here (same
-			// class of bug fixed in update(), below).
+			// Target may already have a partner — clear its stale back-pointer
+			// before re-pointing it here.
 			if (target.linkedEntityId) {
 				await tx
 					.update(entities)
@@ -638,9 +634,8 @@ export const entityService = {
 			return first(rows);
 		}
 
-		// Symmetric link update (T-171, G-036): setting linkedEntityId links both
-		// sides in the same write; setting it to null clears both sides — look up
-		// the current value first so the other side's pointer can be cleared too.
+		// Symmetric link (T-171) — look up the current value first so both
+		// sides stay in sync, including on clear (null).
 		const newLinkedEntityId = fields.linkedEntityId as string | null;
 		return db.transaction(async (tx) => {
 			const currentRows = await tx
@@ -650,10 +645,8 @@ export const entityService = {
 			const current = currentRows[0];
 			if (!current) throw new NotFoundError("Entity", id);
 
-			// Any transition away from the current target — to null, or to a
-			// different entity — must clear that old target's own back-pointer,
-			// or it's left stale and one-directional (the link is "always
-			// mutual" per Scope, not just on the null-clear path).
+			// Clear the old target's back-pointer on any transition away from
+			// it, not just on null.
 			if (
 				current.linkedEntityId &&
 				current.linkedEntityId !== newLinkedEntityId
@@ -664,13 +657,8 @@ export const entityService = {
 					.where(eq(entities.id, current.linkedEntityId));
 			}
 
-			// The new target may itself already be linked to a third entity —
-			// that old partner's back-pointer would otherwise go stale and
-			// one-directional the moment the target gets re-pointed at this
-			// entity (same class of bug as the old-target clear above, just
-			// triggered from the new-target side). Skip when the target already
-			// points back at this entity (re-confirming an existing link) —
-			// nothing to clear.
+			// New target may already have its own partner — clear that stale
+			// back-pointer too, unless it already points back at us.
 			if (newLinkedEntityId !== null) {
 				const target = await entityService.getById(
 					tx,
