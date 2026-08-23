@@ -473,7 +473,11 @@ export const entityService = {
 		// always sees the pairing.
 		const linkedEntityId = input.linkedEntityId;
 		return db.transaction(async (tx) => {
-			await entityService.getById(tx, input.campaignId, linkedEntityId);
+			const target = await entityService.getById(
+				tx,
+				input.campaignId,
+				linkedEntityId,
+			);
 
 			const rows = await tx
 				.insert(entities)
@@ -490,6 +494,17 @@ export const entityService = {
 				.returning();
 			const row = rows[0];
 			if (!row) throw new Error("Entity creation failed");
+
+			// The target may already be linked to a third entity — that old
+			// partner's back-pointer would otherwise go stale and
+			// one-directional the moment the target gets re-pointed here (same
+			// class of bug fixed in update(), below).
+			if (target.linkedEntityId) {
+				await tx
+					.update(entities)
+					.set({ linkedEntityId: null })
+					.where(eq(entities.id, target.linkedEntityId));
+			}
 
 			await tx
 				.update(entities)
