@@ -4,10 +4,6 @@ Milestone ref: M-OBS.5
 
 Priority: P2
 
-Blocked on: T-054, T-055, T-057, T-059 — must all be merged into develop
-  first (T-057 stands up the app shell/nav/routing this ticket extends;
-  T-059 provides the comment write endpoint this ticket's UI calls)
-
 Branch: feat/m-obs/t-058-observability-dashboard-log-view-comments
 
 Context files (load ONLY these):
