@@ -91,5 +91,14 @@ export const ADJUST_WEALTH_DESCRIPTION =
 export const LIST_INVENTORY_DESCRIPTION =
 	"List a campaign's inventory items and current wealth. Optionally filter items to one entity's owned items with ownerEntityId — omit it for the whole campaign (all owners plus unassigned). Returns items and wealth.";
 
+export const SAVE_ENCOUNTER_DESCRIPTION =
+	"Save an encounter roster to a campaign: a name, optional freeform notes (terrain/narrative hook), and a list of members, each { entityId, count? } (count defaults to 1) — e.g. \"goblin x 2\" is one member referencing the goblin entity with count: 2, not two separate entries. Direct write — only ever inserts a new encounter, no preview/confirm needed. Every entityId must already exist in the campaign (look it up with get_entity/list_entities, or create it with create_entity first). Manual save only — this does not generate a roster from natural language. Returns the created encounter.";
+
+export const LIST_ENCOUNTERS_DESCRIPTION =
+	"List a campaign's saved encounters. Returns each encounter's id, name, notes, and a member-count summary (not full member detail — call get_encounter for that).";
+
+export const GET_ENCOUNTER_DESCRIPTION =
+	"Look up a single saved encounter by id, including its full member roster (each resolved to entityId, name, type, and count). Returns the encounter.";
+
 export const HELP_DESCRIPTION =
 	"Call this if you're unsure where to start. Returns a summary of QuestLog's workflow: uploading campaign documents, tracking sessions, and querying lore.";
