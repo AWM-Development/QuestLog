@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { DrillDownGridRow } from "./DrillDownGridRow.js";
 import { fmtCost, fmtTokens, fmtTurns } from "./format.js";
-import { runCost } from "./stats.js";
+import { runCost, totalTokens } from "./stats.js";
 import type { TrendRun } from "./types.js";
 
 function fmtDuration(ms: number): string {
@@ -14,11 +14,11 @@ function fmtDuration(ms: number): string {
 function DrillDownRow({ run }: { run: TrendRun }) {
 	const [expanded, setExpanded] = useState(false);
 	if (!run.ticketId) return null; // non-empty rows always carry a ticketId
-	const totalTokens =
-		run.inputTokens +
-		run.outputTokens +
-		run.cacheCreationInputTokens +
-		run.cacheReadInputTokens;
+	// Computed once and reused below in both the summary row and the
+	// expanded detail, rather than re-derived from the same `run` twice.
+	const cost = fmtCost(runCost(run));
+	const duration = fmtDuration(run.durationMs);
+	const tokens = fmtTokens(totalTokens(run));
 
 	return (
 		<div>
@@ -48,9 +48,9 @@ function DrillDownRow({ run }: { run: TrendRun }) {
 							</span>
 						) : null}
 					</div>
-					<div className="num">{fmtCost(runCost(run))}</div>
-					<div className="num">{fmtTokens(totalTokens)}</div>
-					<div className="num">{fmtDuration(run.durationMs)}</div>
+					<div className="num">{cost}</div>
+					<div className="num">{tokens}</div>
+					<div className="num">{duration}</div>
 					<div className="num">
 						{run.turnsToGreen !== null ? fmtTurns(run.turnsToGreen) : "—"}
 					</div>
@@ -73,8 +73,7 @@ function DrillDownRow({ run }: { run: TrendRun }) {
 						color: "var(--text-secondary)",
 					}}
 				>
-					Duration: {fmtDuration(run.durationMs)} · Cost:{" "}
-					{fmtCost(runCost(run))} · Tokens: {fmtTokens(totalTokens)}
+					Duration: {duration} · Cost: {cost} · Tokens: {tokens}
 				</div>
 			) : null}
 		</div>
@@ -121,7 +120,11 @@ export function DrillDown({ runs }: DrillDownProps) {
 				{runs.map((run) =>
 					run.emptyRun ? (
 						<div
-							key="empty-run"
+							// Keyed by createdAt rather than a shared literal — more than
+							// one empty run can fall in the selected date range, and a
+							// literal key here would collapse them to a single React
+							// element, silently dropping every empty-run row but the last.
+							key={`empty-${String(run.createdAt)}`}
 							className="empty-row"
 							style={{
 								color: "var(--text-dim)",

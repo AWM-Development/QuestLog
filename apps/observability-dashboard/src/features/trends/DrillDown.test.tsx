@@ -60,14 +60,18 @@ describe("DrillDown", () => {
 		}
 	});
 
-	it("expands a row on click to show token/cost/duration/reviewer-verdict/retry-log detail", async () => {
+	it("expands a row on click to show token/cost/duration detail", async () => {
 		render(<DrillDown runs={[makeRun({ ticketId: "T-100" })]} />);
 
 		expect(screen.queryByTestId("dd-detail-T-100")).not.toBeInTheDocument();
 
 		fireEvent.click(screen.getByTestId("dd-row-summary-T-100"));
 
-		expect(screen.getByTestId("dd-detail-T-100")).toBeInTheDocument();
+		const detail = screen.getByTestId("dd-detail-T-100");
+		expect(detail).toBeInTheDocument();
+		expect(detail).toHaveTextContent(/duration/i);
+		expect(detail).toHaveTextContent(/cost/i);
+		expect(detail).toHaveTextContent(/tokens/i);
 	});
 
 	it("renders an empty-run row distinctly, without an expand affordance", () => {
@@ -75,5 +79,26 @@ describe("DrillDown", () => {
 
 		expect(screen.getByText(/empty_run/i)).toBeInTheDocument();
 		expect(screen.queryByTestId(/dd-row-summary-/)).not.toBeInTheDocument();
+	});
+
+	it("renders every empty-run row when more than one falls in range, not just the last", () => {
+		render(
+			<DrillDown
+				runs={[
+					makeRun({
+						ticketId: null,
+						emptyRun: true,
+						createdAt: "2026-08-01T00:00:00Z",
+					}),
+					makeRun({
+						ticketId: null,
+						emptyRun: true,
+						createdAt: "2026-08-02T00:00:00Z",
+					}),
+				]}
+			/>,
+		);
+
+		expect(screen.getAllByText(/empty_run/i)).toHaveLength(2);
 	});
 });

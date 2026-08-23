@@ -56,7 +56,7 @@ export interface TierStats {
 
 const TIERS = ["s", "m", "l"] as const;
 
-function totalTokens(run: TrendRun): number {
+export function totalTokens(run: TrendRun): number {
 	return (
 		run.inputTokens +
 		run.outputTokens +
