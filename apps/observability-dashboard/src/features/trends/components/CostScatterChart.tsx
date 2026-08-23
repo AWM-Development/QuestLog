@@ -1,3 +1,4 @@
+import { COMPLEXITY_TIERS } from "@questlog/shared";
 import {
 	CartesianGrid,
 	ComposedChart,
@@ -11,24 +12,21 @@ import {
 	ZAxis,
 } from "recharts";
 import { costVsDiffPoints, fitLine } from "../utils/stats.js";
+import { TIER_COLOR } from "../utils/tierColors.js";
 import type { TrendRun } from "../utils/types.js";
 
 interface CostScatterChartProps {
 	runs: TrendRun[];
 }
 
-const TIER_COLOR: Record<string, string> = {
-	s: "var(--status-info)",
-	m: "var(--status-warning)",
-	l: "var(--status-error)",
-};
-
 /** Cost-vs-diff-size scatter, points colored by complexity tier, with a fit line. */
 export function CostScatterChart({ runs }: CostScatterChartProps) {
 	const points = costVsDiffPoints(runs);
 	const line = fitLine(points);
 
-	const byTier: Record<string, typeof points> = { s: [], m: [], l: [] };
+	const byTier = Object.fromEntries(
+		COMPLEXITY_TIERS.map((tier) => [tier, [] as typeof points]),
+	) as Record<(typeof COMPLEXITY_TIERS)[number], typeof points>;
 	for (const p of points) {
 		if (p.tier) byTier[p.tier]?.push(p);
 	}
@@ -66,7 +64,7 @@ export function CostScatterChart({ runs }: CostScatterChartProps) {
 					<ZAxis range={[60, 60]} />
 					<Tooltip cursor={{ strokeDasharray: "3 3" }} />
 					<Legend />
-					{(["s", "m", "l"] as const).map((tier) => (
+					{COMPLEXITY_TIERS.map((tier) => (
 						<Scatter
 							key={tier}
 							name={tier.toUpperCase()}
