@@ -104,12 +104,8 @@ Context files (load ONLY these):
   - legacy.ts
 `;
 
-// Regression fixture for the bug this ticket fixes: extractScopeExcerpt's
-// old shape-based boundary heuristic ("a line starting with a capitalized
-// word and ending in a colon") mistook this hard-wrapped "Note:" line for
-// the next field and silently truncated the excerpt before it. The new
-// allowlist-bounded boundary only fires on TICKET_SPEC.md's actual field
-// names, so "Note:" is never mistaken for one.
+// The old heuristic mistook this hard-wrapped "Note:" line for the next
+// field and truncated the excerpt before it — see the test below.
 const TICKET_WITH_SCOPE_FALSE_POSITIVE_LINE = `# T-105 — Scope with a false-positive-shaped hard-wrap ticket
 
 Milestone ref: M-TEST.1

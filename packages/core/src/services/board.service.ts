@@ -39,11 +39,8 @@ export interface TicketCard {
 const SCOPE_EXCERPT_MAX_LENGTH = 160;
 
 /**
- * Every top-level field name a ticket file's boundary detection needs to
- * recognize: `TICKET_SPEC.md`'s field set, plus `Branch` and `Scope`
- * themselves, the two fields this map unifies into one mechanism. A field
- * boundary only fires on one of these literal names now, never on the old
- * "capitalized word ending in a colon" shape heuristic — which could
+ * `TICKET_SPEC.md`'s field set, plus `Branch`/`Scope` themselves. Replaces
+ * the old "capitalized word ending in a colon" shape heuristic, which could
  * misfire on a hard-wrapped `Scope:` line that merely looked like a field
  * header (e.g. "Note: fall back to null.") and silently truncate early.
  */
@@ -71,13 +68,11 @@ const FIELD_START_PATTERN = new RegExp(
 );
 
 /**
- * Walks a ticket file's content once, returning every recognized field's
- * raw (unbounded-whitespace) value keyed by field name — a field's value is
- * whatever text sits between its own label and the next recognized field
- * label (or end of file). Single-line fields (`Priority`, `Branch`, ...)
- * and the multi-line `Scope:` field both read from this same map instead of
- * two separate parsing strategies; callers decide per-field whether to take
- * just the first line or the whole span.
+ * One pass over the ticket file, keyed by field name — replaces separately
+ * calling `matchField` per field and `extractScopeExcerpt` for `Scope:`.
+ * A field's raw value is the text between its own label and the next
+ * recognized one (or EOF); callers decide whether to take the first line or
+ * the whole span.
  */
 function parseAllFields(content: string): Map<string, string> {
 	const matches = [...content.matchAll(FIELD_START_PATTERN)];
@@ -99,11 +94,7 @@ function singleLineValue(raw: string | undefined): string | null {
 	return firstLine || null;
 }
 
-/**
- * `Scope:`'s value runs until the next top-level field, not to end-of-line
- * — unlike every other field — so its raw span is collapsed to one line and
- * truncated at a word boundary rather than just trimmed.
- */
+/** Unlike single-line fields, `Scope:`'s raw span is multi-line — collapse and truncate at a word boundary instead of just trimming. */
 function scopeExcerptValue(raw: string | undefined): string | null {
 	const collapsed = raw?.trim().replace(/\s+/g, " ");
 	if (!collapsed) return null;
