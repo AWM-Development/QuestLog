@@ -1,63 +1,15 @@
 /* QuestLog Pipeline Observatory — shared tokens + chrome.
-   Token values and chrome/panel/tag/button rules are carried over from
-   Docs/mockups/observability-dashboard/shared.css (read-only reference,
-   never edited) per Docs/DESIGN_SYSTEM.md §2-5,7.7,7.8 — entity-color
-   system and mascot are deliberately not reused here, this is ops tooling
-   for Alex, not the campaign-content product (see mockup NOTES.md). */
-
-:root {
-	/* Depth planes (§2) */
-	--bg-void: #090d12;
-	--bg-surface: #0e1820;
-	--bg-elevated: #111c26;
-	--bg-focal: #152636;
-	--bg-focal-hover: #1a2e40;
-
-	/* Text (§3) */
-	--text-primary: #d0e4f0;
-	--text-secondary: #8aa4b4;
-	--text-muted: #4a6a7a;
-	--text-dim: #2e4856;
-
-	/* Borders (§3) */
-	--border: #1a2838;
-	--border-hover: #1e3448;
-	--border-subtle: #14222e;
-
-	/* Status (§3) */
-	--status-success: #40d8a0;
-	--status-error: #dc6060;
-	--status-warning: #e8b040;
-	--status-info: #60b8ff;
-
-	/* Accent (§3) */
-	--accent: #60b8ff;
-	--accent-hover: #78c8ff;
-	--accent-muted: rgba(96, 184, 255, 0.1);
-
-	/* Type (§4) */
-	--font-display: "Crimson Pro", Georgia, serif;
-	--font-body: "DM Sans", system-ui, sans-serif;
-	--font-mono: "JetBrains Mono", "Fira Code", monospace;
-
-	/* Spacing (§5) */
-	--space-1: 4px;
-	--space-1-5: 6px;
-	--space-2: 8px;
-	--space-2-5: 10px;
-	--space-3: 12px;
-	--space-3-5: 14px;
-	--space-4: 16px;
-	--space-5: 20px;
-	--space-6: 24px;
-	--space-8: 32px;
-
-	/* Radius (§5) */
-	--r-sm: 6px;
-	--r-md: 10px;
-	--r-lg: 14px;
-	--r-pill: 20px;
-}
+   Base tokens (depth planes, text/border/status colors, default accent,
+   typography, spacing, radius) come from @questlog/shared's
+   design-tokens.css — the same file apps/web imports — rather than a
+   second hand-maintained copy; see that file's own header for exactly
+   what it does and doesn't cover. Chrome/panel/tag/button rules below are
+   carried over from Docs/mockups/observability-dashboard/shared.css
+   (read-only reference, never edited) per Docs/DESIGN_SYSTEM.md
+   §2-5,7.7,7.8 — entity-color system and mascot are deliberately not
+   reused here, this is ops tooling for Alex, not the campaign-content
+   product (see mockup NOTES.md). */
+@import "@questlog/shared/styles/design-tokens.css";
 
 * {
 	box-sizing: border-box;

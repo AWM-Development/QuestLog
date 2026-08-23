@@ -1,0 +1,82 @@
+/*
+ * QuestLog Design Tokens — shared base.
+ *
+ * The entity-agnostic subset of Docs/DESIGN_SYSTEM.md §2-5 (depth planes,
+ * text/border/status colors, the default accent, typography, spacing,
+ * radius) that every app drawing from the same visual system needs
+ * verbatim — currently apps/web and apps/observability-dashboard.
+ *
+ * What deliberately stays OUT of this file, as app-local concerns:
+ *   - The entity-color system (§6) and campaign theme overrides (§11,
+ *     apps/web's `.theme-*` classes) — apps/web only. Observability
+ *     tooling doesn't carry campaign-content theming; see
+ *     Docs/mockups/observability-dashboard/NOTES.md.
+ *   - The mascot system (§10) — apps/web only, same reason.
+ *   - Anything a single app needed and the other never referenced (layout
+ *     widths, shadows, interaction-state overlays, RGB triplets for
+ *     rgba() composition) — kept local to whichever app's own
+ *     src/index.css already declared it, to avoid this file accreting
+ *     tokens nothing outside one app actually uses.
+ *
+ * A consuming app's own index.css imports this first, then declares only
+ * its own additions in a second `:root { ... }` block — CSS custom
+ * properties merge across blocks normally, and a later same-named
+ * declaration would still be free to override a default here (e.g. a
+ * future per-app accent) without editing this file.
+ */
+:root {
+	/* Depth planes (§2) */
+	--bg-void: #090d12;
+	--bg-surface: #0e1820;
+	--bg-elevated: #111c26;
+	--bg-focal: #152636;
+	--bg-focal-hover: #1a2e40;
+
+	/* Text (§3) */
+	--text-primary: #d0e4f0;
+	--text-secondary: #8aa4b4;
+	--text-muted: #4a6a7a;
+	--text-dim: #2e4856;
+
+	/* Borders (§3) */
+	--border: #1a2838;
+	--border-hover: #1e3448;
+	--border-subtle: #14222e;
+
+	/* Status (§3) */
+	--status-success: #40d8a0;
+	--status-error: #dc6060;
+	--status-warning: #e8b040;
+	--status-info: #60b8ff;
+
+	/* Accent (§3) — default/fantasy-theme value. In apps/web this is also
+	   `--ent-npc`'s value (entities ARE the accent system there) and gets
+	   overridden per-campaign by `.theme-*` classes; this file only sets
+	   the `:root` default both apps start from. */
+	--accent: #60b8ff;
+	--accent-hover: #78c8ff;
+	--accent-muted: rgba(96, 184, 255, 0.1);
+
+	/* Typography (§4) */
+	--font-display: "Crimson Pro", Georgia, "Times New Roman", serif;
+	--font-body: "DM Sans", system-ui, -apple-system, sans-serif;
+	--font-mono: "JetBrains Mono", "Fira Code", monospace;
+
+	/* Spacing (§5) */
+	--space-1: 0.25rem;
+	--space-1-5: 6px;
+	--space-2: 0.5rem;
+	--space-2-5: 10px;
+	--space-3: 0.75rem;
+	--space-3-5: 14px;
+	--space-4: 1rem;
+	--space-5: 1.25rem;
+	--space-6: 1.5rem;
+	--space-8: 2rem;
+
+	/* Radius (§5) */
+	--r-sm: 6px;
+	--r-md: 10px;
+	--r-lg: 14px;
+	--r-pill: 20px;
+}

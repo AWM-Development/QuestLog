@@ -13,6 +13,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 ### Added — T-057
 
 - **Observability dashboard: Trends view.** New standalone `apps/observability-dashboard` app (Vite + React + react-router, mirroring `apps/web`'s tooling shape) with a real-data Trends route: 30/90-day/all-time range filter and an exclude-empty-runs toggle, both wired to the `observability.trends` endpoint (`T-054`); four aggregate stat tiles (avg/median cost, avg turns-to-green, total system cost); a per-tier (S/M/L) granularity row; `recharts` tokens-per-run stacked bar and cost-vs-diff-size scatter (with a fit line) charts; and a per-ticket drill-down that expands on click, with header/rows sharing one CSS grid column template so columns can't drift out of alignment as the window resizes. Shares its top-nav chrome with `T-058`'s upcoming Log view. Design per `Docs/mockups/observability-dashboard/`, resolved via `G-004`.
+- **Shared base design tokens.** Extracted the entity-agnostic subset of `DESIGN_SYSTEM.md`'s tokens (depth planes, text/border/status colors, default accent, typography, spacing, radius) to `packages/shared/src/styles/design-tokens.css`, now imported by both `apps/web` and `apps/observability-dashboard` instead of each hand-maintaining its own copy. No visual change in either app.
 
 ### Added — T-152
 
