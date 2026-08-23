@@ -664,8 +664,25 @@ export const entityService = {
 					.where(eq(entities.id, current.linkedEntityId));
 			}
 
+			// The new target may itself already be linked to a third entity —
+			// that old partner's back-pointer would otherwise go stale and
+			// one-directional the moment the target gets re-pointed at this
+			// entity (same class of bug as the old-target clear above, just
+			// triggered from the new-target side). Skip when the target already
+			// points back at this entity (re-confirming an existing link) —
+			// nothing to clear.
 			if (newLinkedEntityId !== null) {
-				await entityService.getById(tx, campaignId, newLinkedEntityId);
+				const target = await entityService.getById(
+					tx,
+					campaignId,
+					newLinkedEntityId,
+				);
+				if (target.linkedEntityId && target.linkedEntityId !== id) {
+					await tx
+						.update(entities)
+						.set({ linkedEntityId: null })
+						.where(eq(entities.id, target.linkedEntityId));
+				}
 			}
 
 			const rows = await tx
