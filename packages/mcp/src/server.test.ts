@@ -877,6 +877,75 @@ describe("get_entity tool", () => {
 	});
 });
 
+describe("get_entity tool — linkedEntity (T-171)", () => {
+	// entityService.create opens its own db.transaction() when linkedEntityId
+	// is present (symmetric write) — doesn't compose with a raw BEGIN/ROLLBACK
+	// wrapper on the same connection (.claude/rules/backend.md "Test DB
+	// pattern"), same reason update_entity's describe block below uses this.
+	let campaignId: string;
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, campaignId);
+	});
+
+	it("includes a linkedEntity summary when the entity has a linked pair", async () => {
+		const npc = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni",
+			type: "npc",
+		});
+		const monster = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+			linkedEntityId: npc.id,
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: npc.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.linkedEntity).toEqual({
+			id: monster.id,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+		});
+	});
+
+	it("omits the linkedEntity key entirely for an unlinked entity", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect("linkedEntity" in payload).toBe(false);
+	});
+});
+
 describe("create_entity tool", () => {
 	// create_entity now searches lore before persisting (T-083), whose
 	// keywordSearch opens its own db.transaction() (T-015) — doesn't compose
@@ -1054,6 +1123,78 @@ describe("create_entity tool", () => {
 		const created = JSON.parse(content[0]?.text ?? "{}");
 		expect(created.description).toBe("A road warden.");
 		expect(created.dmNotes).toBe("Secretly reports to Baron Voss.");
+	});
+
+	it("links to an existing entity when linkedEntityId is provided (T-171)", async () => {
+		const npc = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const createResult = await client.callTool({
+			name: "create_entity",
+			arguments: {
+				campaignId,
+				name: "Izek Strazni (combat)",
+				type: "monster",
+				linkedEntityId: npc.id,
+			},
+		});
+
+		expect(createResult.isError).toBeFalsy();
+		const content = createResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const created = JSON.parse(content[0]?.text ?? "{}");
+		expect(created.linkedEntityId).toBe(npc.id);
+
+		const getResult = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: npc.id },
+		});
+		const getContent = getResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const fetchedNpc = JSON.parse(getContent[0]?.text ?? "{}");
+		expect(fetchedNpc.linkedEntity).toEqual({
+			id: created.id,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+		});
+	});
+
+	it("returns a structured not-found error linking to an entity from a different campaign (T-171)", async () => {
+		const otherCampaign = await campaignService.create(db, {
+			name: "Other Campaign",
+			theme: "sci-fi",
+		});
+		const outsider = await entityService.create(db, {
+			campaignId: otherCampaign.id,
+			name: "Outsider",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "create_entity",
+			arguments: {
+				campaignId,
+				name: "Izek Strazni (combat)",
+				type: "monster",
+				linkedEntityId: outsider.id,
+			},
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+
+		await deleteCampaignTree(db, otherCampaign.id);
 	});
 });
 
@@ -1755,6 +1896,133 @@ describe("update_entity + confirm_update_entity tools", () => {
 			.from(entities)
 			.where(eq(entities.id, entity.id));
 		expect(updated?.name).toBe("Mira Voss");
+	});
+
+	it("previews and confirms linking an unlinked pair via linkedEntityId (T-171)", async () => {
+		const npc = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni",
+			type: "npc",
+		});
+		const monster = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "update_entity",
+			arguments: { campaignId, entityId: monster.id, linkedEntityId: npc.id },
+		});
+		expect(previewResult.isError).toBeFalsy();
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token, preview } = JSON.parse(previewContent[0]?.text ?? "{}");
+		expect(preview.before.linkedEntityId).toBeNull();
+		expect(preview.after.linkedEntityId).toBe(npc.id);
+
+		const confirmResult = await client.callTool({
+			name: "confirm_update_entity",
+			arguments: { token },
+		});
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		expect(JSON.parse(confirmContent[0]?.text ?? "{}").linkedEntityId).toBe(
+			npc.id,
+		);
+
+		const [refetchedNpc] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, npc.id));
+		expect(refetchedNpc?.linkedEntityId).toBe(monster.id);
+	});
+
+	it("previews and confirms clearing a link via linkedEntityId: null (T-171)", async () => {
+		const npc = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni",
+			type: "npc",
+		});
+		const monster = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+			linkedEntityId: npc.id,
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "update_entity",
+			arguments: { campaignId, entityId: monster.id, linkedEntityId: null },
+		});
+		expect(previewResult.isError).toBeFalsy();
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token, preview } = JSON.parse(previewContent[0]?.text ?? "{}");
+		expect(preview.before.linkedEntityId).toBe(npc.id);
+		expect(preview.after.linkedEntityId).toBeNull();
+
+		const confirmResult = await client.callTool({
+			name: "confirm_update_entity",
+			arguments: { token },
+		});
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		expect(
+			JSON.parse(confirmContent[0]?.text ?? "{}").linkedEntityId,
+		).toBeNull();
+
+		const [refetchedNpc] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, npc.id));
+		expect(refetchedNpc?.linkedEntityId).toBeNull();
+	});
+
+	it("returns a structured not-found error linking to an entity from a different campaign (T-171)", async () => {
+		const otherCampaign = await campaignService.create(db, {
+			name: "Other Campaign",
+			theme: "sci-fi",
+		});
+		const outsider = await entityService.create(db, {
+			campaignId: otherCampaign.id,
+			name: "Outsider",
+			type: "npc",
+		});
+		const monster = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "update_entity",
+			arguments: {
+				campaignId,
+				entityId: monster.id,
+				linkedEntityId: outsider.id,
+			},
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+
+		await deleteCampaignTree(db, otherCampaign.id);
 	});
 });
 

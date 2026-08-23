@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-171
+
+- **`monster` entity type + npc↔monster `linkedEntityId` link.** `ENTITY_TYPES` gains `"monster"` — a stat-block-bearing creature is never represented by overloading `npc`. `entities` gains a nullable, self-referential `linkedEntityId` FK (indexed) so a lore-focused `npc` and its combat-focused `monster` counterpart can be paired: setting `linkedEntityId` sets both sides symmetrically in one write (via `entityService.create`/`update`), and clearing it (`null`) clears both sides. `create_entity` accepts an optional `linkedEntityId` to link at creation time; `update_entity`/`confirm_update_entity` accept it to link or (via explicit `null`) unlink an existing pair, validated same-campaign (`NotFoundError` otherwise, no new `*Unscoped` call). `get_entity` returns a `linkedEntity: { id, name, type }` summary when the fetched entity is linked, omitted entirely when it isn't. Schema/plumbing groundwork only — stat-block data itself (AC/HP/traits/etc.), templates, and image rendering are later `M-STATBLOCK` tickets (`G-036`).
+
 ### Added — T-165
 
 - **`board.list` gains `branch` and `scopeExcerpt` fields.** `parseTicketFile` now also extracts each ticket file's `Branch:` field (same `matchField` pattern as `Priority`/`Complexity tier`) and a `scopeExcerpt` — the `Scope:` field's value, truncated to 160 characters at the nearest word boundary with a trailing `…`, `null` for a ticket file with no `Scope:` (gate-stubs, or a ticket predating the field). No router or caching changes — this is the data `T-158`'s (still-blocked) `/board` ticket-details modal needs, which `T-157` didn't return.

@@ -444,25 +444,60 @@ export const entityService = {
 			dmNotes?: string;
 			sourceId?: string;
 			attributes?: Record<string, unknown>;
+			linkedEntityId?: string;
 		},
 	) {
-		const rows = await db
-			.insert(entities)
-			.values({
-				campaignId: input.campaignId,
-				name: input.name,
-				type: input.type,
-				description: input.description ?? null,
-				// Never lore-seeded or auto-populated, unlike description — a plain
-				// passthrough (T-161, G-032).
-				dmNotes: input.dmNotes ?? null,
-				sourceId: input.sourceId ?? null,
-				attributes: input.attributes ?? {},
-			})
-			.returning();
-		const row = rows[0];
-		if (!row) throw new Error("Entity creation failed");
-		return row;
+		if (input.linkedEntityId === undefined) {
+			const rows = await db
+				.insert(entities)
+				.values({
+					campaignId: input.campaignId,
+					name: input.name,
+					type: input.type,
+					description: input.description ?? null,
+					// Never lore-seeded or auto-populated, unlike description — a plain
+					// passthrough (T-161, G-032).
+					dmNotes: input.dmNotes ?? null,
+					sourceId: input.sourceId ?? null,
+					attributes: input.attributes ?? {},
+				})
+				.returning();
+			const row = rows[0];
+			if (!row) throw new Error("Entity creation failed");
+			return row;
+		}
+
+		// Symmetric npc<->monster (or any pair) link (T-171, G-036): validate the
+		// target is in the same campaign, then set both sides' linkedEntityId
+		// inside one transaction so a reader fetching either entity independently
+		// always sees the pairing.
+		const linkedEntityId = input.linkedEntityId;
+		return db.transaction(async (tx) => {
+			await entityService.getById(tx, input.campaignId, linkedEntityId);
+
+			const rows = await tx
+				.insert(entities)
+				.values({
+					campaignId: input.campaignId,
+					name: input.name,
+					type: input.type,
+					description: input.description ?? null,
+					dmNotes: input.dmNotes ?? null,
+					sourceId: input.sourceId ?? null,
+					attributes: input.attributes ?? {},
+					linkedEntityId,
+				})
+				.returning();
+			const row = rows[0];
+			if (!row) throw new Error("Entity creation failed");
+
+			await tx
+				.update(entities)
+				.set({ linkedEntityId: row.id })
+				.where(eq(entities.id, linkedEntityId));
+
+			return row;
+		});
 	},
 
 	/**
@@ -482,6 +517,7 @@ export const entityService = {
 			type: string;
 			description?: string;
 			dmNotes?: string;
+			linkedEntityId?: string;
 			fetchFn?: FetchFn;
 		},
 	): Promise<{
@@ -536,6 +572,7 @@ export const entityService = {
 			description,
 			dmNotes: input.dmNotes,
 			attributes,
+			linkedEntityId: input.linkedEntityId,
 		});
 
 		return { entity, citations, confidence, seeded };
@@ -550,6 +587,7 @@ export const entityService = {
 			type?: string;
 			description?: string;
 			dmNotes?: string;
+			linkedEntityId?: string | null;
 		},
 	) {
 		const { id, campaignId, ...fields } = input;
@@ -559,6 +597,8 @@ export const entityService = {
 		if ("type" in fields) updateData.type = fields.type;
 		if ("description" in fields) updateData.description = fields.description;
 		if ("dmNotes" in fields) updateData.dmNotes = fields.dmNotes;
+		if ("linkedEntityId" in fields)
+			updateData.linkedEntityId = fields.linkedEntityId;
 
 		if (Object.keys(updateData).length === 0) {
 			const rows = await db
@@ -570,16 +610,56 @@ export const entityService = {
 			return row;
 		}
 
-		const rows = await db
-			.update(entities)
-			.set(updateData)
-			.where(and(eq(entities.id, id), eq(entities.campaignId, campaignId)))
-			.returning();
+		if (!("linkedEntityId" in fields)) {
+			const rows = await db
+				.update(entities)
+				.set(updateData)
+				.where(and(eq(entities.id, id), eq(entities.campaignId, campaignId)))
+				.returning();
 
-		if (rows.length === 0) {
-			throw new NotFoundError("Entity", id);
+			if (rows.length === 0) {
+				throw new NotFoundError("Entity", id);
+			}
+			return first(rows);
 		}
-		return first(rows);
+
+		// Symmetric link update (T-171, G-036): setting linkedEntityId links both
+		// sides in the same write; setting it to null clears both sides — look up
+		// the current value first so the other side's pointer can be cleared too.
+		const newLinkedEntityId = fields.linkedEntityId as string | null;
+		return db.transaction(async (tx) => {
+			const currentRows = await tx
+				.select()
+				.from(entities)
+				.where(and(eq(entities.id, id), eq(entities.campaignId, campaignId)));
+			const current = currentRows[0];
+			if (!current) throw new NotFoundError("Entity", id);
+
+			if (newLinkedEntityId !== null) {
+				await entityService.getById(tx, campaignId, newLinkedEntityId);
+			} else if (current.linkedEntityId) {
+				await tx
+					.update(entities)
+					.set({ linkedEntityId: null })
+					.where(eq(entities.id, current.linkedEntityId));
+			}
+
+			const rows = await tx
+				.update(entities)
+				.set(updateData)
+				.where(and(eq(entities.id, id), eq(entities.campaignId, campaignId)))
+				.returning();
+			const row = first(rows);
+
+			if (newLinkedEntityId !== null) {
+				await tx
+					.update(entities)
+					.set({ linkedEntityId: row.id })
+					.where(eq(entities.id, newLinkedEntityId));
+			}
+
+			return row;
+		});
 	},
 
 	async list(
@@ -600,7 +680,11 @@ export const entityService = {
 			);
 	},
 
-	async getById(db: Database, campaignId: string, entityId: string) {
+	async getById(
+		db: Database | Transaction,
+		campaignId: string,
+		entityId: string,
+	) {
 		const rows = await db
 			.select()
 			.from(entities)
