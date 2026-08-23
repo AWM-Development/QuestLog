@@ -1,3 +1,4 @@
+import { COMPLEXITY_TIERS, type ComplexityTier } from "@questlog/shared";
 import type { TrendRun } from "./types.js";
 
 export function runCost(run: TrendRun): number {
@@ -54,8 +55,6 @@ export interface TierStats {
 	runCount: number;
 }
 
-const TIERS = ["s", "m", "l"] as const;
-
 export function totalTokens(run: TrendRun): number {
 	return (
 		run.inputTokens +
@@ -65,12 +64,12 @@ export function totalTokens(run: TrendRun): number {
 	);
 }
 
-/** Per-tier (S/M/L) granularity row, per T-057's Scope. */
+/** Per-tier granularity row, one entry per `COMPLEXITY_TIERS` value. */
 export function perTierStats(
 	runs: TrendRun[],
-): Record<(typeof TIERS)[number], TierStats> {
-	const result = {} as Record<(typeof TIERS)[number], TierStats>;
-	for (const tier of TIERS) {
+): Record<ComplexityTier, TierStats> {
+	const result = {} as Record<ComplexityTier, TierStats>;
+	for (const tier of COMPLEXITY_TIERS) {
 		const tierRuns = runs.filter((r) => r.complexityTier === tier);
 		result[tier] = {
 			avgCost: average(tierRuns.map(runCost)),
@@ -83,7 +82,7 @@ export function perTierStats(
 
 export interface CostVsDiffPoint {
 	ticketId: string;
-	tier: "s" | "m" | "l" | null;
+	tier: ComplexityTier | null;
 	cost: number;
 	linesChanged: number;
 }

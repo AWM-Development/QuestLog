@@ -139,6 +139,20 @@ describe("perTierStats", () => {
 		const byTier = perTierStats(runs);
 		expect(byTier.s.runCount + byTier.m.runCount + byTier.l.runCount).toBe(0);
 	});
+
+	it("includes xs and d tiers, not just s/m/l — T-050's real rubric is five tiers", () => {
+		const runs = [
+			makeRun({ complexityTier: "xs", theoreticalCostStandardUsd: 0.5 }),
+			makeRun({ complexityTier: "d", theoreticalCostStandardUsd: 0.2 }),
+		];
+
+		const byTier = perTierStats(runs);
+
+		expect(byTier.xs.runCount).toBe(1);
+		expect(byTier.xs.avgCost).toBe(0.5);
+		expect(byTier.d.runCount).toBe(1);
+		expect(byTier.d.avgCost).toBe(0.2);
+	});
 });
 
 describe("costVsDiffPoints", () => {
