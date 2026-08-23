@@ -91,5 +91,8 @@ export const ADJUST_WEALTH_DESCRIPTION =
 export const LIST_INVENTORY_DESCRIPTION =
 	"List a campaign's inventory items and current wealth. Optionally filter items to one entity's owned items with ownerEntityId — omit it for the whole campaign (all owners plus unassigned). Returns items and wealth.";
 
+export const BORROW_ENTITY_DESCRIPTION =
+	"Copy an entity from one campaign into another as an independent new row (a one-time fork, not a live link — the copy never syncs back). Direct write — only ever inserts a new row, no preview/confirm needed. Copies name/type/description verbatim; dmNotes carries over with a provenance line appended noting where it was borrowed from; lore-seeding attributes are not copied, replaced instead with a structured borrowedFrom record. No lore chunks, inventory, or session links are copied — the entity row alone. Returns the newly created entity in the destination campaign.";
+
 export const HELP_DESCRIPTION =
 	"Call this if you're unsure where to start. Returns a summary of QuestLog's workflow: uploading campaign documents, tracking sessions, and querying lore.";
