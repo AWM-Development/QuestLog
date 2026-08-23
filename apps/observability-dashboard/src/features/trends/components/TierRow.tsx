@@ -1,4 +1,4 @@
-import { fmtCost, fmtTokens } from "../utils/format.js";
+import { formatCost, formatTokens } from "../utils/format.js";
 import type { TierStats } from "../utils/stats.js";
 
 interface TierRowProps {
@@ -18,11 +18,13 @@ export function TierRow({ byTier }: TierRowProps) {
 						<div className="stats">
 							<div>
 								<div className="mini-label">Avg Cost</div>
-								<div className="mini-value">{fmtCost(stats.avgCost)}</div>
+								<div className="mini-value">{formatCost(stats.avgCost)}</div>
 							</div>
 							<div>
 								<div className="mini-label">Avg Tokens</div>
-								<div className="mini-value">{fmtTokens(stats.avgTokens)}</div>
+								<div className="mini-value">
+									{formatTokens(stats.avgTokens)}
+								</div>
 							</div>
 							<div>
 								<div className="mini-label">Runs</div>

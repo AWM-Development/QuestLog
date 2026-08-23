@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { fmtCost, fmtDuration, fmtTokens, fmtTurns } from "../utils/format.js";
+import {
+	formatCost,
+	formatDuration,
+	formatTokens,
+	formatTurns,
+} from "../utils/format.js";
 import { runCost, totalTokens } from "../utils/stats.js";
 import type { TrendRun } from "../utils/types.js";
 import { DrillDownGridRow } from "./DrillDownGridRow.js";
@@ -9,9 +14,9 @@ function DrillDownRow({ run }: { run: TrendRun }) {
 	if (!run.ticketId) return null; // non-empty rows always carry a ticketId
 	// Computed once and reused below in both the summary row and the
 	// expanded detail, rather than re-derived from the same `run` twice.
-	const cost = fmtCost(runCost(run));
-	const duration = fmtDuration(run.durationMs);
-	const tokens = fmtTokens(totalTokens(run));
+	const cost = formatCost(runCost(run));
+	const duration = formatDuration(run.durationMs);
+	const tokens = formatTokens(totalTokens(run));
 
 	return (
 		<div>
@@ -41,7 +46,7 @@ function DrillDownRow({ run }: { run: TrendRun }) {
 					<div className="num">{tokens}</div>
 					<div className="num">{duration}</div>
 					<div className="num">
-						{run.turnsToGreen !== null ? fmtTurns(run.turnsToGreen) : "—"}
+						{run.turnsToGreen !== null ? formatTurns(run.turnsToGreen) : "—"}
 					</div>
 					<div className="num">—</div>
 					<div style={{ textAlign: "right", color: "var(--text-muted)" }}>

@@ -1,4 +1,4 @@
-import { fmtCost, fmtTurns } from "../utils/format.js";
+import { formatCost, formatTurns } from "../utils/format.js";
 import type { AggregateStats } from "../utils/stats.js";
 
 interface StatTilesProps {
@@ -7,12 +7,16 @@ interface StatTilesProps {
 
 export function StatTiles({ stats }: StatTilesProps) {
 	const tiles = [
-		{ label: "Avg Cost / Ticket", value: fmtCost(stats.avgCost), accent: true },
-		{ label: "Median Cost / Ticket", value: fmtCost(stats.medianCost) },
-		{ label: "Avg Turns to Green", value: fmtTurns(stats.avgTurnsToGreen) },
+		{
+			label: "Avg Cost / Ticket",
+			value: formatCost(stats.avgCost),
+			accent: true,
+		},
+		{ label: "Median Cost / Ticket", value: formatCost(stats.medianCost) },
+		{ label: "Avg Turns to Green", value: formatTurns(stats.avgTurnsToGreen) },
 		{
 			label: "Total System Cost",
-			value: fmtCost(stats.totalSystemCost),
+			value: formatCost(stats.totalSystemCost),
 			accent: true,
 		},
 	];

@@ -88,11 +88,7 @@ export interface CostVsDiffPoint {
 	linesChanged: number;
 }
 
-/**
- * One point per run with diff-stat data (`linesAdded`/`linesRemoved`, T-055's
- * sync). Runs ingested before diff-stat sync landed carry `null` here — drop
- * them rather than plotting a fake zero, which would skew the fit line.
- */
+/** Drops runs with no diff-stat data yet, rather than plotting a fake zero. */
 export function costVsDiffPoints(runs: TrendRun[]): CostVsDiffPoint[] {
 	return runs
 		.filter((r) => r.linesAdded !== null && r.linesRemoved !== null)

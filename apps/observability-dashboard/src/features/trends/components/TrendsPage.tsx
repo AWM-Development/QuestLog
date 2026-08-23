@@ -21,7 +21,7 @@ export function TrendsPage() {
 	});
 
 	const runs = (data ?? []) as TrendRun[];
-	const nonEmptyRuns = runs.filter((r) => !r.emptyRun);
+	const runsWithTickets = runs.filter((r) => !r.emptyRun);
 
 	return (
 		<div className="page-body">
@@ -31,11 +31,11 @@ export function TrendsPage() {
 				excludeEmpty={excludeEmpty}
 				onToggleExcludeEmpty={() => setExcludeEmpty((v) => !v)}
 			/>
-			<StatTiles stats={aggregateStats(nonEmptyRuns)} />
-			<TierRow byTier={perTierStats(nonEmptyRuns)} />
+			<StatTiles stats={aggregateStats(runsWithTickets)} />
+			<TierRow byTier={perTierStats(runsWithTickets)} />
 			<div className="chart-grid">
-				<TokensChart runs={nonEmptyRuns} />
-				<CostScatterChart runs={nonEmptyRuns} />
+				<TokensChart runs={runsWithTickets} />
+				<CostScatterChart runs={runsWithTickets} />
 			</div>
 			<DrillDown runs={runs} />
 		</div>

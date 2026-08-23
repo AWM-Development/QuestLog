@@ -34,7 +34,7 @@ export function TokensChart({ runs }: TokensChartProps) {
 		<div className="panel">
 			<div className="section-title">Tokens Per Run</div>
 			<div className="section-sub">
-				Input / output / cache-write / cache-read, most recent runs
+				input / output / cache-write / cache-read, most recent runs
 			</div>
 			<ResponsiveContainer width="100%" height={200}>
 				<BarChart data={data}>
