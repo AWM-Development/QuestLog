@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { fmtCost, fmtDuration, fmtTokens, fmtTurns } from "../lib/format.js";
-import { runCost, totalTokens } from "../lib/stats.js";
-import type { TrendRun } from "../lib/types.js";
+import { fmtCost, fmtDuration, fmtTokens, fmtTurns } from "../utils/format.js";
+import { runCost, totalTokens } from "../utils/stats.js";
+import type { TrendRun } from "../utils/types.js";
 import { DrillDownGridRow } from "./DrillDownGridRow.js";
 
 function DrillDownRow({ run }: { run: TrendRun }) {

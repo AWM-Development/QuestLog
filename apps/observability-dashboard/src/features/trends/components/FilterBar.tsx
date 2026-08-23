@@ -1,4 +1,4 @@
-import type { TrendsRange } from "../lib/range.js";
+import type { TrendsRange } from "../utils/range.js";
 
 interface FilterBarProps {
 	range: TrendsRange;

@@ -10,8 +10,8 @@ import {
 	YAxis,
 	ZAxis,
 } from "recharts";
-import { costVsDiffPoints, fitLine } from "../lib/stats.js";
-import type { TrendRun } from "../lib/types.js";
+import { costVsDiffPoints, fitLine } from "../utils/stats.js";
+import type { TrendRun } from "../utils/types.js";
 
 interface CostScatterChartProps {
 	runs: TrendRun[];

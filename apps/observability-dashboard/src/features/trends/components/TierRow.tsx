@@ -1,5 +1,5 @@
-import { fmtCost, fmtTokens } from "../lib/format.js";
-import type { TierStats } from "../lib/stats.js";
+import { fmtCost, fmtTokens } from "../utils/format.js";
+import type { TierStats } from "../utils/stats.js";
 
 interface TierRowProps {
 	byTier: Record<"s" | "m" | "l", TierStats>;

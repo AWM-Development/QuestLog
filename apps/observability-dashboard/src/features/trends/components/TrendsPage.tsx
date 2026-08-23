@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { trpc } from "../../../lib/trpc.js";
-import { type TrendsRange, rangeToDateFilter } from "../lib/range.js";
-import { aggregateStats, perTierStats } from "../lib/stats.js";
-import type { TrendRun } from "../lib/types.js";
+import { type TrendsRange, rangeToDateFilter } from "../utils/range.js";
+import { aggregateStats, perTierStats } from "../utils/stats.js";
+import type { TrendRun } from "../utils/types.js";
 import { CostScatterChart } from "./CostScatterChart.js";
 import { DrillDown } from "./DrillDown.js";
 import { FilterBar } from "./FilterBar.js";

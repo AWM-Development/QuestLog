@@ -7,7 +7,7 @@ import {
 	XAxis,
 	YAxis,
 } from "recharts";
-import type { TrendRun } from "../lib/types.js";
+import type { TrendRun } from "../utils/types.js";
 
 interface TokensChartProps {
 	runs: TrendRun[];

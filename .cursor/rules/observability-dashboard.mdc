@@ -25,10 +25,14 @@ files) stays flat in `src/features/<name>/`. Once a feature grows past
 that — `src/features/trends/` crossed it at 17 files, mixing 8 components
 with 4 non-component logic modules (`format.ts`/`range.ts`/`stats.ts`/
 `types.ts`) plus their tests — split it into `components/` (everything
-rendering JSX) and `lib/` (pure types/functions the components consume,
-no JSX). There's no fixed file-count threshold; the signal is a flat
-listing no longer being scannable at a glance, the same reasoning
-`apps/web`'s own subfolder split exists for.
+rendering JSX) and `utils/` (pure types/functions the components consume,
+no JSX). Named `utils/`, not `lib/`, deliberately: `src/lib/` already
+exists one level up as this app's cross-feature infra folder (`trpc.ts`,
+mirroring `apps/web/src/lib/`) — a same-named `lib/` nested inside a
+feature would mean two different things sharing one name at different
+depths. There's no fixed file-count threshold for when to split; the
+signal is a flat listing no longer being scannable at a glance, the same
+reasoning `apps/web`'s own subfolder split exists for.
 
 ## Styling: real CSS classes for anything the mockup already named
 
