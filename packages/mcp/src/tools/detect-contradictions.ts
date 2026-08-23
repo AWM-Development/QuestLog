@@ -1,5 +1,4 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { NotFoundError } from "@questlog/core/lib/errors.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
 import { continuityService } from "@questlog/core/services/continuity.service.js";
 import { sessionService } from "@questlog/core/services/session.service.js";
@@ -47,13 +46,11 @@ export function registerDetectContradictions(
 				);
 				text = sourceText(source);
 			} else if (sessionId) {
-				const session = await sessionService.getById(db, sessionId);
-				// sessionService.getById takes a bare id (T-068 has no
-				// campaign-scoped variant for it yet) — validate ownership here,
-				// same pattern ingest-text.ts uses for a resumed sourceId.
-				if (session.campaignId !== campaignId) {
-					throw new NotFoundError("Session", sessionId);
-				}
+				const session = await sessionService.getByIdForCampaign(
+					db,
+					campaignId,
+					sessionId,
+				);
 				text = session.content;
 			} else {
 				const [recentSource] = await sourceService.listByCampaign(

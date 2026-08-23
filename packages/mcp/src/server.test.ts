@@ -4058,6 +4058,62 @@ describe("detect_contradictions tool (T-164)", () => {
 		const payload = JSON.parse(content[0]?.text ?? "{}");
 		expect(payload.error.code).toBe("NOT_FOUND");
 	});
+
+	it("rejects/404s on a sourceId owned by a different campaign (T-068 scoping)", async () => {
+		const otherCampaign = await campaignService.create(db, {
+			name: "Other Campaign",
+			theme: "sci-fi",
+		});
+		const [otherSource] = await db
+			.insert(sources)
+			.values({
+				campaignId: otherCampaign.id,
+				name: "Not yours",
+				type: "paste",
+				status: "done",
+				metadata: { extractedText: "Some other campaign's text." },
+			})
+			.returning();
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "detect_contradictions",
+			arguments: { campaignId, sourceId: otherSource?.id },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+
+		await deleteCampaignTree(db, otherCampaign.id);
+	});
+
+	it("rejects/404s on a sessionId owned by a different campaign (T-068 scoping)", async () => {
+		const otherCampaign = await campaignService.create(db, {
+			name: "Other Campaign",
+			theme: "sci-fi",
+		});
+		const otherSession = await sessionService.create(db, {
+			campaignId: otherCampaign.id,
+			content: "Some other campaign's session.",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "detect_contradictions",
+			arguments: { campaignId, sessionId: otherSession.id },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+
+		await deleteCampaignTree(db, otherCampaign.id);
+	});
 });
 
 describe("global-setup DB truncation wiring (T-052)", () => {
