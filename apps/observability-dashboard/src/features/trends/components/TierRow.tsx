@@ -1,16 +1,15 @@
+import { COMPLEXITY_TIERS, type ComplexityTier } from "@questlog/shared";
 import { formatCost, formatTokens } from "../utils/format.js";
 import type { TierStats } from "../utils/stats.js";
 
 interface TierRowProps {
-	byTier: Record<"s" | "m" | "l", TierStats>;
+	byTier: Record<ComplexityTier, TierStats>;
 }
-
-const TIER_ORDER = ["s", "m", "l"] as const;
 
 export function TierRow({ byTier }: TierRowProps) {
 	return (
 		<div className="tier-row">
-			{TIER_ORDER.map((tier) => {
+			{COMPLEXITY_TIERS.map((tier) => {
 				const stats = byTier[tier];
 				return (
 					<div key={tier} className="tier-tile">

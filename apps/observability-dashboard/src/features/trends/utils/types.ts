@@ -1,3 +1,5 @@
+import type { ComplexityTier } from "@questlog/shared";
+
 /**
  * Client-side shape of a `ticket_runs` row as returned by the
  * `observability.trends` tRPC query — mirrors
@@ -8,7 +10,7 @@
  */
 export interface TrendRun {
 	ticketId: string | null;
-	complexityTier: "s" | "m" | "l" | null;
+	complexityTier: ComplexityTier | null;
 	appliesRate: "intro" | "standard";
 	theoreticalCostIntroUsd: number;
 	theoreticalCostStandardUsd: number;
