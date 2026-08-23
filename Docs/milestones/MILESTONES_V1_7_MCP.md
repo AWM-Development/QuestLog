@@ -49,7 +49,7 @@ None — closed with no tickets drafted.
 ### Tasks
 
 - [x] Continuity contradiction-detection service — LLM pass over recent entities/sessions, confidence-gated (T-163)
-- [ ] Continuity detection tool surface — ingest wiring + on-demand `detect_contradictions` tool (T-164)
+- [x] Continuity detection tool surface — ingest wiring + on-demand `detect_contradictions` tool (T-164)
 
 ---
 

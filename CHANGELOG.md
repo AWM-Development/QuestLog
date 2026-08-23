@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-164
+
+- **Continuity contradiction detection surfaced on ingest and on-demand.** `ingest_text` now runs `continuityService.detectContradictions` (`T-163`) against the freshly-ingested text alongside its existing entity-candidate detection, returning a new `contradictionCandidates` array in its response (empty when nothing conflicts, same non-blocking/best-effort shape as `entityCandidates`). A new `detect_contradictions` MCP tool checks recent content on demand — pass `sourceId` or `sessionId` to scope the check, or omit both to check the campaign's most recent source and session content. No preview/confirm plumbing; the DM triages candidates via plain conversation with the calling model and applies real fixes through the existing `correct_lore`/`confirm_correct_lore` flow, unchanged (`G-031`'s resolution). Completes `M-CONTINUITY`.
+
 ### Fixed — T-179
 
 - **Ticket-board `Scope:` excerpt no longer truncates on a hard-wrapped false-positive line.** `parseTicketFile`'s field parsing is unified into one `parseAllFields` pass over an explicit allowlist of `TICKET_SPEC.md`'s actual top-level field names, replacing the old shape-based boundary heuristic (`/^[A-Z][\w /-]*:/`) that could mistake a hard-wrapped `Scope:` prose line like "Note: fall back to null." for the start of the next field and silently cut the excerpt short. No behavior change for any existing field — same output for `Priority`/`Complexity tier`/`Blocked on`/`Gated on`/`Branch`/`Scope` on every well-formed ticket file, verified by the full existing fixture suite.
