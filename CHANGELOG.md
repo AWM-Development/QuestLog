@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-163
+
+- **Continuity contradiction-detection service.** New `continuityService.detectContradictions` (`packages/core/src/services/continuity.service.ts`) checks new document text against the existing lore of any entity it names, and returns confidence-gated `ContradictionCandidate`s for real factual contradictions (e.g. an NPC described as dead in existing lore but referenced as alive in the new text). Mirrors `entityService.detectCandidates`'s shape: reuses `detectSpans`'s existing-entity matching, one `callClaudeStructured` call per document (not per entity), threshold `CONTRADICTION_CONFIDENCE_THRESHOLD = 0.6` (moderate tolerance per `G-031`'s resolution). Service-layer only — no MCP tool surface yet, no wiring into `ingest_text` or `correct_lore`; that's `T-164`.
+
 ### Added — T-165
 
 - **`board.list` gains `branch` and `scopeExcerpt` fields.** `parseTicketFile` now also extracts each ticket file's `Branch:` field (same `matchField` pattern as `Priority`/`Complexity tier`) and a `scopeExcerpt` — the `Scope:` field's value, truncated to 160 characters at the nearest word boundary with a trailing `…`, `null` for a ticket file with no `Scope:` (gate-stubs, or a ticket predating the field). No router or caching changes — this is the data `T-158`'s (still-blocked) `/board` ticket-details modal needs, which `T-157` didn't return.
