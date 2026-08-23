@@ -6,7 +6,7 @@ Complexity tier: S
 
 Strategy-gate flag: no
 
-Priority: P2
+Priority: P0
 
 Branch: feat/m-obs/t-179-unify-ticket-field-parsing
 
