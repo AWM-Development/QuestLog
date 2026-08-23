@@ -113,6 +113,11 @@ a {
 	letter-spacing: 0.02em;
 	text-transform: uppercase;
 }
+/* Hand-synced with utils/tierColors.ts's TIER_COLOR. */
+.tag-tier-xs {
+	background: rgba(64, 216, 160, 0.1);
+	color: var(--status-success);
+}
 .tag-tier-s {
 	background: rgba(96, 184, 255, 0.1);
 	color: var(--status-info);
@@ -124,6 +129,10 @@ a {
 .tag-tier-l {
 	background: rgba(220, 96, 96, 0.1);
 	color: var(--status-error);
+}
+.tag-tier-d {
+	background: rgba(138, 164, 180, 0.1);
+	color: var(--text-secondary);
 }
 
 .panel {
@@ -215,7 +224,9 @@ a {
 
 .tier-row {
 	display: grid;
-	grid-template-columns: repeat(3, 1fr);
+	/* 5 tiers (XS/S/M/L/D, T-050) — the mockup only ever designed for 3
+	   (S/M/L), so this is a new call, not a value carried over. */
+	grid-template-columns: repeat(5, 1fr);
 	gap: var(--space-3);
 	margin-bottom: var(--space-6);
 }
