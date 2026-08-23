@@ -2935,6 +2935,86 @@ describe("ingest_text + get_source_status tools", () => {
 
 		await waitForStatus(payload.source.id, "done");
 	});
+
+	it("includes a non-empty contradictionCandidates array when the ingested text conflicts with existing entity lore (T-164)", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Lord Varen",
+			type: "npc",
+			description: "Lord Varen is deceased, killed at the Siege of Korth.",
+		});
+		const contradictionLlmService: Pick<LlmService, "callClaudeStructured"> = {
+			callClaudeStructured: vi
+				.fn()
+				.mockImplementation(async ({ schemaName }) => {
+					if (schemaName === "report_contradictions") {
+						return {
+							data: {
+								contradictions: [
+									{
+										entityId: entity.id,
+										newClaimExcerpt:
+											"Lord Varen greeted the party at the gate.",
+										existingClaimExcerpt:
+											"Lord Varen is deceased, killed at the Siege of Korth.",
+										confidence: 0.9,
+									},
+								],
+							},
+							usage: { inputTokens: 0, outputTokens: 0 },
+						};
+					}
+					return {
+						data: { candidates: [] },
+						usage: { inputTokens: 0, outputTokens: 0 },
+					};
+				}),
+		};
+		const client = await connectedClient(
+			createMockFetch(basisVector(0)),
+			contradictionLlmService,
+		);
+
+		const result = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Ashfall Primer",
+				content: "Lord Varen greeted the party at the gate.",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.contradictionCandidates).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ entityId: entity.id, confidence: 0.9 }),
+			]),
+		);
+
+		await waitForStatus(payload.source.id, "done");
+	});
+
+	it("returns an empty contradictionCandidates array when nothing conflicts", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Ashfall Primer",
+				content: "The party rests at the Ashfall inn.",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.contradictionCandidates).toEqual([]);
+
+		await waitForStatus(payload.source.id, "done");
+	});
 });
 
 describe("list_sources tool", () => {
@@ -3766,6 +3846,217 @@ describe("get_chunk_history tool (T-152)", () => {
 		expect(result.isError).toBeFalsy();
 		const content = result.content as Array<{ type: string; text: string }>;
 		expect(JSON.parse(content[0]?.text ?? "null")).toEqual([]);
+	});
+});
+
+describe("detect_contradictions tool (T-164)", () => {
+	// Mirrors continuity.service.test.ts's own mock — the tool layer's
+	// contract with the LLM is unchanged by wiring, only who calls it.
+	function createContradictionLlmService(
+		contradictions: Array<{
+			entityId: string;
+			newClaimExcerpt: string;
+			existingClaimExcerpt: string;
+			confidence: number;
+		}>,
+	): Pick<LlmService, "callClaudeStructured"> {
+		return {
+			callClaudeStructured: vi.fn().mockResolvedValue({
+				data: { contradictions },
+				usage: { inputTokens: 0, outputTokens: 0 },
+			}),
+		};
+	}
+
+	let campaignId: string;
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, campaignId);
+	});
+
+	it("returns a candidate detected in the scoped source (sourceId)", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Lord Varen",
+			type: "npc",
+			description: "Lord Varen is deceased, killed at the Siege of Korth.",
+		});
+		const [source] = await db
+			.insert(sources)
+			.values({
+				campaignId,
+				name: "Session 4 recap",
+				type: "paste",
+				status: "done",
+				metadata: {
+					extractedText: "Lord Varen greeted the party at the gate.",
+				},
+			})
+			.returning();
+
+		const llmService = createContradictionLlmService([
+			{
+				entityId: entity.id,
+				newClaimExcerpt: "Lord Varen greeted the party at the gate.",
+				existingClaimExcerpt:
+					"Lord Varen is deceased, killed at the Siege of Korth.",
+				confidence: 0.9,
+			},
+		]);
+		const client = await connectedClient(
+			createMockFetch(basisVector(0)),
+			llmService,
+		);
+
+		const result = await client.callTool({
+			name: "detect_contradictions",
+			arguments: { campaignId, sourceId: source?.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.candidates).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ entityId: entity.id, confidence: 0.9 }),
+			]),
+		);
+	});
+
+	it("returns a candidate detected in the scoped session (sessionId)", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Lord Varen",
+			type: "npc",
+			description: "Lord Varen is deceased, killed at the Siege of Korth.",
+		});
+		const session = await sessionService.create(db, {
+			campaignId,
+			content: "Lord Varen greeted the party at the gate.",
+		});
+
+		const llmService = createContradictionLlmService([
+			{
+				entityId: entity.id,
+				newClaimExcerpt: "Lord Varen greeted the party at the gate.",
+				existingClaimExcerpt:
+					"Lord Varen is deceased, killed at the Siege of Korth.",
+				confidence: 0.9,
+			},
+		]);
+		const client = await connectedClient(
+			createMockFetch(basisVector(0)),
+			llmService,
+		);
+
+		const result = await client.callTool({
+			name: "detect_contradictions",
+			arguments: { campaignId, sessionId: session.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.candidates).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ entityId: entity.id, confidence: 0.9 }),
+			]),
+		);
+	});
+
+	it("checks the most recent source and session when no scope is given", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Lord Varen",
+			type: "npc",
+			description: "Lord Varen is deceased, killed at the Siege of Korth.",
+		});
+		await db.insert(sources).values({
+			campaignId,
+			name: "Older recap",
+			type: "paste",
+			status: "done",
+			metadata: { extractedText: "Nothing notable happened." },
+		});
+		await db.insert(sources).values({
+			campaignId,
+			name: "Latest recap",
+			type: "paste",
+			status: "done",
+			metadata: {
+				extractedText: "Lord Varen greeted the party at the gate.",
+			},
+		});
+
+		const llmService = createContradictionLlmService([
+			{
+				entityId: entity.id,
+				newClaimExcerpt: "Lord Varen greeted the party at the gate.",
+				existingClaimExcerpt:
+					"Lord Varen is deceased, killed at the Siege of Korth.",
+				confidence: 0.9,
+			},
+		]);
+		const client = await connectedClient(
+			createMockFetch(basisVector(0)),
+			llmService,
+		);
+
+		const result = await client.callTool({
+			name: "detect_contradictions",
+			arguments: { campaignId },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.candidates).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ entityId: entity.id, confidence: 0.9 }),
+			]),
+		);
+	});
+
+	it("returns an empty candidates array for a campaign with no contradictions", async () => {
+		const llmService = createContradictionLlmService([]);
+		const client = await connectedClient(
+			createMockFetch(basisVector(0)),
+			llmService,
+		);
+
+		const result = await client.callTool({
+			name: "detect_contradictions",
+			arguments: { campaignId },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.candidates).toEqual([]);
+	});
+
+	it("rejects/404s on a campaignId the caller doesn't own (T-068 scoping)", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const unknownCampaignId = "00000000-0000-0000-0000-000000000000";
+
+		const result = await client.callTool({
+			name: "detect_contradictions",
+			arguments: { campaignId: unknownCampaignId },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
 	});
 });
 

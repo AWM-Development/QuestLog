@@ -77,3 +77,15 @@ export const GetChunkHistoryInput = z.object({
 	chunkId: z.string().uuid(),
 });
 export type GetChunkHistoryInput = z.infer<typeof GetChunkHistoryInput>;
+
+export const DetectContradictionsInput = z.object({
+	campaignId: z.string().uuid(),
+	// At most one of these narrows the scope to one source/session's text;
+	// sourceId takes precedence if both are given. Omitting both runs
+	// against the campaign's most recent source and session content.
+	sourceId: z.string().uuid().optional(),
+	sessionId: z.string().uuid().optional(),
+});
+export type DetectContradictionsInput = z.infer<
+	typeof DetectContradictionsInput
+>;
