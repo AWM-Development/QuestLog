@@ -18,47 +18,11 @@ export function StatTiles({ stats }: StatTilesProps) {
 	];
 
 	return (
-		<div
-			className="stat-row"
-			style={{
-				display: "grid",
-				gridTemplateColumns: "repeat(4, 1fr)",
-				gap: "var(--space-3)",
-				marginBottom: "var(--space-3)",
-			}}
-		>
+		<div className="stat-row">
 			{tiles.map((tile) => (
-				<div
-					key={tile.label}
-					className="stat-tile"
-					style={{
-						background: "var(--bg-elevated)",
-						border: "0.5px solid var(--border)",
-						borderRadius: "var(--r-md)",
-						padding: "var(--space-3-5)",
-					}}
-				>
-					<div
-						className="label"
-						style={{
-							fontSize: "10px",
-							color: "var(--text-muted)",
-							textTransform: "uppercase",
-							letterSpacing: "0.04em",
-							marginBottom: "4px",
-						}}
-					>
-						{tile.label}
-					</div>
-					<div
-						className="value"
-						style={{
-							fontFamily: "var(--font-mono)",
-							fontSize: "20px",
-							fontWeight: 500,
-							color: tile.accent ? "var(--accent)" : "var(--text-primary)",
-						}}
-					>
+				<div key={tile.label} className="stat-tile">
+					<div className="label">{tile.label}</div>
+					<div className={`value${tile.accent ? " accent" : ""}`}>
 						{tile.value}
 					</div>
 				</div>

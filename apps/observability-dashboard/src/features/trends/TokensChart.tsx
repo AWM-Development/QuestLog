@@ -56,21 +56,10 @@ export function TokensChart({ runs }: TokensChartProps) {
 					))}
 				</BarChart>
 			</ResponsiveContainer>
-			<div className="legend" style={legendStyle}>
+			<div className="legend">
 				{SEGMENTS.map((seg) => (
 					<span key={seg.key}>
-						<span
-							className="swatch"
-							style={{
-								display: "inline-block",
-								width: 8,
-								height: 8,
-								borderRadius: 2,
-								marginRight: 4,
-								verticalAlign: "middle",
-								background: seg.color,
-							}}
-						/>
+						<span className="swatch" style={{ background: seg.color }} />
 						{seg.label}
 					</span>
 				))}
@@ -78,12 +67,3 @@ export function TokensChart({ runs }: TokensChartProps) {
 		</div>
 	);
 }
-
-const legendStyle = {
-	display: "flex",
-	gap: "var(--space-3)",
-	flexWrap: "wrap" as const,
-	marginTop: "var(--space-3)",
-	fontSize: "10px",
-	color: "var(--text-muted)",
-};

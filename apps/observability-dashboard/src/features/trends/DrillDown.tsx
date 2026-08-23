@@ -26,11 +26,7 @@ function DrillDownRow({ run }: { run: TrendRun }) {
 					cursor: "pointer",
 				}}
 			>
-				<DrillDownGridRow
-					data-testid="dd-row"
-					className="dd-row-summary"
-					style={{ padding: "var(--space-2) var(--space-3)", fontSize: "12px" }}
-				>
+				<DrillDownGridRow data-testid="dd-row" className="dd-row-summary">
 					<div>
 						<span className="mono">{run.ticketId}</span>
 					</div>
@@ -54,18 +50,7 @@ function DrillDownRow({ run }: { run: TrendRun }) {
 				</DrillDownGridRow>
 			</button>
 			{expanded ? (
-				<div
-					data-testid={`dd-detail-${run.ticketId}`}
-					className="expand-body"
-					style={{
-						background: "var(--bg-focal)",
-						borderRadius: "var(--r-md)",
-						padding: "var(--space-3)",
-						margin: "var(--space-2) var(--space-3) var(--space-3)",
-						fontSize: "12px",
-						color: "var(--text-secondary)",
-					}}
-				>
+				<div data-testid={`dd-detail-${run.ticketId}`} className="expand-body">
 					Duration: {duration} · Cost: {cost} · Tokens: {tokens}
 				</div>
 			) : null}
@@ -89,17 +74,7 @@ export function DrillDown({ runs }: DrillDownProps) {
 			<div className="section-sub">
 				Click a row to expand full metrics for that run
 			</div>
-			<DrillDownGridRow
-				data-testid="dd-header"
-				className="dd-header"
-				style={{
-					color: "var(--text-muted)",
-					fontWeight: 500,
-					fontSize: "11px",
-					padding: "var(--space-2) var(--space-3)",
-					borderBottom: "0.5px solid var(--border)",
-				}}
-			>
+			<DrillDownGridRow data-testid="dd-header" className="dd-header">
 				<div>Ticket</div>
 				<div>Tier</div>
 				<div className="num">Cost</div>
@@ -116,12 +91,6 @@ export function DrillDown({ runs }: DrillDownProps) {
 							// createdAt, not a shared literal — multiple empty runs in one range would otherwise collapse to a single React element.
 							key={`empty-${String(run.createdAt)}`}
 							className="empty-row"
-							style={{
-								color: "var(--text-dim)",
-								fontStyle: "italic",
-								padding: "var(--space-2) var(--space-3)",
-								fontSize: "12px",
-							}}
 						>
 							No ticket picked up — empty_run: true (filtered out by default,
 							toggle "Exclude Empty Runs" off to include)

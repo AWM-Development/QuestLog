@@ -33,15 +33,7 @@ export function TrendsPage() {
 			/>
 			<StatTiles stats={aggregateStats(nonEmptyRuns)} />
 			<TierRow byTier={perTierStats(nonEmptyRuns)} />
-			<div
-				className="chart-grid"
-				style={{
-					display: "grid",
-					gridTemplateColumns: "1.3fr 1fr",
-					gap: "var(--space-4)",
-					marginBottom: "var(--space-4)",
-				}}
-			>
+			<div className="chart-grid">
 				<TokensChart runs={nonEmptyRuns} />
 				<CostScatterChart runs={nonEmptyRuns} />
 			</div>

@@ -20,16 +20,7 @@ export function FilterBar({
 	onToggleExcludeEmpty,
 }: FilterBarProps) {
 	return (
-		<div
-			className="filter-bar"
-			style={{
-				display: "flex",
-				alignItems: "center",
-				gap: "var(--space-2)",
-				marginBottom: "var(--space-5)",
-				flexWrap: "wrap",
-			}}
-		>
+		<div className="filter-bar">
 			{RANGE_OPTIONS.map((opt) => (
 				<button
 					key={opt.value}
@@ -40,7 +31,7 @@ export function FilterBar({
 					{opt.label}
 				</button>
 			))}
-			<div style={{ flex: 1 }} />
+			<div className="spacer" />
 			<button
 				type="button"
 				className={`btn-secondary${excludeEmpty ? " on" : ""}`}
