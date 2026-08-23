@@ -49,6 +49,8 @@ describe("board router", () => {
 					complexityTier: "S",
 					blockedOn: null,
 					gatedOn: null,
+					branch: "feat/m-test/t-100-example",
+					scopeExcerpt: "does a thing.",
 					status: "queue",
 					path: "Docs/tickets/queue/T-100-example.md",
 				},
