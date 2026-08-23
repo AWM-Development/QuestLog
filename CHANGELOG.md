@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-173
+
+- **Saved encounters: schema + manual `save_encounter` path.** New campaign-scoped `encounters`/`encounter_members` tables (mirroring `inventoryItems`'s shape — an `(entityId, count)` pair per roster row, e.g. "goblin x 2" is one row, not two) and a new `encounter.service.ts` (`save`/`list`/`getById`). Three new MCP tools: `save_encounter` (direct write, additive-only — no preview/confirm), `list_encounters` (member-count summary), `get_encounter` (full roster, each member resolved to `{ entityId, name, type, count }`). A DM can hand-assemble a roster via `get_entity`/`list_entities` and persist it directly, no LLM step required — natural-language generation is `T-174`, built on top of this.
+
 ### Fixed — T-179
 
 - **Ticket-board `Scope:` excerpt no longer truncates on a hard-wrapped false-positive line.** `parseTicketFile`'s field parsing is unified into one `parseAllFields` pass over an explicit allowlist of `TICKET_SPEC.md`'s actual top-level field names, replacing the old shape-based boundary heuristic (`/^[A-Z][\w /-]*:/`) that could mistake a hard-wrapped `Scope:` prose line like "Note: fall back to null." for the start of the next field and silently cut the excerpt short. No behavior change for any existing field — same output for `Priority`/`Complexity tier`/`Blocked on`/`Gated on`/`Branch`/`Scope` on every well-formed ticket file, verified by the full existing fixture suite.
