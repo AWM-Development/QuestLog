@@ -1,0 +1,329 @@
+/* QuestLog Pipeline Observatory — shared tokens + chrome.
+   Base tokens (depth planes, text/border/status colors, default accent,
+   typography, spacing, radius) come from @questlog/shared's
+   design-tokens.css — the same file apps/web imports — rather than a
+   second hand-maintained copy; see that file's own header for exactly
+   what it does and doesn't cover. Chrome/panel/tag/button rules below are
+   carried over from Docs/mockups/observability-dashboard/shared.css
+   (read-only reference, never edited) per Docs/DESIGN_SYSTEM.md
+   §2-5,7.7,7.8 — entity-color system and mascot are deliberately not
+   reused here, this is ops tooling for Alex, not the campaign-content
+   product (see mockup NOTES.md). */
+@import "@questlog/shared/styles/design-tokens.css";
+
+:root {
+	--hover-overlay: rgba(208, 228, 240, 0.02);
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: var(--bg-void);
+	color: var(--text-primary);
+	font-family: var(--font-body);
+	font-size: 14px;
+	line-height: 1.6;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.chrome-header {
+	background: var(--bg-surface);
+	border-bottom: 0.5px solid var(--border);
+	padding: var(--space-4) var(--space-6);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.chrome-title {
+	font-family: var(--font-display);
+	font-weight: 600;
+	font-size: 20px;
+	color: var(--text-primary);
+}
+.chrome-title .sub {
+	font-family: var(--font-body);
+	font-size: 11px;
+	color: var(--text-muted);
+	font-weight: 400;
+	display: block;
+	margin-top: 2px;
+}
+
+.chrome-nav {
+	display: flex;
+	gap: var(--space-1);
+	background: var(--bg-elevated);
+	border: 0.5px solid var(--border);
+	border-radius: var(--r-md);
+	padding: 3px;
+}
+.chrome-nav a {
+	padding: var(--space-1-5) var(--space-3-5);
+	border-radius: var(--r-sm);
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--text-muted);
+}
+.chrome-nav a:hover {
+	color: var(--text-secondary);
+}
+.chrome-nav a.active {
+	background: var(--accent-muted);
+	color: var(--accent);
+}
+
+.page-body {
+	max-width: 1180px;
+	margin: 0 auto;
+	padding: var(--space-6);
+}
+
+.btn-secondary {
+	background: transparent;
+	color: var(--text-muted);
+	border: 0.5px solid var(--border);
+	border-radius: var(--r-sm);
+	padding: 6px 12px;
+	font-size: 12px;
+	font-family: var(--font-body);
+	cursor: pointer;
+}
+.btn-secondary:hover {
+	color: var(--text-secondary);
+	border-color: var(--border-hover);
+	background: var(--hover-overlay);
+}
+.btn-secondary.on {
+	color: var(--accent);
+	border-color: var(--accent);
+	background: var(--accent-muted);
+}
+
+.tag {
+	display: inline-block;
+	border-radius: 3px;
+	padding: 1px 6px;
+	font-size: 9px;
+	font-family: var(--font-mono);
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+}
+/* Hand-synced with utils/tierColors.ts's TIER_COLOR. */
+.tag-tier-xs {
+	background: rgba(64, 216, 160, 0.1);
+	color: var(--status-success);
+}
+.tag-tier-s {
+	background: var(--accent-muted);
+	color: var(--status-info);
+}
+.tag-tier-m {
+	background: rgba(232, 176, 64, 0.1);
+	color: var(--status-warning);
+}
+.tag-tier-l {
+	background: rgba(220, 96, 96, 0.1);
+	color: var(--status-error);
+}
+.tag-tier-d {
+	background: rgba(138, 164, 180, 0.1);
+	color: var(--text-secondary);
+}
+
+.panel {
+	background: var(--bg-elevated);
+	border: 0.5px solid var(--border);
+	border-radius: var(--r-lg);
+	padding: var(--space-4);
+}
+
+.section-title {
+	font-family: var(--font-display);
+	font-size: 17px;
+	font-weight: 600;
+	margin: 0 0 var(--space-1) 0;
+}
+.section-sub {
+	color: var(--text-muted);
+	font-size: 12px;
+	margin: 0 0 var(--space-4) 0;
+}
+
+.mono {
+	font-family: var(--font-mono);
+}
+
+.empty-state {
+	text-align: center;
+	padding: var(--space-8) var(--space-4);
+	color: var(--text-secondary);
+}
+.empty-state .headline {
+	font-family: var(--font-display);
+	font-size: 16px;
+	color: var(--text-primary);
+	margin-bottom: var(--space-1);
+}
+.empty-state .sub {
+	font-size: 12px;
+	color: var(--text-muted);
+}
+
+/* Trends layout — carried over from the mockup's own <style> block
+   (Docs/mockups/observability-dashboard/index.html). Restored here after
+   /morning-review found these class names surviving the port into
+   components while their rules didn't, leaving each className pointing at
+   nothing and the same layout duplicated inline right next to it instead
+   (2026-08-23). */
+
+.filter-bar {
+	display: flex;
+	align-items: center;
+	gap: var(--space-2);
+	margin-bottom: var(--space-5);
+	flex-wrap: wrap;
+}
+.filter-bar .spacer {
+	flex: 1;
+}
+
+.stat-row {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: var(--space-3);
+	margin-bottom: var(--space-3);
+}
+.stat-tile {
+	background: var(--bg-elevated);
+	border: 0.5px solid var(--border);
+	border-radius: var(--r-md);
+	padding: var(--space-3-5);
+}
+.stat-tile .label {
+	font-size: 10px;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	margin-bottom: 4px;
+}
+.stat-tile .value {
+	font-family: var(--font-mono);
+	font-size: 20px;
+	font-weight: 500;
+	color: var(--text-primary);
+	font-variant-numeric: tabular-nums;
+}
+.stat-tile .value.accent {
+	color: var(--accent);
+}
+
+.tier-row {
+	display: grid;
+	/* 5 tiers (XS/S/M/L/D, T-050) — the mockup only ever designed for 3
+	   (S/M/L), so this is a new call, not a value carried over. */
+	grid-template-columns: repeat(5, 1fr);
+	gap: var(--space-3);
+	margin-bottom: var(--space-6);
+}
+.tier-tile {
+	background: var(--bg-elevated);
+	border: 0.5px solid var(--border);
+	border-radius: var(--r-md);
+	padding: var(--space-3);
+	display: flex;
+	align-items: center;
+	gap: var(--space-3);
+}
+.tier-tile .tag {
+	font-size: 11px;
+	padding: 3px 8px;
+}
+.tier-tile .stats {
+	display: flex;
+	gap: var(--space-4);
+}
+.tier-tile .stats .mini-label {
+	font-size: 9px;
+	color: var(--text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+.tier-tile .stats .mini-value {
+	font-family: var(--font-mono);
+	font-size: 13px;
+	color: var(--text-primary);
+	font-variant-numeric: tabular-nums;
+}
+
+.chart-grid {
+	display: grid;
+	grid-template-columns: 1.3fr 1fr;
+	gap: var(--space-4);
+	margin-bottom: var(--space-4);
+}
+
+.legend {
+	display: flex;
+	gap: var(--space-3);
+	flex-wrap: wrap;
+	margin-top: var(--space-3);
+	font-size: 10px;
+	color: var(--text-muted);
+}
+.legend .swatch {
+	display: inline-block;
+	width: 8px;
+	height: 8px;
+	border-radius: 2px;
+	margin-right: 4px;
+	vertical-align: middle;
+}
+
+/* Non-grid drill-down chrome — column widths themselves come from
+   DrillDownGridRow.tsx's shared DRILLDOWN_GRID_TEMPLATE constant, not CSS,
+   deliberately (see that file's own docstring for why). */
+.dd-header {
+	color: var(--text-muted);
+	font-weight: 500;
+	font-size: 11px;
+	padding: var(--space-2) var(--space-3);
+	border-bottom: 0.5px solid var(--border);
+}
+.dd-row-summary {
+	padding: var(--space-2) var(--space-3);
+	font-size: 12px;
+	border-bottom: 0.5px solid var(--border-subtle);
+}
+.dd-row-summary:hover {
+	background: var(--hover-overlay);
+}
+.num {
+	font-family: var(--font-mono);
+	text-align: right;
+	font-variant-numeric: tabular-nums;
+}
+
+.expand-body {
+	background: var(--bg-focal);
+	border-radius: var(--r-md);
+	padding: var(--space-3);
+	margin: var(--space-2) var(--space-3) var(--space-3);
+	font-size: 12px;
+	color: var(--text-secondary);
+}
+
+.empty-row {
+	color: var(--text-dim);
+	font-style: italic;
+	padding: var(--space-2) var(--space-3);
+	font-size: 12px;
+}

@@ -442,6 +442,8 @@ Each commit should be a single logical change that compiles and passes tests. "A
 ### Leave a Trail
 Write commit messages that explain *why*, not *what*. Add JSDoc comments to service methods that have non-obvious behavior. Use TODO comments sparingly but intentionally for known shortcuts: `// TODO: add pagination when session count exceeds 50`.
 
+**Component doc comments follow the same WHY-not-WHAT bar, not a per-file default.** A `/** ... */` block above a component is warranted when there's a durable reason worth recording — a non-obvious constraint, a bug it structurally prevents, a decision that would otherwise get re-litigated (`DrillDownGridRow.tsx`'s shared-column-template comment is this: it explains *why* the constant is shared, not just *what* it contains). It is not a required header on every component — a component whose purpose is legible from its name, props, and body doesn't need one manufactured for consistency's sake. `.claude/agents/reviewer.md`'s comment-discipline check (short, WHY not WHAT, no ticket/incident narration, no rationale repeated verbatim at multiple call sites — collapse that into one `IMPLEMENTATION_NOTES.md` entry plus a pointer) is the actual bar this applies against; this paragraph just names it as a rule that also covers component-level doc comments specifically, not only service methods.
+
 ---
 
 ## 7. Feature Completion Checklist

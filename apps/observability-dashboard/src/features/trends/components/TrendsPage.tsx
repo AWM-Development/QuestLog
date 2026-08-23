@@ -1,0 +1,43 @@
+import { useState } from "react";
+import { trpc } from "../../../lib/trpc.js";
+import { type TrendsRange, rangeToDateFilter } from "../utils/range.js";
+import { aggregateStats, perTierStats } from "../utils/stats.js";
+import type { TrendRun } from "../utils/types.js";
+import { CostScatterChart } from "./CostScatterChart.js";
+import { DrillDown } from "./DrillDown.js";
+import { FilterBar } from "./FilterBar.js";
+import { StatTiles } from "./StatTiles.js";
+import { TierRow } from "./TierRow.js";
+import { TokensChart } from "./TokensChart.js";
+
+export function TrendsPage() {
+	const [range, setRange] = useState<TrendsRange>("30");
+	const [excludeEmpty, setExcludeEmpty] = useState(true);
+
+	const dateFilter = rangeToDateFilter(range);
+	const { data } = trpc.observability.trends.useQuery({
+		...dateFilter,
+		includeEmptyRuns: !excludeEmpty,
+	});
+
+	const runs = (data ?? []) as TrendRun[];
+	const runsWithTickets = runs.filter((r) => !r.emptyRun);
+
+	return (
+		<div className="page-body">
+			<FilterBar
+				range={range}
+				onRangeChange={setRange}
+				excludeEmpty={excludeEmpty}
+				onToggleExcludeEmpty={() => setExcludeEmpty((v) => !v)}
+			/>
+			<StatTiles stats={aggregateStats(runsWithTickets)} />
+			<TierRow byTier={perTierStats(runsWithTickets)} />
+			<div className="chart-grid">
+				<TokensChart runs={runsWithTickets} />
+				<CostScatterChart runs={runsWithTickets} />
+			</div>
+			<DrillDown runs={runs} />
+		</div>
+	);
+}

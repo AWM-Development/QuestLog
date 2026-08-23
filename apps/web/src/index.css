@@ -1,31 +1,19 @@
 @import "tailwindcss";
+@import "@questlog/shared/styles/design-tokens.css";
 
 /*
- * QuestLog Design Tokens
- * Entity-driven color system with four-plane depth hierarchy.
+ * QuestLog Design Tokens — apps/web-specific additions.
+ * Entity-driven color system, campaign theming, and other product-surface
+ * concerns layer on top of the shared base
+ * (@questlog/shared/styles/design-tokens.css — depth planes, text/border/
+ * status colors, default accent, typography, spacing, radius). This file
+ * declares only what's specific to apps/web (or not yet extracted).
  * Dark mode first. Fantasy theme (default).
  *
  * See Docs/DESIGN_SYSTEM.md for the full specification.
  * Task 8.1 will add per-campaign theme overrides via theme classes on the app root.
  */
 :root {
-	/* ── Depth system (four planes) ── */
-	--bg-void: #090d12;
-	--bg-surface: #0e1820;
-	--bg-elevated: #111c26;
-	--bg-focal: #152636;
-	--bg-focal-hover: #1a2e40;
-
-	/* ── Text ── */
-	--text-primary: #d0e4f0;
-	--text-secondary: #8aa4b4;
-	--text-muted: #4a6a7a;
-	--text-dim: #2e4856;
-
-	/* ── Borders ── */
-	--border: #1a2838;
-	--border-hover: #1e3448;
-	--border-subtle: #14222e;
 	--state-hover-soft: rgba(208, 228, 240, 0.03);
 	--state-active-soft: rgba(96, 184, 255, 0.06);
 	--state-active-border: rgba(96, 184, 255, 0.12);
@@ -69,33 +57,18 @@
 	--ent-item-rgb: 128, 216, 216;
 	--ent-arc-rgb: 192, 160, 255;
 
-	/* ── Accent (aliases --ent-npc — entities ARE the accent system) ── */
-	--accent: #60b8ff;
-	--accent-hover: #78c8ff;
-	--accent-muted: rgba(96, 184, 255, 0.1);
+	/* ── Accent — aliases --ent-npc (entities ARE the accent system).
+	   Base value comes from the shared tokens file; campaign theme classes
+	   below still override it per-campaign, same as before. ── */
 
-	/* ── Status ── */
-	--status-success: #40d8a0;
-	--status-error: #dc6060;
+	/* ── Status — muted/rgb variants beyond the shared base's four colors ── */
 	--status-error-muted: rgba(220, 96, 96, 0.08);
-	--status-warning: #e8b040;
 	--status-warning-muted: rgba(232, 176, 64, 0.08);
 	--status-warning-rgb: 232, 176, 64;
-	--status-info: #60b8ff;
 	--text-secondary-rgb: 138, 164, 180;
 
-	/* ── Spacing ── */
+	/* ── Spacing — extra token beyond the shared base's scale ── */
 	--space-0-5: 2px; /* micro-gap: list items, inline input padding */
-	--space-1: 0.25rem;
-	--space-1-5: 6px; /* button vertical padding, tight gaps */
-	--space-2: 0.5rem;
-	--space-2-5: 10px; /* input/panel vertical padding, section spacing */
-	--space-3: 0.75rem;
-	--space-3-5: 14px; /* button/input horizontal padding */
-	--space-4: 1rem;
-	--space-5: 1.25rem;
-	--space-6: 1.5rem;
-	--space-8: 2rem;
 
 	/* ── Layout ── */
 	--rail-width: 56px;
@@ -103,17 +76,8 @@
 	--dock-width: 360px;
 	--sessionlog-max-width: 720px;
 
-	/* ── Typography ── */
-	--font-display: "Crimson Pro", Georgia, "Times New Roman", serif;
-	--font-body: "DM Sans", system-ui, -apple-system, sans-serif;
-	--font-mono: "JetBrains Mono", "Fira Code", monospace;
-
-	/* ── Border radius ── */
-	--r-sm: 6px;
-	--r-md: 10px;
-	--r-lg: 14px;
+	/* ── Border radius — extra size beyond the shared base's scale ── */
 	--r-xl: 18px;
-	--r-pill: 20px;
 
 	/* ── Shadows ── */
 	--shadow-sm: 0 1px 2px rgba(4, 12, 24, 0.3);
