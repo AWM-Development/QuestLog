@@ -635,13 +635,22 @@ export const entityService = {
 			const current = currentRows[0];
 			if (!current) throw new NotFoundError("Entity", id);
 
-			if (newLinkedEntityId !== null) {
-				await entityService.getById(tx, campaignId, newLinkedEntityId);
-			} else if (current.linkedEntityId) {
+			// Any transition away from the current target — to null, or to a
+			// different entity — must clear that old target's own back-pointer,
+			// or it's left stale and one-directional (the link is "always
+			// mutual" per Scope, not just on the null-clear path).
+			if (
+				current.linkedEntityId &&
+				current.linkedEntityId !== newLinkedEntityId
+			) {
 				await tx
 					.update(entities)
 					.set({ linkedEntityId: null })
 					.where(eq(entities.id, current.linkedEntityId));
+			}
+
+			if (newLinkedEntityId !== null) {
+				await entityService.getById(tx, campaignId, newLinkedEntityId);
 			}
 
 			const rows = await tx

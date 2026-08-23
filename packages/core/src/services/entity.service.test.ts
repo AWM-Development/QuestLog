@@ -1039,6 +1039,37 @@ describe("entityService linkedEntityId (T-171)", () => {
 		expect(refetchedNpc.linkedEntityId).toBeNull();
 	});
 
+	it("clears the old target's back-pointer when relinking to a different entity", async () => {
+		const npcA = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni",
+			type: "npc",
+		});
+		const monster = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+			linkedEntityId: npcA.id,
+		});
+		const npcB = await entityService.create(db, {
+			campaignId,
+			name: "Rictavio",
+			type: "npc",
+		});
+
+		const updated = await entityService.update(db, {
+			id: monster.id,
+			campaignId,
+			linkedEntityId: npcB.id,
+		});
+
+		expect(updated.linkedEntityId).toBe(npcB.id);
+		const refetchedA = await entityService.getById(db, campaignId, npcA.id);
+		expect(refetchedA.linkedEntityId).toBeNull();
+		const refetchedB = await entityService.getById(db, campaignId, npcB.id);
+		expect(refetchedB.linkedEntityId).toBe(monster.id);
+	});
+
 	it("throws NotFoundError updating with a linkedEntityId from a different campaign", async () => {
 		const otherCampaign = await campaignService.create(db, {
 			name: "Other Campaign",
