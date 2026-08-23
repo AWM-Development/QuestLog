@@ -39,30 +39,68 @@ export interface TicketCard {
 const SCOPE_EXCERPT_MAX_LENGTH = 160;
 
 /**
- * `Scope:`'s value runs until the next top-level field/section (e.g. `Out of
- * scope:`, `Iteration cap:`), not to end-of-line — unlike every other field
- * `matchField` handles, so it needs its own extraction instead of reusing
- * that single-line regex.
+ * `TICKET_SPEC.md`'s field set, plus `Branch`/`Scope` themselves. Replaces
+ * the old "capitalized word ending in a colon" shape heuristic, which could
+ * misfire on a hard-wrapped `Scope:` line that merely looked like a field
+ * header (e.g. "Note: fall back to null.") and silently truncate early.
  */
-function extractScopeExcerpt(content: string): string | null {
-	const startMatch = content.match(/^Scope:[ \t]*/m);
-	if (!startMatch || startMatch.index === undefined) return null;
+const TOP_LEVEL_FIELDS = [
+	"Milestone ref",
+	"Complexity tier",
+	"Strategy-gate flag",
+	"Priority",
+	"Blocked on",
+	"Gated on",
+	"Branch",
+	"Context files",
+	"Mockup",
+	"Runner",
+	"Model",
+	"Scope",
+	"Out of scope",
+	"Iteration cap",
+	"Definition of done includes",
+] as const;
 
-	const afterStart = content.slice(startMatch.index + startMatch[0].length);
-	// A top-level field/section starts at column 0 with a capitalized word
-	// followed by a colon (bullets under Scope are indented, so they never
-	// match this and stay part of the excerpt).
-	const nextFieldMatch = afterStart.match(/\n[A-Z][\w /-]*(?:\s*\([^)]*\))?:/);
-	const rawScope = (
-		nextFieldMatch ? afterStart.slice(0, nextFieldMatch.index) : afterStart
-	)
-		.trim()
-		.replace(/\s+/g, " ");
+const FIELD_START_PATTERN = new RegExp(
+	`^(${TOP_LEVEL_FIELDS.join("|")})(?:\\s*\\([^)]*\\))?:[ \\t]*`,
+	"gm",
+);
 
-	if (!rawScope) return null;
-	if (rawScope.length <= SCOPE_EXCERPT_MAX_LENGTH) return rawScope;
+/**
+ * One pass over the ticket file, keyed by field name — replaces separately
+ * calling `matchField` per field and `extractScopeExcerpt` for `Scope:`.
+ * A field's raw value is the text between its own label and the next
+ * recognized one (or EOF); callers decide whether to take the first line or
+ * the whole span.
+ */
+function parseAllFields(content: string): Map<string, string> {
+	const matches = [...content.matchAll(FIELD_START_PATTERN)];
+	const fields = new Map<string, string>();
+	for (let i = 0; i < matches.length; i++) {
+		const match = matches[i];
+		const name = match?.[1];
+		if (!match || !name || fields.has(name)) continue;
+		const valueStart = match.index + match[0].length;
+		const valueEnd = matches[i + 1]?.index ?? content.length;
+		fields.set(name, content.slice(valueStart, valueEnd));
+	}
+	return fields;
+}
 
-	const cut = rawScope.slice(0, SCOPE_EXCERPT_MAX_LENGTH);
+/** A single-line field's value is just the first line of its raw span, trimmed. */
+function singleLineValue(raw: string | undefined): string | null {
+	const firstLine = raw?.split("\n", 1)[0]?.trim();
+	return firstLine || null;
+}
+
+/** Unlike single-line fields, `Scope:`'s raw span is multi-line — collapse and truncate at a word boundary instead of just trimming. */
+function scopeExcerptValue(raw: string | undefined): string | null {
+	const collapsed = raw?.trim().replace(/\s+/g, " ");
+	if (!collapsed) return null;
+	if (collapsed.length <= SCOPE_EXCERPT_MAX_LENGTH) return collapsed;
+
+	const cut = collapsed.slice(0, SCOPE_EXCERPT_MAX_LENGTH);
 	const lastSpace = cut.lastIndexOf(" ");
 	const truncated = lastSpace > 0 ? cut.slice(0, lastSpace) : cut;
 	return `${truncated}…`;
@@ -84,11 +122,6 @@ function deriveStatus(path: string): TicketStatus | null {
 	return STATUS_BY_FOLDER[folder] ?? null;
 }
 
-function matchField(content: string, field: string): string | null {
-	const match = content.match(new RegExp(`^${field}:\\s*(.+)$`, "m"));
-	return match?.[1] ? match[1].trim() : null;
-}
-
 /**
  * Parses one ticket (or gate-stub) file's raw content + its repo-relative
  * path into a board card, or `null` when the file isn't a card: a gate-stub
@@ -106,16 +139,17 @@ export function parseTicketFile(
 	const titleMatch = content.match(/^#\s+(T-\d+)\s+—\s+(.+)$/m);
 	if (!titleMatch?.[1] || !titleMatch[2]) return null;
 	const [, id, title] = titleMatch;
+	const fields = parseAllFields(content);
 
 	return {
 		id,
 		title: title.trim(),
-		priority: matchField(content, "Priority"),
-		complexityTier: matchField(content, "Complexity tier"),
-		blockedOn: matchField(content, "Blocked on"),
-		gatedOn: matchField(content, "Gated on"),
-		branch: matchField(content, "Branch"),
-		scopeExcerpt: extractScopeExcerpt(content),
+		priority: singleLineValue(fields.get("Priority")),
+		complexityTier: singleLineValue(fields.get("Complexity tier")),
+		blockedOn: singleLineValue(fields.get("Blocked on")),
+		gatedOn: singleLineValue(fields.get("Gated on")),
+		branch: singleLineValue(fields.get("Branch")),
+		scopeExcerpt: scopeExcerptValue(fields.get("Scope")),
 		status,
 		path,
 	};

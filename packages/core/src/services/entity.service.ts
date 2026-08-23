@@ -284,6 +284,20 @@ function buildSeededDraft(
 // inferred types collapse to `any`.
 type EntityRow = typeof entities.$inferSelect;
 
+/**
+ * Append `note` to `existing`, separated by a blank line — or return `note`
+ * alone if `existing` is empty/whitespace-only. Shared join logic behind
+ * `appendToDescription`, `appendToDmNotes`, and `borrow_entity`'s dmNotes
+ * provenance line (T-170) — distinct from `createSeeded`'s own `---`-divided
+ * append, which labels a multi-paragraph lore draft rather than a short note.
+ */
+export function appendWithSeparator(
+	existing: string | null | undefined,
+	note: string,
+): string {
+	return existing?.trim() ? `${existing.trim()}\n\n${note}` : note;
+}
+
 export const entityService = {
 	async detectSpans(
 		db: Database,
@@ -818,9 +832,7 @@ export const entityService = {
 		const row = rows[0];
 		if (!row) throw new NotFoundError("Entity", entityId);
 
-		const updated = row.description?.trim()
-			? `${row.description.trim()}\n\n${note}`
-			: note;
+		const updated = appendWithSeparator(row.description, note);
 
 		const updatedRows = await db
 			.update(entities)
@@ -848,9 +860,7 @@ export const entityService = {
 		const row = rows[0];
 		if (!row) throw new NotFoundError("Entity", entityId);
 
-		const updated = row.dmNotes?.trim()
-			? `${row.dmNotes.trim()}\n\n${note}`
-			: note;
+		const updated = appendWithSeparator(row.dmNotes, note);
 
 		const updatedRows = await db
 			.update(entities)

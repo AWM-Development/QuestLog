@@ -104,6 +104,28 @@ Context files (load ONLY these):
   - legacy.ts
 `;
 
+// The old heuristic mistook this hard-wrapped "Note:" line for the next
+// field and truncated the excerpt before it — see the test below.
+const TICKET_WITH_SCOPE_FALSE_POSITIVE_LINE = `# T-105 — Scope with a false-positive-shaped hard-wrap ticket
+
+Milestone ref: M-TEST.1
+
+Complexity tier: S
+
+Priority: P1
+
+Branch: feat/m-test/t-105-scope-false-positive-line
+
+Context files (load ONLY these):
+  - corge.ts
+
+Scope: Handle this case correctly and completely.
+Note: fall back to null if the value is missing entirely.
+
+Out of scope:
+  - Nothing relevant to this fixture.
+`;
+
 const GATE_STUB = `# G-050 — Some open design question
 
 Gate type: 🎨 design
@@ -230,6 +252,14 @@ describe("parseTicketFile", () => {
 			"Docs/tickets/gated/G-050-some-open-design-question.md",
 		);
 		expect(card).toBeNull();
+	});
+
+	it("does not truncate a Scope excerpt at a hard-wrapped line that merely looks like a field header (e.g. 'Note:'), the T-165 regression this ticket fixes", () => {
+		const card = parseTicketFile(
+			TICKET_WITH_SCOPE_FALSE_POSITIVE_LINE,
+			"Docs/tickets/queue/T-105-scope-false-positive-line.md",
+		);
+		expect(card?.scopeExcerpt).toContain("Note: fall back to null");
 	});
 
 	it("returns null for a file outside any recognized pipeline folder", () => {
