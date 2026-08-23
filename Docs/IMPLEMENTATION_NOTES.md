@@ -1,8 +1,12 @@
 # QuestLog — Implementation Notes
 
-**Purpose:** Non-obvious decisions and gotchas that aren't derivable from reading the code. Read at the start of every session. Add an entry when you make a non-obvious decision. Retired entries: `Docs/IMPLEMENTATION_NOTES_ARCHIVE.md`.
+**Purpose:** Non-obvious decisions and gotchas that aren't derivable from reading the code. Excerpted into ticket bodies as needed (`ticket-writer`'s `## Relevant background` step, T-085) — not read wholesale by the ticket-execution pipeline. Read in full only for audit/maintenance sessions (`/archive-implementation-notes`, `/drift-audit`, `/ungate`). Add an entry when you make a non-obvious decision. Retired entries: `Docs/IMPLEMENTATION_NOTES_ARCHIVE.md`. **Pending restructure:** `G-040` resolved to split this file into `Docs/implementation-notes/` topic files — tracked as `T-180`; this note and file layout are transitional until that ticket merges.
 
 **Last Updated:** 2026-08-22
+
+## G-040 — Documentation-corpus restructure: topic split, header correction (2026-08-23)
+
+Resolved via `/ungate`: split this file into five topic files under `Docs/implementation-notes/` (by area — Database, Pipeline & Executor, Backend services, Frontend, Tooling & Infra), ticketed as `T-180` (the move + a corrected `README.md` index) and `T-181` (repointing the ~90 live `IMPLEMENTATION_NOTES.md § T-###`-style citations elsewhere in the repo, blocked on `T-180`). `CHANGELOG.md` explicitly stays out of scope — its prose overlap with this file is acceptable given the differing audience. Full rationale: `Docs/tickets/gated/resolved/G-040-implementation-notes-doc-restructure.md` § Resolution.
 
 ## T-055 — PR diff-stat sync into the observability store (2026-08-11, amended 2026-08-16)
 
@@ -848,6 +852,12 @@ The mockup's "Last 30/90 Runs" filter buttons describe a row-count semantic, but
 
 `G-039`'s resolution picked a lightweight Satori-style SVG renderer over a full headless browser (Playwright/Chromium) — narrowed from `G-036`'s already-fixed HTML/CSS template format down to purely which engine renders it. The deciding factor was deploy footprint for this app's actual scale (single-user, Fly.io small instances): a full browser binary is real weight (image size, memory, cold-start) this app doesn't need, and the accepted tradeoff is real (Satori's CSS subset — flexbox-based layout, no absolute positioning — constrains what a template can express compared to full CSS). The gate's own flagged sub-decision ("QuestLog doesn't have a blob-storage story yet") turned out to already be solved: `StorageProvider` (`packages/core/src/services/storage.service.ts`, pluggable — local filesystem now, S3/GCS-ready later) already backs uploaded import files, and is reused as-is for caching pre-rendered stat-block images rather than inventing a second storage mechanism. Rendering happens on entity/template edit, not inline per tool call, so a live-encounter stat-block lookup never pays render latency. With both `G-036` and `G-039` resolved, `M-STATBLOCK`'s full task list was drafted in the same session (`T-175`–`T-178`, alongside `T-171`) per the milestone doc's own stated policy of waiting for both gates before writing it. Full rationale: `Docs/tickets/gated/resolved/G-039-stat-block-image-rendering.md` § Resolution.
 
+
+## T-164 — Continuity detection tool surface: source text recovered from `metadata`; `sessionService` gained a scoped lookup (2026-08-23)
+
+The on-demand `detect_contradictions` tool's `sourceId`/no-scope paths need a source's plain ingested text, which isn't a dedicated DB column — `metadata.extractedText` (set by `importService.processSource` once processing reaches `chunking`, for both paste and file sources) is read first, falling back to `metadata.content` (set at creation for a still-`pending` paste source, per `sourceService.createFromText`) so a source ingested in the same tool call that triggered detection isn't silently treated as empty.
+
+The `sessionId` scope path originally called `sessionService.getById` (a bare, unscoped lookup) and checked `session.campaignId !== campaignId` inline in the tool handler. Review flagged this as a deviation from `.claude/rules/mcp.md`'s "Campaign-scoped ID lookups (T-068)" rule, and as invisible to `campaign-scoping.test.ts`'s automated guard (which only regexes for `Unscoped(` calls, not a bare `getById` lacking a `campaignId` param). Fixed on the same branch: `sessionService.getById` is renamed `getByIdUnscoped` (matching `sourceService`'s existing convention exactly, including its doc comment), and a new `sessionService.getByIdForCampaign(db, campaignId, id)` does the scoped lookup + ownership check as one query. `detect-contradictions.ts` now calls the scoped method directly, with no inline check. The router's own `session.getById` procedure (trusted-internal, not reachable with untrusted external ids the way an MCP tool is) now calls `getByIdUnscoped` explicitly rather than a bare `getById`, keeping the naming honest about which callers are scoped.
 
 ## T-179 — Ticket-field parsing: single-line fields still take only the first line of their allowlist-bounded span (2026-08-23)
 

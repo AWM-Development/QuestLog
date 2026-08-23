@@ -336,10 +336,22 @@
     "mergedAt": "2026-08-23T14:38:41Z"
   },
   {
+    "ticketId": "T-164",
+    "prNumber": 322,
+    "branch": "feat/m-continuity/t-164-continuity-detection-tool-surface",
+    "mergedAt": "2026-08-23T19:53:11Z"
+  },
+  {
     "ticketId": "T-165",
     "prNumber": 311,
     "branch": "feat/m-obs/t-165-board-list-branch-scope-excerpt-fields",
     "mergedAt": "2026-08-23T13:56:52Z"
+  },
+  {
+    "ticketId": "T-170",
+    "prNumber": 313,
+    "branch": "feat/m-crosscampaign/t-170-borrow-entity-cross-campaign-fork",
+    "mergedAt": "2026-08-23T19:30:46Z"
   },
   {
     "ticketId": "T-179",
