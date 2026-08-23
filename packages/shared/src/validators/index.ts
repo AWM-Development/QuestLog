@@ -38,6 +38,7 @@ export {
 	ConfirmCorrectLoreInput,
 	ConfirmIngestEntitiesInput,
 	CorrectLoreInput,
+	DetectContradictionsInput,
 	GetChunkHistoryInput,
 	GetSourceStatusInput,
 	IngestTextInput,

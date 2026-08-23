@@ -84,3 +84,15 @@ export const BorrowEntityInput = z.object({
 	destCampaignId: z.string().uuid(),
 });
 export type BorrowEntityInput = z.infer<typeof BorrowEntityInput>;
+
+export const DetectContradictionsInput = z.object({
+	campaignId: z.string().uuid(),
+	// At most one of these narrows the scope to one source/session's text;
+	// sourceId takes precedence if both are given. Omitting both runs
+	// against the campaign's most recent source and session content.
+	sourceId: z.string().uuid().optional(),
+	sessionId: z.string().uuid().optional(),
+});
+export type DetectContradictionsInput = z.infer<
+	typeof DetectContradictionsInput
+>;
