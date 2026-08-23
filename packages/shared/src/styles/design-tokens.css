@@ -1,0 +1,61 @@
+/*
+ * Shared base tokens (Docs/DESIGN_SYSTEM.md §2-5), used verbatim by
+ * apps/web and apps/observability-dashboard. Entity colors, campaign
+ * themes, and mascot tokens (§6/§10/§11) stay apps/web-only.
+ */
+:root {
+	/* Depth planes (§2) */
+	--bg-void: #090d12;
+	--bg-surface: #0e1820;
+	--bg-elevated: #111c26;
+	--bg-focal: #152636;
+	--bg-focal-hover: #1a2e40;
+
+	/* Text (§3) */
+	--text-primary: #d0e4f0;
+	--text-secondary: #8aa4b4;
+	--text-muted: #4a6a7a;
+	--text-dim: #2e4856;
+
+	/* Borders (§3) */
+	--border: #1a2838;
+	--border-hover: #1e3448;
+	--border-subtle: #14222e;
+
+	/* Status (§3) */
+	--status-success: #40d8a0;
+	--status-error: #dc6060;
+	--status-warning: #e8b040;
+	--status-info: #60b8ff;
+
+	/* Accent (§3) — default/fantasy-theme value. In apps/web this is also
+	   `--ent-npc`'s value (entities ARE the accent system there) and gets
+	   overridden per-campaign by `.theme-*` classes; this file only sets
+	   the `:root` default both apps start from. */
+	--accent: #60b8ff;
+	--accent-hover: #78c8ff;
+	--accent-muted: rgba(96, 184, 255, 0.1);
+
+	/* Typography (§4) */
+	--font-display: "Crimson Pro", Georgia, "Times New Roman", serif;
+	--font-body: "DM Sans", system-ui, -apple-system, sans-serif;
+	--font-mono: "JetBrains Mono", "Fira Code", monospace;
+
+	/* Spacing (§5) */
+	--space-1: 0.25rem;
+	--space-1-5: 6px;
+	--space-2: 0.5rem;
+	--space-2-5: 10px;
+	--space-3: 0.75rem;
+	--space-3-5: 14px;
+	--space-4: 1rem;
+	--space-5: 1.25rem;
+	--space-6: 1.5rem;
+	--space-8: 2rem;
+
+	/* Radius (§5) */
+	--r-sm: 6px;
+	--r-md: 10px;
+	--r-lg: 14px;
+	--r-pill: 20px;
+}

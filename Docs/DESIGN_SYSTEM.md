@@ -9,7 +9,8 @@
 - `Docs/PRD.md` — Product specification (this doc replaces §5)
 - `Docs/DEVELOPMENT_GUIDE.md` — Coding conventions
 - `Docs/STYLE_AUDIT.md` — Repeatable audit/refactor playbook for tokens vs shared vs feature styles
-- `apps/web/src/index.css` — Token implementation (to be updated)
+- `packages/shared/src/styles/design-tokens.css` — Canonical base token implementation, shared by every app drawing from this system (currently `apps/web` and `apps/observability-dashboard`)
+- `apps/web/src/index.css` — apps/web-specific additions layered on the shared base (entity colors, campaign theming, mascot; to be updated)
 - `apps/web/src/components/styles.ts` — Shared style presets (to be updated)
 
 ---
