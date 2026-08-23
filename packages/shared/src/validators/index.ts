@@ -34,9 +34,11 @@ export {
 	UnarchiveEntityInput,
 } from "./entity.js";
 export {
+	BorrowEntityInput,
 	ConfirmCorrectLoreInput,
 	ConfirmIngestEntitiesInput,
 	CorrectLoreInput,
+	DetectContradictionsInput,
 	GetChunkHistoryInput,
 	GetSourceStatusInput,
 	IngestTextInput,

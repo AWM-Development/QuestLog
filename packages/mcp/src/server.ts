@@ -4,6 +4,7 @@ import { registerAddItem } from "./tools/add-item.js";
 import { registerAdjustWealth } from "./tools/adjust-wealth.js";
 import { registerAppendEntityNote } from "./tools/append-entity-note.js";
 import { registerArchiveEntity } from "./tools/archive-entity.js";
+import { registerBorrowEntity } from "./tools/borrow-entity.js";
 import { registerConfirmArchiveEntity } from "./tools/confirm-archive-entity.js";
 import { registerConfirmCorrectLore } from "./tools/confirm-correct-lore.js";
 import { registerConfirmIngestEntities } from "./tools/confirm-ingest-entities.js";
@@ -13,6 +14,7 @@ import { registerConfirmUpdateEntity } from "./tools/confirm-update-entity.js";
 import { registerCorrectLore } from "./tools/correct-lore.js";
 import { registerCreateCampaign } from "./tools/create-campaign.js";
 import { registerCreateEntity } from "./tools/create-entity.js";
+import { registerDetectContradictions } from "./tools/detect-contradictions.js";
 import { registerGetChunkHistory } from "./tools/get-chunk-history.js";
 import { registerGetEntity } from "./tools/get-entity.js";
 import { registerGetSourceStatus } from "./tools/get-source-status.js";
@@ -61,10 +63,12 @@ export function createMcpServer(deps: CreateMcpServerOptions): McpServer {
 	registerCorrectLore(server, deps);
 	registerConfirmCorrectLore(server, deps);
 	registerGetChunkHistory(server, deps);
+	registerDetectContradictions(server, deps);
 	registerAddItem(server, deps);
 	registerTransferItem(server, deps);
 	registerAdjustWealth(server, deps);
 	registerListInventory(server, deps);
+	registerBorrowEntity(server, deps);
 	registerHelp(server);
 
 	return server;

@@ -87,3 +87,48 @@ Notes: Raised directly by Alex, who characterized the current single-file
   optimization favors small per-ticket-id fragments; human-navigation
   favors a smaller number of coherent topic pages, closer to what Alex
   described).
+
+## Resolution (2026-08-23)
+
+Decided in `/ungate` session with Alex:
+
+- **Split, and correct the stale header now.** `Docs/IMPLEMENTATION_NOTES.md`'s
+  header (still reading "Read at the start of every session," predating
+  T-085) is fixed in this same PR — no reason to leave a false claim
+  sitting while the larger restructure ticket runs. The topic-file split
+  itself is commissioned as a separate ticket rather than done in this
+  docs-planning session, since it's a genuinely large content-move task
+  (840+ lines, ~90 entries) that belongs in the normal execution pipeline,
+  not a gate-resolution PR.
+- **Taxonomy: by area, five files.** `Docs/implementation-notes/database.md`,
+  `pipeline-executor.md`, `backend-services.md`, `frontend.md`,
+  `tooling-infra.md`, plus a `README.md` index (ticket-id → topic-file
+  table, for human navigation — not a citation-resolution mechanism).
+  This is the human-navigation-favoring structure this gate's own Notes
+  section flagged as the right one, since T-085 already solved the
+  agent-context side of the problem (zero live `queue/`/`backlog/`
+  tickets reference the whole file anymore).
+- **Cross-cutting entries:** primary-topic judgment call — file under
+  whichever single topic an entry is most centrally about, and cite it
+  with a one-line pointer from any other topic file that depends on it,
+  rather than duplicating (extending `G-013`'s cite-not-restate rule to
+  this split, not inventing a sixth "cross-cutting" file).
+- **Citation scheme: rewrite, don't index-resolve.** Once an entry moves
+  to a topic file, every live citation naming the old
+  `IMPLEMENTATION_NOTES.md § T-###` path gets rewritten to name the new
+  file directly (e.g. `Docs/implementation-notes/pipeline-executor.md § T-069`).
+  Alex chose precision over avoiding the one-time rewrite cost — this is a
+  separate ticket (`T-181`) from the split itself (`T-180`), since the
+  new file names don't exist until `T-180` merges.
+- **`CHANGELOG.md`: left as-is.** Alex judged the prose overlap between
+  `CHANGELOG.md` and `IMPLEMENTATION_NOTES.md` entries acceptable —
+  different audiences (user/dev-facing "what shipped" vs. agent-facing
+  "why") justify independent prose even with some overlap. `G-013`/`T-104`'s
+  cite-not-restate rule is not extended to cover this second document.
+
+Ticketed as **T-180**
+(`Docs/tickets/queue/T-180-implementation-notes-topic-split.md`, P1, D-tier
+— the split, the corrected `README.md`, and the `archive-implementation-notes`
+skill update) and **T-181**
+(`Docs/tickets/backlog/T-181-implementation-notes-citation-repoint.md`, P2,
+L-tier, `Blocked on: T-180` — the ~90-citation repoint).
