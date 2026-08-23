@@ -113,10 +113,7 @@ a {
 	letter-spacing: 0.02em;
 	text-transform: uppercase;
 }
-/* Kept in sync by hand with utils/tierColors.ts's TIER_COLOR — see that
-   file's own comment for why (a <span className> can't consume a JS
-   object) and the color-choice reasoning (XS/S/M/L as a severity/size
-   gradient, D as a sibling category, not a size). */
+/* Hand-synced with utils/tierColors.ts's TIER_COLOR. */
 .tag-tier-xs {
 	background: rgba(64, 216, 160, 0.1);
 	color: var(--status-success);
