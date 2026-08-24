@@ -1,15 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-	campaignWealth,
-	sessions,
-} from "@questlog/core/db/schema/index.js";
+import { campaignWealth } from "@questlog/core/db/schema/index.js";
 import { basisVector } from "@questlog/core/db/test-helpers.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
-import { connectedClient, createMockFetch, db } from "../test-helpers.js";
 import { entityService } from "@questlog/core/services/entity.service.js";
 import { inventoryService } from "@questlog/core/services/inventory.service.js";
 import { sessionService } from "@questlog/core/services/session.service.js";
 import { sql } from "drizzle-orm";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { connectedClient, createMockFetch, db } from "../test-helpers.js";
 
 describe("prep_brief tool", () => {
 	let campaignId: string;

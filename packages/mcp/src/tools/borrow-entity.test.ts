@@ -1,10 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { basisVector, deleteCampaignTree } from "@questlog/core/db/test-helpers.js";
-import { campaignService } from "@questlog/core/services/campaign.service.js";
-import { connectedClient, createMockFetch, db } from "../test-helpers.js";
 import { entities } from "@questlog/core/db/schema/index.js";
+import {
+	basisVector,
+	deleteCampaignTree,
+} from "@questlog/core/db/test-helpers.js";
+import { campaignService } from "@questlog/core/services/campaign.service.js";
 import { entityService } from "@questlog/core/services/entity.service.js";
 import { eq } from "drizzle-orm";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { connectedClient, createMockFetch, db } from "../test-helpers.js";
 
 describe("borrow_entity tool", () => {
 	let sourceCampaignId: string;

@@ -1,13 +1,12 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { chunks, entities, sources } from "@questlog/core/db/schema/index.js";
 import {
-	chunks,
-	entities,
-	sources,
-} from "@questlog/core/db/schema/index.js";
-import { basisVector, deleteCampaignTree } from "@questlog/core/db/test-helpers.js";
+	basisVector,
+	deleteCampaignTree,
+} from "@questlog/core/db/test-helpers.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
-import { connectedClient, createMockFetch, db } from "../test-helpers.js";
 import { eq } from "drizzle-orm";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { connectedClient, createMockFetch, db } from "../test-helpers.js";
 
 describe("create_entity tool", () => {
 	// create_entity now searches lore before persisting (T-083), whose

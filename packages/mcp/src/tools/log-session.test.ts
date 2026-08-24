@@ -1,16 +1,18 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	chunks,
 	entities,
 	sessionEntities,
 	sessions,
 } from "@questlog/core/db/schema/index.js";
-import { basisVector, deleteCampaignTree } from "@questlog/core/db/test-helpers.js";
+import {
+	basisVector,
+	deleteCampaignTree,
+} from "@questlog/core/db/test-helpers.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
-import { connectedClient, createMockFetch, db } from "../test-helpers.js";
 import { entityService } from "@questlog/core/services/entity.service.js";
 import { eq } from "drizzle-orm";
-import { writeRequestService } from "@questlog/core/services/write-request.service.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { connectedClient, createMockFetch, db } from "../test-helpers.js";
 
 describe("log_session + confirm_log_session tools", () => {
 	// confirm_log_session opens its own db.transaction() (via

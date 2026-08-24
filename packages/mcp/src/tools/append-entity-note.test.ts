@@ -1,9 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { basisVector } from "@questlog/core/db/test-helpers.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
-import { connectedClient, createMockFetch, db } from "../test-helpers.js";
 import { entityService } from "@questlog/core/services/entity.service.js";
 import { sql } from "drizzle-orm";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { connectedClient, createMockFetch, db } from "../test-helpers.js";
 
 describe("append_entity_note tool", () => {
 	let campaignId: string;

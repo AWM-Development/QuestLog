@@ -1,10 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { basisVector, deleteCampaignTree } from "@questlog/core/db/test-helpers.js";
-import { campaignService } from "@questlog/core/services/campaign.service.js";
-import { connectedClient, createMockFetch, db } from "../test-helpers.js";
-import { entityService } from "@questlog/core/services/entity.service.js";
-import { sessionService } from "@questlog/core/services/session.service.js";
 import { sources } from "@questlog/core/db/schema/index.js";
+import {
+	basisVector,
+	deleteCampaignTree,
+} from "@questlog/core/db/test-helpers.js";
+import { campaignService } from "@questlog/core/services/campaign.service.js";
+import { entityService } from "@questlog/core/services/entity.service.js";
+import type { LlmService } from "@questlog/core/services/llm.service.js";
+import { sessionService } from "@questlog/core/services/session.service.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { connectedClient, createMockFetch, db } from "../test-helpers.js";
 
 describe("detect_contradictions tool (T-164)", () => {
 	// Mirrors continuity.service.test.ts's own mock — the tool layer's

@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
 import { basisVector } from "@questlog/core/db/test-helpers.js";
+import { describe, expect, it } from "vitest";
 import { connectedClient, createMockFetch } from "../test-helpers.js";
 
 describe("server instructions + help tool (T-033)", () => {

@@ -1,12 +1,19 @@
 import type { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { entities } from "@questlog/core/db/schema/index.js";
-import { basisVector, deleteCampaignTree } from "@questlog/core/db/test-helpers.js";
+import {
+	basisVector,
+	deleteCampaignTree,
+} from "@questlog/core/db/test-helpers.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
 import type { LlmService } from "@questlog/core/services/llm.service.js";
-import { writeRequestService } from "@questlog/core/services/write-request.service.js";
 import { eq } from "drizzle-orm";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { connectedClient, createMockFetch, db, waitForStatus } from "../test-helpers.js";
+import {
+	connectedClient,
+	createMockFetch,
+	db,
+	waitForStatus,
+} from "../test-helpers.js";
 
 /** Mock structured-extraction client returning a fixed candidate list, for tests exercising a specific staged shape (e.g. an "unclassified" candidate) rather than the fixture heuristic's derived output. */
 function createMockLlmService(

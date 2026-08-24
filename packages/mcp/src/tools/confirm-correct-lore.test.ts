@@ -1,15 +1,17 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	chunkCorrections,
 	chunks,
 	sources,
 } from "@questlog/core/db/schema/index.js";
-import { basisVector, deleteCampaignTree } from "@questlog/core/db/test-helpers.js";
+import {
+	basisVector,
+	deleteCampaignTree,
+} from "@questlog/core/db/test-helpers.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
-import { connectedClient, createMockFetch, db } from "../test-helpers.js";
 import { entityService } from "@questlog/core/services/entity.service.js";
 import { eq } from "drizzle-orm";
-import { writeRequestService } from "@questlog/core/services/write-request.service.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { connectedClient, createMockFetch, db } from "../test-helpers.js";
 
 describe("confirm_correct_lore tool (T-076)", () => {
 	// confirm_correct_lore opens its own db.transaction() (via

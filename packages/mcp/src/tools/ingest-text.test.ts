@@ -1,8 +1,16 @@
-import { basisVector, deleteCampaignTree } from "@questlog/core/db/test-helpers.js";
+import {
+	basisVector,
+	deleteCampaignTree,
+} from "@questlog/core/db/test-helpers.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
 import { sourceService } from "@questlog/core/services/source.service.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { connectedClient, createMockFetch, db, waitForStatus } from "../test-helpers.js";
+import {
+	connectedClient,
+	createMockFetch,
+	db,
+	waitForStatus,
+} from "../test-helpers.js";
 
 describe("ingest_text tool", () => {
 	// processSource is triggered fire-and-forget (not awaited by the tool
@@ -300,5 +308,4 @@ describe("ingest_text tool", () => {
 			/Exactly one of campaignId or newCampaign/,
 		);
 	});
-
 });

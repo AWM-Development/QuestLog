@@ -1,12 +1,11 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { chunks, sources } from "@questlog/core/db/schema/index.js";
 import {
-	chunks,
-	sources,
-} from "@questlog/core/db/schema/index.js";
-import { basisVector, deleteCampaignTree } from "@questlog/core/db/test-helpers.js";
+	basisVector,
+	deleteCampaignTree,
+} from "@questlog/core/db/test-helpers.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { connectedClient, createMockFetch, db } from "../test-helpers.js";
-import { writeRequestService } from "@questlog/core/services/write-request.service.js";
 
 describe("get_chunk_history tool (T-152)", () => {
 	// confirm_correct_lore opens its own db.transaction() (via

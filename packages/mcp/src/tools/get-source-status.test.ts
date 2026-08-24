@@ -1,7 +1,16 @@
-import { basisVector, deleteCampaignTree } from "@questlog/core/db/test-helpers.js";
+import {
+	basisVector,
+	deleteCampaignTree,
+} from "@questlog/core/db/test-helpers.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { connectedClient, createFailingFetch, createMockFetch, db, waitForStatus } from "../test-helpers.js";
+import {
+	connectedClient,
+	createFailingFetch,
+	createMockFetch,
+	db,
+	waitForStatus,
+} from "../test-helpers.js";
 
 describe("get_source_status tool", () => {
 	// processSource is triggered fire-and-forget (not awaited by the tool
@@ -136,5 +145,4 @@ describe("get_source_status tool", () => {
 		const payload = JSON.parse(content[0]?.text ?? "{}");
 		expect(payload.error.code).toBe("NOT_FOUND");
 	});
-
 });
