@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-172
+
+- **`encounter` MCP tool — initiative sort + HP-delta, stateless.** New `encounter` tool with two actions: `roll_initiative` takes a list of combatants (each with an already-decided initiative value) and returns them sorted descending by initiative, ties broken by input order; `apply_hp_delta` takes a current/max hp pair plus a delta (negative for damage, positive for healing) and returns the clamped `newHp` (never below 0 or above max) and a `"healthy"`/`"bloodied"`/`"down"` status band. No persisted encounter state — the actual turn-by-turn tracking stays in the conversation itself, per `G-037`'s resolution. First tool in this codebase with no `db`/`storage`/`llmService` dependency at all. New shared `Combatant` Zod shape (`packages/shared/src/validators/mcp.ts`) doubles as the standard reference format for a combatant.
+
 ### Added — T-171
 
 - **`monster` entity type + npc↔monster `linkedEntityId` link.** `ENTITY_TYPES` gains `"monster"` — a stat-block-bearing creature is never represented by overloading `npc`. `entities` gains a nullable, self-referential `linkedEntityId` FK (indexed) so a lore-focused `npc` and its combat-focused `monster` counterpart can be paired: setting `linkedEntityId` sets both sides symmetrically in one write (via `entityService.create`/`update`), and clearing it (`null`) clears both sides. `create_entity` accepts an optional `linkedEntityId` to link at creation time; `update_entity`/`confirm_update_entity` accept it to link or (via explicit `null`) unlink an existing pair, validated same-campaign (`NotFoundError` otherwise, no new `*Unscoped` call). `get_entity` returns a `linkedEntity: { id, name, type }` summary when the fetched entity is linked, omitted entirely when it isn't. Schema/plumbing groundwork only — stat-block data itself (AC/HP/traits/etc.), templates, and image rendering are later `M-STATBLOCK` tickets (`G-036`).
