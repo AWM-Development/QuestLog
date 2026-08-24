@@ -43,4 +43,8 @@ Every other milestone doc in `Docs/milestones/` tracks planned feature work for 
 - [ ] **M-BUG.6 — `ingest_text` idempotency-key strategy** (Gated on: G-046)
   Follow-up to M-BUG.3: defense in depth for the remaining case M-BUG.3's fix doesn't cover — a response genuinely lost in transit (not a server bug) still leaves a client unable to tell whether a retry will duplicate. Needs a design decision on key shape/scope before a ticket can be drafted — see `Docs/tickets/gated/G-046-ingest-text-idempotency-key-strategy.md`.
 
+- [ ] **M-BUG.7 — `packages/observability/src/cli.ts` never loads `.env`, silently no-op'ing local ingestion** (T-182)
+  Found while diagnosing a "graceful degradation" warning that turned out not to be the intended no-secret-provisioned case (2026-08-24). `db/migrate.ts` calls `dotenv.config({ path: "../../.env" })` before resolving `OBSERVABILITY_DATABASE_URL`; `cli.ts` (the `ingest` script) never does, so it only sees the var when the invoking shell has separately exported it — not merely when `.env` has it. A bulk audit found only 1 of 94 local `*.usage.json` cost-report artifacts had ever actually reached the observability DB despite `.env` carrying a valid `OBSERVABILITY_DATABASE_URL` in every affected worktree since T-131; the missing 93 (plus the pre-existing empty-run artifact, already present) were backfilled manually the same day.
+  Exit: see `Docs/tickets/queue/T-182-observability-cli-missing-dotenv-config.md`.
+
 **Noted but deferred — not a ticket yet:** none yet; this doc will grow as new bugs are reported.
