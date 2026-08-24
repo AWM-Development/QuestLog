@@ -360,6 +360,12 @@
     "mergedAt": "2026-08-23T19:30:46Z"
   },
   {
+    "ticketId": "T-171",
+    "prNumber": 317,
+    "branch": "feat/m-statblock/t-171-monster-entity-type-npc-link",
+    "mergedAt": "2026-08-24T16:38:08Z"
+  },
+  {
     "ticketId": "T-179",
     "prNumber": 316,
     "branch": "feat/m-obs/t-179-unify-ticket-field-parsing",
