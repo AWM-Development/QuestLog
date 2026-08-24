@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-103
+
+- **`packages/mcp/src/server.test.ts` split into per-tool test files.** The 4,301-line, 23-`describe`-block monolith is now `packages/mcp/src/tools/<tool-name>.test.ts` (one file per tool, mirroring the production `tools/` layout), plus a new `packages/mcp/src/test-helpers.ts` for the shared test fixtures (`connectedClient`, `createMockFetch`/`createFailingFetch`, `waitForStatus`, the shared test DB connection). `server.test.ts` now holds only the cross-cutting `global-setup DB truncation wiring (T-052)` test that isn't tool-shaped. Pure reorganization — no test or assertion content changed, same 158 tests pass before and after. Also fixes a cross-file test-DB isolation gap the split exposed: `packages/mcp/vitest.config.ts` now sets `fileParallelism: false`, since the many new files now share one physical test DB and Vitest's default file-level parallelism let one file's fixtures leak into another's "table is empty" assertions (`Docs/IMPLEMENTATION_NOTES.md` § T-103). Internal test-hygiene only — no user-facing behavior change.
+
 ### Added — T-057
 
 - **Observability dashboard: Trends view.** New standalone `apps/observability-dashboard` app (Vite + React + react-router, mirroring `apps/web`'s tooling shape) with a real-data Trends route: 30/90-day/all-time range filter and an exclude-empty-runs toggle, both wired to the `observability.trends` endpoint (`T-054`); four aggregate stat tiles (avg/median cost, avg turns-to-green, total system cost); a per-tier (S/M/L) granularity row; `recharts` tokens-per-run stacked bar and cost-vs-diff-size scatter (with a fit line) charts; and a per-ticket drill-down that expands on click, with header/rows sharing one CSS grid column template so columns can't drift out of alignment as the window resizes. Shares its top-nav chrome with `T-058`'s upcoming Log view. Design per `Docs/mockups/observability-dashboard/`, resolved via `G-004`.
