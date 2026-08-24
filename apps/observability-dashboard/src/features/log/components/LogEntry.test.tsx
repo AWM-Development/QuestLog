@@ -122,6 +122,12 @@ describe("LogEntry", () => {
 		expect(entry.className).not.toMatch(/blocked/);
 	});
 
+	it("renders the always-visible .log-notes aside from the Efficiency notes prose, without the Retry log line", () => {
+		render(<LogEntry report={SHIPPED_REPORT} run={RUN} />);
+
+		expect(screen.getByText('"Straightforward extraction."')).toBeVisible();
+	});
+
 	it("expanding a shipped entry shows test evidence and reviewer verdict text", () => {
 		render(<LogEntry report={SHIPPED_REPORT} run={RUN} />);
 

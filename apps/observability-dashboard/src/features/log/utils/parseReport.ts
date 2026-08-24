@@ -24,10 +24,13 @@ export interface ParsedReport {
 	sections: ParsedReportSection[];
 	/** Only non-null for a blocked report — the mockup's "Exact question for Alex" callout. */
 	exactQuestion: string | null;
+	/** The mockup's always-visible ".log-notes" aside — see IMPLEMENTATION_NOTES.md § T-058. */
+	efficiencyNotesSummary: string;
 }
 
 const TITLE_PATTERN = /^#\s+T-\d+\s+—\s+(.+?)(?:\s+—\s+BLOCKED)?\s*$/m;
 const TIER_PATTERN = /^\*\*Complexity tier:\*\*\s*([A-Za-z]+)/m;
+const RETRY_LOG_PATTERN = /^\*\*Retry log:\*\*/m;
 
 /** Splits report markdown into a heading→body map, keyed by each `## ` section's exact heading text. */
 function extractSections(content: string): Map<string, string> {
@@ -63,6 +66,13 @@ function section(sections: Map<string, string>, heading: string): string {
 	return sections.get(heading) ?? "";
 }
 
+/** The Efficiency notes prose alone, with the `**Retry log:**` line (and everything after it) stripped — REPORT_TEMPLATE.md/BLOCKED_TEMPLATE.md's own "self-report, in your own words" sentence. */
+function summarizeEfficiencyNotes(sections: Map<string, string>): string {
+	const full = section(sections, "Efficiency notes");
+	const match = full.match(RETRY_LOG_PATTERN);
+	return (match ? full.slice(0, match.index) : full).trim();
+}
+
 /** Parses a `ticket_reports.content` blob per its `reportType` — `wont_fix` falls back to the shipped shape (best-effort; no dedicated template exists for it). */
 export function parseReport(
 	reportType: LogReport["reportType"],
@@ -71,6 +81,7 @@ export function parseReport(
 	const sections = extractSections(content);
 	const title = extractTitle(content);
 	const complexityTier = extractComplexityTier(content);
+	const efficiencyNotesSummary = summarizeEfficiencyNotes(sections);
 
 	if (reportType === "blocked") {
 		return {
@@ -91,6 +102,7 @@ export function parseReport(
 				{ label: "Branch state", value: section(sections, "Branch state") },
 			],
 			exactQuestion: section(sections, "Exact question for Alex"),
+			efficiencyNotesSummary,
 		};
 	}
 
@@ -119,5 +131,6 @@ export function parseReport(
 			},
 		],
 		exactQuestion: null,
+		efficiencyNotesSummary,
 	};
 }

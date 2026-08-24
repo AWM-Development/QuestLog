@@ -94,6 +94,9 @@ importers:
       '@biomejs/biome':
         specifier: ^1.9.4
         version: 1.9.4
+      '@questlog/observability':
+        specifier: workspace:*
+        version: link:../../packages/observability
       '@questlog/server':
         specifier: workspace:*
         version: link:../server

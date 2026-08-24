@@ -32,13 +32,7 @@ interface LogEntryProps {
 	run: LogRun | undefined;
 }
 
-/**
- * One reverse-chronological Log entry — head (id/title/badges/cost),
- * one-line summary, `<details>`-expand full report, and a comment thread.
- * Per this ticket's Scope, a blocked entry swaps in the blocked-report
- * shape (via `parseReport`'s shared `sections` list) and renders its
- * "Exact question for Alex" callout open by default, mirroring the mockup.
- */
+/** One reverse-chronological Log entry, per `Docs/mockups/observability-dashboard/log.html`. A blocked entry swaps in the blocked-report shape (`parseReport`'s shared `sections` list) and opens its "Exact question for Alex" callout by default. */
 export function LogEntry({ report, run }: LogEntryProps) {
 	const parsed = parseReport(report.reportType, report.content);
 	const isBlocked = report.reportType === "blocked";
@@ -74,14 +68,17 @@ export function LogEntry({ report, run }: LogEntryProps) {
 				<span className="cost">{cost}</span>
 			</div>
 			<div className="log-summary">{parsed.summary}</div>
+			{parsed.efficiencyNotesSummary ? (
+				<div className="log-notes">"{parsed.efficiencyNotesSummary}"</div>
+			) : null}
 			<details className="log-expand" open={isBlocked}>
 				<summary>▾ Full report</summary>
 				<div className="body">
 					<dl>
-						{parsed.sections.map((s) => (
-							<Fragment key={s.label}>
-								<dt>{s.label}</dt>
-								<dd>{s.value}</dd>
+						{parsed.sections.map((section) => (
+							<Fragment key={section.label}>
+								<dt>{section.label}</dt>
+								<dd>{section.value}</dd>
 							</Fragment>
 						))}
 					</dl>

@@ -114,6 +114,15 @@ describe("parseReport", () => {
 		expect(
 			parsed.sections.find((s) => s.label === "Efficiency notes")?.value,
 		).toMatch(/Retry log.*mechanical_lint_typecheck/s);
+
+		// The mockup's always-visible ".log-notes" aside is the Efficiency
+		// notes prose alone (its self-report "why this ran the way it did"
+		// sentence), with the Retry log line stripped — the full text
+		// (including Retry log) stays available in `sections` above.
+		expect(parsed.efficiencyNotesSummary).toBe(
+			"Straightforward extraction — the PT files were already well-organized.",
+		);
+		expect(parsed.efficiencyNotesSummary).not.toMatch(/Retry log/);
 	});
 
 	it("extracts a blocked report's title (BLOCKED suffix stripped), exact question, and blocked-shape sections", () => {
@@ -136,6 +145,9 @@ describe("parseReport", () => {
 		expect(
 			parsed.sections.find((s) => s.label === "What was attempted")?.value,
 		).toMatch(/Drafted a three-way comparison table/);
+		expect(parsed.efficiencyNotesSummary).toBe(
+			"Burned the full iteration cap because each approach only revealed the\njudgment-call problem after significant drafting.",
+		);
 	});
 
 	it("falls back to an untitled/empty shape when a section is missing rather than throwing", () => {
@@ -147,5 +159,6 @@ describe("parseReport", () => {
 		expect(parsed.sections.every((s) => typeof s.value === "string")).toBe(
 			true,
 		);
+		expect(parsed.efficiencyNotesSummary).toBe("");
 	});
 });

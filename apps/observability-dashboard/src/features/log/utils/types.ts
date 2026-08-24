@@ -1,20 +1,19 @@
+// Type-only import — erased at build time, same pattern `lib/trpc.ts` already
+// uses for `AppRouter` from `@questlog/server`. `ReportType`/`ReviewerVerdict`
+// come from the package that owns them rather than being re-declared as a
+// second literal union here — see IMPLEMENTATION_NOTES.md § T-058.
+import type {
+	ReportType,
+	ReviewerVerdict,
+} from "@questlog/observability/ingest.js";
 import type { TrendRun } from "../../trends/utils/types.js";
 
-/**
- * Client-side shape of a `ticket_reports` row as returned by the
- * `observability.feed` tRPC query — mirrors
- * `packages/observability/src/schema/tables.ts`'s `ticketReports` select
- * shape. `content` is the report's raw markdown (`REPORT_TEMPLATE.md` for
- * shipped, `BLOCKED_TEMPLATE.md` for blocked) — `utils/parseReport.ts`
- * extracts the structured pieces the Log entry actually renders, per this
- * ticket's Out of scope note that M-OBS.4's endpoint shape isn't this
- * ticket's to change.
- */
+/** Client-side shape of a `ticket_reports` row (`observability.feed`). See IMPLEMENTATION_NOTES.md § T-058 for why `content` is parsed client-side. */
 export interface LogReport {
 	id: string;
 	ticketId: string;
-	reportType: "shipped" | "blocked" | "wont_fix";
-	reviewerVerdict: "PASS" | "PASS-WITH-NOTES" | "FAIL" | null;
+	reportType: ReportType;
+	reviewerVerdict: ReviewerVerdict | null;
 	remediationPassRequired: boolean;
 	content: string;
 	createdAt: string | Date;
