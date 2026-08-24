@@ -366,6 +366,12 @@
     "mergedAt": "2026-08-24T16:38:08Z"
   },
   {
+    "ticketId": "T-172",
+    "prNumber": 323,
+    "branch": "feat/m-encounter/t-172-encounter-utility-tool",
+    "mergedAt": "2026-08-24T17:06:16Z"
+  },
+  {
     "ticketId": "T-179",
     "prNumber": 316,
     "branch": "feat/m-obs/t-179-unify-ticket-field-parsing",
