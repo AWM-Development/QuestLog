@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-171
+
+- **`monster` entity type + npc↔monster `linkedEntityId` link.** `ENTITY_TYPES` gains `"monster"` — a stat-block-bearing creature is never represented by overloading `npc`. `entities` gains a nullable, self-referential `linkedEntityId` FK (indexed) so a lore-focused `npc` and its combat-focused `monster` counterpart can be paired: setting `linkedEntityId` sets both sides symmetrically in one write (via `entityService.create`/`update`), and clearing it (`null`) clears both sides. `create_entity` accepts an optional `linkedEntityId` to link at creation time; `update_entity`/`confirm_update_entity` accept it to link or (via explicit `null`) unlink an existing pair, validated same-campaign (`NotFoundError` otherwise, no new `*Unscoped` call). `get_entity` returns a `linkedEntity: { id, name, type }` summary when the fetched entity is linked, omitted entirely when it isn't. Schema/plumbing groundwork only — stat-block data itself (AC/HP/traits/etc.), templates, and image rendering are later `M-STATBLOCK` tickets (`G-036`).
+
 ### Added — T-057
 
 - **Observability dashboard: Trends view.** New standalone `apps/observability-dashboard` app (Vite + React + react-router, mirroring `apps/web`'s tooling shape) with a real-data Trends route: 30/90-day/all-time range filter and an exclude-empty-runs toggle, both wired to the `observability.trends` endpoint (`T-054`); four aggregate stat tiles (avg/median cost, avg turns-to-green, total system cost); a per-tier (S/M/L) granularity row; `recharts` tokens-per-run stacked bar and cost-vs-diff-size scatter (with a fit line) charts; and a per-ticket drill-down that expands on click, with header/rows sharing one CSS grid column template so columns can't drift out of alignment as the window resizes. Shares its top-nav chrome with `T-058`'s upcoming Log view. Design per `Docs/mockups/observability-dashboard/`, resolved via `G-004`.

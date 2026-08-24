@@ -38,7 +38,7 @@ Output format was initially decided as "markdown first, image later" but Alex ov
 
 ### Tasks
 
-- [ ] **M-STATBLOCK.0 — `monster` entity type + npc↔monster `linkedEntityId` link** (T-171)
+- [x] **M-STATBLOCK.0 — `monster` entity type + npc↔monster `linkedEntityId` link** (T-171)
   Schema/plumbing groundwork only, no stat-block data yet: adds `monster` to `ENTITY_TYPES` and a symmetric, same-campaign-validated `entities.linkedEntityId` FK so a lore-focused `npc` and its combat-focused `monster` counterpart can be paired. See `T-171` for full scope.
 
 - [ ] **M-STATBLOCK.1 — monster stat-block columns on entities** (T-175)
