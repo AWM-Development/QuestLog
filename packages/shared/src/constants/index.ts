@@ -17,6 +17,7 @@ export const ENTITY_TYPES = [
 	"item",
 	"arc",
 	"pc",
+	"monster",
 ] as const;
 export type EntityType = (typeof ENTITY_TYPES)[number];
 
@@ -47,3 +48,7 @@ export type SessionStatus = (typeof SESSION_STATUSES)[number];
 
 export const MESSAGE_ROLES = ["user", "assistant"] as const;
 export type MessageRole = (typeof MESSAGE_ROLES)[number];
+
+/** `Docs/tickets/TICKET_SPEC.md`'s Complexity tier rubric (T-050/M-OBS.6). Lowercase to match how it's already stored/consumed (`ticket_runs.complexity_tier`, CSS class names) — the ticket file field itself is written uppercase. */
+export const COMPLEXITY_TIERS = ["xs", "s", "m", "l", "d"] as const;
+export type ComplexityTier = (typeof COMPLEXITY_TIERS)[number];

@@ -65,16 +65,55 @@ describe("sessionService", () => {
 		});
 	});
 
-	describe("getById", () => {
+	describe("getByIdUnscoped", () => {
 		it("returns a session when it exists", async () => {
 			const created = await sessionService.create(db, { campaignId });
-			const found = await sessionService.getById(db, created.id);
+			const found = await sessionService.getByIdUnscoped(db, created.id);
 			expect(found.id).toBe(created.id);
 		});
 
 		it("throws NotFoundError for missing id", async () => {
 			await expect(
-				sessionService.getById(db, "00000000-0000-0000-0000-000000000000"),
+				sessionService.getByIdUnscoped(
+					db,
+					"00000000-0000-0000-0000-000000000000",
+				),
+			).rejects.toThrow(NotFoundError);
+		});
+	});
+
+	describe("getByIdForCampaign", () => {
+		it("returns a session when it belongs to the given campaign", async () => {
+			const created = await sessionService.create(db, { campaignId });
+			const found = await sessionService.getByIdForCampaign(
+				db,
+				campaignId,
+				created.id,
+			);
+			expect(found.id).toBe(created.id);
+		});
+
+		it("throws NotFoundError for a session owned by a different campaign", async () => {
+			const otherCampaign = await campaignService.create(db, {
+				name: "Other Campaign",
+				theme: "sci-fi",
+			});
+			const created = await sessionService.create(db, {
+				campaignId: otherCampaign.id,
+			});
+
+			await expect(
+				sessionService.getByIdForCampaign(db, campaignId, created.id),
+			).rejects.toThrow(NotFoundError);
+		});
+
+		it("throws NotFoundError for non-existent id", async () => {
+			await expect(
+				sessionService.getByIdForCampaign(
+					db,
+					campaignId,
+					"00000000-0000-0000-0000-000000000000",
+				),
 			).rejects.toThrow(NotFoundError);
 		});
 	});

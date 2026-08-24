@@ -14,14 +14,31 @@ export function registerUpdateEntity(server: McpServer, { db }: ToolDeps) {
 			inputSchema: EntityUpdateInput,
 		},
 		withToolErrors(
-			async ({ campaignId, entityId, name, type, description, dmNotes }) => {
+			async ({
+				campaignId,
+				entityId,
+				name,
+				type,
+				description,
+				dmNotes,
+				linkedEntityId,
+			}) => {
 				const existing = await entityService.getById(db, campaignId, entityId);
+
+				// Fail fast, same as the entityId check above — a bogus link target
+				// shouldn't produce a preview at all (T-171). `null` explicitly
+				// clears the link and needs no existence check.
+				if (linkedEntityId !== undefined && linkedEntityId !== null) {
+					await entityService.getById(db, campaignId, linkedEntityId);
+				}
 
 				const fields: Record<string, unknown> = {};
 				if (name !== undefined) fields.name = name;
 				if (type !== undefined) fields.type = type;
 				if (description !== undefined) fields.description = description;
 				if (dmNotes !== undefined) fields.dmNotes = dmNotes;
+				if (linkedEntityId !== undefined)
+					fields.linkedEntityId = linkedEntityId;
 
 				const payload = {
 					campaignId,
@@ -32,6 +49,7 @@ export function registerUpdateEntity(server: McpServer, { db }: ToolDeps) {
 						type: existing.type,
 						description: existing.description,
 						dmNotes: existing.dmNotes,
+						linkedEntityId: existing.linkedEntityId,
 					},
 					after: {
 						name: "name" in fields ? fields.name : existing.name,
@@ -41,6 +59,10 @@ export function registerUpdateEntity(server: McpServer, { db }: ToolDeps) {
 								? fields.description
 								: existing.description,
 						dmNotes: "dmNotes" in fields ? fields.dmNotes : existing.dmNotes,
+						linkedEntityId:
+							"linkedEntityId" in fields
+								? fields.linkedEntityId
+								: existing.linkedEntityId,
 					},
 				};
 

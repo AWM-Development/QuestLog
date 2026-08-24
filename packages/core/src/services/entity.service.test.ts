@@ -932,6 +932,240 @@ describe("entityService.appendToDmNotes", () => {
 	});
 });
 
+describe("entityService linkedEntityId (T-171)", () => {
+	// entityService.create/update open their own db.transaction() when
+	// linkedEntityId is present (symmetric write) — doesn't compose with a
+	// raw BEGIN/ROLLBACK wrapper (.claude/rules/backend.md "Test DB
+	// pattern"), same reason createSeeded's describe block above uses this.
+	let campaignId: string;
+
+	beforeEach(async () => {
+		const campaign = await campaignService.create(db, {
+			name: "Test Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, campaignId);
+	});
+
+	it("sets both sides symmetrically when creating a monster linked to an npc", async () => {
+		const npc = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni",
+			type: "npc",
+		});
+		const monster = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+			linkedEntityId: npc.id,
+		});
+
+		expect(monster.linkedEntityId).toBe(npc.id);
+		const refetchedNpc = await entityService.getById(db, campaignId, npc.id);
+		expect(refetchedNpc.linkedEntityId).toBe(monster.id);
+	});
+
+	it("throws NotFoundError creating with a linkedEntityId from a different campaign", async () => {
+		const otherCampaign = await campaignService.create(db, {
+			name: "Other Campaign",
+			theme: "fantasy",
+		});
+		const outsider = await entityService.create(db, {
+			campaignId: otherCampaign.id,
+			name: "Outsider",
+			type: "npc",
+		});
+
+		await expect(
+			entityService.create(db, {
+				campaignId,
+				name: "Izek Strazni (combat)",
+				type: "monster",
+				linkedEntityId: outsider.id,
+			}),
+		).rejects.toThrow(NotFoundError);
+
+		await deleteCampaignTree(db, otherCampaign.id);
+	});
+
+	it("sets both sides symmetrically via update, on an initially-unlinked pair", async () => {
+		const npc = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni",
+			type: "npc",
+		});
+		const monster = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+		});
+
+		const updated = await entityService.update(db, {
+			id: monster.id,
+			campaignId,
+			linkedEntityId: npc.id,
+		});
+
+		expect(updated.linkedEntityId).toBe(npc.id);
+		const refetchedNpc = await entityService.getById(db, campaignId, npc.id);
+		expect(refetchedNpc.linkedEntityId).toBe(monster.id);
+	});
+
+	it("clears both sides symmetrically when update sets linkedEntityId to null", async () => {
+		const npc = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni",
+			type: "npc",
+		});
+		const monster = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+			linkedEntityId: npc.id,
+		});
+
+		const updated = await entityService.update(db, {
+			id: monster.id,
+			campaignId,
+			linkedEntityId: null,
+		});
+
+		expect(updated.linkedEntityId).toBeNull();
+		const refetchedNpc = await entityService.getById(db, campaignId, npc.id);
+		expect(refetchedNpc.linkedEntityId).toBeNull();
+	});
+
+	it("clears the old target's back-pointer when relinking to a different entity", async () => {
+		const npcA = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni",
+			type: "npc",
+		});
+		const monster = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+			linkedEntityId: npcA.id,
+		});
+		const npcB = await entityService.create(db, {
+			campaignId,
+			name: "Rictavio",
+			type: "npc",
+		});
+
+		const updated = await entityService.update(db, {
+			id: monster.id,
+			campaignId,
+			linkedEntityId: npcB.id,
+		});
+
+		expect(updated.linkedEntityId).toBe(npcB.id);
+		const refetchedA = await entityService.getById(db, campaignId, npcA.id);
+		expect(refetchedA.linkedEntityId).toBeNull();
+		const refetchedB = await entityService.getById(db, campaignId, npcB.id);
+		expect(refetchedB.linkedEntityId).toBe(monster.id);
+	});
+
+	it("clears the old target's back-pointer when create() links to an already-linked entity", async () => {
+		const npcA = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni",
+			type: "npc",
+		});
+		const monsterA = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+			linkedEntityId: npcA.id,
+		});
+
+		const monsterB = await entityService.create(db, {
+			campaignId,
+			name: "Rictavio's true form",
+			type: "monster",
+			linkedEntityId: npcA.id,
+		});
+
+		expect(monsterB.linkedEntityId).toBe(npcA.id);
+		const refetchedNpcA = await entityService.getById(db, campaignId, npcA.id);
+		expect(refetchedNpcA.linkedEntityId).toBe(monsterB.id);
+		const refetchedMonsterA = await entityService.getById(
+			db,
+			campaignId,
+			monsterA.id,
+		);
+		expect(refetchedMonsterA.linkedEntityId).toBeNull();
+	});
+
+	it("clears the third entity's back-pointer when update() relinks to an already-linked target", async () => {
+		const npcA = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni",
+			type: "npc",
+		});
+		const monsterA = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+			linkedEntityId: npcA.id,
+		});
+		const monsterUnlinked = await entityService.create(db, {
+			campaignId,
+			name: "Rictavio's true form",
+			type: "monster",
+		});
+
+		// monsterUnlinked relinks to npcA, which is already linked to monsterA
+		// — monsterA's back-pointer must be cleared, not left stale.
+		const updated = await entityService.update(db, {
+			id: monsterUnlinked.id,
+			campaignId,
+			linkedEntityId: npcA.id,
+		});
+
+		expect(updated.linkedEntityId).toBe(npcA.id);
+		const refetchedNpcA = await entityService.getById(db, campaignId, npcA.id);
+		expect(refetchedNpcA.linkedEntityId).toBe(monsterUnlinked.id);
+		const refetchedMonsterA = await entityService.getById(
+			db,
+			campaignId,
+			monsterA.id,
+		);
+		expect(refetchedMonsterA.linkedEntityId).toBeNull();
+	});
+
+	it("throws NotFoundError updating with a linkedEntityId from a different campaign", async () => {
+		const otherCampaign = await campaignService.create(db, {
+			name: "Other Campaign",
+			theme: "fantasy",
+		});
+		const outsider = await entityService.create(db, {
+			campaignId: otherCampaign.id,
+			name: "Outsider",
+			type: "npc",
+		});
+		const monster = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+		});
+
+		await expect(
+			entityService.update(db, {
+				id: monster.id,
+				campaignId,
+				linkedEntityId: outsider.id,
+			}),
+		).rejects.toThrow(NotFoundError);
+
+		await deleteCampaignTree(db, otherCampaign.id);
+	});
+});
+
 describe("extractExcerpt", () => {
 	it("returns the sentence containing the span when surrounded by other sentences", () => {
 		const text =

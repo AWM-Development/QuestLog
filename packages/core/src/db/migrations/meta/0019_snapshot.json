@@ -1,5 +1,5 @@
 {
-  "id": "084e9aee-dce7-4deb-9deb-1d96fd1c5369",
+  "id": "895883fd-9be2-4a83-b7e8-690edcac54e8",
   "prevId": "bc275fe1-8157-4e4c-9f36-1fe2a1135298",
   "version": "7",
   "dialect": "postgresql",
@@ -508,177 +508,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.encounter_members": {
-      "name": "encounter_members",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "encounter_id": {
-          "name": "encounter_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "entity_id": {
-          "name": "entity_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "count": {
-          "name": "count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "default": 1
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "encounter_members_encounter_id_idx": {
-          "name": "encounter_members_encounter_id_idx",
-          "columns": [
-            {
-              "expression": "encounter_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "encounter_members_encounter_id_encounters_id_fk": {
-          "name": "encounter_members_encounter_id_encounters_id_fk",
-          "tableFrom": "encounter_members",
-          "tableTo": "encounters",
-          "columnsFrom": [
-            "encounter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "encounter_members_entity_id_entities_id_fk": {
-          "name": "encounter_members_entity_id_entities_id_fk",
-          "tableFrom": "encounter_members",
-          "tableTo": "entities",
-          "columnsFrom": [
-            "entity_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.encounters": {
-      "name": "encounters",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "campaign_id": {
-          "name": "campaign_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "name": {
-          "name": "name",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "notes": {
-          "name": "notes",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "encounters_campaign_id_idx": {
-          "name": "encounters_campaign_id_idx",
-          "columns": [
-            {
-              "expression": "campaign_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "encounters_campaign_id_campaigns_id_fk": {
-          "name": "encounters_campaign_id_campaigns_id_fk",
-          "tableFrom": "encounters",
-          "tableTo": "campaigns",
-          "columnsFrom": [
-            "campaign_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.entities": {
       "name": "entities",
       "schema": "",
@@ -746,6 +575,12 @@
           "notNull": true,
           "default": "'active'"
         },
+        "linked_entity_id": {
+          "name": "linked_entity_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -791,6 +626,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "entities_linked_entity_id_idx": {
+          "name": "entities_linked_entity_id_idx",
+          "columns": [
+            {
+              "expression": "linked_entity_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -813,6 +663,19 @@
           "tableTo": "sources",
           "columnsFrom": [
             "source_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "entities_linked_entity_id_entities_id_fk": {
+          "name": "entities_linked_entity_id_entities_id_fk",
+          "tableFrom": "entities",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "linked_entity_id"
           ],
           "columnsTo": [
             "id"

@@ -12,6 +12,12 @@
     "mergedAt": "2026-08-16T23:27:10Z"
   },
   {
+    "ticketId": "T-057",
+    "prNumber": 310,
+    "branch": "feat/m-obs/t-057-observability-dashboard-trends-view",
+    "mergedAt": "2026-08-23T20:28:47Z"
+  },
+  {
     "ticketId": "T-059",
     "prNumber": 277,
     "branch": "feat/m-obs/t-059-observability-comment-schema-endpoint",
@@ -336,10 +342,34 @@
     "mergedAt": "2026-08-23T14:38:41Z"
   },
   {
+    "ticketId": "T-164",
+    "prNumber": 322,
+    "branch": "feat/m-continuity/t-164-continuity-detection-tool-surface",
+    "mergedAt": "2026-08-23T19:53:11Z"
+  },
+  {
     "ticketId": "T-165",
     "prNumber": 311,
     "branch": "feat/m-obs/t-165-board-list-branch-scope-excerpt-fields",
     "mergedAt": "2026-08-23T13:56:52Z"
+  },
+  {
+    "ticketId": "T-170",
+    "prNumber": 313,
+    "branch": "feat/m-crosscampaign/t-170-borrow-entity-cross-campaign-fork",
+    "mergedAt": "2026-08-23T19:30:46Z"
+  },
+  {
+    "ticketId": "T-171",
+    "prNumber": 317,
+    "branch": "feat/m-statblock/t-171-monster-entity-type-npc-link",
+    "mergedAt": "2026-08-24T16:38:08Z"
+  },
+  {
+    "ticketId": "T-172",
+    "prNumber": 323,
+    "branch": "feat/m-encounter/t-172-encounter-utility-tool",
+    "mergedAt": "2026-08-24T17:06:16Z"
   },
   {
     "ticketId": "T-179",

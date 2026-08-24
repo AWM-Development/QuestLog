@@ -8,7 +8,7 @@ milestone doc.
 
 Complexity tier: L
 
-Priority: P2
+Priority: P0
 
 Branch: chore/mcp-test-hygiene/t-103-split-server-test-file
 

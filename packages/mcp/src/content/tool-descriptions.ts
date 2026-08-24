@@ -20,16 +20,16 @@ export const LIST_ENTITIES_DESCRIPTION =
 export const GET_ENTITY_DESCRIPTION =
 	"Look up a single entity by id or by fuzzy name match. Exactly one of entityId or name must be provided. " +
 	"dmNotes is DM-only background information — never read aloud or paraphrased to players — while description/summary are party-safe. " +
-	"Returns the matching entity, including any inventory items it owns.";
+	"Returns the matching entity, including any inventory items it owns, and — only when it's paired with another entity, such as an npc linked to its monster combat stats — a linkedEntity summary with id, name, and type.";
 
 export const CREATE_ENTITY_DESCRIPTION =
-	"Create a new entity (npc, location, faction, item, or arc) in a campaign. Direct write — only ever inserts a new row, no preview/confirm needed. Searches ingested lore for a matching description first: a high-confidence match seeds the description and is cited in the response, a caller-supplied description is never overwritten (a seeded draft is appended alongside it instead), and lower-confidence matches still come back as citations to review. Optionally accepts dmNotes — a manually-authored, DM-only field for the DM's own eyes, never meant to be read aloud to players or otherwise shared with the party; never lore-seeded, unlike description. Returns the created entity along with any lore citations, a confidence score, and whether the description was seeded from ingested lore.";
+	"Create a new entity (npc, location, faction, item, arc, pc, or monster) in a campaign. Direct write — only ever inserts a new row, no preview/confirm needed. Searches ingested lore for a matching description first: a high-confidence match seeds the description and is cited in the response, a caller-supplied description is never overwritten (a seeded draft is appended alongside it instead), and lower-confidence matches still come back as citations to review. Optionally accepts dmNotes — a manually-authored, DM-only field for the DM's own eyes, never meant to be read aloud to players or otherwise shared with the party; never lore-seeded, unlike description. Optionally accepts linkedEntityId to pair this entity with an existing one in the same campaign (e.g. a monster's combat-stats entity linked to its npc lore/roleplay entity) — the link is set on both entities symmetrically. Returns the created entity along with any lore citations, a confidence score, and whether the description was seeded from ingested lore.";
 
 export const APPEND_ENTITY_NOTE_DESCRIPTION =
 	'Append a note to an existing entity\'s description, without overwriting its prior content. Direct write — additive only, no preview/confirm needed. Pass visibility: "dm" to append to the entity\'s DM-only dmNotes field instead — for the DM\'s own eyes, never meant to be read aloud to players or otherwise shared with the party. Omitted or "party" appends to description exactly as before. Returns the updated entity.';
 
 export const UPDATE_ENTITY_DESCRIPTION =
-	"Preview a change to an existing entity's name, type, description, or dmNotes: returns the proposed before/after field values without persisting anything. dmNotes is a manually-authored, DM-only field — for the DM's own eyes, never meant to be read aloud to players or otherwise shared with the party. Summarize the proposed change to the user in plain language before calling confirm_update_entity with the returned token to save it.";
+	"Preview a change to an existing entity's name, type, description, dmNotes, or linkedEntityId: returns the proposed before/after field values without persisting anything. dmNotes is a manually-authored, DM-only field — for the DM's own eyes, never meant to be read aloud to players or otherwise shared with the party. Pass linkedEntityId to pair this entity with another existing one in the same campaign (set symmetrically on both), or linkedEntityId: null to clear an existing link. Summarize the proposed change to the user in plain language before calling confirm_update_entity with the returned token to save it.";
 
 export const CONFIRM_UPDATE_ENTITY_DESCRIPTION =
 	"Confirm a previously-previewed update_entity change-set: applies the proposed field changes to the entity. Returns the updated entity.";
@@ -99,6 +99,19 @@ export const LIST_ENCOUNTERS_DESCRIPTION =
 
 export const GET_ENCOUNTER_DESCRIPTION =
 	"Look up a single saved encounter by id, including its full member roster (each resolved to entityId, name, type, and count). Returns the encounter.";
+
+export const ENCOUNTER_DESCRIPTION =
+	'Stateless combat utility actions — no persisted encounter state, no dice rolling. Two actions: "roll_initiative" takes a list of combatants (each with an already-decided initiative value) and returns them sorted descending by initiative, ties broken by input order. "apply_hp_delta" takes a current/max hp pair and a delta (negative for damage, positive for healing) and returns the clamped newHp (never below 0 or above max) plus a status of "healthy", "bloodied" (at or below 50% of max), or "down" (at 0).';
+
+export const BORROW_ENTITY_DESCRIPTION =
+	"Copy an entity from one campaign into another as an independent new row (a one-time fork, not a live link — the copy never syncs back). Direct write — only ever inserts a new row, no preview/confirm needed. Copies name/type/description verbatim; dmNotes carries over with a provenance line appended noting where it was borrowed from; lore-seeding attributes are not copied, replaced instead with a structured borrowedFrom record. No lore chunks, inventory, or session links are copied — the entity row alone. Returns the newly created entity in the destination campaign.";
+
+export const DETECT_CONTRADICTIONS_DESCRIPTION =
+	"Check for likely factual contradictions between recent campaign content and existing entity lore (e.g. an entity described as dead elsewhere but referenced as alive here). " +
+	"Pass sourceId or sessionId to scope the check to one source or session; omit both to check the campaign's most recent source and session content. " +
+	"Direct read — no preview/confirm needed. " +
+	"For each candidate returned, summarize which entity is affected and the conflicting claims in plain language, and suggest correct_lore as the next step if the DM confirms it's a real contradiction — never just relay the raw JSON. " +
+	"Returns an empty candidates array when nothing conflicts.";
 
 export const HELP_DESCRIPTION =
 	"Call this if you're unsure where to start. Returns a summary of QuestLog's workflow: uploading campaign documents, tracking sessions, and querying lore.";

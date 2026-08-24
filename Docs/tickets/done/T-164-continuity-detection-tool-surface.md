@@ -8,8 +8,6 @@ Strategy-gate flag: yes
 
 Priority: P1
 
-Blocked on: T-163 — must be merged into develop first
-
 Branch: feat/m-continuity/t-164-continuity-detection-tool-surface
 
 Context files (load ONLY these):

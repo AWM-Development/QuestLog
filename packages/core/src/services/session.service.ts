@@ -3,7 +3,7 @@ import type {
 	SessionFinalizeInput,
 	SessionUpdateInput,
 } from "@questlog/shared";
-import { desc, eq, max } from "drizzle-orm";
+import { and, desc, eq, max } from "drizzle-orm";
 import type { Database, Transaction } from "../db/index.js";
 import { campaigns, sessionEntities, sessions } from "../db/schema/index.js";
 import { NotFoundError } from "../lib/errors.js";
@@ -42,8 +42,30 @@ export const sessionService = {
 		return first(rows);
 	},
 
-	async getById(db: Database, id: string) {
+	/**
+	 * Get a single session by ID with no campaign scope — trusted-internal
+	 * callers only. MCP tool handlers must use {@link getByIdForCampaign}
+	 * instead (T-068; `.claude/rules/mcp.md`).
+	 */
+	async getByIdUnscoped(db: Database, id: string) {
 		const rows = await db.select().from(sessions).where(eq(sessions.id, id));
+		if (rows.length === 0) {
+			throw new NotFoundError("Session", id);
+		}
+		return first(rows);
+	},
+
+	/**
+	 * Get a single session by ID scoped to a campaign, throwing NotFoundError
+	 * if absent or owned by a different campaign — same shape as
+	 * sourceService.getByIdForCampaign, for callers taking untrusted external
+	 * input (e.g. an MCP tool) rather than an internally-sourced id.
+	 */
+	async getByIdForCampaign(db: Database, campaignId: string, id: string) {
+		const rows = await db
+			.select()
+			.from(sessions)
+			.where(and(eq(sessions.id, id), eq(sessions.campaignId, campaignId)));
 		if (rows.length === 0) {
 			throw new NotFoundError("Session", id);
 		}
@@ -72,7 +94,7 @@ export const sessionService = {
 			updateData.dismissedEntityTexts = fields.dismissedEntityTexts;
 
 		if (Object.keys(updateData).length === 0) {
-			return this.getById(db, id);
+			return this.getByIdUnscoped(db, id);
 		}
 
 		const rows = await db

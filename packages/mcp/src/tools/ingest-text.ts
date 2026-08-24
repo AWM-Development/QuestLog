@@ -1,5 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { campaignService } from "@questlog/core/services/campaign.service.js";
+import { continuityService } from "@questlog/core/services/continuity.service.js";
 import { entityService } from "@questlog/core/services/entity.service.js";
 import { importService } from "@questlog/core/services/import.service.js";
 import { sourceService } from "@questlog/core/services/source.service.js";
@@ -106,6 +107,28 @@ export function registerIngestText(
 					);
 				}
 
+				// Informational, non-blocking — same shape/rationale as
+				// entityCandidates above (T-164), except this stays an empty
+				// array rather than null on both "none found" and "detection
+				// failed", since it's a plain list with no staged token/preview
+				// step to omit.
+				let contradictionCandidates: Awaited<
+					ReturnType<typeof continuityService.detectContradictions>
+				> = [];
+				try {
+					contradictionCandidates =
+						await continuityService.detectContradictions(db, {
+							campaignId: resolvedCampaignId,
+							text: content,
+							llmService,
+						});
+				} catch (err: unknown) {
+					console.error(
+						`[ingest_text] Error detecting contradictions for source ${source.id}:`,
+						err,
+					);
+				}
+
 				return {
 					content: [
 						{
@@ -114,6 +137,7 @@ export function registerIngestText(
 								campaign: newCampaign ? { id: resolvedCampaignId } : undefined,
 								source: { id: source.id, status: source.status },
 								entityCandidates,
+								contradictionCandidates,
 							}),
 						},
 					],
