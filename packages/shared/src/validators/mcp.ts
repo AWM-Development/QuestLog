@@ -78,6 +78,25 @@ export const GetChunkHistoryInput = z.object({
 });
 export type GetChunkHistoryInput = z.infer<typeof GetChunkHistoryInput>;
 
+export const BorrowEntityInput = z.object({
+	sourceCampaignId: z.string().uuid(),
+	entityId: z.string().uuid(),
+	destCampaignId: z.string().uuid(),
+});
+export type BorrowEntityInput = z.infer<typeof BorrowEntityInput>;
+
+export const DetectContradictionsInput = z.object({
+	campaignId: z.string().uuid(),
+	// At most one of these narrows the scope to one source/session's text;
+	// sourceId takes precedence if both are given. Omitting both runs
+	// against the campaign's most recent source and session content.
+	sourceId: z.string().uuid().optional(),
+	sessionId: z.string().uuid().optional(),
+});
+export type DetectContradictionsInput = z.infer<
+	typeof DetectContradictionsInput
+>;
+
 // Shared reference shape for the `encounter` tool's live combatants — also
 // the standard tracking format Alex asked for, per G-037's resolution.
 export const Combatant = z.object({

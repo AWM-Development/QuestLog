@@ -18,7 +18,7 @@ export const sessionRouter = router({
 	getById: procedure
 		.input(z.object({ id: z.string().uuid() }))
 		.query(({ ctx, input }) =>
-			withErrorHandling(() => sessionService.getById(ctx.db, input.id)),
+			withErrorHandling(() => sessionService.getByIdUnscoped(ctx.db, input.id)),
 		),
 
 	list: procedure

@@ -1,5 +1,6 @@
 import { sql } from "drizzle-orm";
 import {
+	type AnyPgColumn,
 	boolean,
 	customType,
 	index,
@@ -108,6 +109,13 @@ export const entities = pgTable(
 			.default({}),
 		dmNotes: text("dm_notes"),
 		status: text("status").notNull().default("active"),
+		// Self-referential npc<->monster pairing (T-171, G-036) — a symmetric
+		// 1:1 link, not an entity_relationships edge, since it's a well-defined
+		// structural pairing rather than an arbitrary narrative relationship.
+		// No type restriction enforced at the schema level; see entity.service.ts.
+		linkedEntityId: uuid("linked_entity_id").references(
+			(): AnyPgColumn => entities.id,
+		),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
 			.notNull(),
@@ -122,6 +130,7 @@ export const entities = pgTable(
 			sql`${table.name} gin_trgm_ops`,
 		),
 		index("entities_campaign_id_idx").using("btree", table.campaignId),
+		index("entities_linked_entity_id_idx").using("btree", table.linkedEntityId),
 	],
 );
 

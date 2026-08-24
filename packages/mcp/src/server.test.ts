@@ -877,6 +877,75 @@ describe("get_entity tool", () => {
 	});
 });
 
+describe("get_entity tool — linkedEntity (T-171)", () => {
+	// entityService.create opens its own db.transaction() when linkedEntityId
+	// is present (symmetric write) — doesn't compose with a raw BEGIN/ROLLBACK
+	// wrapper on the same connection (.claude/rules/backend.md "Test DB
+	// pattern"), same reason update_entity's describe block below uses this.
+	let campaignId: string;
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, campaignId);
+	});
+
+	it("includes a linkedEntity summary when the entity has a linked pair", async () => {
+		const npc = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni",
+			type: "npc",
+		});
+		const monster = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+			linkedEntityId: npc.id,
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: npc.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.linkedEntity).toEqual({
+			id: monster.id,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+		});
+	});
+
+	it("omits the linkedEntity key entirely for an unlinked entity", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: entity.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect("linkedEntity" in payload).toBe(false);
+	});
+});
+
 describe("create_entity tool", () => {
 	// create_entity now searches lore before persisting (T-083), whose
 	// keywordSearch opens its own db.transaction() (T-015) — doesn't compose
@@ -1054,6 +1123,193 @@ describe("create_entity tool", () => {
 		const created = JSON.parse(content[0]?.text ?? "{}");
 		expect(created.description).toBe("A road warden.");
 		expect(created.dmNotes).toBe("Secretly reports to Baron Voss.");
+	});
+
+	it("links to an existing entity when linkedEntityId is provided (T-171)", async () => {
+		const npc = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const createResult = await client.callTool({
+			name: "create_entity",
+			arguments: {
+				campaignId,
+				name: "Izek Strazni (combat)",
+				type: "monster",
+				linkedEntityId: npc.id,
+			},
+		});
+
+		expect(createResult.isError).toBeFalsy();
+		const content = createResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const created = JSON.parse(content[0]?.text ?? "{}");
+		expect(created.linkedEntityId).toBe(npc.id);
+
+		const getResult = await client.callTool({
+			name: "get_entity",
+			arguments: { campaignId, entityId: npc.id },
+		});
+		const getContent = getResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const fetchedNpc = JSON.parse(getContent[0]?.text ?? "{}");
+		expect(fetchedNpc.linkedEntity).toEqual({
+			id: created.id,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+		});
+	});
+
+	it("returns a structured not-found error linking to an entity from a different campaign (T-171)", async () => {
+		const otherCampaign = await campaignService.create(db, {
+			name: "Other Campaign",
+			theme: "sci-fi",
+		});
+		const outsider = await entityService.create(db, {
+			campaignId: otherCampaign.id,
+			name: "Outsider",
+			type: "npc",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "create_entity",
+			arguments: {
+				campaignId,
+				name: "Izek Strazni (combat)",
+				type: "monster",
+				linkedEntityId: outsider.id,
+			},
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+
+		await deleteCampaignTree(db, otherCampaign.id);
+	});
+});
+
+describe("borrow_entity tool", () => {
+	let sourceCampaignId: string;
+	let destCampaignId: string;
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+
+		const sourceCampaign = await campaignService.create(db, {
+			name: "Source Campaign",
+			theme: "fantasy",
+		});
+		sourceCampaignId = sourceCampaign.id;
+
+		const destCampaign = await campaignService.create(db, {
+			name: "Dest Campaign",
+			theme: "sci-fi",
+		});
+		destCampaignId = destCampaign.id;
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, sourceCampaignId);
+		await deleteCampaignTree(db, destCampaignId);
+	});
+
+	it("copies the entity into the destination campaign with a fresh id, provenance note, and borrowedFrom attributes, leaving the source unchanged", async () => {
+		const source = await entityService.create(db, {
+			campaignId: sourceCampaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+			description: "A road warden.",
+			dmNotes: "Secretly reports to Baron Voss.",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "borrow_entity",
+			arguments: { sourceCampaignId, entityId: source.id, destCampaignId },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const forked = JSON.parse(content[0]?.text ?? "{}");
+
+		expect(forked.id).not.toBe(source.id);
+		expect(forked.campaignId).toBe(destCampaignId);
+		expect(forked.name).toBe("Mira Duskwood");
+		expect(forked.type).toBe("npc");
+		expect(forked.description).toBe("A road warden.");
+		expect(forked.dmNotes).toContain("Secretly reports to Baron Voss.");
+		expect(forked.dmNotes).toContain(
+			'Borrowed from campaign "Source Campaign" (entity "Mira Duskwood")',
+		);
+		expect(forked.attributes).toEqual({
+			borrowedFrom: {
+				campaignId: sourceCampaignId,
+				entityId: source.id,
+				name: "Mira Duskwood",
+				forkedAt: expect.any(String),
+			},
+		});
+
+		const [unchangedSource] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, source.id));
+		expect(unchangedSource?.campaignId).toBe(sourceCampaignId);
+		expect(unchangedSource?.description).toBe("A road warden.");
+		expect(unchangedSource?.dmNotes).toBe("Secretly reports to Baron Voss.");
+	});
+
+	it("returns a well-formed not-found error for a nonexistent destCampaignId", async () => {
+		const source = await entityService.create(db, {
+			campaignId: sourceCampaignId,
+			name: "Mira Duskwood",
+			type: "npc",
+		});
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const unknownCampaignId = "00000000-0000-0000-0000-000000000000";
+
+		const result = await client.callTool({
+			name: "borrow_entity",
+			arguments: {
+				sourceCampaignId,
+				entityId: source.id,
+				destCampaignId: unknownCampaignId,
+			},
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+	});
+
+	it("returns a well-formed not-found error for an entityId that doesn't exist in sourceCampaignId", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const unknownEntityId = "00000000-0000-0000-0000-000000000000";
+
+		const result = await client.callTool({
+			name: "borrow_entity",
+			arguments: {
+				sourceCampaignId,
+				entityId: unknownEntityId,
+				destCampaignId,
+			},
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
 	});
 });
 
@@ -1755,6 +2011,133 @@ describe("update_entity + confirm_update_entity tools", () => {
 			.from(entities)
 			.where(eq(entities.id, entity.id));
 		expect(updated?.name).toBe("Mira Voss");
+	});
+
+	it("previews and confirms linking an unlinked pair via linkedEntityId (T-171)", async () => {
+		const npc = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni",
+			type: "npc",
+		});
+		const monster = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "update_entity",
+			arguments: { campaignId, entityId: monster.id, linkedEntityId: npc.id },
+		});
+		expect(previewResult.isError).toBeFalsy();
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token, preview } = JSON.parse(previewContent[0]?.text ?? "{}");
+		expect(preview.before.linkedEntityId).toBeNull();
+		expect(preview.after.linkedEntityId).toBe(npc.id);
+
+		const confirmResult = await client.callTool({
+			name: "confirm_update_entity",
+			arguments: { token },
+		});
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		expect(JSON.parse(confirmContent[0]?.text ?? "{}").linkedEntityId).toBe(
+			npc.id,
+		);
+
+		const [refetchedNpc] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, npc.id));
+		expect(refetchedNpc?.linkedEntityId).toBe(monster.id);
+	});
+
+	it("previews and confirms clearing a link via linkedEntityId: null (T-171)", async () => {
+		const npc = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni",
+			type: "npc",
+		});
+		const monster = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+			linkedEntityId: npc.id,
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const previewResult = await client.callTool({
+			name: "update_entity",
+			arguments: { campaignId, entityId: monster.id, linkedEntityId: null },
+		});
+		expect(previewResult.isError).toBeFalsy();
+		const previewContent = previewResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		const { token, preview } = JSON.parse(previewContent[0]?.text ?? "{}");
+		expect(preview.before.linkedEntityId).toBe(npc.id);
+		expect(preview.after.linkedEntityId).toBeNull();
+
+		const confirmResult = await client.callTool({
+			name: "confirm_update_entity",
+			arguments: { token },
+		});
+		expect(confirmResult.isError).toBeFalsy();
+		const confirmContent = confirmResult.content as Array<{
+			type: string;
+			text: string;
+		}>;
+		expect(
+			JSON.parse(confirmContent[0]?.text ?? "{}").linkedEntityId,
+		).toBeNull();
+
+		const [refetchedNpc] = await db
+			.select()
+			.from(entities)
+			.where(eq(entities.id, npc.id));
+		expect(refetchedNpc?.linkedEntityId).toBeNull();
+	});
+
+	it("returns a structured not-found error linking to an entity from a different campaign (T-171)", async () => {
+		const otherCampaign = await campaignService.create(db, {
+			name: "Other Campaign",
+			theme: "sci-fi",
+		});
+		const outsider = await entityService.create(db, {
+			campaignId: otherCampaign.id,
+			name: "Outsider",
+			type: "npc",
+		});
+		const monster = await entityService.create(db, {
+			campaignId,
+			name: "Izek Strazni (combat)",
+			type: "monster",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const result = await client.callTool({
+			name: "update_entity",
+			arguments: {
+				campaignId,
+				entityId: monster.id,
+				linkedEntityId: outsider.id,
+			},
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+
+		await deleteCampaignTree(db, otherCampaign.id);
 	});
 });
 
@@ -2935,6 +3318,86 @@ describe("ingest_text + get_source_status tools", () => {
 
 		await waitForStatus(payload.source.id, "done");
 	});
+
+	it("includes a non-empty contradictionCandidates array when the ingested text conflicts with existing entity lore (T-164)", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Lord Varen",
+			type: "npc",
+			description: "Lord Varen is deceased, killed at the Siege of Korth.",
+		});
+		const contradictionLlmService: Pick<LlmService, "callClaudeStructured"> = {
+			callClaudeStructured: vi
+				.fn()
+				.mockImplementation(async ({ schemaName }) => {
+					if (schemaName === "report_contradictions") {
+						return {
+							data: {
+								contradictions: [
+									{
+										entityId: entity.id,
+										newClaimExcerpt:
+											"Lord Varen greeted the party at the gate.",
+										existingClaimExcerpt:
+											"Lord Varen is deceased, killed at the Siege of Korth.",
+										confidence: 0.9,
+									},
+								],
+							},
+							usage: { inputTokens: 0, outputTokens: 0 },
+						};
+					}
+					return {
+						data: { candidates: [] },
+						usage: { inputTokens: 0, outputTokens: 0 },
+					};
+				}),
+		};
+		const client = await connectedClient(
+			createMockFetch(basisVector(0)),
+			contradictionLlmService,
+		);
+
+		const result = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Ashfall Primer",
+				content: "Lord Varen greeted the party at the gate.",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.contradictionCandidates).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ entityId: entity.id, confidence: 0.9 }),
+			]),
+		);
+
+		await waitForStatus(payload.source.id, "done");
+	});
+
+	it("returns an empty contradictionCandidates array when nothing conflicts", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "ingest_text",
+			arguments: {
+				campaignId,
+				title: "Ashfall Primer",
+				content: "The party rests at the Ashfall inn.",
+			},
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.contradictionCandidates).toEqual([]);
+
+		await waitForStatus(payload.source.id, "done");
+	});
 });
 
 describe("list_sources tool", () => {
@@ -3766,6 +4229,273 @@ describe("get_chunk_history tool (T-152)", () => {
 		expect(result.isError).toBeFalsy();
 		const content = result.content as Array<{ type: string; text: string }>;
 		expect(JSON.parse(content[0]?.text ?? "null")).toEqual([]);
+	});
+});
+
+describe("detect_contradictions tool (T-164)", () => {
+	// Mirrors continuity.service.test.ts's own mock — the tool layer's
+	// contract with the LLM is unchanged by wiring, only who calls it.
+	function createContradictionLlmService(
+		contradictions: Array<{
+			entityId: string;
+			newClaimExcerpt: string;
+			existingClaimExcerpt: string;
+			confidence: number;
+		}>,
+	): Pick<LlmService, "callClaudeStructured"> {
+		return {
+			callClaudeStructured: vi.fn().mockResolvedValue({
+				data: { contradictions },
+				usage: { inputTokens: 0, outputTokens: 0 },
+			}),
+		};
+	}
+
+	let campaignId: string;
+
+	beforeEach(async () => {
+		vi.clearAllMocks();
+		const campaign = await campaignService.create(db, {
+			name: "Ashfall Primer Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await deleteCampaignTree(db, campaignId);
+	});
+
+	it("returns a candidate detected in the scoped source (sourceId)", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Lord Varen",
+			type: "npc",
+			description: "Lord Varen is deceased, killed at the Siege of Korth.",
+		});
+		const [source] = await db
+			.insert(sources)
+			.values({
+				campaignId,
+				name: "Session 4 recap",
+				type: "paste",
+				status: "done",
+				metadata: {
+					extractedText: "Lord Varen greeted the party at the gate.",
+				},
+			})
+			.returning();
+
+		const llmService = createContradictionLlmService([
+			{
+				entityId: entity.id,
+				newClaimExcerpt: "Lord Varen greeted the party at the gate.",
+				existingClaimExcerpt:
+					"Lord Varen is deceased, killed at the Siege of Korth.",
+				confidence: 0.9,
+			},
+		]);
+		const client = await connectedClient(
+			createMockFetch(basisVector(0)),
+			llmService,
+		);
+
+		const result = await client.callTool({
+			name: "detect_contradictions",
+			arguments: { campaignId, sourceId: source?.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.candidates).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ entityId: entity.id, confidence: 0.9 }),
+			]),
+		);
+	});
+
+	it("returns a candidate detected in the scoped session (sessionId)", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Lord Varen",
+			type: "npc",
+			description: "Lord Varen is deceased, killed at the Siege of Korth.",
+		});
+		const session = await sessionService.create(db, {
+			campaignId,
+			content: "Lord Varen greeted the party at the gate.",
+		});
+
+		const llmService = createContradictionLlmService([
+			{
+				entityId: entity.id,
+				newClaimExcerpt: "Lord Varen greeted the party at the gate.",
+				existingClaimExcerpt:
+					"Lord Varen is deceased, killed at the Siege of Korth.",
+				confidence: 0.9,
+			},
+		]);
+		const client = await connectedClient(
+			createMockFetch(basisVector(0)),
+			llmService,
+		);
+
+		const result = await client.callTool({
+			name: "detect_contradictions",
+			arguments: { campaignId, sessionId: session.id },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.candidates).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ entityId: entity.id, confidence: 0.9 }),
+			]),
+		);
+	});
+
+	it("checks the most recent source and session when no scope is given", async () => {
+		const entity = await entityService.create(db, {
+			campaignId,
+			name: "Lord Varen",
+			type: "npc",
+			description: "Lord Varen is deceased, killed at the Siege of Korth.",
+		});
+		await db.insert(sources).values({
+			campaignId,
+			name: "Older recap",
+			type: "paste",
+			status: "done",
+			metadata: { extractedText: "Nothing notable happened." },
+		});
+		await db.insert(sources).values({
+			campaignId,
+			name: "Latest recap",
+			type: "paste",
+			status: "done",
+			metadata: {
+				extractedText: "Lord Varen greeted the party at the gate.",
+			},
+		});
+
+		const llmService = createContradictionLlmService([
+			{
+				entityId: entity.id,
+				newClaimExcerpt: "Lord Varen greeted the party at the gate.",
+				existingClaimExcerpt:
+					"Lord Varen is deceased, killed at the Siege of Korth.",
+				confidence: 0.9,
+			},
+		]);
+		const client = await connectedClient(
+			createMockFetch(basisVector(0)),
+			llmService,
+		);
+
+		const result = await client.callTool({
+			name: "detect_contradictions",
+			arguments: { campaignId },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.candidates).toEqual(
+			expect.arrayContaining([
+				expect.objectContaining({ entityId: entity.id, confidence: 0.9 }),
+			]),
+		);
+	});
+
+	it("returns an empty candidates array for a campaign with no contradictions", async () => {
+		const llmService = createContradictionLlmService([]);
+		const client = await connectedClient(
+			createMockFetch(basisVector(0)),
+			llmService,
+		);
+
+		const result = await client.callTool({
+			name: "detect_contradictions",
+			arguments: { campaignId },
+		});
+
+		expect(result.isError).toBeFalsy();
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.candidates).toEqual([]);
+	});
+
+	it("rejects/404s on a campaignId the caller doesn't own (T-068 scoping)", async () => {
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+		const unknownCampaignId = "00000000-0000-0000-0000-000000000000";
+
+		const result = await client.callTool({
+			name: "detect_contradictions",
+			arguments: { campaignId: unknownCampaignId },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+	});
+
+	it("rejects/404s on a sourceId owned by a different campaign (T-068 scoping)", async () => {
+		const otherCampaign = await campaignService.create(db, {
+			name: "Other Campaign",
+			theme: "sci-fi",
+		});
+		const [otherSource] = await db
+			.insert(sources)
+			.values({
+				campaignId: otherCampaign.id,
+				name: "Not yours",
+				type: "paste",
+				status: "done",
+				metadata: { extractedText: "Some other campaign's text." },
+			})
+			.returning();
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "detect_contradictions",
+			arguments: { campaignId, sourceId: otherSource?.id },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+
+		await deleteCampaignTree(db, otherCampaign.id);
+	});
+
+	it("rejects/404s on a sessionId owned by a different campaign (T-068 scoping)", async () => {
+		const otherCampaign = await campaignService.create(db, {
+			name: "Other Campaign",
+			theme: "sci-fi",
+		});
+		const otherSession = await sessionService.create(db, {
+			campaignId: otherCampaign.id,
+			content: "Some other campaign's session.",
+		});
+
+		const client = await connectedClient(createMockFetch(basisVector(0)));
+
+		const result = await client.callTool({
+			name: "detect_contradictions",
+			arguments: { campaignId, sessionId: otherSession.id },
+		});
+
+		expect(result.isError).toBe(true);
+		const content = result.content as Array<{ type: string; text: string }>;
+		const payload = JSON.parse(content[0]?.text ?? "{}");
+		expect(payload.error.code).toBe("NOT_FOUND");
+
+		await deleteCampaignTree(db, otherCampaign.id);
 	});
 });
 

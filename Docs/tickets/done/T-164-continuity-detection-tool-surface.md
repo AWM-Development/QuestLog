@@ -8,7 +8,6 @@ Strategy-gate flag: yes
 
 Priority: P1
 
-
 Branch: feat/m-continuity/t-164-continuity-detection-tool-surface
 
 Context files (load ONLY these):

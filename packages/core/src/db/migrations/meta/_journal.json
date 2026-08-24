@@ -134,6 +134,13 @@
       "when": 1787178800497,
       "tag": "0018_typical_pyro",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1787494086919,
+      "tag": "0019_giant_madelyne_pryor",
+      "breakpoints": true
     }
   ]
 }

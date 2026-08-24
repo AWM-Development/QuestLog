@@ -1,0 +1,13 @@
+{
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"jsx": "react-jsx",
+		"lib": ["ES2022", "DOM", "DOM.Iterable"],
+		"paths": {
+			"@/*": ["./src/*"],
+			"@questlog/shared": ["../../packages/shared/src"],
+			"@questlog/server/*": ["../../apps/server/src/*"]
+		}
+	},
+	"include": ["src"]
+}

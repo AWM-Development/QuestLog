@@ -27,8 +27,31 @@ export function registerGetEntity(server: McpServer, { db }: ToolDeps) {
 				campaignId,
 				ownerEntityId: entity.id,
 			});
+			// linkedEntity is a lightweight summary lookup, not the full entity
+			// (T-171) — omitted entirely when unlinked, rather than null-valued, so
+			// the common no-link case's JSON shape is unchanged from before.
+			const linkedEntity = entity.linkedEntityId
+				? await entityService.getById(db, campaignId, entity.linkedEntityId)
+				: null;
 			return {
-				content: [{ type: "text", text: JSON.stringify({ ...entity, items }) }],
+				content: [
+					{
+						type: "text",
+						text: JSON.stringify({
+							...entity,
+							items,
+							...(linkedEntity
+								? {
+										linkedEntity: {
+											id: linkedEntity.id,
+											name: linkedEntity.name,
+											type: linkedEntity.type,
+										},
+									}
+								: {}),
+						}),
+					},
+				],
 			};
 		}),
 	);
