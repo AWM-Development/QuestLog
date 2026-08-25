@@ -16,14 +16,28 @@ These two are otherwise unconnected — bundled into one version number only bec
 **Anticipated but not yet gated:** Alex has also flagged **loot-table generation** (assembling a table of possible loot, weighted/random-drawing individual items, some of which may come from `G-042`'s templates) as a future capability that likely lands in this same milestone once `G-042` (and possibly `G-041`) resolve enough to make it concretely scopable. Not filed as its own gate yet — deliberately, per `GATE_SPEC.md`'s "don't invent a decision" discipline — because its shape depends on `G-042`'s resolution (a loot table drawing from item templates needs the templates to exist first) and no open question has been articulated yet beyond "we'll want this eventually." Revisit once `G-042` resolves.
 
 **Open gates:**
-- `G-041` (`Docs/tickets/gated/G-041-generalized-freeform-text-detection.md`) — blocks M-DETECT below.
+- `G-041` — resolved (`Docs/tickets/gated/resolved/G-041-generalized-freeform-text-detection.md`); ticketed `T-183`.
 - `G-042` (`Docs/tickets/gated/G-042-item-template-system.md`) — blocks M-ITEMTEMPLATE below.
 
 ---
 
 ## Milestone M-DETECT — Generalized freeform-text detection
 
-*Blocked on `G-041`. Task list written here once the gate resolves.*
+**Goal:** one reusable "detect mentions of X in freeform text" mechanism,
+proven against the one detector that already exists (`log_session`'s
+entity-mention scan), before a second concrete consumer (e.g. inventory
+auto-detect) is designed against it. See `G-041`'s Resolution for the full
+decision.
+
+### Tasks
+
+- [ ] **M-DETECT.1 — Pluggable detector registry + retrofit `log_session`** (T-183)
+  A small `register(type, detector)` / `detect(db, type, args)` registry
+  in `packages/core`, the existing entity-mention detection registered
+  under `"entity"`, and `log_session`'s tool handler retrofitted to call
+  through the registry instead of `entityService.detectSpans` directly.
+  No second detector built yet — `continuity.service.ts`'s own direct
+  `detectSpans` call stays as-is.
 
 ## Milestone M-ITEMTEMPLATE — Item template system
 

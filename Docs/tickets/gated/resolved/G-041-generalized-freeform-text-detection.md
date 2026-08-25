@@ -45,3 +45,33 @@ Notes: Raised so `M-INVENTORY`'s schema/tool design (`G-023`) doesn't
   shipped instance, so "generalize" is still a one-example judgment call;
   this gate exists to hold the question open, not to answer it prematurely
   with only one data point.
+
+## Resolution (2026-08-25)
+
+**Generalize now — build a pluggable detector registry, and retrofit
+`log_session`'s existing entity-detection path onto it.** Resolved with
+Alex via `/ungate`, despite this gate's own Notes flagging "only one data
+point" as a reason to wait: Alex's explicit call was to build the shared
+mechanism now rather than deferring until a second concrete consumer
+(inventory/loot detection or otherwise) exists to design against.
+
+**Shape:** a small `register(type, detector)` / `detect(db, type, args)`
+registry in `packages/core`, keyed by detector type. The existing
+entity-mention detection (`entityService.detectSpans`) is wrapped and
+registered under `"entity"` — its own implementation is untouched, only
+adapted to the registry's calling convention. `log_session`'s tool
+handler is retrofitted to call through the registry instead of
+`entityService.detectSpans` directly, with no change to its output shape
+or downstream behavior.
+
+**Retrofit scope: `log_session` only, not every existing consumer.**
+`continuity.service.ts`'s own direct call to `entityService.detectSpans`
+is explicitly out of scope for this resolution — the decision generalizes
+the *mechanism*, it doesn't mandate migrating every current caller onto
+it in one pass. A future detector (inventory/loot, or anything else) is
+also not built here — this resolution only proves the registry pattern
+against the one detector that already exists; a second detector is left
+for whenever that concrete need is actually being built.
+
+Ticketed as `T-183` (`Docs/tickets/queue/T-183-detector-registry.md`)
+against `Docs/milestones/MILESTONES_V1_9_MCP.md` Milestone M-DETECT.
