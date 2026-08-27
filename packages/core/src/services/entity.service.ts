@@ -811,9 +811,9 @@ export const entityService = {
 			}
 		}
 
-		const first = tied[0];
-		if (!first) throw new NotFoundError("Entity", name);
-		return first;
+		const winner = tied[0];
+		if (!winner) throw new NotFoundError("Entity", name);
+		return winner;
 	},
 
 	async archive(
