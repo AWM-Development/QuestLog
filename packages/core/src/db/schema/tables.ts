@@ -116,6 +116,14 @@ export const entities = pgTable(
 		linkedEntityId: uuid("linked_entity_id").references(
 			(): AnyPgColumn => entities.id,
 		),
+		// Self-referential 1:many structural containment (T-183, G-053) — a
+		// content-heavy entity's addressable sub-parts (e.g. a dungeon's rooms).
+		// Structurally like linkedEntityId, but a plain parent pointer with no
+		// symmetric-pairing logic. No type restriction at the schema level; see
+		// entity.service.ts.
+		parentEntityId: uuid("parent_entity_id").references(
+			(): AnyPgColumn => entities.id,
+		),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.defaultNow()
 			.notNull(),
@@ -131,6 +139,7 @@ export const entities = pgTable(
 		),
 		index("entities_campaign_id_idx").using("btree", table.campaignId),
 		index("entities_linked_entity_id_idx").using("btree", table.linkedEntityId),
+		index("entities_parent_entity_id_idx").using("btree", table.parentEntityId),
 	],
 );
 

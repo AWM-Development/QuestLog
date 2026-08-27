@@ -5,6 +5,35 @@ export class NotFoundError extends Error {
 	}
 }
 
+/**
+ * Thrown by `entityService.getByName` when an unscoped fuzzy match ties for
+ * top score across candidates with different `parentEntityId` values (G-053)
+ * — QuestLog doesn't guess which parent the caller meant; it surfaces the
+ * tie so the calling agent can ask the user to disambiguate (T-184 wires
+ * this into the MCP tool surface).
+ */
+export class AmbiguousEntityError extends Error {
+	public readonly candidates: Array<{
+		id: string;
+		name: string;
+		type: string;
+		parentEntityId: string | null;
+	}>;
+
+	constructor(
+		candidates: Array<{
+			id: string;
+			name: string;
+			type: string;
+			parentEntityId: string | null;
+		}>,
+	) {
+		super("Ambiguous entity name: multiple matches under different parents");
+		this.name = "AmbiguousEntityError";
+		this.candidates = candidates;
+	}
+}
+
 export class ValidationError extends Error {
 	constructor(message: string) {
 		super(message);

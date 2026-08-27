@@ -3,7 +3,7 @@ import { ENTITY_TYPES, type EntityType } from "@questlog/shared";
 import { and, eq, sql } from "drizzle-orm";
 import type { Database, Transaction } from "../db/index.js";
 import { entities } from "../db/schema/index.js";
-import { NotFoundError } from "../lib/errors.js";
+import { AmbiguousEntityError, NotFoundError } from "../lib/errors.js";
 import { first } from "../lib/utils.js";
 import { CONTEXT_CONFIG, contextService } from "./context.service.js";
 import type { ContextCitation } from "./context.service.js";
@@ -459,8 +459,18 @@ export const entityService = {
 			sourceId?: string;
 			attributes?: Record<string, unknown>;
 			linkedEntityId?: string;
+			parentEntityId?: string;
 		},
 	) {
+		// Validate before insert, same campaign-scoped-lookup discipline as
+		// linkedEntityId below — throws NotFoundError for a nonexistent id or
+		// one belonging to a different campaign (.claude/rules/mcp.md § "Campaign-
+		// scoped ID lookups"). No type restriction (G-053) — left to the calling
+		// agent's judgment.
+		if (input.parentEntityId !== undefined) {
+			await entityService.getById(db, input.campaignId, input.parentEntityId);
+		}
+
 		if (input.linkedEntityId === undefined) {
 			const rows = await db
 				.insert(entities)
@@ -474,6 +484,7 @@ export const entityService = {
 					dmNotes: input.dmNotes ?? null,
 					sourceId: input.sourceId ?? null,
 					attributes: input.attributes ?? {},
+					parentEntityId: input.parentEntityId ?? null,
 				})
 				.returning();
 			const row = rows[0];
@@ -502,6 +513,7 @@ export const entityService = {
 					sourceId: input.sourceId ?? null,
 					attributes: input.attributes ?? {},
 					linkedEntityId,
+					parentEntityId: input.parentEntityId ?? null,
 				})
 				.returning();
 			const row = rows[0];
@@ -543,6 +555,7 @@ export const entityService = {
 			description?: string;
 			dmNotes?: string;
 			linkedEntityId?: string;
+			parentEntityId?: string;
 			fetchFn?: FetchFn;
 		},
 	): Promise<{
@@ -598,6 +611,7 @@ export const entityService = {
 			dmNotes: input.dmNotes,
 			attributes,
 			linkedEntityId: input.linkedEntityId,
+			parentEntityId: input.parentEntityId,
 		});
 
 		return { entity, citations, confidence, seeded };
@@ -710,6 +724,7 @@ export const entityService = {
 		campaignId: string,
 		type?: string,
 		includeArchived = false,
+		opts?: { parentEntityId?: string },
 	) {
 		return db
 			.select()
@@ -719,6 +734,9 @@ export const entityService = {
 					eq(entities.campaignId, campaignId),
 					type ? eq(entities.type, type) : undefined,
 					includeArchived ? undefined : eq(entities.status, "active"),
+					opts?.parentEntityId
+						? eq(entities.parentEntityId, opts.parentEntityId)
+						: undefined,
 				),
 			);
 	},
@@ -744,23 +762,58 @@ export const entityService = {
 		campaignId: string,
 		name: string,
 		includeArchived = false,
+		parentEntityId?: string,
 	) {
 		const candidateRows = await db
 			.select()
 			.from(entities)
-			.where(wordSimilarityCandidateFilter(campaignId, name, !includeArchived));
+			.where(
+				and(
+					wordSimilarityCandidateFilter(campaignId, name, !includeArchived),
+					parentEntityId
+						? eq(entities.parentEntityId, parentEntityId)
+						: undefined,
+				),
+			);
 
-		let best: { row: (typeof candidateRows)[number]; score: number } | null =
-			null;
+		// Track every candidate tied for the top score, not just the first —
+		// an unscoped tie across different parents is ambiguous (G-053) and
+		// must be surfaced, not silently resolved by iteration order.
+		let bestScore = -1;
+		let tied: (typeof candidateRows)[number][] = [];
 		for (const row of candidateRows) {
 			const score = trigramSimilarity(name, row.name);
-			if (score >= FUZZY_THRESHOLD && (!best || score > best.score)) {
-				best = { row, score };
+			if (score < FUZZY_THRESHOLD) continue;
+			if (score > bestScore) {
+				bestScore = score;
+				tied = [row];
+			} else if (score === bestScore) {
+				tied.push(row);
 			}
 		}
-		if (!best) throw new NotFoundError("Entity", name);
+		if (tied.length === 0) throw new NotFoundError("Entity", name);
 
-		return best.row;
+		// A caller-scoped lookup (parentEntityId given) already resolves to one
+		// parent's children — a same-name tie there is "which of two identically-
+		// scoped duplicates," not "which parent," so it keeps today's
+		// first-wins behavior instead of throwing.
+		if (!parentEntityId && tied.length > 1) {
+			const distinctParents = new Set(tied.map((row) => row.parentEntityId));
+			if (distinctParents.size > 1) {
+				throw new AmbiguousEntityError(
+					tied.map((row) => ({
+						id: row.id,
+						name: row.name,
+						type: row.type,
+						parentEntityId: row.parentEntityId,
+					})),
+				);
+			}
+		}
+
+		const first = tied[0];
+		if (!first) throw new NotFoundError("Entity", name);
+		return first;
 	},
 
 	async archive(
