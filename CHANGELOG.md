@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-183
+
+- **`parentEntityId` — self-referential 1:many entity containment (schema + service layer).** `entities` gains a nullable, self-referential `parentEntityId` FK (indexed) so a content-heavy entity's sub-parts (e.g. a dungeon's rooms) can be individually addressable, scoped-to-parent rows rather than paragraphs in one flat `description` (`G-053`'s resolution). `entityService.create`/`createSeeded` accept an optional `parentEntityId`, validated same-campaign (`NotFoundError` otherwise). `entityService.list` accepts an optional `parentEntityId` filter to scope results to one parent's children. `entityService.getByName` accepts an optional `parentEntityId` to scope its fuzzy match to one parent's children; when unscoped and a same-named tie spans two or more different parents, it now throws a new `AmbiguousEntityError` (carrying the tied candidates) instead of silently picking one by iteration order. No MCP tool surface yet — that's `T-184`.
+
 ### Added — T-172
 
 - **`encounter` MCP tool — initiative sort + HP-delta, stateless.** New `encounter` tool with two actions: `roll_initiative` takes a list of combatants (each with an already-decided initiative value) and returns them sorted descending by initiative, ties broken by input order; `apply_hp_delta` takes a current/max hp pair plus a delta (negative for damage, positive for healing) and returns the clamped `newHp` (never below 0 or above max) and a `"healthy"`/`"bloodied"`/`"down"` status band. No persisted encounter state — the actual turn-by-turn tracking stays in the conversation itself, per `G-037`'s resolution. First tool in this codebase with no `db`/`storage`/`llmService` dependency at all. New shared `Combatant` Zod shape (`packages/shared/src/validators/mcp.ts`) doubles as the standard reference format for a combatant.

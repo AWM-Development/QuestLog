@@ -16,7 +16,7 @@ import {
 	deleteCampaignTree,
 	similarityVector,
 } from "../db/test-helpers.js";
-import { NotFoundError } from "../lib/errors.js";
+import { AmbiguousEntityError, NotFoundError } from "../lib/errors.js";
 import { campaignService } from "./campaign.service.js";
 import { entityService, extractExcerpt } from "./entity.service.js";
 import type { LlmService } from "./llm.service.js";
@@ -1186,6 +1186,167 @@ describe("extractExcerpt", () => {
 		const excerpt = extractExcerpt(text, { startIndex, endIndex });
 
 		expect(excerpt).toBe("Mira Duskwood met the party at the gates.");
+	});
+});
+
+describe("entityService parentEntityId (T-183, G-053)", () => {
+	let campaignId: string;
+
+	beforeEach(async () => {
+		await db.execute(sql`BEGIN`);
+		const campaign = await campaignService.create(db, {
+			name: "Test Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await db.execute(sql`ROLLBACK`);
+	});
+
+	it("persists parentEntityId when creating a child with a valid parent", async () => {
+		const dungeon = await entityService.create(db, {
+			campaignId,
+			name: "Ash Keep",
+			type: "location",
+		});
+		const room = await entityService.create(db, {
+			campaignId,
+			name: "Entrance Hall",
+			type: "location",
+			parentEntityId: dungeon.id,
+		});
+
+		expect(room.parentEntityId).toBe(dungeon.id);
+	});
+
+	it("throws NotFoundError creating with a parentEntityId from a different campaign", async () => {
+		const otherCampaign = await campaignService.create(db, {
+			name: "Other Campaign",
+			theme: "fantasy",
+		});
+		const outsideParent = await entityService.create(db, {
+			campaignId: otherCampaign.id,
+			name: "Castle Ravenloft",
+			type: "location",
+		});
+
+		await expect(
+			entityService.create(db, {
+				campaignId,
+				name: "Entrance Hall",
+				type: "location",
+				parentEntityId: outsideParent.id,
+			}),
+		).rejects.toThrow(NotFoundError);
+	});
+
+	it("throws NotFoundError creating with a nonexistent parentEntityId", async () => {
+		await expect(
+			entityService.create(db, {
+				campaignId,
+				name: "Entrance Hall",
+				type: "location",
+				parentEntityId: "00000000-0000-0000-0000-000000000000",
+			}),
+		).rejects.toThrow(NotFoundError);
+	});
+
+	it("list scoped by parentEntityId returns only that parent's children", async () => {
+		const dungeon = await entityService.create(db, {
+			campaignId,
+			name: "Ash Keep",
+			type: "location",
+		});
+		const otherDungeon = await entityService.create(db, {
+			campaignId,
+			name: "Castle Ravenloft",
+			type: "location",
+		});
+		const room = await entityService.create(db, {
+			campaignId,
+			name: "Entrance Hall",
+			type: "location",
+			parentEntityId: dungeon.id,
+		});
+		await entityService.create(db, {
+			campaignId,
+			name: "Great Hall",
+			type: "location",
+			parentEntityId: otherDungeon.id,
+		});
+
+		const results = await entityService.list(db, campaignId, undefined, false, {
+			parentEntityId: dungeon.id,
+		});
+
+		expect(results).toHaveLength(1);
+		expect(results[0]?.id).toBe(room.id);
+	});
+
+	it("getByName scoped to a parentEntityId returns only that parent's matching child, ignoring a same-named entity under a different parent", async () => {
+		const dungeon = await entityService.create(db, {
+			campaignId,
+			name: "Ash Keep",
+			type: "location",
+		});
+		const otherDungeon = await entityService.create(db, {
+			campaignId,
+			name: "Castle Ravenloft",
+			type: "location",
+		});
+		const room = await entityService.create(db, {
+			campaignId,
+			name: "Entrance Hall",
+			type: "location",
+			parentEntityId: dungeon.id,
+		});
+		await entityService.create(db, {
+			campaignId,
+			name: "Entrance Hall",
+			type: "location",
+			parentEntityId: otherDungeon.id,
+		});
+
+		const found = await entityService.getByName(
+			db,
+			campaignId,
+			"Entrance Hall",
+			false,
+			dungeon.id,
+		);
+
+		expect(found.id).toBe(room.id);
+	});
+
+	it("getByName (unscoped) throws AmbiguousEntityError when two same-named entities under two different parents tie for top fuzzy-match score", async () => {
+		const dungeon = await entityService.create(db, {
+			campaignId,
+			name: "Ash Keep",
+			type: "location",
+		});
+		const otherDungeon = await entityService.create(db, {
+			campaignId,
+			name: "Castle Ravenloft",
+			type: "location",
+		});
+		await entityService.create(db, {
+			campaignId,
+			name: "Entrance Hall",
+			type: "location",
+			parentEntityId: dungeon.id,
+		});
+		await entityService.create(db, {
+			campaignId,
+			name: "Entrance Hall",
+			type: "location",
+			parentEntityId: otherDungeon.id,
+		});
+
+		await expect(
+			entityService.getByName(db, campaignId, "Entrance Hall"),
+		).rejects.toThrow(AmbiguousEntityError);
 	});
 });
 
