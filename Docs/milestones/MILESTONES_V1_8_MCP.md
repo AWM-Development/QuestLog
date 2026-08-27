@@ -76,7 +76,7 @@ Output format was initially decided as "markdown first, image later" but Alex ov
 
 ### Tasks
 
-- [ ] **M-GENERATE.1 — `encounters`/`encounter_members` schema + manual `save_encounter` path** (T-173)
+- [x] **M-GENERATE.1 — `encounters`/`encounter_members` schema + manual `save_encounter` path** (T-173)
   New tables, `encounter.service.ts`, and `save_encounter`/`list_encounters`/`get_encounter` tools — no LLM/NL parsing, a direct-write persistence layer usable standalone. See `T-173` for full scope.
 
 - [ ] **M-GENERATE.2 — `generate_encounter`: NL parsing + roster matching + preview/confirm** (T-174, Blocked on T-173)

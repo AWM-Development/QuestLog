@@ -22,6 +22,10 @@ export const TABLES_IN_DELETE_ORDER = [
 	// both must clear before their referenced tables (T-142 review follow-up).
 	"inventory_items",
 	"campaign_wealth",
+	// encounter_members FKs to both entities and encounters — must clear
+	// before either (T-173).
+	"encounter_members",
+	"encounters",
 	"entities",
 	"sources",
 	"sessions",

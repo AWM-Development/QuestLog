@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-173
+
+- **Saved encounters: schema + manual `save_encounter` path.** New campaign-scoped `encounters`/`encounter_members` tables (mirroring `inventoryItems`'s shape — an `(entityId, count)` pair per roster row, e.g. "goblin x 2" is one row, not two) and a new `encounter.service.ts` (`save`/`list`/`getById`). Three new MCP tools: `save_encounter` (direct write, additive-only — no preview/confirm), `list_encounters` (member-count summary), `get_encounter` (full roster, each member resolved to `{ entityId, name, type, count }`). A DM can hand-assemble a roster via `get_entity`/`list_entities` and persist it directly, no LLM step required — natural-language generation is `T-174`, built on top of this.
+
 ### Added — T-172
 
 - **`encounter` MCP tool — initiative sort + HP-delta, stateless.** New `encounter` tool with two actions: `roll_initiative` takes a list of combatants (each with an already-decided initiative value) and returns them sorted descending by initiative, ties broken by input order; `apply_hp_delta` takes a current/max hp pair plus a delta (negative for damage, positive for healing) and returns the clamped `newHp` (never below 0 or above max) and a `"healthy"`/`"bloodied"`/`"down"` status band. No persisted encounter state — the actual turn-by-turn tracking stays in the conversation itself, per `G-037`'s resolution. First tool in this codebase with no `db`/`storage`/`llmService` dependency at all. New shared `Combatant` Zod shape (`packages/shared/src/validators/mcp.ts`) doubles as the standard reference format for a combatant.

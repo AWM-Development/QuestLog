@@ -12,6 +12,8 @@ import {
 	chunkCorrections,
 	chunks,
 	conversations,
+	encounterMembers,
+	encounters,
 	entities,
 	entityRelationships,
 	inventoryItems,
@@ -174,6 +176,19 @@ export async function deleteCampaignTree(db: Database, campaignId: string) {
 	await db
 		.delete(campaignWealth)
 		.where(eq(campaignWealth.campaignId, campaignId));
+	// encounter_members FKs to both entities and encounters — must clear
+	// before either (T-173).
+	const encounterRows = await db
+		.select({ id: encounters.id })
+		.from(encounters)
+		.where(eq(encounters.campaignId, campaignId));
+	const encounterIds = encounterRows.map((r) => r.id);
+	if (encounterIds.length > 0) {
+		await db
+			.delete(encounterMembers)
+			.where(inArray(encounterMembers.encounterId, encounterIds));
+	}
+	await db.delete(encounters).where(eq(encounters.campaignId, campaignId));
 	// entities.sourceId now FKs to sources (T-080) — must delete before sources.
 	await db.delete(entities).where(eq(entities.campaignId, campaignId));
 	await db.delete(sources).where(eq(sources.campaignId, campaignId));

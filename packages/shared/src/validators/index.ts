@@ -59,6 +59,11 @@ export {
 	TransferItemInput,
 } from "./inventory.js";
 export {
+	GetEncounterInput,
+	ListEncountersInput,
+	SaveEncounterInput,
+} from "./encounter.js";
+export {
 	GetTicketRunInput,
 	ListReportsInput,
 	ListTrendsInput,

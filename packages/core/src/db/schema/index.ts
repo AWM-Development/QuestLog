@@ -4,6 +4,8 @@ export {
 	chunkCorrections,
 	chunks,
 	conversations,
+	encounterMembers,
+	encounters,
 	entities,
 	entityRelationships,
 	inventoryItems,
