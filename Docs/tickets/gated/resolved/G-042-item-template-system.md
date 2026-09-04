@@ -78,3 +78,79 @@ Notes: Raised by Alex specifically while confirming `G-023`'s
   (see `MILESTONES_V1_9_MCP.md`'s "Anticipated but not yet gated" note).
   Cross-aware of `G-036`/`G-039` (parallel effort, stat blocks rather than
   items) but not blocked by either — resolve independently.
+
+## Resolution (2026-09-04)
+
+Resolved with Alex via `/ungate`. Answers to the five sub-decisions:
+
+1. **Template scope & storage: global shared library, dedicated
+   `item_templates` table.** Not per-campaign or per-ruleset — a "+1
+   longsword" is reusable across any campaign that wants it, and a
+   dedicated table follows the same "structured relational data over
+   JSONB blobs" precedent `G-023`/`G-036` already established. Unlike
+   `G-036`'s stat-block templates, an item template is not "the one layout
+   a campaign selects" — it's one catalog entry among many, so there's no
+   `campaigns.itemTemplateId`-style selection column; `add_item` picks a
+   template per call instead (`T-186`).
+
+2. **Template → instance relationship: snapshot copy.** Creating an
+   `inventory_items` row from a template copies the template's fields in
+   at creation time; later template edits never propagate to
+   already-created items. Simplest option, no dangling-reference/
+   cascade-on-delete handling needed, and matches inventory's existing
+   no-audit-trail simplicity (`G-023`'s resolution) — this tool class
+   already favors speed over strict provenance tracking.
+
+3. **Field shape: hybrid — discrete columns for fixed fields, JSONB for
+   irregular ones.** `category`, `rarity`, `baseValue`, `weight` become
+   real typed columns on `item_templates`; a `properties` JSONB column
+   holds irregular effects/properties text — same split `G-036` used for
+   monster stat columns (discrete) vs. traits/actions (JSONB). Needed
+   regardless of the image-rendering decision below, but doubly so once
+   rendering was chosen: a renderer needs reliably-shaped fields to
+   interpolate, not a single freeform description blob.
+
+4. **Image rendering: yes, but with a fixed, QuestLog-built card layout,
+   not a DM-authorable one.** Items get the same image ambition as
+   `G-036`/`G-039`'s stat blocks — a rendered card, not just structured
+   text. But unlike stat blocks (which need a DM-authorable template
+   library because rulesets vary the *layout*, not just the data), an
+   item card's layout doesn't need per-campaign customization — one
+   built-in HTML/CSS card design, parameterized by each template's own
+   fields, is enough. This avoids standing up a second full
+   template-library system (`item_card_templates`) for something Alex
+   judged structurally simpler than stat blocks. The renderer reuses the
+   same Satori-family dependency, rasterize step, and `StorageProvider`
+   caching pattern `T-178` introduces for stat blocks — no second,
+   parallel image-rendering integration (`T-187`, `Blocked on: T-178`).
+   The rendering target is the *template*, not each individual
+   `inventory_items` instance — the card represents the reusable
+   definition, so it renders once per template regardless of how many
+   instances get created from it.
+
+5. **Creation-flow integration: `add_item` gains `templateId`, plus new
+   template-authoring tools.** `add_item` (`T-186`) accepts an optional
+   `templateId` alongside its existing freeform fields — any explicit
+   field the caller also passes still wins over the template's default,
+   so instantiating from a template fills in blanks rather than locking
+   fields. Template authoring itself is two new MCP tools,
+   `create_item_template`/`list_item_templates` (`T-185`), classified as
+   quick-action (`.claude/rules/mcp.md`'s carve-out) the same way
+   `G-036`'s three stat-block-template tools are — no preview/confirm, no
+   audit trail. Editing/deleting an existing template is out of scope for
+   v1, same precedent `T-176` already set for stat block templates
+   (create/list only).
+
+Ticketed via `/ungate` against `Docs/milestones/MILESTONES_V1_9_MCP.md`
+Milestone M-ITEMTEMPLATE: `T-185` (schema + create/list tools, `queue/`),
+`T-186` (`add_item` template instantiation, `backlog/`, `Blocked on:
+T-185`), `T-187` (fixed-layout card rendering, `backlog/`, `Blocked on:
+T-185, T-178` — reuses `T-178`'s Satori/rasterize dependency and
+`StorageProvider` pattern rather than integrating a second time).
+
+Loot-table generation (flagged in `MILESTONES_V1_9_MCP.md`'s "Anticipated
+but not yet gated" note as depending on this gate's resolution) is not
+filed as its own gate by this resolution — its shape still isn't
+concretely scopable from what's decided here alone; revisit once
+`T-185`/`T-186` actually ship and there's a real item catalog to draw a
+loot table from.
