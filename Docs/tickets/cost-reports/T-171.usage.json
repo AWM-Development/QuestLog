@@ -1,0 +1,24 @@
+{
+  "ticket_id": "T-171",
+  "empty_run": false,
+  "session_id": "10e8292b-2066-4d4e-a434-41d21c3d51af",
+  "input_tokens": 508,
+  "output_tokens": 142015,
+  "cache_creation_input_tokens": 645844,
+  "cache_read_input_tokens": 44806101,
+  "duration_ms": 1016529,
+  "turn_count": 254,
+  "turns_to_green": 218,
+  "theoretical_cost_usd": {
+    "applies_rate": "intro",
+    "intro_usd": 12.9657622,
+    "standard_usd": 19.4486433
+  },
+  "reviewer_subagent": null,
+  "total_system_cost_usd": {
+    "applies_rate": "intro",
+    "intro_usd": 12.9657622,
+    "standard_usd": 19.4486433
+  },
+  "runner": "claude-code"
+}

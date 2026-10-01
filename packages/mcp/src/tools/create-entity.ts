@@ -15,24 +15,39 @@ export function registerCreateEntity(
 			description: CREATE_ENTITY_DESCRIPTION,
 			inputSchema: EntityCreateInput,
 		},
-		withToolErrors(async ({ campaignId, name, type, description, dmNotes }) => {
-			const { entity, citations, confidence, seeded } =
-				await entityService.createSeeded(db, {
-					campaignId,
-					name,
-					type,
-					description,
-					dmNotes,
-					fetchFn,
-				});
-			return {
-				content: [
-					{
-						type: "text",
-						text: JSON.stringify({ ...entity, citations, confidence, seeded }),
-					},
-				],
-			};
-		}),
+		withToolErrors(
+			async ({
+				campaignId,
+				name,
+				type,
+				description,
+				dmNotes,
+				linkedEntityId,
+			}) => {
+				const { entity, citations, confidence, seeded } =
+					await entityService.createSeeded(db, {
+						campaignId,
+						name,
+						type,
+						description,
+						dmNotes,
+						linkedEntityId,
+						fetchFn,
+					});
+				return {
+					content: [
+						{
+							type: "text",
+							text: JSON.stringify({
+								...entity,
+								citations,
+								confidence,
+								seeded,
+							}),
+						},
+					],
+				};
+			},
+		),
 	);
 }

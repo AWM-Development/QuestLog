@@ -38,7 +38,7 @@ Output format was initially decided as "markdown first, image later" but Alex ov
 
 ### Tasks
 
-- [ ] **M-STATBLOCK.0 — `monster` entity type + npc↔monster `linkedEntityId` link** (T-171)
+- [x] **M-STATBLOCK.0 — `monster` entity type + npc↔monster `linkedEntityId` link** (T-171)
   Schema/plumbing groundwork only, no stat-block data yet: adds `monster` to `ENTITY_TYPES` and a symmetric, same-campaign-validated `entities.linkedEntityId` FK so a lore-focused `npc` and its combat-focused `monster` counterpart can be paired. See `T-171` for full scope.
 
 - [ ] **M-STATBLOCK.1 — monster stat-block columns on entities** (T-175)
@@ -65,7 +65,7 @@ Output format was initially decided as "markdown first, image later" but Alex ov
 
 ### Tasks
 
-- [ ] **M-ENCOUNTER.1 — `encounter` utility tool: initiative sort + HP delta** (T-172)
+- [x] **M-ENCOUNTER.1 — `encounter` utility tool: initiative sort + HP delta** (T-172)
   Stateless `roll_initiative` and `apply_hp_delta` actions plus the shared `Combatant` reference shape. No `db` dependency — first tool in this codebase that needs none. See `T-172` for full scope.
 
 ## Milestone M-GENERATE — NL encounter generation & saved encounters

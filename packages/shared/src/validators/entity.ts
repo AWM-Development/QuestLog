@@ -14,6 +14,9 @@ export const EntityCreateInput = z.object({
 	type: z.enum(ENTITY_TYPES),
 	description: z.string().max(2000).optional(),
 	dmNotes: z.string().max(2000).optional(),
+	// Links this entity to an existing one (in the same campaign) at creation
+	// time, symmetrically — see entity.service.ts (T-171, G-036).
+	linkedEntityId: z.string().uuid().optional(),
 });
 export type EntityCreateInput = z.infer<typeof EntityCreateInput>;
 
@@ -41,16 +44,21 @@ export const EntityUpdateInput = z
 		type: z.enum(ENTITY_TYPES).optional(),
 		description: z.string().max(2000).optional(),
 		dmNotes: z.string().max(2000).optional(),
+		// null explicitly clears the link, undefined/omitted leaves it unchanged
+		// (T-171, G-036) — same optional-vs-explicit-null convention as the rest
+		// of this input.
+		linkedEntityId: z.string().uuid().nullable().optional(),
 	})
 	.refine(
 		(input) =>
 			input.name !== undefined ||
 			input.type !== undefined ||
 			input.description !== undefined ||
-			input.dmNotes !== undefined,
+			input.dmNotes !== undefined ||
+			input.linkedEntityId !== undefined,
 		{
 			message:
-				"At least one of name, type, description, or dmNotes must be provided",
+				"At least one of name, type, description, dmNotes, or linkedEntityId must be provided",
 		},
 	);
 export type EntityUpdateInput = z.infer<typeof EntityUpdateInput>;
