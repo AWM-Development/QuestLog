@@ -14,6 +14,7 @@ interface UpdateEntityPayload {
 		type?: string;
 		description?: string;
 		dmNotes?: string;
+		linkedEntityId?: string | null;
 	};
 }
 
