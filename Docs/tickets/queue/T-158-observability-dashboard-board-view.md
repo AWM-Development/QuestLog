@@ -8,8 +8,6 @@ Strategy-gate flag: yes
 
 Priority: P1
 
-Blocked on: T-057, T-165 — must both be merged into develop first (T-057 stands up the `apps/observability-dashboard` app shell/nav/routing this ticket extends; T-165 adds the `branch`/scope-excerpt fields this ticket's details modal needs to `board.list`, which T-157 — already shipped — doesn't return)
-
 Branch: feat/m-obs/t-158-observability-dashboard-board-view
 
 Context files (load ONLY these):
