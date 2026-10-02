@@ -23,6 +23,7 @@
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^1.9.4",
+		"@questlog/observability": "workspace:*",
 		"@questlog/server": "workspace:*",
 		"@tanstack/react-query": "^5.90.21",
 		"@testing-library/jest-dom": "^6.6.3",

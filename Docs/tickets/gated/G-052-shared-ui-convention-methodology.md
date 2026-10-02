@@ -69,6 +69,8 @@ Blocks: M-OBS.11 (`Docs/milestones/MILESTONES_V1_2_MCP.md`) — no ticket has
   honestly. The milestone task carries `(Gated on: G-052)` in place of a
   ticket id.
 
+Notes (2026-08-23, T-058): A third concrete instance, same root cause as the `PlaceholderPage.tsx`/`LogPage.tsx` pair above — `apps/web/src/components/buttons/Chip.tsx` already has a `variant="badge"` (`badgeStyle`, an inline `CSSProperties` object spread via `chipBase`) for the identical visual concept T-058 needed for Log entries' outcome/reviewer-verdict pills. T-058 built `.badge`/`.badge-success`/`.badge-error`/`.badge-warning`/`.badge-info` as plain CSS classes in `apps/observability-dashboard/src/index.css` instead — correct under that app's own current, already-established convention (`.claude/rules/observability-dashboard.md`'s "real CSS classes... not inline style" rule, itself a direct fix of a T-057 regression), but not a reuse of `Chip`'s existing badge concept, since `frontend.md`'s inline-style rule is `apps/web`-scoped and `Chip` isn't (yet) importable/appropriate for this app pending this gate's resolution. Worth noting `Chip`'s `badge` variant is a single accent-tinted look (no per-status color), so even if this gate resolves toward convergence, T-058's four-color badge is new ground, not a strict duplicate to delete outright. No action taken here beyond recording it — same as the `PlaceholderPage` instance, this is evidence for `/ungate` to work through, not something T-058 could resolve unilaterally.
+
 Notes: Raised directly by Alex while reviewing T-057's new components,
   alongside the token-duplication finding that `G-051`'s sibling PR already
   fixed directly on T-057's branch (mechanical, no decision required —
