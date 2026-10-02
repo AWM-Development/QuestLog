@@ -378,6 +378,12 @@
     "mergedAt": "2026-08-24T17:06:16Z"
   },
   {
+    "ticketId": "T-173",
+    "prNumber": 324,
+    "branch": "feat/m-generate/t-173-encounters-table-manual-save",
+    "mergedAt": "2026-10-02T14:51:22Z"
+  },
+  {
     "ticketId": "T-179",
     "prNumber": 316,
     "branch": "feat/m-obs/t-179-unify-ticket-field-parsing",
