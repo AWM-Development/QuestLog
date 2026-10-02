@@ -242,6 +242,57 @@ export const campaignWealth = pgTable(
 	],
 );
 
+// A saved encounter: a name, freeform notes (terrain/narrative hook), and a
+// roster of (entity, count) pairs via `encounterMembers` below. Manual save
+// path only — no LLM/NL parsing (T-174, built on top of this table).
+export const encounters = pgTable(
+	"encounters",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		campaignId: uuid("campaign_id")
+			.references(() => campaigns.id)
+			.notNull(),
+		name: text("name").notNull(),
+		notes: text("notes"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.defaultNow()
+			.notNull()
+			.$onUpdate(() => new Date()),
+	},
+	(table) => [
+		index("encounters_campaign_id_idx").using("btree", table.campaignId),
+	],
+);
+
+// One row per (entity, count) pair in an encounter's roster — e.g.
+// "goblin x 2" is one row referencing the goblin entity with count: 2, not
+// two separate entity rows.
+export const encounterMembers = pgTable(
+	"encounter_members",
+	{
+		id: uuid("id").defaultRandom().primaryKey(),
+		encounterId: uuid("encounter_id")
+			.references(() => encounters.id)
+			.notNull(),
+		entityId: uuid("entity_id")
+			.references(() => entities.id)
+			.notNull(),
+		count: integer("count").notNull().default(1),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.defaultNow()
+			.notNull(),
+	},
+	(table) => [
+		index("encounter_members_encounter_id_idx").using(
+			"btree",
+			table.encounterId,
+		),
+	],
+);
+
 export const sources = pgTable(
 	"sources",
 	{
