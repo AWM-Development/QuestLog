@@ -94,6 +94,12 @@ export const LIST_INVENTORY_DESCRIPTION =
 export const SAVE_ENCOUNTER_DESCRIPTION =
 	'Save an encounter roster to a campaign: a name, optional freeform notes (terrain/narrative hook), and a list of members, each { entityId, count? } (count defaults to 1) — e.g. "goblin x 2" is one member referencing the goblin entity with count: 2, not two separate entries. Direct write — only ever inserts a new encounter, no preview/confirm needed. Every entityId must already exist in the campaign (look it up with get_entity/list_entities, or create it with create_entity first). Manual save only — this does not generate a roster from natural language. Returns the created encounter.';
 
+export const GENERATE_ENCOUNTER_DESCRIPTION =
+	'Preview an encounter built from a freeform description (e.g. "three goblins and a bugbear chieftain guard the bridge"): extracts the creature groups, matches each against the campaign\'s existing monster entities, and lists the rest as new-monster candidates. Takes campaignId, a name for the encounter, the description, and optional notes. Persists nothing — returns a token and a preview { matched: [{ entityId, name, type, count }], newMonsterCandidates: [{ name, count }] }. Summarize the proposed roster to the user in plain language — which monsters already exist and which would be created as new bare-name monster entities — before calling confirm_generate_encounter (separate tool) with the token. Confirm applies the whole preview or nothing; to adjust it, call generate_encounter again with a revised description. Assembles a roster only — no difficulty balancing, dice, or stat blocks.';
+
+export const CONFIRM_GENERATE_ENCOUNTER_DESCRIPTION =
+	"Confirm a generate_encounter preview: in one transaction, creates a bare-name monster entity for each newMonsterCandidates entry, then saves the encounter with every matched and newly created monster at its previewed count. Returns the created encounter; look its full roster up with get_encounter.";
+
 export const LIST_ENCOUNTERS_DESCRIPTION =
 	"List a campaign's saved encounters. Returns each encounter's id, name, notes, and a member-count summary (not full member detail — call get_encounter for that).";
 
