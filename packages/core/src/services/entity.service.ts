@@ -462,11 +462,7 @@ export const entityService = {
 			parentEntityId?: string;
 		},
 	) {
-		// Validate before insert, same campaign-scoped-lookup discipline as
-		// linkedEntityId below — throws NotFoundError for a nonexistent id or
-		// one belonging to a different campaign (.claude/rules/mcp.md § "Campaign-
-		// scoped ID lookups"). No type restriction (G-053) — left to the calling
-		// agent's judgment.
+		// Campaign-scoped lookup (.claude/rules/mcp.md); no parent type restriction (G-053).
 		if (input.parentEntityId !== undefined) {
 			await entityService.getById(db, input.campaignId, input.parentEntityId);
 		}
@@ -564,6 +560,11 @@ export const entityService = {
 		confidence: number;
 		seeded: boolean;
 	}> {
+		// Fail fast before the (paid) embedding search below.
+		if (input.parentEntityId !== undefined) {
+			await entityService.getById(db, input.campaignId, input.parentEntityId);
+		}
+
 		const results = await contextService.searchChunks(db, {
 			campaignId: input.campaignId,
 			// `type` is a hint appended to the query text, not a hard filter —
@@ -734,7 +735,7 @@ export const entityService = {
 					eq(entities.campaignId, campaignId),
 					type ? eq(entities.type, type) : undefined,
 					includeArchived ? undefined : eq(entities.status, "active"),
-					opts?.parentEntityId
+					opts?.parentEntityId !== undefined
 						? eq(entities.parentEntityId, opts.parentEntityId)
 						: undefined,
 				),
@@ -770,15 +771,13 @@ export const entityService = {
 			.where(
 				and(
 					wordSimilarityCandidateFilter(campaignId, name, !includeArchived),
-					parentEntityId
+					parentEntityId !== undefined
 						? eq(entities.parentEntityId, parentEntityId)
 						: undefined,
 				),
 			);
 
-		// Track every candidate tied for the top score, not just the first —
-		// an unscoped tie across different parents is ambiguous (G-053) and
-		// must be surfaced, not silently resolved by iteration order.
+		// Collect all top-score ties: a cross-parent tie must surface (G-053).
 		let bestScore = -1;
 		let tied: (typeof candidateRows)[number][] = [];
 		for (const row of candidateRows) {
@@ -793,11 +792,8 @@ export const entityService = {
 		}
 		if (tied.length === 0) throw new NotFoundError("Entity", name);
 
-		// A caller-scoped lookup (parentEntityId given) already resolves to one
-		// parent's children — a same-name tie there is "which of two identically-
-		// scoped duplicates," not "which parent," so it keeps today's
-		// first-wins behavior instead of throwing.
-		if (!parentEntityId && tied.length > 1) {
+		// Scoped lookups already target one parent; ties there stay first-wins.
+		if (parentEntityId === undefined && tied.length > 1) {
 			const distinctParents = new Set(tied.map((row) => row.parentEntityId));
 			if (distinctParents.size > 1) {
 				throw new AmbiguousEntityError(
@@ -811,9 +807,7 @@ export const entityService = {
 			}
 		}
 
-		const winner = tied[0];
-		if (!winner) throw new NotFoundError("Entity", name);
-		return winner;
+		return tied[0] as (typeof tied)[number];
 	},
 
 	async archive(

@@ -1253,6 +1253,33 @@ describe("entityService parentEntityId (T-183, G-053)", () => {
 		).rejects.toThrow(NotFoundError);
 	});
 
+	it("createSeeded throws NotFoundError for a nonexistent parentEntityId before searching", async () => {
+		const fetchFn = vi.fn();
+		await expect(
+			entityService.createSeeded(db, {
+				campaignId,
+				name: "Entrance Hall",
+				type: "location",
+				parentEntityId: "00000000-0000-0000-0000-000000000000",
+				fetchFn,
+			}),
+		).rejects.toThrow(NotFoundError);
+		expect(fetchFn).not.toHaveBeenCalled();
+	});
+
+	it("list with an empty-string parentEntityId errors instead of silently returning the whole campaign", async () => {
+		await entityService.create(db, {
+			campaignId,
+			name: "Ash Keep",
+			type: "location",
+		});
+		await expect(
+			entityService.list(db, campaignId, undefined, false, {
+				parentEntityId: "",
+			}),
+		).rejects.toThrow();
+	});
+
 	it("list scoped by parentEntityId returns only that parent's children", async () => {
 		const dungeon = await entityService.create(db, {
 			campaignId,
