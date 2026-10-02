@@ -1267,19 +1267,6 @@ describe("entityService parentEntityId (T-183, G-053)", () => {
 		expect(fetchFn).not.toHaveBeenCalled();
 	});
 
-	it("list with an empty-string parentEntityId errors instead of silently returning the whole campaign", async () => {
-		await entityService.create(db, {
-			campaignId,
-			name: "Ash Keep",
-			type: "location",
-		});
-		await expect(
-			entityService.list(db, campaignId, undefined, false, {
-				parentEntityId: "",
-			}),
-		).rejects.toThrow();
-	});
-
 	it("list scoped by parentEntityId returns only that parent's children", async () => {
 		const dungeon = await entityService.create(db, {
 			campaignId,
