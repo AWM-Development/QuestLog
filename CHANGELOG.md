@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Changed — T-103
+
+- **`packages/mcp/src/server.test.ts` split into per-tool test files.** The 4,301-line, 23-`describe`-block monolith is now `packages/mcp/src/tools/<tool-name>.test.ts` (one file per tool, mirroring the production `tools/` layout), plus a new `packages/mcp/src/test-helpers.ts` for the shared test fixtures (`connectedClient`, `createMockFetch`/`createFailingFetch`, `waitForStatus`, the shared test DB connection). `server.test.ts` now holds only the cross-cutting `global-setup DB truncation wiring (T-052)` test that isn't tool-shaped. Pure reorganization — no test or assertion content changed, same 158 tests pass before and after. Also fixes a cross-file test-DB isolation gap the split exposed: `packages/mcp/vitest.config.ts` now sets `fileParallelism: false`, since the many new files now share one physical test DB and Vitest's default file-level parallelism let one file's fixtures leak into another's "table is empty" assertions (`Docs/IMPLEMENTATION_NOTES.md` § T-103). Internal test-hygiene only — no user-facing behavior change.
+
 ### Added — T-172
 
 - **`encounter` MCP tool — initiative sort + HP-delta, stateless.** New `encounter` tool with two actions: `roll_initiative` takes a list of combatants (each with an already-decided initiative value) and returns them sorted descending by initiative, ties broken by input order; `apply_hp_delta` takes a current/max hp pair plus a delta (negative for damage, positive for healing) and returns the clamped `newHp` (never below 0 or above max) and a `"healthy"`/`"bloodied"`/`"down"` status band. No persisted encounter state — the actual turn-by-turn tracking stays in the conversation itself, per `G-037`'s resolution. First tool in this codebase with no `db`/`storage`/`llmService` dependency at all. New shared `Combatant` Zod shape (`packages/shared/src/validators/mcp.ts`) doubles as the standard reference format for a combatant.
