@@ -1,6 +1,6 @@
 {
-  "id": "620b99ba-10b2-49c2-b079-5cf21d3e3215",
-  "prevId": "895883fd-9be2-4a83-b7e8-690edcac54e8",
+  "id": "4ccf9ef7-d81e-4088-9435-a2cf195de19e",
+  "prevId": "620b99ba-10b2-49c2-b079-5cf21d3e3215",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -752,6 +752,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "parent_entity_id": {
+          "name": "parent_entity_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -812,6 +818,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "entities_parent_entity_id_idx": {
+          "name": "entities_parent_entity_id_idx",
+          "columns": [
+            {
+              "expression": "parent_entity_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -847,6 +868,19 @@
           "tableTo": "entities",
           "columnsFrom": [
             "linked_entity_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "entities_parent_entity_id_entities_id_fk": {
+          "name": "entities_parent_entity_id_entities_id_fk",
+          "tableFrom": "entities",
+          "tableTo": "entities",
+          "columnsFrom": [
+            "parent_entity_id"
           ],
           "columnsTo": [
             "id"
