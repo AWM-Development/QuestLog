@@ -31,7 +31,8 @@ export const BOARD_COLUMNS: readonly BoardColumnDef[] = [
 		status: "in-progress",
 		name: "In-progress",
 		emptyHeadline: "Nothing running",
-		emptySub: "The executor is idle — next pickup is the earliest queued ticket.",
+		emptySub:
+			"The executor is idle — next pickup is the earliest queued ticket.",
 	},
 	{
 		status: "blocked",
@@ -71,7 +72,10 @@ function ids(text: string | null): string[] {
 /** `Blocked on:` is free prose after the ids (T-057's own is a paragraph), so chips are the ids only. */
 export function extractDependencyChips(card: TicketCard): DependencyChip[] {
 	return [
-		...ids(card.blockedOn).map((label) => ({ kind: "blocked" as const, label })),
+		...ids(card.blockedOn).map((label) => ({
+			kind: "blocked" as const,
+			label,
+		})),
 		...ids(card.gatedOn).map((label) => ({ kind: "gated" as const, label })),
 	];
 }

@@ -327,3 +327,358 @@ a {
 	padding: var(--space-2) var(--space-3);
 	font-size: 12px;
 }
+
+/* Board — carried over from Docs/mockups/board/index.html's own <style>
+   block. Drag/grip/⋮ menu/milestone-progress/density/search-overlay rules
+   are deliberately not ported: those are prototype-only or out of T-158's
+   scope (G-047/G-048). */
+.page-body-wide {
+	max-width: 1440px;
+}
+
+.board-toolbar {
+	margin-bottom: var(--space-5);
+}
+.board-toolbar .section-sub {
+	margin: 0;
+	max-width: 640px;
+}
+
+.board {
+	display: flex;
+	gap: var(--space-3);
+	align-items: flex-start;
+	overflow-x: auto;
+	padding-bottom: var(--space-2);
+}
+.column {
+	display: flex;
+	flex-direction: column;
+	background: var(--bg-surface);
+	border: 0.5px solid var(--border-subtle);
+	border-radius: var(--r-lg);
+	overflow: hidden;
+}
+.column-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: var(--space-3) var(--space-3-5);
+	border-bottom: 0.5px solid var(--border-subtle);
+	flex: 0 0 auto;
+}
+.column-head .name {
+	font-family: var(--font-mono);
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--text-secondary);
+}
+.column-head .count {
+	font-family: var(--font-mono);
+	font-size: 10px;
+	color: var(--text-dim);
+	background: var(--bg-elevated);
+	border-radius: var(--r-pill);
+	padding: 1px 7px;
+}
+.column-body {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-2);
+	padding: var(--space-2-5);
+	max-height: 560px;
+	overflow-y: auto;
+	min-height: 60px;
+}
+.column[data-col="blocked"] .column-head .name,
+.column[data-col="blocked"] .column-head .count {
+	color: var(--status-error);
+}
+.column[data-col="gated"] .column-head .name,
+.column[data-col="gated"] .column-head .count {
+	color: var(--status-warning);
+}
+
+.card {
+	background: var(--bg-elevated);
+	border: 0.5px solid var(--border);
+	border-radius: var(--r-md);
+	padding: var(--space-3);
+	display: flex;
+	flex-direction: column;
+	gap: 7px;
+	cursor: pointer;
+}
+.card:hover {
+	border-color: var(--border-hover);
+	background: var(--bg-focal);
+}
+.card-top {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+.card-id {
+	font-family: var(--font-mono);
+	font-size: 10px;
+	color: var(--text-muted);
+}
+.card-top-spacer {
+	flex: 1;
+}
+.card-title {
+	font-size: 12.5px;
+	font-weight: 500;
+	color: var(--text-primary);
+	line-height: 1.4;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+.card-scope {
+	font-size: 11px;
+	color: var(--text-muted);
+	line-height: 1.45;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+.card-meta {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+.priority {
+	font-family: var(--font-mono);
+	font-size: 9px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	padding: 1px 6px;
+	border-radius: 3px;
+}
+.priority-p0 {
+	color: var(--status-error);
+	background: rgba(220, 96, 96, 0.1);
+}
+.priority-p1 {
+	color: var(--status-warning);
+	background: rgba(232, 176, 64, 0.1);
+}
+.priority-p2 {
+	color: var(--text-muted);
+	background: rgba(74, 106, 122, 0.15);
+}
+
+.chip-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+}
+.chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	border-radius: var(--r-pill);
+	padding: 2px 7px 2px 6px;
+	font-size: 9px;
+	font-family: var(--font-mono);
+	font-weight: 500;
+}
+.chip svg {
+	flex: 0 0 auto;
+}
+.chip-blocked {
+	color: var(--status-error);
+	background: rgba(220, 96, 96, 0.1);
+}
+.chip-gated {
+	color: var(--status-warning);
+	background: rgba(232, 176, 64, 0.1);
+}
+.chip-more {
+	color: var(--text-dim);
+	background: var(--bg-focal);
+}
+
+.col-empty {
+	text-align: center;
+	padding: var(--space-5) var(--space-2);
+	color: var(--text-dim);
+}
+.col-empty .headline {
+	font-size: 11px;
+	color: var(--text-muted);
+	font-weight: 500;
+	margin-bottom: 2px;
+}
+.col-empty .sub {
+	font-size: 10px;
+	color: var(--text-dim);
+	line-height: 1.5;
+}
+
+@keyframes pulse {
+	0%,
+	100% {
+		opacity: 0.4;
+	}
+	50% {
+		opacity: 1;
+	}
+}
+.skeleton-card {
+	background: var(--bg-elevated);
+	border-radius: var(--r-md);
+	height: 64px;
+	animation: pulse 1s ease-in-out infinite;
+}
+.skeleton-card:nth-child(2) {
+	animation-delay: 0.12s;
+}
+.skeleton-card:nth-child(3) {
+	animation-delay: 0.24s;
+}
+
+.board-error {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: var(--space-2);
+	background: var(--bg-focal);
+	border: 0.5px solid var(--border);
+	border-left: 3px solid var(--status-error);
+	border-radius: var(--r-md);
+	padding: var(--space-6);
+}
+.board-error .headline {
+	font-family: var(--font-display);
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--text-primary);
+}
+.board-error .sub {
+	font-size: 12px;
+	color: var(--text-muted);
+	max-width: 320px;
+}
+
+.modal-backdrop {
+	position: fixed;
+	inset: 0;
+	background: rgba(5, 8, 11, 0.6);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 50;
+	padding: var(--space-6);
+}
+.modal {
+	background: var(--bg-elevated);
+	border: 0.5px solid var(--border-hover);
+	border-radius: var(--r-lg);
+	width: 100%;
+	max-width: 460px;
+	max-height: 84vh;
+	overflow-y: auto;
+	padding: var(--space-5);
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-4);
+}
+.modal-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--space-3);
+}
+.modal-head .id-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 4px;
+}
+.modal-head .card-id {
+	font-size: 11px;
+}
+.modal-head h2 {
+	font-family: var(--font-display);
+	font-size: 18px;
+	font-weight: 600;
+	margin: 0;
+	color: var(--text-primary);
+	line-height: 1.35;
+}
+.modal-close {
+	background: transparent;
+	border: none;
+	color: var(--text-muted);
+	cursor: pointer;
+	padding: 4px;
+	border-radius: 4px;
+	flex: 0 0 auto;
+}
+.modal-close:hover {
+	color: var(--text-secondary);
+	background: var(--bg-focal-hover);
+}
+.modal-row {
+	display: flex;
+	gap: var(--space-4);
+	font-size: 12px;
+}
+.modal-row .field {
+	flex: 1;
+	min-width: 0;
+}
+.modal-row .field .k,
+.modal-section .k {
+	font-family: var(--font-mono);
+	font-size: 9px;
+	color: var(--text-dim);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	margin-bottom: 3px;
+}
+.modal-row .field .v {
+	color: var(--text-secondary);
+}
+.modal-section {
+	border-top: 0.5px solid var(--border-subtle);
+	padding-top: var(--space-3);
+}
+.modal-section .v {
+	font-size: 12.5px;
+	color: var(--text-secondary);
+	line-height: 1.55;
+}
+.mono-v {
+	font-family: var(--font-mono);
+	font-size: 11px;
+	overflow-wrap: anywhere;
+}
+.modal-chip-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+	margin-top: 5px;
+}
+
+/* Cards are real <button>s (keyboard-activatable for free) — reset the UA button chrome. */
+button.card {
+	width: 100%;
+	text-align: left;
+	font: inherit;
+	color: inherit;
+}
+
+/* The modal is a native <dialog open> (semantic role for free) — undo the UA's own centering/colors; the backdrop does the positioning. */
+dialog.modal {
+	position: static;
+	margin: 0;
+	color: inherit;
+}

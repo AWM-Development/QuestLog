@@ -65,7 +65,8 @@ describe("extractDependencyChips", () => {
 	it("pulls ticket ids out of free-text Blocked on, ignoring prose, deduped", () => {
 		const chips = extractDependencyChips(
 			card({
-				blockedOn: "T-057, T-165 — must both be merged (T-057 stands up the shell)",
+				blockedOn:
+					"T-057, T-165 — must both be merged (T-057 stands up the shell)",
 			}),
 		);
 		expect(chips).toEqual([
