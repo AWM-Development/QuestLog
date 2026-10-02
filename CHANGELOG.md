@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-158
+
+- **Observability dashboard: `/board` ticket board.** A third route beside Trends and Log (new "Board" nav link) rendering `board.list` as six fixed-width columns — Gated, Backlog, Queue, In-progress, Blocked, Done. Each card shows id, title, scope preview, tier badge, priority, and `Blocked on:`/`Gated on:` chips (first two plus a `+N` overflow); clicking a card opens a details modal with the full chip list, branch, and scope excerpt. Empty columns, loading, and `board.list` errors (with Retry) render plain states instead of a blank screen. Read-only — no drag-and-drop or move actions (`G-047`/`G-048` follow-ups).
+
 ### Changed — T-103
 
 - **`packages/mcp/src/server.test.ts` split into per-tool test files.** The 4,301-line, 23-`describe`-block monolith is now `packages/mcp/src/tools/<tool-name>.test.ts` (one file per tool, mirroring the production `tools/` layout), plus a new `packages/mcp/src/test-helpers.ts` for the shared test fixtures (`connectedClient`, `createMockFetch`/`createFailingFetch`, `waitForStatus`, the shared test DB connection). `server.test.ts` now holds only the cross-cutting `global-setup DB truncation wiring (T-052)` test that isn't tool-shaped. Pure reorganization — no test or assertion content changed, same 158 tests pass before and after. Also fixes a cross-file test-DB isolation gap the split exposed: `packages/mcp/vitest.config.ts` now sets `fileParallelism: false`, since the many new files now share one physical test DB and Vitest's default file-level parallelism let one file's fixtures leak into another's "table is empty" assertions (`Docs/IMPLEMENTATION_NOTES.md` § T-103). Internal test-hygiene only — no user-facing behavior change.

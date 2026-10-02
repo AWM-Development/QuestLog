@@ -14,7 +14,7 @@ export function TicketModal({
 	const columnName =
 		BOARD_COLUMNS.find((c) => c.status === card.status)?.name ?? card.status;
 	return (
-		// biome-ignore lint/a11y/useKeyWithClickEvents: Escape-to-close is handled by the dialog's own button; backdrop click is a pointer convenience
+		// biome-ignore lint/a11y/useKeyWithClickEvents: backdrop click is a pointer convenience; keyboard users close via the × button
 		<div
 			className="modal-backdrop"
 			data-testid="modal-backdrop"
