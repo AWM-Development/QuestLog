@@ -109,12 +109,88 @@ describe("encounterService", () => {
 		});
 	});
 
+	describe("save edge cases", () => {
+		it("saves an encounter with no members", async () => {
+			const encounter = await encounterService.save(db, {
+				campaignId,
+				name: "Empty roster",
+				members: [],
+			});
+			const fetched = await encounterService.getById(
+				db,
+				campaignId,
+				encounter.id,
+			);
+			expect(fetched.members).toEqual([]);
+		});
+
+		it("throws NotFoundError for a nonexistent campaign, even with no members", async () => {
+			await expect(
+				encounterService.save(db, {
+					campaignId: "00000000-0000-4000-8000-000000000000",
+					name: "Orphan",
+					members: [],
+				}),
+			).rejects.toThrow(NotFoundError);
+		});
+
+		it("accepts the same entity listed twice", async () => {
+			const encounter = await encounterService.save(db, {
+				campaignId,
+				name: "Split goblins",
+				members: [
+					{ entityId: goblinId, count: 1 },
+					{ entityId: goblinId, count: 2 },
+				],
+			});
+			const fetched = await encounterService.getById(
+				db,
+				campaignId,
+				encounter.id,
+			);
+			expect(fetched.members).toHaveLength(2);
+		});
+	});
+
+	describe("getById", () => {
+		it("throws NotFoundError for a nonexistent encounter", async () => {
+			await expect(
+				encounterService.getById(
+					db,
+					campaignId,
+					"00000000-0000-4000-8000-000000000000",
+				),
+			).rejects.toThrow(NotFoundError);
+		});
+
+		it("throws NotFoundError when the encounter belongs to a different campaign", async () => {
+			const other = await campaignService.create(db, {
+				name: "Other Campaign",
+				theme: "fantasy",
+			});
+			const encounter = await encounterService.save(db, {
+				campaignId,
+				name: "Private",
+				members: [{ entityId: goblinId, count: 1 }],
+			});
+
+			await expect(
+				encounterService.getById(db, other.id, encounter.id),
+			).rejects.toThrow(NotFoundError);
+
+			await deleteCampaignTree(db, other.id);
+		});
+	});
+
 	describe("list", () => {
 		it("returns every saved encounter with a member-count summary, not full member detail", async () => {
 			await encounterService.save(db, {
 				campaignId,
 				name: "Ambush at the bridge",
-				members: [{ entityId: goblinId, count: 2 }],
+				members: [
+					{ entityId: goblinId, count: 2 },
+					{ entityId: ogreId, count: 1 },
+				],
 			});
 			await encounterService.save(db, {
 				campaignId,
@@ -127,11 +203,10 @@ describe("encounterService", () => {
 			expect(encounters).toHaveLength(2);
 			for (const encounter of encounters) {
 				expect(encounter).not.toHaveProperty("members");
-				expect(typeof encounter.memberCount).toBe("number");
 			}
-			expect(encounters.map((e) => e.name).sort()).toEqual([
-				"Ambush at the bridge",
-				"Ogre's den",
+			expect(encounters.map((e) => [e.name, e.memberCount])).toEqual([
+				["Ambush at the bridge", 2],
+				["Ogre's den", 1],
 			]);
 		});
 	});

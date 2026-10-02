@@ -1,6 +1,11 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import type { Database } from "../db/index.js";
-import { encounterMembers, encounters, entities } from "../db/schema/index.js";
+import {
+	campaigns,
+	encounterMembers,
+	encounters,
+	entities,
+} from "../db/schema/index.js";
 import { NotFoundError } from "../lib/errors.js";
 import { first } from "../lib/utils.js";
 
@@ -12,28 +17,31 @@ interface SaveEncounterInput {
 }
 
 export const encounterService = {
-	/**
-	 * Validates every member's entityId exists in campaignId (reuse
-	 * entityService's scoped-lookup pattern via a direct campaign-filtered
-	 * query — no *Unscoped call), then inserts the encounter and its members
-	 * inside one transaction. Additive-only — never mutates an existing
-	 * encounter (`.claude/rules/mcp.md`'s write-tool rule).
-	 */
+	/** Additive-only: never mutates an existing encounter. Campaign and member entities are validated with campaign-filtered queries (no *Unscoped call). */
 	async save(db: Database, input: SaveEncounterInput) {
 		return db.transaction(async (tx) => {
-			for (const member of input.members) {
-				const rows = await tx
+			const campaignRows = await tx
+				.select({ id: campaigns.id })
+				.from(campaigns)
+				.where(eq(campaigns.id, input.campaignId));
+			if (campaignRows.length === 0) {
+				throw new NotFoundError("Campaign", input.campaignId);
+			}
+
+			const entityIds = [...new Set(input.members.map((m) => m.entityId))];
+			if (entityIds.length > 0) {
+				const found = await tx
 					.select({ id: entities.id })
 					.from(entities)
 					.where(
 						and(
-							eq(entities.id, member.entityId),
+							inArray(entities.id, entityIds),
 							eq(entities.campaignId, input.campaignId),
 						),
 					);
-				if (rows.length === 0) {
-					throw new NotFoundError("Entity", member.entityId);
-				}
+				const foundIds = new Set(found.map((r) => r.id));
+				const missing = entityIds.find((id) => !foundIds.has(id));
+				if (missing) throw new NotFoundError("Entity", missing);
 			}
 
 			const encounterRows = await tx
@@ -78,7 +86,8 @@ export const encounterService = {
 				eq(encounterMembers.encounterId, encounters.id),
 			)
 			.where(eq(encounters.campaignId, campaignId))
-			.groupBy(encounters.id);
+			.groupBy(encounters.id)
+			.orderBy(asc(encounters.createdAt), asc(encounters.id));
 
 		return rows;
 	},
@@ -106,7 +115,8 @@ export const encounterService = {
 			})
 			.from(encounterMembers)
 			.innerJoin(entities, eq(entities.id, encounterMembers.entityId))
-			.where(eq(encounterMembers.encounterId, encounterId));
+			.where(eq(encounterMembers.encounterId, encounterId))
+			.orderBy(asc(encounterMembers.createdAt), asc(encounterMembers.id));
 
 		return { ...encounter, members: memberRows };
 	},

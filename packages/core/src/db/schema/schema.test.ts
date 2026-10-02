@@ -54,6 +54,9 @@ describe("database schema", () => {
 			"chunks",
 			"conversations",
 			"write_requests",
+			"inventory_items",
+			"campaign_wealth",
+			"encounters",
 		];
 
 		const result = await db.execute(sql`
