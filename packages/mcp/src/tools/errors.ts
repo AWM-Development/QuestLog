@@ -8,7 +8,8 @@ import {
 /**
  * Wraps a tool handler so a thrown `NotFoundError`/`ValidationError`/
  * `AmbiguousEntityError` becomes the structured
- * `{ isError: true, content: [...] }` shape required by `.claude/rules/mcp.md` instead of an exception that kills the MCP
+ * `{ isError: true, content: [...] }` shape required by
+ * `.claude/rules/mcp.md` instead of an exception that kills the MCP
  * connection. Any other error rethrows unchanged.
  */
 export function withToolErrors<Args extends unknown[]>(
