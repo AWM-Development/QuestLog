@@ -23,3 +23,18 @@ export const GetEncounterInput = z.object({
 	encounterId: z.string().uuid(),
 });
 export type GetEncounterInput = z.infer<typeof GetEncounterInput>;
+
+export const GenerateEncounterInput = z.object({
+	campaignId: z.string().uuid(),
+	name: z.string().min(1).max(200),
+	description: z.string().min(1).max(5000),
+	notes: z.string().max(2000).optional(),
+});
+export type GenerateEncounterInput = z.infer<typeof GenerateEncounterInput>;
+
+export const ConfirmGenerateEncounterInput = z.object({
+	token: z.string().uuid(),
+});
+export type ConfirmGenerateEncounterInput = z.infer<
+	typeof ConfirmGenerateEncounterInput
+>;

@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-174
+
+- **`generate_encounter` / `confirm_generate_encounter` — build a saved encounter from a freeform description.** `generate_encounter` takes a campaign, an encounter name, and plain text like "three goblins and a bugbear chieftain guard the bridge", extracts the creature groups with a structured LLM call, fuzzy-matches each against the campaign's existing `monster` entities, and returns a preview token listing `matched` roster monsters (with real `entityId`s) and `newMonsterCandidates` (names with no roster match) — nothing is persisted. `confirm_generate_encounter` applies the whole preview in one transaction: it creates a bare-name `monster` entity per new candidate and saves the encounter (via T-173's `encounterService.save`) over matched and newly created members. Repeated creatures are merged and their counts summed. Assembles a roster only — no CR/party-size balancing, dice, or stat blocks. New `entityService.extractEncounterCreatures`/`findByNameAndType` and `encounterService.planFromCreatures`/`savePlan`; `encounterService.save` now accepts a transaction.
+
 ### Added — T-173
 
 - **Saved encounters: schema + manual `save_encounter` path.** New campaign-scoped `encounters`/`encounter_members` tables (mirroring `inventoryItems`'s shape — an `(entityId, count)` pair per roster row, e.g. "goblin x 2" is one row, not two) and a new `encounter.service.ts` (`save`/`list`/`getById`). Three new MCP tools: `save_encounter` (direct write, additive-only — no preview/confirm), `list_encounters` (member-count summary), `get_encounter` (full roster, each member resolved to `{ entityId, name, type, count }`). A DM can hand-assemble a roster via `get_entity`/`list_entities` and persist it directly, no LLM step required — natural-language generation is `T-174`, built on top of this.
