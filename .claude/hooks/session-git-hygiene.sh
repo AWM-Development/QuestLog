@@ -15,6 +15,9 @@ set -euo pipefail
 
 cd "$CLAUDE_PROJECT_DIR"
 
+source "$CLAUDE_PROJECT_DIR/scripts/hook-timing.sh"
+hook_timing_install session-git-hygiene.sh
+
 # --- shared-primary-directory warning: begin ---
 # The hook itself can't relocate this session (each Bash call's cwd is
 # fixed by the harness for the session's lifetime) — this is a mechanical

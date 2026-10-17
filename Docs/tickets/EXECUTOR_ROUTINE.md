@@ -66,6 +66,8 @@ That's it — do not `git checkout` anything in this directory. Step 1 reads eve
 
 **Provisioning fallback:** a scheduled/`remote_trigger` launch can reach this point without its `SessionStart` hooks having fired at all (confirmed live — no `pnpm install`/provisioning output anywhere before the first turn), not merely a stale copy of them. No edit to the hook scripts fixes that, since the event invoking them never dispatched. Check before proceeding: if `node_modules/` is missing, or (`CLAUDE_CODE_REMOTE=true`) `pg_isready -h localhost -p 5433 -q` fails, run `bash .claude/hooks/session-git-hygiene.sh && bash .claude/hooks/session-db-local.sh && bash .claude/hooks/session-db-remote.sh` directly (each no-ops on paths that don't apply to this session). Harmless if `SessionStart` already ran — same idempotent checks either way.
 
+**Environment preflight (T-192):** after the provisioning fallback, run `bash scripts/executor-env-preflight.sh` from the primary directory. Exit 0 prints `ENV_OK`; non-zero prints one `ENV_UNHEALTHY: <class>: <detail>` line (`node_modules` | `postgres` | `db_migrations` | `pgvector` | `git_remote` | `disk`) — output that line as your final message and stop **before Step 1**: no ticket attempt consumed, no branch pushed, nothing claimed. A local run from the shared primary checkout defers the database checks (its per-worktree Postgres only exists after Step 2); the remote/scheduled case is what this guards. Each `SessionStart` hook also ends with a `<script>: completed in <N>s` line. Rationale and check definitions: `Docs/IMPLEMENTATION_NOTES.md` § T-192.
+
 **STALENESS_THRESHOLD_HOURS = 6** — the age past which a claimed-but-unfinished branch (Step 1 case 4) is treated as abandoned rather than actively owned. Defined once here; Step 1 and `.claude/commands/promote-execute.md` both reference this value rather than hardcoding their own copy. Too low steals a slow ticket out from under a session still working it; too high leaves a genuinely crashed run stranded for most of a day before anything picks it back up. 6 hours is longer than any observed real ticket run and short enough that a crash doesn't strand work overnight.
 
 ## Step 1: Pre-flight (cheapest possible check — do this before reading anything else)
@@ -176,3 +178,11 @@ Step 5's reviewer subagent still runs for every tier except `XS` and `D` regardl
 - Delete `tmp/.active-ticket` — this session's ticket work is done, and the marker must not linger to misattribute a later, unrelated session's usage.
 - Push the feature branch and open a PR against `develop` using the morning report as the PR description. Do NOT merge it. This is the second push to the branch — see Step 2's claim-push note and `Docs/IMPLEMENTATION_NOTES.md` § T-069 for why that's permitted (or the fallback if rejected).
 - Output a brief summary: ticket id, outcome, PR link.
+
+## Re-enabling the cloud routine (T-192)
+The nightly cloud routine has been paused since `G-035` (cloud-environment caching didn't fire — see `Docs/tickets/gated/resolved/G-035-prewarmed-sandbox-environment-investigation.md` § Resolution). **Alex runs this re-test, never the executor, and Alex alone enables or disables the trigger.**
+
+1. Fire the routine twice against one environment, ~3 minutes apart.
+2. Compare the two runs' `SessionStart` hook output (the `<script>: completed in <N>s` lines and the `fast-path` line).
+3. **PASS** — the second run's hooks show the fast-path and total setup under 60s, with no `apt` re-install: re-enable the trigger.
+4. **FAIL** — the second run re-ran the full setup (same as the 2026-08-05 finding): leave the trigger paused and record the measured cold-start seconds (the first run's three `completed in` lines, summed) in `Docs/IMPLEMENTATION_NOTES.md` § T-192, so the budget/schedule tickets (`T-193`, `T-194`) can size a cold-start-tolerant cadence.

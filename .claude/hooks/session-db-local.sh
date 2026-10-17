@@ -11,6 +11,9 @@ set -euo pipefail
 
 cd "$CLAUDE_PROJECT_DIR"
 
+source "$CLAUDE_PROJECT_DIR/scripts/hook-timing.sh"
+hook_timing_install session-db-local.sh
+
 if [ "${CLAUDE_CODE_REMOTE:-}" = "true" ]; then
   exit 0
 fi

@@ -52,7 +52,7 @@ No task here depends on another — each is gated independently and can resolve 
 
 ### Tasks
 
-- [ ] **M-AUTOPILOT.1 — Cloud executor environment preflight, timing, caching re-test procedure** (T-192)
+- [x] **M-AUTOPILOT.1 — Cloud executor environment preflight, timing, caching re-test procedure** (T-192)
 - [ ] **M-AUTOPILOT.2 — Executor usage budget guard (daily USD cap, session-limit stop)** (T-193)
 - [ ] **M-AUTOPILOT.3 — Multi-fire schedule + Context-file overlap rule** (T-194)
 - [ ] **M-AUTOPILOT.4 — `/drain` continuous executor loop** (T-195)
