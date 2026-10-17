@@ -79,7 +79,7 @@ Output format was initially decided as "markdown first, image later" but Alex ov
 - [x] **M-GENERATE.1 — `encounters`/`encounter_members` schema + manual `save_encounter` path** (T-173)
   New tables, `encounter.service.ts`, and `save_encounter`/`list_encounters`/`get_encounter` tools — no LLM/NL parsing, a direct-write persistence layer usable standalone. See `T-173` for full scope.
 
-- [ ] **M-GENERATE.2 — `generate_encounter`: NL parsing + roster matching + preview/confirm** (T-174, Blocked on T-173)
+- [x] **M-GENERATE.2 — `generate_encounter`: NL parsing + roster matching + preview/confirm** (T-174)
   Structured-LLM extraction of a creature list from freeform text, fuzzy-matched against the campaign's monster roster, proposing new `monster` entities for the rest — preview/confirm, same pattern `log_session`/`confirm_ingest_entities` already establish. See `T-174` for full scope.
 
 - [ ] **M-GENERATE.3 — `update_encounter` / `delete_encounter`: edit and remove saved encounters** (T-191, Blocked on T-173)

@@ -8,7 +8,6 @@ Strategy-gate flag: yes
 
 Priority: P1
 
-Blocked on: T-173 — must be merged into develop first
 
 Branch: feat/m-generate/t-174-generate-encounter-nl-tool
 

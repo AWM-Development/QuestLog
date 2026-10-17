@@ -1328,3 +1328,87 @@ describe("entityService.detectCandidates", () => {
 		expect(llmService.callClaudeStructured).not.toHaveBeenCalled();
 	});
 });
+
+describe("entityService.findByNameAndType (T-174)", () => {
+	let campaignId: string;
+
+	beforeEach(async () => {
+		await db.execute(sql`BEGIN`);
+		const campaign = await campaignService.create(db, {
+			name: "Test Campaign",
+			theme: "fantasy",
+		});
+		campaignId = campaign.id;
+	});
+
+	afterEach(async () => {
+		await db.execute(sql`ROLLBACK`);
+	});
+
+	it("returns the fuzzy-matched entity of the requested type", async () => {
+		const goblin = await entityService.create(db, {
+			campaignId,
+			name: "Goblin",
+			type: "monster",
+		});
+		const found = await entityService.findByNameAndType(
+			db,
+			campaignId,
+			"Goblinn",
+			"monster",
+		);
+		expect(found?.id).toBe(goblin.id);
+	});
+
+	it("returns null instead of throwing when the only name match has another type", async () => {
+		await entityService.create(db, {
+			campaignId,
+			name: "Goblin",
+			type: "npc",
+		});
+		await expect(
+			entityService.findByNameAndType(db, campaignId, "Goblin", "monster"),
+		).resolves.toBeNull();
+	});
+});
+
+describe("entityService.extractEncounterCreatures (T-174)", () => {
+	it("returns the structured creature list from the LLM response", async () => {
+		const callClaudeStructured = vi.fn().mockResolvedValue({
+			data: { creatures: [{ creatureName: "goblin", count: 3 }] },
+			usage: { inputTokens: 0, outputTokens: 0 },
+		});
+		const creatures = await entityService.extractEncounterCreatures(
+			"three goblins",
+			{ callClaudeStructured },
+		);
+		expect(creatures).toEqual([{ creatureName: "goblin", count: 3 }]);
+		expect(callClaudeStructured.mock.calls[0]?.[0].prompt).toContain(
+			"three goblins",
+		);
+	});
+
+	it("drops blank names and non-positive counts", async () => {
+		const callClaudeStructured = vi.fn().mockResolvedValue({
+			data: {
+				creatures: [
+					{ creatureName: "  ", count: 2 },
+					{ creatureName: "ogre", count: 0 },
+					{ creatureName: "wolf", count: 2 },
+				],
+			},
+			usage: { inputTokens: 0, outputTokens: 0 },
+		});
+		await expect(
+			entityService.extractEncounterCreatures("x", { callClaudeStructured }),
+		).resolves.toEqual([{ creatureName: "wolf", count: 2 }]);
+	});
+
+	it("skips the LLM call for a blank description", async () => {
+		const callClaudeStructured = vi.fn();
+		await expect(
+			entityService.extractEncounterCreatures("   ", { callClaudeStructured }),
+		).resolves.toEqual([]);
+		expect(callClaudeStructured).not.toHaveBeenCalled();
+	});
+});

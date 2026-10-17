@@ -8,7 +8,6 @@ Strategy-gate flag: no
 
 Priority: P2
 
-Blocked on: T-173 — must be merged into develop first
 
 Branch: feat/m-generate/t-191-update-delete-saved-encounter
 

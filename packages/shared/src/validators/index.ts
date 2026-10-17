@@ -59,6 +59,8 @@ export {
 	TransferItemInput,
 } from "./inventory.js";
 export {
+	ConfirmGenerateEncounterInput,
+	GenerateEncounterInput,
 	GetEncounterInput,
 	ListEncountersInput,
 	SaveEncounterInput,

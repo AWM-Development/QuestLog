@@ -110,6 +110,42 @@ function toCandidateEntityType(raw: string): EntityCandidateEntityType {
 		: "unclassified";
 }
 
+/** One creature group pulled from a DM's freeform encounter description. */
+export interface ExtractedEncounterCreature {
+	creatureName: string;
+	count: number;
+}
+
+interface EncounterCreatureExtractionResult {
+	creatures: ExtractedEncounterCreature[];
+}
+
+const ENCOUNTER_EXTRACTION_SCHEMA_NAME = "extract_encounter_creatures";
+
+const ENCOUNTER_EXTRACTION_PROMPT_PREAMBLE =
+	'List every distinct creature or monster group in the encounter description below, as a creatureName (singular, e.g. "goblin", not "goblins") and the number of that creature present (count, 1 when the text gives no number). Report only creatures that take part in the encounter, not scenery, locations, or named non-combatants.';
+
+/** Marker separating the fixed preamble from the DM's raw description — same role as `CANDIDATE_EXTRACTION_TEXT_MARKER`. */
+export const ENCOUNTER_EXTRACTION_TEXT_MARKER = "\n\nEncounter description:\n";
+
+const ENCOUNTER_EXTRACTION_SCHEMA: Anthropic.Tool.InputSchema = {
+	type: "object",
+	properties: {
+		creatures: {
+			type: "array",
+			items: {
+				type: "object",
+				properties: {
+					creatureName: { type: "string" },
+					count: { type: "number" },
+				},
+				required: ["creatureName", "count"],
+			},
+		},
+	},
+	required: ["creatures"],
+};
+
 interface EntityCandidate {
 	id: string;
 	name: string;
@@ -296,6 +332,21 @@ export function appendWithSeparator(
 	note: string,
 ): string {
 	return existing?.trim() ? `${existing.trim()}\n\n${note}` : note;
+}
+
+/** Best fuzzy-name match among candidate rows, or null when none clears `FUZZY_THRESHOLD` — the scoring loop `getByName` and `findByNameAndType` share. */
+function bestFuzzyMatch<T extends { name: string }>(
+	rows: T[],
+	name: string,
+): T | null {
+	let best: { row: T; score: number } | null = null;
+	for (const row of rows) {
+		const score = trigramSimilarity(name, row.name);
+		if (score >= FUZZY_THRESHOLD && (!best || score > best.score)) {
+			best = { row, score };
+		}
+	}
+	return best?.row ?? null;
 }
 
 export const entityService = {
@@ -750,17 +801,50 @@ export const entityService = {
 			.from(entities)
 			.where(wordSimilarityCandidateFilter(campaignId, name, !includeArchived));
 
-		let best: { row: (typeof candidateRows)[number]; score: number } | null =
-			null;
-		for (const row of candidateRows) {
-			const score = trigramSimilarity(name, row.name);
-			if (score >= FUZZY_THRESHOLD && (!best || score > best.score)) {
-				best = { row, score };
-			}
-		}
+		const best = bestFuzzyMatch(candidateRows, name);
 		if (!best) throw new NotFoundError("Entity", name);
 
-		return best.row;
+		return best;
+	},
+
+	/** Same fuzzy match as `getByName`, restricted to one entity type and returning null instead of throwing — "no match" is an expected outcome for a caller deciding whether to create. */
+	async findByNameAndType(
+		db: Database,
+		campaignId: string,
+		name: string,
+		type: EntityType,
+	) {
+		const candidateRows = await db
+			.select()
+			.from(entities)
+			.where(
+				and(
+					wordSimilarityCandidateFilter(campaignId, name, true),
+					eq(entities.type, type),
+				),
+			);
+		return bestFuzzyMatch(candidateRows, name);
+	},
+
+	/** Structured-extraction of creature groups from a DM's freeform encounter description. Never touches the DB. */
+	async extractEncounterCreatures(
+		description: string,
+		llmService: Pick<LlmService, "callClaudeStructured"> = defaultLlmService,
+	): Promise<ExtractedEncounterCreature[]> {
+		if (!description.trim()) return [];
+
+		const { data } =
+			await llmService.callClaudeStructured<EncounterCreatureExtractionResult>({
+				prompt: `${ENCOUNTER_EXTRACTION_PROMPT_PREAMBLE}${ENCOUNTER_EXTRACTION_TEXT_MARKER}${description}`,
+				schemaName: ENCOUNTER_EXTRACTION_SCHEMA_NAME,
+				schema: ENCOUNTER_EXTRACTION_SCHEMA,
+				schemaDescription:
+					"Structured list of creature groups (name + count) extracted from an encounter description.",
+			});
+
+		return (data.creatures ?? []).filter(
+			(c) => c.creatureName.trim() && Number.isFinite(c.count) && c.count >= 1,
+		);
 	},
 
 	async archive(
