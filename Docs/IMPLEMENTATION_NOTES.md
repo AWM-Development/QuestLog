@@ -894,3 +894,14 @@ A content-heavy entity's sub-parts (e.g. a dungeon's rooms) become ordinary `ent
 Both FKs are `ON DELETE no action`, not cascade: the manual path is create/list/get only, so nothing deletes encounters yet. Edit/delete is ticketed as `T-191`, which deletes members explicitly inside a transaction rather than adding `ON DELETE CASCADE` (no migration needed). Hard-deleting an `entity` referenced by a saved encounter would fail on `encounter_members.entity_id`, but entities are soft-archived only (`G-006`), so that path doesn't exist. Until then `TABLES_IN_DELETE_ORDER`/`deleteCampaignTree` must clear members before encounters and before entities.
 
 `SaveEncounterInput` caps `count` at 1000 and `members` at 100 entries — arbitrary guardrails (a count beyond int4 would otherwise surface as a raw Postgres overflow), raise them if a real encounter needs more. `list`/`getById` order by `createdAt` then `id` so roster order is deterministic.
+
+## T-192 — Cloud executor env preflight: fail before claiming, DB checks only where a shared Postgres exists (2026-10-17)
+
+`scripts/executor-env-preflight.sh` runs at `EXECUTOR_ROUTINE.md` Step 0 and prints `ENV_OK` or one `ENV_UNHEALTHY: <class>: <detail>` line. Per-database readiness reuses `db_readiness_issue` (§ T-130) — same definition as both hooks' verification gates, over `TEST_DB_NAMES` remotely and `TEST_DB_NAMES_CI` for a worktree, mirroring each hook's own gate. pgvector is compared (`sort -V`) against the `docker-compose.yml` image tag via `pg_available_extensions.default_version`, i.e. the installed binary, not what a given database happened to `CREATE EXTENSION` at. `CLAUDE_PROJECT_DIR` must be exported before sourcing `db-readiness.sh`: unset, its extension list silently comes back empty and the extension check is skipped.
+
+Database checks are skipped when neither `CLAUDE_CODE_REMOTE=true` nor a `tmp/worktrees/*` path applies (the shared primary checkout): a local session's Postgres is per-worktree (§ T-072) and doesn't exist until Step 2, so checking `:5433` there would false-fail every local run.
+
+`scripts/hook-timing.sh` (sourced by the three `SessionStart` hooks) installs an `EXIT` trap printing `<script>: completed in <N>s`, exit-0 paths only, early no-op exits included so every hook's last line is the timing line.
+
+**Cold-start cost — not yet measured.** The sandbox this ticket ran in was already warm, so only warm timings exist: `session-git-hygiene.sh` 4s, `session-db-local.sh` 0s (no-op remotely), `session-db-remote.sh` 1s (fast-path). A cold figure needs a fresh environment's first run; it comes from Alex's re-test (`EXECUTOR_ROUTINE.md` § "Re-enabling the cloud routine"), and belongs in this section once measured.
+

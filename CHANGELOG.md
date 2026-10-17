@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-192
+
+- **Cloud executor environment preflight.** New `scripts/executor-env-preflight.sh` checks `node_modules`/`pnpm`, Postgres, every test database's migrations, the pgvector version against the pinned one, git-remote reachability and free disk, printing `ENV_OK` or a single `ENV_UNHEALTHY: <class>: <detail>` line; `EXECUTOR_ROUTINE.md` Step 0 runs it and stops before claiming any ticket on failure. The three `SessionStart` hooks now end with `<script>: completed in <N>s`, and `EXECUTOR_ROUTINE.md` documents the manual caching re-test for re-enabling the paused cloud routine.
+
 ### Added — T-173
 
 - **Saved encounters: schema + manual `save_encounter` path.** New campaign-scoped `encounters`/`encounter_members` tables (mirroring `inventoryItems`'s shape — an `(entityId, count)` pair per roster row, e.g. "goblin x 2" is one row, not two) and a new `encounter.service.ts` (`save`/`list`/`getById`). Three new MCP tools: `save_encounter` (direct write, additive-only — no preview/confirm), `list_encounters` (member-count summary), `get_encounter` (full roster, each member resolved to `{ entityId, name, type, count }`). A DM can hand-assemble a roster via `get_entity`/`list_entities` and persist it directly, no LLM step required — natural-language generation is `T-174`, built on top of this.
