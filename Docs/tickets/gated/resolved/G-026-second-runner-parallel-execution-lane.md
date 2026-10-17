@@ -71,3 +71,5 @@ is running (not assumed now).
 up until `T-109` merges and this is roadmap-shaped rather than urgent.
 `M-ROBUST.1`'s milestone-doc line updated from `(Gated on: G-026)` to
 `(T-153)`.
+
+> Superseded by `T-194` (2026-10-17): the Devin lane is replaced by parallel Claude Code fires; `T-153` archived.

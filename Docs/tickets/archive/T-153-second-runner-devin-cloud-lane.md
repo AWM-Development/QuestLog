@@ -1,5 +1,7 @@
 # T-153 — Second runner: Devin cloud execution lane
 
+> **Archived 2026-10-17 — superseded.** Alex replaced the Devin lane with parallel Claude Code fires (`T-194`, `M-AUTOPILOT.3`). Not executed; kept as a point-in-time record.
+
 Milestone ref: M-ROBUST.1 (`Docs/milestones/MILESTONES_V1_6_MCP.md`)
 
 Complexity tier: L

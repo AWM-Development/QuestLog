@@ -26,8 +26,8 @@ This doc exists so those four gates' eventual resolutions have a milestone to la
 
 ### Tasks
 
-- [ ] **M-ROBUST.1 — Second runner as a parallel execution lane** (T-153)
-  Devin cloud fan-out, one ticket at a time, alongside the nightly Claude Code executor. `T-069`'s claim-push mutex is trusted as-is for cross-lane ticket collision safety (no additional lane-assignment rule). Sequenced after `T-109`'s cost adapter lands — see `T-153`'s `Blocked on:` — per `G-026`'s resolution.
+- [x] **M-ROBUST.1 — Second runner as a parallel execution lane — SUPERSEDED** (was T-153, archived)
+  Superseded 2026-10-17 by Alex: the Devin lane (`G-026`) is replaced by parallel Claude Code executor fires, which reuse `T-069`'s claim-push mutex with no new vendor or cost adapter. See `M-AUTOPILOT.3` (T-194). `Docs/tickets/archive/T-153-second-runner-devin-cloud-lane.md` is kept as a point-in-time record.
 
 - [x] **M-ROBUST.2 — External visibility surfaces: Slack delivery + ticket-tracker mirror — WON'T FIX** (resolved via `G-027`)
   Resolved 2026-08-22: neither surface built. (a) Slack delivery of `/lineup`/blocked-run/`/ungate` — declined; no Slack app/bot token installed anywhere and Alex judged the provisioning cost not worth it for a solo-dev pipeline. (b) External tracker mirror (Linear/Jira) — declined; would add a second surface to keep in sync for no clear gap over `Docs/tickets/` as sole canonical source. See `Docs/tickets/gated/resolved/G-027-external-visibility-surfaces-slack-tracker.md` § Resolution.
@@ -41,3 +41,26 @@ This doc exists so those four gates' eventual resolutions have a milestone to la
 ### Ordering constraint
 
 No task here depends on another — each is gated independently and can resolve in any order. `M-ROBUST.3` has a soft sequencing preference (after `T-114`, per its gate's Notes) but isn't hard-blocked on it; `/ungate` can still resolve `G-028` earlier and simply scope `M-ROBUST.3`'s eventual ticket(s) to land after `T-114` merges. None of these four are auto-promoted or picked up by the nightly executor — each stays in `gated/` until `/ungate` resolves it, same as any other 🧠 gate.
+
+---
+
+## Milestone M-AUTOPILOT: Unattended Pipeline Autopilot
+
+**Goal:** get development agents working through milestone tickets with minimal human relay — safe environment, hard spend limits, parallel fires, self-driving PRs, narrow auto-merge, automated ticketing — without loosening the human gates (🧠 decisions, P0 priority, `/ungate`).
+
+**Context:** Opened 2026-10-17 in an interactive planning session with Alex, reacting to Claude Desktop/Code advances. Decisions made in that session: (1) auto-merge approved for XS/D PRs only; (2) daily spend cap of ~10% of the weekly Claude limit and never exceeding the session limit, enforced via a configurable USD/day proxy (`T-193`) because the limit is not programmatically readable; (3) `G-029(b)` reopened for the executor's own PR only (`T-196`); (4) the Devin lane (`G-026`/`T-153`) is replaced by parallel Claude fires (`T-194`); (5) automated ticketing may draft P2/P1 but never P0 (`T-199`). The nightly cloud routine has been paused since `G-035` (environment caching not working); `T-192` gates everything else, and the trigger stays paused until Alex runs its re-test and re-enables it.
+
+### Tasks
+
+- [ ] **M-AUTOPILOT.1 — Cloud executor environment preflight, timing, caching re-test procedure** (T-192)
+- [ ] **M-AUTOPILOT.2 — Executor usage budget guard (daily USD cap, session-limit stop)** (T-193)
+- [ ] **M-AUTOPILOT.3 — Multi-fire schedule + Context-file overlap rule** (T-194)
+- [ ] **M-AUTOPILOT.4 — `/drain` continuous executor loop** (T-195)
+- [ ] **M-AUTOPILOT.5 — Executor self-drives its own PR** (T-196)
+- [ ] **M-AUTOPILOT.6 — Auto-merge for XS/D low-risk PRs** (T-197)
+- [ ] **M-AUTOPILOT.7 — Multi-PR morning-review digest** (T-198)
+- [ ] **M-AUTOPILOT.8 — Scheduled automated ticketing pass** (T-199)
+
+### Ordering constraint
+
+`T-192` first; every other task is `Blocked on` it. `T-193` precedes `T-194`/`T-195`/`T-196`/`T-199` (they all consult the budget). `T-195` also needs `T-194`. Alex-only actions outside the tickets: run `T-192`'s caching re-test, apply repo auto-merge/branch-protection settings for `T-197`, then re-enable and widen the scheduled trigger.
