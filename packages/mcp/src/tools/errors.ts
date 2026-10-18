@@ -1,9 +1,14 @@
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
-import { NotFoundError, ValidationError } from "@questlog/core/lib/errors.js";
+import {
+	AmbiguousEntityError,
+	NotFoundError,
+	ValidationError,
+} from "@questlog/core/lib/errors.js";
 
 /**
- * Wraps a tool handler so a thrown `NotFoundError`/`ValidationError` becomes
- * the structured `{ isError: true, content: [...] }` shape required by
+ * Wraps a tool handler so a thrown `NotFoundError`/`ValidationError`/
+ * `AmbiguousEntityError` becomes the structured
+ * `{ isError: true, content: [...] }` shape required by
  * `.claude/rules/mcp.md` instead of an exception that kills the MCP
  * connection. Any other error rethrows unchanged.
  */
@@ -35,6 +40,23 @@ export function withToolErrors<Args extends unknown[]>(
 							type: "text",
 							text: JSON.stringify({
 								error: { code: "VALIDATION_ERROR", message: error.message },
+							}),
+						},
+					],
+				};
+			}
+			if (error instanceof AmbiguousEntityError) {
+				return {
+					isError: true,
+					content: [
+						{
+							type: "text",
+							text: JSON.stringify({
+								error: {
+									code: "AMBIGUOUS_ENTITY",
+									message: error.message,
+									candidates: error.candidates,
+								},
 							}),
 						},
 					],

@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-183
+
+- **`parentEntityId` — self-referential 1:many entity containment (schema + service layer).** `entities` gains a nullable, self-referential `parentEntityId` FK (indexed) so a content-heavy entity's sub-parts (e.g. a dungeon's rooms) can be individually addressable, scoped-to-parent rows rather than paragraphs in one flat `description` (`G-053`'s resolution). `entityService.create`/`createSeeded` accept an optional `parentEntityId`, validated same-campaign (`NotFoundError` otherwise). `entityService.list` accepts an optional `parentEntityId` filter to scope results to one parent's children. `entityService.getByName` accepts an optional `parentEntityId` to scope its fuzzy match to one parent's children; when unscoped and a same-named tie spans two or more different parents, it now throws a new `AmbiguousEntityError` (carrying the tied candidates) instead of silently picking one by iteration order. No MCP tool surface yet — that's `T-184`.
+
 ### Added — T-173
 
 - **Saved encounters: schema + manual `save_encounter` path.** New campaign-scoped `encounters`/`encounter_members` tables (mirroring `inventoryItems`'s shape — an `(entityId, count)` pair per roster row, e.g. "goblin x 2" is one row, not two) and a new `encounter.service.ts` (`save`/`list`/`getById`). Three new MCP tools: `save_encounter` (direct write, additive-only — no preview/confirm), `list_encounters` (member-count summary), `get_encounter` (full roster, each member resolved to `{ entityId, name, type, count }`). A DM can hand-assemble a roster via `get_entity`/`list_entities` and persist it directly, no LLM step required — natural-language generation is `T-174`, built on top of this.
