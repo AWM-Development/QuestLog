@@ -12,7 +12,7 @@ export function ChromeHeader() {
 		<header className="chrome-header">
 			<div className="chrome-title">
 				QuestLog Pipeline Observatory
-				<span className="sub">Trends · Log — one page each morning</span>
+				<span className="sub">Trends · Log · Board</span>
 			</div>
 			<nav className="chrome-nav">
 				<NavLink
@@ -27,6 +27,12 @@ export function ChromeHeader() {
 					className={({ isActive }) => (isActive ? "active" : "")}
 				>
 					Log
+				</NavLink>
+				<NavLink
+					to="/board"
+					className={({ isActive }) => (isActive ? "active" : "")}
+				>
+					Board
 				</NavLink>
 			</nav>
 		</header>

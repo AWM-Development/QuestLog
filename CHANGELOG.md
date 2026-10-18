@@ -10,6 +10,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/). Version
 
 ## [Unreleased]
 
+### Added — T-158
+
+- **Observability dashboard: `/board` ticket board.** A third route beside Trends and Log (new "Board" nav link) rendering `board.list` as six fixed-width columns — Gated, Backlog, Queue, In-progress, Blocked, Done. Each card shows id, title, scope preview, tier badge, priority, and `Blocked on:`/`Gated on:` chips (first two plus a `+N` overflow); clicking a card opens a details modal with the full chip list, branch, and scope excerpt. Empty columns, loading, and `board.list` errors (with Retry) render plain states instead of a blank screen. Read-only — no drag-and-drop or move actions (`G-047`/`G-048` follow-ups).
+
 ### Added — T-173
 
 - **Saved encounters: schema + manual `save_encounter` path.** New campaign-scoped `encounters`/`encounter_members` tables (mirroring `inventoryItems`'s shape — an `(entityId, count)` pair per roster row, e.g. "goblin x 2" is one row, not two) and a new `encounter.service.ts` (`save`/`list`/`getById`). Three new MCP tools: `save_encounter` (direct write, additive-only — no preview/confirm), `list_encounters` (member-count summary), `get_encounter` (full roster, each member resolved to `{ entityId, name, type, count }`). A DM can hand-assemble a roster via `get_entity`/`list_entities` and persist it directly, no LLM step required — natural-language generation is `T-174`, built on top of this.
